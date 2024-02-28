@@ -179,10 +179,10 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   Kokkos::fence();
 }
 
-template <typename handle_t, typename crsMat_t, typename x_vector_type, typename y_vector_type>
+template <typename handle_t, typename crsMat_t, typename x_vector_type,
+          typename y_vector_type>
 void check_spmv(
-    handle_t* handle, crsMat_t input_mat,
-    x_vector_type x, y_vector_type y,
+    handle_t *handle, crsMat_t input_mat, x_vector_type x, y_vector_type y,
     typename y_vector_type::non_const_value_type alpha,
     typename y_vector_type::non_const_value_type beta, const std::string &mode,
     typename Kokkos::ArithTraits<typename crsMat_t::value_type>::mag_type
@@ -228,10 +228,10 @@ void check_spmv(
   EXPECT_TRUE(num_errors == 0);
 }
 
-template <typename Handle, typename crsMat_t, typename x_vector_type, typename y_vector_type>
+template <typename Handle, typename crsMat_t, typename x_vector_type,
+          typename y_vector_type>
 void check_spmv_mv(
-    Handle* handle,
-    crsMat_t input_mat, x_vector_type x, y_vector_type y,
+    Handle *handle, crsMat_t input_mat, x_vector_type x, y_vector_type y,
     y_vector_type expected_y,
     typename y_vector_type::non_const_value_type alpha,
     typename y_vector_type::non_const_value_type beta, int numMV,
@@ -407,16 +407,16 @@ Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(int mag) {
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename Device>
-void test_spmv(KokkosSparse::SPMVAlgorithm algo,
-               lno_t numRows, size_type nnz, lno_t bandwidth,
-               lno_t row_size_variance, bool heavy) {
+void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
+               lno_t bandwidth, lno_t row_size_variance, bool heavy) {
   using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device,
                                                     void, size_type>;
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
   using x_vector_type = scalar_view_t;
   using y_vector_type = scalar_view_t;
   using mag_t         = typename Kokkos::ArithTraits<scalar_t>::mag_type;
-  using handle_t = KokkosSparse::SPMVHandle<Device, crsMat_t, x_vector_type, y_vector_type>;
+  using handle_t =
+      KokkosSparse::SPMVHandle<Device, crsMat_t, x_vector_type, y_vector_type>;
 
   constexpr mag_t max_x   = static_cast<mag_t>(1);
   constexpr mag_t max_y   = static_cast<mag_t>(1);
@@ -461,7 +461,8 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo,
     testAlphaBeta.push_back(2.5);
   }
 
-  // This handle can be reused for all following calls, since the matrix does not change
+  // This handle can be reused for all following calls, since the matrix does
+  // not change
   handle_t handle(algo);
 
   for (auto mode : nonTransModes) {
@@ -492,9 +493,9 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_spmv_algorithms(lno_t numRows, size_type nnz, lno_t bandwidth,
                           lno_t row_size_variance, bool heavy) {
   using namespace KokkosSparse;
-  for(SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_MERGE_PATH})
-  {
-    test_spmv<scalar_t, lno_t, size_type, Device>(algo, numRows, nnz, bandwidth, row_size_variance, heavy);
+  for (SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_MERGE_PATH}) {
+    test_spmv<scalar_t, lno_t, size_type, Device>(algo, numRows, nnz, bandwidth,
+                                                  row_size_variance, heavy);
   }
 }
 
@@ -514,7 +515,8 @@ void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
                                                     void, size_type>;
   using ViewTypeX = Kokkos::View<scalar_t **, layout, Device>;
   using ViewTypeY = Kokkos::View<scalar_t **, layout, Device>;
-  using handle_t = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
+  using handle_t =
+      KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
 
   ViewTypeX b_x("A", numRows, numMV);
   ViewTypeY b_y("B", numCols, numMV);
@@ -561,8 +563,8 @@ void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
       for (double beta : testAlphaBeta) {
         mag_t max_error =
             beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
-        Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, alpha, beta, numMV,
-                            mode, max_error);
+        Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, alpha, beta,
+                            numMV, mode, max_error);
       }
     }
   }
@@ -572,8 +574,8 @@ void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
         // hoping the transpose won't have a long column...
         mag_t max_error =
             beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
-        Test::check_spmv_mv(&handle, input_mat, b_xt, b_yt, b_yt_copy, alpha, beta,
-                            numMV, mode, max_error);
+        Test::check_spmv_mv(&handle, input_mat, b_xt, b_yt, b_yt_copy, alpha,
+                            beta, numMV, mode, max_error);
       }
     }
   }
@@ -597,7 +599,8 @@ void test_spmv_mv_heavy(lno_t numRows, size_type nnz, lno_t bandwidth,
   using ViewTypeX = Kokkos::View<scalar_t **, layout, Device>;
   using ViewTypeY = Kokkos::View<scalar_t **, layout, Device>;
   using mag_t     = typename Kokkos::ArithTraits<scalar_t>::mag_type;
-  using handle_t = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
+  using handle_t =
+      KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
 
   constexpr mag_t max_x   = static_cast<mag_t>(10);
   constexpr mag_t max_y   = static_cast<mag_t>(10);
@@ -624,16 +627,16 @@ void test_spmv_mv_heavy(lno_t numRows, size_type nnz, lno_t bandwidth,
 
     handle_t handle;
 
-    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv, "N",
-                        max_nnz_per_row * max_val * max_x);
-    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv, "N",
-                        max_y);
-    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, nv, "N",
-                        max_y + max_nnz_per_row * max_val * max_x);
-    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv, "T",
-                        max_nnz_per_row * max_val * max_x);
-    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv, "T",
-                        max_y);
+    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv,
+                        "N", max_nnz_per_row * max_val * max_x);
+    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv,
+                        "N", max_y);
+    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, nv,
+                        "N", max_y + max_nnz_per_row * max_val * max_x);
+    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv,
+                        "T", max_nnz_per_row * max_val * max_x);
+    Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv,
+                        "T", max_y);
     // Testing all modes together, since matrix is square
     std::vector<const char *> modes   = {"N", "C", "T", "H"};
     std::vector<double> testAlphaBeta = {0.0, 1.0, -1.0, 2.5};
@@ -642,8 +645,8 @@ void test_spmv_mv_heavy(lno_t numRows, size_type nnz, lno_t bandwidth,
         for (double beta : testAlphaBeta) {
           mag_t max_error =
               beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
-          Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, alpha, beta, nv,
-                              mode, max_error);
+          Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, alpha,
+                              beta, nv, mode, max_error);
         }
       }
     }
@@ -1070,8 +1073,10 @@ void test_spmv_all_interfaces_light() {
   using vector_t       = Kokkos::View<scalar_t *, layout_t, DeviceType>;
   using range1D_t      = Kokkos::RangePolicy<execution_space>;
   using range2D_t = Kokkos::MDRangePolicy<execution_space, Kokkos::Rank<2>>;
-  using v_handle_t = KokkosSparse::SPMVHandle<DeviceType, crsMat_t, vector_t, vector_t>;
-  using mv_handle_t = KokkosSparse::SPMVHandle<DeviceType, crsMat_t, multivector_t, multivector_t>;
+  using v_handle_t =
+      KokkosSparse::SPMVHandle<DeviceType, crsMat_t, vector_t, vector_t>;
+  using mv_handle_t = KokkosSparse::SPMVHandle<DeviceType, crsMat_t,
+                                               multivector_t, multivector_t>;
   multivector_t x_mv("x_mv", n, 3);
   vector_t x("x", n);
   // Randomize x (it won't be modified after that)

@@ -147,10 +147,10 @@ Bsr bsr_random(const int blockSize, const int blockRows, const int blockCols) {
 /*! \brief test a specific spmv
 
 */
-template <typename Handle, typename Bsr, typename Crs, typename XVector, typename YVector,
-          typename Alpha = typename Bsr::non_const_value_type,
-          typename Beta  = typename Bsr::non_const_value_type>
-void test_spmv(Handle* handle, const char *mode, const Alpha &alpha,
+template <typename Handle, typename Bsr, typename Crs, typename XVector,
+          typename YVector, typename Alpha = typename Bsr::non_const_value_type,
+          typename Beta = typename Bsr::non_const_value_type>
+void test_spmv(Handle *handle, const char *mode, const Alpha &alpha,
                const Beta &beta, const Bsr &a, const Crs &acrs,
                size_t maxNnzPerRow, const XVector &x, const YVector &y) {
   using scalar_type  = typename Bsr::non_const_value_type;
@@ -195,7 +195,8 @@ void test_spmv(Handle* handle, const char *mode, const Alpha &alpha,
   }
 
   if (!errIdx.empty()) {
-    std::string alg = KokkosSparse::get_spmv_algorithm_name(handle->get_algorithm());
+    std::string alg =
+        KokkosSparse::get_spmv_algorithm_name(handle->get_algorithm());
 
     std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMV failure!"
               << std::endl;
@@ -360,8 +361,8 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
   using handle_t = SPMVHandle<execution_space, Bsr, decltype(x), decltype(y)>;
 
   // cover a variety of algorithms
-  std::vector<handle_t*> handles;
-  for(SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_BSR_V41})
+  std::vector<handle_t *> handles;
+  for (SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_BSR_V41})
     handles.push_back(new handle_t(algo));
 
   if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
@@ -370,17 +371,16 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
       handles.push_back(new handle_t(SPMV_BSR_TC));
 #if defined(KOKKOS_ARCH_AMPERE)
-  // Also call SPMV_BSR_TC with Precision = Double on Ampere
+      // Also call SPMV_BSR_TC with Precision = Double on Ampere
       handles.push_back(new handle_t(SPMV_BSR_TC));
-      handles.back()->bsr_tc_precision  = Experimental::Bsr_TC_Precision::Double;
+      handles.back()->bsr_tc_precision = Experimental::Bsr_TC_Precision::Double;
 #endif  // AMPERE
 #endif  // AMPERE || VOLTA
     }
 #endif  // CUDA
   }
 
-  for (handle_t* handle : handles)
-  {
+  for (handle_t *handle : handles) {
     for (scalar_type alpha :
          {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(3.7)}) {
       for (scalar_type beta : {scalar_type(0), scalar_type(1), scalar_type(-1),
@@ -469,9 +469,9 @@ void test_spmv() {
 
 // Note: if mode_is_transpose(mode), then maxNnzPerRow is for A^T. Otherwise,
 // it's for A.
-template <typename Handle, typename Bsr, typename Crs, typename XVector, typename YVector,
-          typename Alpha, typename Beta>
-void test_spm_mv(Handle* handle, const char *mode, const Alpha &alpha,
+template <typename Handle, typename Bsr, typename Crs, typename XVector,
+          typename YVector, typename Alpha, typename Beta>
+void test_spm_mv(Handle *handle, const char *mode, const Alpha &alpha,
                  const Beta &beta, const Bsr &a, const Crs &acrs,
                  size_t maxNnzPerRow, const XVector &x, const YVector &y) {
   using scalar_type  = typename Bsr::non_const_value_type;
@@ -516,7 +516,8 @@ void test_spm_mv(Handle* handle, const char *mode, const Alpha &alpha,
   }
 
   if (!errIdx.empty()) {
-    std::string alg = KokkosSparse::get_spmv_algorithm_name(handle->get_algorithm());
+    std::string alg =
+        KokkosSparse::get_spmv_algorithm_name(handle->get_algorithm());
 
     std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMMV failure!"
               << std::endl;
@@ -585,12 +586,13 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
   using namespace KokkosSparse;
   using execution_space = typename Bsr::execution_space;
   using scalar_type     = typename Bsr::non_const_value_type;
-  using multivector_t = typename MultiVectorTypeFor<Layout, Bsr>::type;
-  using handle_t = SPMVHandle<execution_space, Bsr, multivector_t, multivector_t>;
+  using multivector_t   = typename MultiVectorTypeFor<Layout, Bsr>::type;
+  using handle_t =
+      SPMVHandle<execution_space, Bsr, multivector_t, multivector_t>;
 
   // cover a variety of algorithms
-  std::vector<handle_t*> handles;
-  for(SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_BSR_V41})
+  std::vector<handle_t *> handles;
+  for (SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_BSR_V41})
     handles.push_back(new handle_t(algo));
 
   if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
@@ -599,9 +601,9 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
       handles.push_back(new handle_t(SPMV_BSR_TC));
 #if defined(KOKKOS_ARCH_AMPERE)
-  // Also call SPMV_BSR_TC with Precision = Double on Ampere
+      // Also call SPMV_BSR_TC with Precision = Double on Ampere
       handles.push_back(new handle_t(SPMV_BSR_TC));
-      handles.back()->bsr_tc_precision  = Experimental::Bsr_TC_Precision::Double;
+      handles.back()->bsr_tc_precision = Experimental::Bsr_TC_Precision::Double;
 #endif  // AMPERE
 #endif  // AMPERE || VOLTA
     }
@@ -610,7 +612,7 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
 
   for (size_t numVecs : {1, 7}) {  // num multivecs
     auto [x, y] = random_multivecs_for_spm_mv<Layout>(mode, a, numVecs);
-    for (handle_t* handle : handles){
+    for (handle_t *handle : handles) {
       for (scalar_type alpha : {scalar_type(0), scalar_type(1), scalar_type(-1),
                                 scalar_type(3.7)}) {
         for (scalar_type beta : {scalar_type(0), scalar_type(1),

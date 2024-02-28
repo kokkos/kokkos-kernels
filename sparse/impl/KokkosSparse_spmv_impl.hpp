@@ -250,16 +250,15 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz,
 
 // spmv_beta_no_transpose: version for CPU execution spaces (RangePolicy or
 // trivial serial impl used)
-template <class execution_space, class Handle, class AMatrix, class XVector, class YVector,
-          int dobeta, bool conjugate,
+template <class execution_space, class Handle, class AMatrix, class XVector,
+          class YVector, int dobeta, bool conjugate,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               execution_space>()>::type* = nullptr>
-static void spmv_beta_no_transpose(
-    const execution_space& exec,
-    Handle* handle,
-    typename YVector::const_value_type& alpha, const AMatrix& A,
-    const XVector& x, typename YVector::const_value_type& beta,
-    const YVector& y) {
+static void spmv_beta_no_transpose(const execution_space& exec, Handle* handle,
+                                   typename YVector::const_value_type& alpha,
+                                   const AMatrix& A, const XVector& x,
+                                   typename YVector::const_value_type& beta,
+                                   const YVector& y) {
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
 
   if (A.numRows() <= static_cast<ordinal_type>(0)) {
@@ -383,16 +382,15 @@ static void spmv_beta_no_transpose(
 }
 
 // spmv_beta_no_transpose: version for GPU execution spaces (TeamPolicy used)
-template <class execution_space, class Handle, class AMatrix, class XVector, class YVector,
-          int dobeta, bool conjugate,
+template <class execution_space, class Handle, class AMatrix, class XVector,
+          class YVector, int dobeta, bool conjugate,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
               execution_space>()>::type* = nullptr>
-static void spmv_beta_no_transpose(
-    const execution_space& exec,
-    Handle* handle,
-    typename YVector::const_value_type& alpha, const AMatrix& A,
-    const XVector& x, typename YVector::const_value_type& beta,
-    const YVector& y) {
+static void spmv_beta_no_transpose(const execution_space& exec, Handle* handle,
+                                   typename YVector::const_value_type& alpha,
+                                   const AMatrix& A, const XVector& x,
+                                   typename YVector::const_value_type& beta,
+                                   const YVector& y) {
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
 
   if (A.numRows() <= static_cast<ordinal_type>(0)) {
@@ -401,9 +399,9 @@ static void spmv_beta_no_transpose(
 
   bool use_dynamic_schedule = handle->force_dynamic_schedule;
   bool use_static_schedule  = handle->force_static_schedule;
-  int team_size           = handle->team_size;
-  int vector_length       = handle->vector_length;
-  int64_t rows_per_thread = handle->rows_per_thread;
+  int team_size             = handle->team_size;
+  int vector_length         = handle->vector_length;
+  int64_t rows_per_thread   = handle->rows_per_thread;
 
   int64_t rows_per_team = spmv_launch_parameters<execution_space>(
       A.numRows(), A.nnz(), rows_per_thread, team_size, vector_length);
@@ -596,10 +594,9 @@ static void spmv_beta_transpose(const execution_space& exec,
                        op);
 }
 
-template <class execution_space, class Handle, class AMatrix, class XVector, class YVector,
-          int dobeta>
-static void spmv_beta(const execution_space& exec,
-                      Handle* handle,
+template <class execution_space, class Handle, class AMatrix, class XVector,
+          class YVector, int dobeta>
+static void spmv_beta(const execution_space& exec, Handle* handle,
                       const char mode[],
                       typename YVector::const_value_type& alpha,
                       const AMatrix& A, const XVector& x,
@@ -610,20 +607,23 @@ static void spmv_beta(const execution_space& exec,
       SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
           exec, mode, alpha, A, x, beta, y);
     } else {
-      spmv_beta_no_transpose<execution_space, Handle, AMatrix, XVector, YVector, dobeta, false>(exec, handle, alpha, A, x, beta, y);
+      spmv_beta_no_transpose<execution_space, Handle, AMatrix, XVector, YVector,
+                             dobeta, false>(exec, handle, alpha, A, x, beta, y);
     }
   } else if (mode[0] == Conjugate[0]) {
-    if (handle->algo  == SPMV_MERGE_PATH) {
+    if (handle->algo == SPMV_MERGE_PATH) {
       SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
           exec, mode, alpha, A, x, beta, y);
     } else {
-      spmv_beta_no_transpose<execution_space, Handle, AMatrix, XVector, YVector, dobeta,
-                             true>(exec, handle, alpha, A, x, beta, y);
+      spmv_beta_no_transpose<execution_space, Handle, AMatrix, XVector, YVector,
+                             dobeta, true>(exec, handle, alpha, A, x, beta, y);
     }
   } else if (mode[0] == Transpose[0]) {
-    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta, false>(exec, alpha, A, x, beta, y);
+    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
+                        false>(exec, alpha, A, x, beta, y);
   } else if (mode[0] == ConjugateTranspose[0]) {
-    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta, true>(exec, alpha, A, x, beta, y);
+    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
+                        true>(exec, alpha, A, x, beta, y);
   } else {
     std::stringstream ss;
     ss << __FILE__ << ":" << __LINE__ << " Invalid transpose mode " << mode

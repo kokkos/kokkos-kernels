@@ -25,7 +25,8 @@ namespace KokkosSparse {
 namespace Experimental {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class Handle, class AMatrix, class XVector, class YVector>
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
+          class YVector>
 struct spmv_bsrmatrix_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -41,7 +42,8 @@ struct spmv_bsrmatrix_tpl_spec_avail {
   template <>                                                                  \
   struct spmv_bsrmatrix_tpl_spec_avail<                                        \
       Kokkos::Cuda,                                                            \
-      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, MEMSPACE, SCALAR, OFFSET, ORDINAL>, \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, MEMSPACE, SCALAR,       \
+                                         OFFSET, ORDINAL>,                     \
       ::KokkosSparse::Experimental::BsrMatrix<                                 \
           const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET>,              \
@@ -128,23 +130,24 @@ KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-#define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE)  \
-  template <>                                                              \
-  struct spmv_bsrmatrix_tpl_spec_avail<                                    \
-      EXECSPACE,                                                           \
-      KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>, \
-      ::KokkosSparse::Experimental::BsrMatrix<                             \
-          const SCALAR, const MKL_INT,                                     \
-          Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                    \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>,         \
-      Kokkos::View<                                                        \
-          const SCALAR*, Kokkos::LayoutLeft,                               \
-          Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                    \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>, \
-      Kokkos::View<SCALAR*, Kokkos::LayoutLeft,                            \
-                   Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {             \
-    enum : bool { value = true };                                          \
+#define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE)      \
+  template <>                                                                  \
+  struct spmv_bsrmatrix_tpl_spec_avail<                                        \
+      EXECSPACE,                                                               \
+      KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, \
+                                         MKL_INT, MKL_INT>,                    \
+      ::KokkosSparse::Experimental::BsrMatrix<                                 \
+          const SCALAR, const MKL_INT,                                         \
+          Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                        \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>,             \
+      Kokkos::View<                                                            \
+          const SCALAR*, Kokkos::LayoutLeft,                                   \
+          Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                        \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,     \
+      Kokkos::View<SCALAR*, Kokkos::LayoutLeft,                                \
+                   Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,               \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                 \
+    enum : bool { value = true };                                              \
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -168,7 +171,8 @@ KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
 #endif
 
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class Handle, class AMatrix, class XVector, class YVector,
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
+          class YVector,
           const bool integerScalarType =
               std::is_integral_v<typename AMatrix::non_const_value_type>>
 struct spmv_mv_bsrmatrix_tpl_spec_avail {
@@ -186,7 +190,8 @@ struct spmv_mv_bsrmatrix_tpl_spec_avail {
   template <>                                                                  \
   struct spmv_mv_bsrmatrix_tpl_spec_avail<                                     \
       Kokkos::Cuda,                                                            \
-      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, MEMSPACE, SCALAR, OFFSET, ORDINAL>, \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, MEMSPACE, SCALAR,       \
+                                         OFFSET, ORDINAL>,                     \
       ::KokkosSparse::Experimental::BsrMatrix<                                 \
           const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET>,              \
@@ -234,24 +239,25 @@ KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-#define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE) \
-  template <>                                                                \
-  struct spmv_mv_bsrmatrix_tpl_spec_avail<                                   \
-      EXECSPACE,                                                             \
-      KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>, \
-      ::KokkosSparse::Experimental::BsrMatrix<                               \
-          const SCALAR, const int,                                           \
-          Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                      \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
-      Kokkos::View<                                                          \
-          const SCALAR*, Kokkos::LayoutLeft,                                 \
-          Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                      \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,   \
-      Kokkos::View<SCALAR*, Kokkos::LayoutLeft,                              \
-                   Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
-      true> {                                                                \
-    enum : bool { value = true };                                            \
+#define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE)   \
+  template <>                                                                  \
+  struct spmv_mv_bsrmatrix_tpl_spec_avail<                                     \
+      EXECSPACE,                                                               \
+      KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, \
+                                         MKL_INT, MKL_INT>,                    \
+      ::KokkosSparse::Experimental::BsrMatrix<                                 \
+          const SCALAR, const int,                                             \
+          Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                        \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                 \
+      Kokkos::View<                                                            \
+          const SCALAR*, Kokkos::LayoutLeft,                                   \
+          Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                        \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,     \
+      Kokkos::View<SCALAR*, Kokkos::LayoutLeft,                                \
+                   Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,               \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      true> {                                                                  \
+    enum : bool { value = true };                                              \
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -283,7 +289,8 @@ KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
   template <>                                                                 \
   struct spmv_bsrmatrix_tpl_spec_avail<                                       \
       Kokkos::HIP,                                                            \
-      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::HIP, MEMSPACE, SCALAR, OFFSET, ORDINAL>, \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::HIP, MEMSPACE, SCALAR,       \
+                                         OFFSET, ORDINAL>,                    \
       ::KokkosSparse::Experimental::BsrMatrix<                                \
           const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::HIP, MEMSPACE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET>,             \

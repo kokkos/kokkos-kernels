@@ -38,10 +38,11 @@ typedef default_size_type Offset;
 template <typename Layout>
 void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop,
               int num_vecs, char mode, Scalar beta) {
-  using matrix_type = KokkosSparse::CrsMatrix<Scalar, Ordinal,
-                                  Kokkos::DefaultExecutionSpace, void, Offset> ;
-  using mv_type = Kokkos::View<Scalar**, Layout> ;
-  using h_mv_type = typename mv_type::HostMirror ;
+  using matrix_type =
+      KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace,
+                              void, Offset>;
+  using mv_type   = Kokkos::View<Scalar**, Layout>;
+  using h_mv_type = typename mv_type::HostMirror;
 
   srand(17312837);
   matrix_type A;
@@ -86,8 +87,12 @@ void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop,
   // Create handles for both rank-1 and rank-2 cases,
   // even though only 1 will get used below (depending on num_vecs)
 
-  KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, decltype(x0), decltype(y0)> handle_rank1;
-  KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, mv_type, mv_type> handle_rank2;
+  KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type,
+                           decltype(x0), decltype(y0)>
+      handle_rank1;
+  KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, mv_type,
+                           mv_type>
+      handle_rank2;
   // Do 5 warm up calls (not timed). This will also initialize the handle.
   for (int i = 0; i < 5; i++) {
     if (num_vecs == 1) {

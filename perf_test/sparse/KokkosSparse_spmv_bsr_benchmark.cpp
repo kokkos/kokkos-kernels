@@ -207,7 +207,9 @@ struct SpmvNative {
             typename YView>
   static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs,
                    const XView &x, const Beta &beta, const YView &y) {
-    KokkosSparse::SPMVHandle<typename Matrix::execution_space, Matrix, XView, YView> handle(KokkosSparse::SPMV_NATIVE);
+    KokkosSparse::SPMVHandle<typename Matrix::execution_space, Matrix, XView,
+                             YView>
+        handle(KokkosSparse::SPMV_NATIVE);
     return KokkosSparse::spmv(&handle, mode, alpha, crs, x, beta, y);
   }
 
@@ -220,7 +222,9 @@ struct SpmvV41 {
             typename YView>
   static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs,
                    const XView &x, const Beta &beta, const YView &y) {
-    KokkosSparse::SPMVHandle<typename Matrix::execution_space, Matrix, XView, YView> handle(KokkosSparse::SPMV_BSR_V41);
+    KokkosSparse::SPMVHandle<typename Matrix::execution_space, Matrix, XView,
+                             YView>
+        handle(KokkosSparse::SPMV_BSR_V41);
     return KokkosSparse::spmv(&handle, mode, alpha, crs, x, beta, y);
   }
 

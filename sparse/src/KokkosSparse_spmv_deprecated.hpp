@@ -181,76 +181,87 @@ using SPMV2D1D
 
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
-void spmv(const ExecutionSpace& space,
-          KokkosKernels::Experimental::Controls controls, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y) {
-    // Translate the algorithm choice in controls to a SPMVHandle algo enum.
-    // Also since this interface does not allow reuse, use native instead of rocSPARSE
-    SPMVAlgorithm algo = SPMV_FAST_SETUP;
+[
+    [deprecated("Use the version of spmv that takes a SPMVHandle instead of "
+                "Controls")]] void
+spmv(const ExecutionSpace& space,
+     KokkosKernels::Experimental::Controls controls, const char mode[],
+     const AlphaType& alpha, const AMatrix& A, const XVector& x,
+     const BetaType& beta, const YVector& y) {
+  // Translate the algorithm choice in controls to a SPMVHandle algo enum.
+  // Also since this interface does not allow reuse, use native instead of
+  // rocSPARSE
+  SPMVAlgorithm algo = SPMV_FAST_SETUP;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-    if constexpr(std::is_same_v<typename AMatrix::execution_space, Kokkos::HIP>)
+  if constexpr (std::is_same_v<typename AMatrix::execution_space, Kokkos::HIP>)
     algo = SPMV_NATIVE;
 #endif
-    if(controls.isParameter("algorithm"))
-    {
-      if(controls.getParameter("algorithm") != "tpl")
-        algo = SPMV_NATIVE;
-    }
-    KokkosSparse::SPMVHandle<ExecutionSpace, AMatrix, XVector, YVector> handle(algo);
+  if (controls.isParameter("algorithm")) {
+    if (controls.getParameter("algorithm") != "tpl") algo = SPMV_NATIVE;
+  }
+  KokkosSparse::SPMVHandle<ExecutionSpace, AMatrix, XVector, YVector> handle(
+      algo);
   spmv(space, &handle, mode, alpha, A, x, beta, y);
 }
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
-void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y) {
-  spmv(typename AMatrix::execution_space{}, controls, mode, alpha, A, x, beta, y);
+[
+    [deprecated("Use the version of spmv that takes a SPMVHandle instead of "
+                "Controls")]] void
+spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+     const AlphaType& alpha, const AMatrix& A, const XVector& x,
+     const BetaType& beta, const YVector& y) {
+  spmv(typename AMatrix::execution_space{}, controls, mode, alpha, A, x, beta,
+       y);
 }
 
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
-    void spmv(const ExecutionSpace& space,
-          KokkosKernels::Experimental::Controls controls, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y,
-          const RANK_ONE&) {
+[
+    [deprecated("Use the version of spmv that takes a SPMVHandle instead of "
+                "Controls")]] void
+spmv(const ExecutionSpace& space,
+     KokkosKernels::Experimental::Controls controls, const char mode[],
+     const AlphaType& alpha, const AMatrix& A, const XVector& x,
+     const BetaType& beta, const YVector& y, const RANK_ONE&) {
   spmv(space, controls, mode, alpha, A, x, beta, y);
 }
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
-void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y, const RANK_ONE&) {
+[
+    [deprecated("Use the version of spmv that takes a SPMVHandle instead of "
+                "Controls")]] void
+spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+     const AlphaType& alpha, const AMatrix& A, const XVector& x,
+     const BetaType& beta, const YVector& y, const RANK_ONE&) {
   spmv(controls, mode, alpha, A, x, beta, y);
 }
 
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
-void spmv(const ExecutionSpace& space,
-          KokkosKernels::Experimental::Controls controls, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y,
-          const RANK_TWO&) {
+[
+    [deprecated("Use the version of spmv that takes a SPMVHandle instead of "
+                "Controls")]] void
+spmv(const ExecutionSpace& space,
+     KokkosKernels::Experimental::Controls controls, const char mode[],
+     const AlphaType& alpha, const AMatrix& A, const XVector& x,
+     const BetaType& beta, const YVector& y, const RANK_TWO&) {
   spmv(space, controls, mode, alpha, A, x, beta, y);
 }
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
-void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y, const RANK_TWO&) {
+[
+    [deprecated("Use the version of spmv that takes a SPMVHandle instead of "
+                "Controls")]] void
+spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+     const AlphaType& alpha, const AMatrix& A, const XVector& x,
+     const BetaType& beta, const YVector& y, const RANK_TWO&) {
   spmv(controls, mode, alpha, A, x, beta, y);
 }
 
-} // namespace KokkosSparse
+}  // namespace KokkosSparse
 
 #endif

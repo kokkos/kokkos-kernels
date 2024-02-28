@@ -72,16 +72,15 @@ struct RANK_TWO {};
 /// \param beta [in] Scalar multiplier for the vector y.
 /// \param y [in/out] Result vector.
 // clang-format on
-template <class ExecutionSpace, class Handle, class AlphaType, class AMatrix, class XVector,
-          class BetaType, class YVector>
-void spmv(const ExecutionSpace& space,
-          Handle* handle, const char mode[],
+template <class ExecutionSpace, class Handle, class AlphaType, class AMatrix,
+          class XVector, class BetaType, class YVector>
+void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y)
-{
+          const BetaType& beta, const YVector& y) {
   // Make sure A is a CrsMatrix or BsrMatrix.
-  static_assert(is_crs_matrix_v<AMatrix> || Experimental::is_bsr_matrix_v<AMatrix>,
-                "KokkosSparse::spmv: AMatrix must be a CrsMatrix or BsrMatrix");
+  static_assert(
+      is_crs_matrix_v<AMatrix> || Experimental::is_bsr_matrix_v<AMatrix>,
+      "KokkosSparse::spmv: AMatrix must be a CrsMatrix or BsrMatrix");
   // Make sure that x and y are Views.
   static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosSparse::spmv: XVector must be a Kokkos::View.");
@@ -111,44 +110,40 @@ void spmv(const ExecutionSpace& space,
                 "KokkosSparse::spmv: Output Vector must be non-const.");
 
   // Check that A, X, Y types match that of the Handle
-  static_assert(std::is_same_v<AMatrix, typename Handle::AMatrixType>,
-                "KokkosSparse::spmv: AMatrix must be identical to Handle::AMatrixType");
-  static_assert(std::is_same_v<XVector, typename Handle::XVectorType>,
-                "KokkosSparse::spmv: XVector must be identical to Handle::XVectorType");
-  static_assert(std::is_same_v<YVector, typename Handle::YVectorType>,
-                "KokkosSparse::spmv: YVector must be identical to Handle::YVectorType");
+  static_assert(
+      std::is_same_v<AMatrix, typename Handle::AMatrixType>,
+      "KokkosSparse::spmv: AMatrix must be identical to Handle::AMatrixType");
+  static_assert(
+      std::is_same_v<XVector, typename Handle::XVectorType>,
+      "KokkosSparse::spmv: XVector must be identical to Handle::XVectorType");
+  static_assert(
+      std::is_same_v<YVector, typename Handle::YVectorType>,
+      "KokkosSparse::spmv: YVector must be identical to Handle::YVectorType");
 
   constexpr bool isBSR = Experimental::is_bsr_matrix_v<AMatrix>;
 
   // Check compatibility of dimensions at run time.
   size_t m, n;
 
-  if constexpr(!isBSR)
-  {
+  if constexpr (!isBSR) {
     m = A.numRows();
     n = A.numCols();
-  }
-  else
-  {
+  } else {
     m = A.numRows() * A.blockDim();
     n = A.numCols() * A.blockDim();
   }
 
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
-    if ((x.extent(1) != y.extent(1)) ||
-        (n != x.extent(0)) ||
-        (m != y.extent(0)))
-         {
+    if ((x.extent(1) != y.extent(1)) || (n != x.extent(0)) ||
+        (m != y.extent(0))) {
       std::ostringstream os;
       os << "KokkosSparse::spmv: Dimensions do not match: "
-         << ", A: " << m << " x " << n
-         << ", x: " << x.extent(0) << " x " << x.extent(1)
-         << ", y: " << y.extent(0) << " x " << y.extent(1);
+         << ", A: " << m << " x " << n << ", x: " << x.extent(0) << " x "
+         << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
-    if ((x.extent(1) != y.extent(1)) ||
-        (m != x.extent(0)) ||
+    if ((x.extent(1) != y.extent(1)) || (m != x.extent(0)) ||
         (n != y.extent(0))) {
       std::ostringstream os;
       os << "KokkosSparse::spmv: Dimensions do not match (transpose): "
@@ -160,7 +155,8 @@ void spmv(const ExecutionSpace& space,
   }
 
   // Efficiently handle cases where alpha*Op(A) is equivalent to the zero matrix
-  if (alpha == Kokkos::ArithTraits<AlphaType>::zero() || m == 0 || n == 0 || A.nnz() == 0) {
+  if (alpha == Kokkos::ArithTraits<AlphaType>::zero() || m == 0 || n == 0 ||
+      A.nnz() == 0) {
     // This is required to maintain semantics of KokkosKernels native SpMV:
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
@@ -182,211 +178,215 @@ void spmv(const ExecutionSpace& space,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
       typename AMatrix::const_size_type>;
 
-  using AMatrix_Internal = std::conditional_t<isBSR, ABsr_Internal, ACrs_Internal>;
+  using AMatrix_Internal =
+      std::conditional_t<isBSR, ABsr_Internal, ACrs_Internal>;
 
   AMatrix_Internal A_i(A);
 
   // Note: data_type of a View includes both the scalar and rank
   using XVector_Internal = Kokkos::View<
-        typename XVector::const_data_type, typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-        typename XVector::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+      typename XVector::const_data_type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+      typename XVector::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
 
-    using YVector_Internal = Kokkos::View<typename YVector::non_const_data_type,
-                         typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
-                         typename YVector::device_type,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using YVector_Internal = Kokkos::View<
+      typename YVector::non_const_data_type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+      typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-    XVector_Internal x_i(x);
-    YVector_Internal y_i(y);
+  XVector_Internal x_i(x);
+  YVector_Internal y_i(y);
 
-    bool useNative = is_spmv_algorithm_native(handle->get_algorithm());
-    
-    // Now call the proper implementation depending on isBSR and the rank of X/Y
-    if constexpr(!isBSR)
-    {
-      if constexpr(XVector::rank() == 1)
-      {
-        /////////////////
-        // CRS, rank 1 //
-        /////////////////
-        #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-        // cuSPARSE does not support the conjugate mode (C)
-        if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
-            Kokkos::CudaSpace> ||
-            std::is_same_v<typename AMatrix_Internal::memory_space,
-            Kokkos::CudaUVMSpace>) {
-          useNative = useNative || (mode[0] == Conjugate[0]);
-        }
-        // cuSPARSE 12 requires that the output (y) vector is 16-byte aligned for all
-        // scalar types
+  bool useNative = is_spmv_algorithm_native(handle->get_algorithm());
+
+  // Now call the proper implementation depending on isBSR and the rank of X/Y
+  if constexpr (!isBSR) {
+    if constexpr (XVector::rank() == 1) {
+/////////////////
+// CRS, rank 1 //
+/////////////////
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+      // cuSPARSE does not support the conjugate mode (C)
+      if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
+                                   Kokkos::CudaSpace> ||
+                    std::is_same_v<typename AMatrix_Internal::memory_space,
+                                   Kokkos::CudaUVMSpace>) {
+        useNative = useNative || (mode[0] == Conjugate[0]);
+      }
+      // cuSPARSE 12 requires that the output (y) vector is 16-byte aligned for
+      // all scalar types
 #if defined(CUSPARSE_VER_MAJOR) && (CUSPARSE_VER_MAJOR == 12)
-        uintptr_t yptr = uintptr_t((void*)y.data());
-        if (yptr % 16 != 0) useNative = true;
+      uintptr_t yptr = uintptr_t((void*)y.data());
+      if (yptr % 16 != 0) useNative = true;
 #endif
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-        if (std::is_same<typename AMatrix_Internal::memory_space,
-            Kokkos::HIPSpace>::value) {
-          useNative = useNative || (mode[0] != NoTranspose[0]);
-        }
+      if (std::is_same<typename AMatrix_Internal::memory_space,
+                       Kokkos::HIPSpace>::value) {
+        useNative = useNative || (mode[0] != NoTranspose[0]);
+      }
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        if (std::is_same_v<typename AMatrix_Internal::memory_space,
-            Kokkos::HostSpace>) {
-          useNative = useNative || (mode[0] == Conjugate[0]);
-        }
+      if (std::is_same_v<typename AMatrix_Internal::memory_space,
+                         Kokkos::HostSpace>) {
+        useNative = useNative || (mode[0] == Conjugate[0]);
+      }
 #ifdef KOKKOS_ENABLE_SYCL
-        if (std::is_same_v<typename AMatrix_Internal::memory_space,
-            Kokkos::Experimental::SYCLDeviceUSMSpace>) {
-          useNative = useNative || (mode[0] == Conjugate[0]);
-        }
+      if (std::is_same_v<typename AMatrix_Internal::memory_space,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace>) {
+        useNative = useNative || (mode[0] == Conjugate[0]);
+      }
 #endif
 #endif
-        if (useNative) {
-          // Explicitly call the non-TPL SPMV implementation
-          std::string label =
+      if (useNative) {
+        // Explicitly call the non-TPL SPMV implementation
+        std::string label =
             "KokkosSparse::spmv[NATIVE," +
             Kokkos::ArithTraits<
-            typename AMatrix_Internal::non_const_value_type>::name() +
+                typename AMatrix_Internal::non_const_value_type>::name() +
             "]";
-          Kokkos::Profiling::pushRegion(label);
-          Impl::SPMV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
-            YVector_Internal, false>::spmv(space, handle, mode, alpha, A_i,
-                x_i, beta, y_i);
-          Kokkos::Profiling::popRegion();
-        } else {
-          // note: the cuSPARSE spmv wrapper defines a profiling region, so one is not
-          // needed here.
-          Impl::SPMV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
-            YVector_Internal>::spmv(space, handle, mode, alpha, A_i, x_i,
-                beta, y_i);
-        }
+        Kokkos::Profiling::pushRegion(label);
+        Impl::SPMV<ExecutionSpace, HandleImpl, AMatrix_Internal,
+                   XVector_Internal, YVector_Internal, false>::spmv(space,
+                                                                    handle,
+                                                                    mode, alpha,
+                                                                    A_i, x_i,
+                                                                    beta, y_i);
+        Kokkos::Profiling::popRegion();
+      } else {
+        // note: the cuSPARSE spmv wrapper defines a profiling region, so one is
+        // not needed here.
+        Impl::SPMV<ExecutionSpace, HandleImpl, AMatrix_Internal,
+                   XVector_Internal, YVector_Internal>::spmv(space, handle,
+                                                             mode, alpha, A_i,
+                                                             x_i, beta, y_i);
       }
-      else
-      {
-        /////////////////
-        // CRS, rank 2 //
-        /////////////////
-        #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    useNative = useNative || (Conjugate[0] == mode[0]);
+    } else {
+/////////////////
+// CRS, rank 2 //
+/////////////////
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+      useNative = useNative || (Conjugate[0] == mode[0]);
 #endif
 
-        if (useNative) {
-          std::string label =
+      if (useNative) {
+        std::string label =
             "KokkosSparse::spmv[NATIVE,MV," +
             Kokkos::ArithTraits<
-            typename AMatrix_Internal::non_const_value_type>::name() +
+                typename AMatrix_Internal::non_const_value_type>::name() +
             "]";
-          Kokkos::Profiling::pushRegion(label);
-          return Impl::SPMV_MV<
-              ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
-              std::is_integral<typename AMatrix_Internal::value_type>::value,
-              false>::spmv_mv(space, handle, mode, alpha, A_i, x_i, beta, y_i);
-          Kokkos::Profiling::popRegion();
-        } else {
-          return Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
-                               YVector_Internal>::spmv_mv(space, handle, mode,
-                                                          alpha, A_i, x_i, beta,
-                                                          y_i);
-        }
+        Kokkos::Profiling::pushRegion(label);
+        return Impl::SPMV_MV<
+            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
+            YVector_Internal,
+            std::is_integral<typename AMatrix_Internal::value_type>::value,
+            false>::spmv_mv(space, handle, mode, alpha, A_i, x_i, beta, y_i);
+        Kokkos::Profiling::popRegion();
+      } else {
+        return Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal,
+                             XVector_Internal,
+                             YVector_Internal>::spmv_mv(space, handle, mode,
+                                                        alpha, A_i, x_i, beta,
+                                                        y_i);
       }
     }
-    else
-    {
-      if constexpr(XVector::rank() == 1)
-      {
-        /////////////////
-        // BSR, rank 1 //
-        /////////////////
-        #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-        // cuSPARSE does not support the modes (C), (T), (H)
-        if (std::is_same<typename AMatrix_Internal::memory_space,
-            Kokkos::CudaSpace>::value ||
-            std::is_same<typename AMatrix_Internal::memory_space,
-            Kokkos::CudaUVMSpace>::value) {
-          useNative = useNative || (mode[0] != NoTranspose[0]);
-        }
+  } else {
+    if constexpr (XVector::rank() == 1) {
+/////////////////
+// BSR, rank 1 //
+/////////////////
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+      // cuSPARSE does not support the modes (C), (T), (H)
+      if (std::is_same<typename AMatrix_Internal::memory_space,
+                       Kokkos::CudaSpace>::value ||
+          std::is_same<typename AMatrix_Internal::memory_space,
+                       Kokkos::CudaUVMSpace>::value) {
+        useNative = useNative || (mode[0] != NoTranspose[0]);
+      }
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        if (std::is_same<typename AMatrix_Internal::memory_space,
-            Kokkos::HostSpace>::value) {
-          useNative = useNative || (mode[0] == Conjugate[0]);
-        }
+      if (std::is_same<typename AMatrix_Internal::memory_space,
+                       Kokkos::HostSpace>::value) {
+        useNative = useNative || (mode[0] == Conjugate[0]);
+      }
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-        // rocSparse does not support the modes (C), (T), (H)
-        if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
-            Kokkos::HIPSpace>) {
-          useNative = useNative || (mode[0] != NoTranspose[0]);
-        }
+      // rocSparse does not support the modes (C), (T), (H)
+      if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
+                                   Kokkos::HIPSpace>) {
+        useNative = useNative || (mode[0] != NoTranspose[0]);
+      }
 #endif
-        if (useNative) {
-          // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
-          std::string label =
+      if (useNative) {
+        // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
+        std::string label =
             "KokkosSparse::spmv[NATIVE,BSRMATRIX," +
             Kokkos::ArithTraits<
-            typename AMatrix_Internal::non_const_value_type>::name() +
+                typename AMatrix_Internal::non_const_value_type>::name() +
             "]";
-          Kokkos::Profiling::pushRegion(label);
-          Experimental::Impl::SPMV_BSRMATRIX<ExecutionSpace, HandleImpl, AMatrix_Internal,
-            XVector_Internal, YVector_Internal,
-            false>::spmv_bsrmatrix(space, handle,
-                mode, alpha, A_i,
-                x_i, beta, y_i);
-          Kokkos::Profiling::popRegion();
-        } else {
-          Experimental::Impl::SPMV_BSRMATRIX<
-            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal>::spmv_bsrmatrix(space, handle, mode, alpha, A_i, x_i, beta, y_i);
-        }
+        Kokkos::Profiling::pushRegion(label);
+        Experimental::Impl::SPMV_BSRMATRIX<
+            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
+            YVector_Internal, false>::spmv_bsrmatrix(space, handle, mode, alpha,
+                                                     A_i, x_i, beta, y_i);
+        Kokkos::Profiling::popRegion();
+      } else {
+        Experimental::Impl::SPMV_BSRMATRIX<
+            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
+            YVector_Internal>::spmv_bsrmatrix(space, handle, mode, alpha, A_i,
+                                              x_i, beta, y_i);
       }
-      else
-      {
-        /////////////////
-        // BSR, rank 2 //
-        /////////////////
+    } else {
+      /////////////////
+      // BSR, rank 2 //
+      /////////////////
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-        // cuSPARSE does not support the modes (C), (T), (H)
-        if (std::is_same<typename AMatrix_Internal::memory_space,
-            Kokkos::CudaSpace>::value ||
-            std::is_same<typename AMatrix_Internal::memory_space,
-            Kokkos::CudaUVMSpace>::value) {
-          useNative = useNative || (mode[0] != NoTranspose[0]);
-        }
+      // cuSPARSE does not support the modes (C), (T), (H)
+      if (std::is_same<typename AMatrix_Internal::memory_space,
+                       Kokkos::CudaSpace>::value ||
+          std::is_same<typename AMatrix_Internal::memory_space,
+                       Kokkos::CudaUVMSpace>::value) {
+        useNative = useNative || (mode[0] != NoTranspose[0]);
+      }
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        if (std::is_same<typename AMatrix_Internal::memory_space,
-            Kokkos::HostSpace>::value) {
-          useNative = useNative || (mode[0] == Conjugate[0]);
-        }
+      if (std::is_same<typename AMatrix_Internal::memory_space,
+                       Kokkos::HostSpace>::value) {
+        useNative = useNative || (mode[0] == Conjugate[0]);
+      }
 #endif
-        if (useNative) {
-          // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
-          std::string label =
+      if (useNative) {
+        // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
+        std::string label =
             "KokkosSparse::spmv[NATIVE,MV,BSMATRIX," +
             Kokkos::ArithTraits<
-            typename AMatrix_Internal::non_const_value_type>::name() +
+                typename AMatrix_Internal::non_const_value_type>::name() +
             "]";
-          Kokkos::Profiling::pushRegion(label);
-          Experimental::Impl::SPMV_MV_BSRMATRIX<
-            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
-            std::is_integral<typename AMatrix_Internal::const_value_type>::value,
-            false>::spmv_mv_bsrmatrix(space, handle, mode, alpha, A_i, x_i, beta,
-                y_i);
-          Kokkos::Profiling::popRegion();
-        } else {
-          Experimental::Impl::SPMV_MV_BSRMATRIX<
-            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
-            std::is_integral<typename AMatrix_Internal::const_value_type>::value>::
-              spmv_mv_bsrmatrix(space, handle, mode, alpha, A_i, x_i, beta, y_i);
-        }
+        Kokkos::Profiling::pushRegion(label);
+        Experimental::Impl::SPMV_MV_BSRMATRIX<
+            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
+            YVector_Internal,
+            std::is_integral<
+                typename AMatrix_Internal::const_value_type>::value,
+            false>::spmv_mv_bsrmatrix(space, handle, mode, alpha, A_i, x_i,
+                                      beta, y_i);
+        Kokkos::Profiling::popRegion();
+      } else {
+        Experimental::Impl::SPMV_MV_BSRMATRIX<
+            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
+            YVector_Internal,
+            std::is_integral<typename AMatrix_Internal::const_value_type>::
+                value>::spmv_mv_bsrmatrix(space, handle, mode, alpha, A_i, x_i,
+                                          beta, y_i);
       }
     }
+  }
 }
 
 // clang-format off
@@ -413,17 +413,20 @@ void spmv(const ExecutionSpace& space,
 /// \param y [in/out] Result vector.
 // clang-format on
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
-          class BetaType, class YVector, typename = std::enable_if_t<Kokkos::is_execution_space<ExecutionSpace>::value>>
+          class BetaType, class YVector,
+          typename = std::enable_if_t<
+              Kokkos::is_execution_space<ExecutionSpace>::value>>
 void spmv(const ExecutionSpace& space, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y) {
   SPMVAlgorithm algo = SPMV_FAST_SETUP;
   // Without handle reuse, native is overall faster than rocSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-  if constexpr(std::is_same_v<typename AMatrix::execution_space, Kokkos::HIP>)
+  if constexpr (std::is_same_v<typename AMatrix::execution_space, Kokkos::HIP>)
     algo = SPMV_NATIVE;
 #endif
-  SPMVHandle<typename AMatrix::execution_space, AMatrix, XVector, YVector> handle(algo);
+  SPMVHandle<typename AMatrix::execution_space, AMatrix, XVector, YVector>
+      handle(algo);
   spmv(space, &handle, mode, alpha, A, x, beta, y);
 }
 
@@ -452,12 +455,15 @@ void spmv(const ExecutionSpace& space, const char mode[],
 /// \param beta [in] Scalar multiplier for the vector y.
 /// \param y [in/out] Result vector.
 // clang-format on
-template <class Handle, class AlphaType, class AMatrix, class XVector,
-          class BetaType, class YVector, typename = std::enable_if_t<!Kokkos::is_execution_space<Handle>::value>>
-void spmv(Handle* handle, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y) {
-  spmv(typename Handle::ExecutionSpaceType(), handle, mode, alpha, A, x, beta, y);
+template <
+    class Handle, class AlphaType, class AMatrix, class XVector, class BetaType,
+    class YVector,
+    typename = std::enable_if_t<!Kokkos::is_execution_space<Handle>::value>>
+void spmv(Handle* handle, const char mode[], const AlphaType& alpha,
+          const AMatrix& A, const XVector& x, const BetaType& beta,
+          const YVector& y) {
+  spmv(typename Handle::ExecutionSpaceType(), handle, mode, alpha, A, x, beta,
+       y);
 }
 
 // clang-format off
@@ -486,13 +492,14 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A,
   SPMVAlgorithm algo = SPMV_FAST_SETUP;
   // Without handle reuse, native is overall faster than rocSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-  if constexpr(std::is_same_v<typename AMatrix::execution_space, Kokkos::HIP>)
+  if constexpr (std::is_same_v<typename AMatrix::execution_space, Kokkos::HIP>)
     algo = SPMV_NATIVE;
 #endif
-  SPMVHandle<typename AMatrix::execution_space, AMatrix, XVector, YVector> handle(algo);
-  spmv(typename AMatrix::execution_space(), &handle, mode, alpha, A, x, beta, y);
+  SPMVHandle<typename AMatrix::execution_space, AMatrix, XVector, YVector>
+      handle(algo);
+  spmv(typename AMatrix::execution_space(), &handle, mode, alpha, A, x, beta,
+       y);
 }
-
 
 namespace Experimental {
 
@@ -571,13 +578,13 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
       typename XVector::const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
       typename XVector::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
       XVector_Internal;
 
   typedef Kokkos::View<
       typename YVector::non_const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
-      typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       YVector_Internal;
 
   AMatrix_Internal A_i = A;
@@ -865,11 +872,11 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
     typedef Kokkos::View<
         typename XVector::const_value_type*, typename YVector::array_layout,
         typename XVector::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
         XVector_SubInternal;
     typedef Kokkos::View<
         typename YVector::non_const_value_type*, typename YVector::array_layout,
-        typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+        typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
         YVector_SubInternal;
 
     XVector_SubInternal x_i = Kokkos::subview(x, Kokkos::ALL(), 0);
@@ -979,7 +986,8 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
 }  // namespace KokkosSparse
 
 // Pull in all the deprecated versions of spmv
-// It's included here (and not at the top) because it uses definitions in this file.
+// It's included here (and not at the top) because it uses definitions in this
+// file.
 #include "KokkosSparse_spmv_deprecated.hpp"
 
 #endif
