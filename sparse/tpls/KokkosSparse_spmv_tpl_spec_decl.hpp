@@ -369,9 +369,9 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
 namespace KokkosSparse {
 namespace Impl {
 
-template <class AMatrix, class XVector, class YVector>
+template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_rocsparse(const Kokkos::HIP& exec,
-                    KokkosSparse::SpMVHandle<Kokkos::HIP, AMatrix>* handle,
+                    Handle* handle,
                     const char mode[],
                     typename YVector::non_const_value_type const& alpha,
                     const AMatrix& A, const XVector& x,
