@@ -690,6 +690,86 @@ SPGEMM_SYMBOLIC_DECL_MKL_E(Kokkos::OpenMP)
 #endif
 
 #if defined(KOKKOS_ENABLE_SYCL)
+
+template <
+    typename KernelHandle, typename ain_row_index_view_type,
+    typename ain_nonzero_index_view_type, typename bin_row_index_view_type,
+    typename bin_nonzero_index_view_type, typename cin_row_index_view_type>
+void spgemm_symbolic_onemkl(
+    KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
+    typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,
+    ain_row_index_view_type rowptrA, ain_nonzero_index_view_type colidxA,
+    bin_row_index_view_type rowptrB, bin_nonzero_index_view_type colidxB,
+    cin_row_index_view_type rowptrC) {
+  using ExecSpace = typename KernelHandle::HandleExecSpace;
+  using INT_TYPE  = typename KernelHandle::nnz_lno_t;
+  using DATA_TYPE = typename KernelHandle::nnz_scalar_t;
+
+  handle->create_onemkl_spgemm_handle("N", "N");
+  typename KernelHandle::oneMKLSpgemmHandleType *h =
+      handle->get_onemkl_spgemm_handle();
+
+  // Creating some work variables/views
+  sycl::queue queue = ExecSpace().sycl_queue();
+  Kokkos::View<std::int64_t, Kokkos::Experimental::SYCLHostUSMSpace> sizeTempBufferView("oneMKL spgemm buffer size");
+  auto sizeTempBuffer = sizeTempBufferView.data();
+
+  oneapi::mkl::index_base mat_index = oneapi::mkl::index_base::zero;
+
+  oneapi::mkl::sparse::init_matrix_handle(&(h->A));
+  oneapi::mkl::sparse::init_matrix_handle(&(h->B));
+  oneapi::mkl::sparse::init_matrix_handle(&(h->C));
+
+  sycl::event ev_setA, ev_setB, ev_setC;
+  if constexpr (std::is_same_v<DATA_TYPE, Kokkos::complex<float>>) {
+    ev_setA = oneapi::mkl::sparse::set_csr_data(queue, h->A, m, n, mat_index, const_cast<INT_TYPE*>(rowptrA.data()), const_cast<INT_TYPE*>(colidxA.data()), (std::complex<float> *)nullptr, {});
+    ev_setB = oneapi::mkl::sparse::set_csr_data(queue, h->B, n, k, mat_index, const_cast<INT_TYPE*>(rowptrB.data()), const_cast<INT_TYPE*>(colidxB.data()), (std::complex<float> *)nullptr, {});
+    ev_setC = oneapi::mkl::sparse::set_csr_data(queue, h->C, m, k, mat_index, const_cast<INT_TYPE*>(rowptrC.data()), (INT_TYPE *)nullptr, (std::complex<float> *)nullptr, {});
+  } else if constexpr (std::is_same_v<DATA_TYPE, Kokkos::complex<double>>) {
+    ev_setA = oneapi::mkl::sparse::set_csr_data(queue, h->A, m, n, mat_index, const_cast<INT_TYPE*>(rowptrA.data()), const_cast<INT_TYPE*>(colidxA.data()), (std::complex<double> *)nullptr, {});
+    ev_setB = oneapi::mkl::sparse::set_csr_data(queue, h->B, n, k, mat_index, const_cast<INT_TYPE*>(rowptrB.data()), const_cast<INT_TYPE*>(colidxB.data()), (std::complex<double> *)nullptr, {});
+    ev_setC = oneapi::mkl::sparse::set_csr_data(queue, h->C, m, k, mat_index, const_cast<INT_TYPE*>(rowptrC.data()), (INT_TYPE *)nullptr, (std::complex<double> *)nullptr, {});
+  } else {
+    ev_setA = oneapi::mkl::sparse::set_csr_data(queue, h->A, m, n, mat_index, const_cast<INT_TYPE*>(rowptrA.data()), const_cast<INT_TYPE*>(colidxA.data()), (DATA_TYPE *)nullptr, {});
+    ev_setB = oneapi::mkl::sparse::set_csr_data(queue, h->B, n, k, mat_index, const_cast<INT_TYPE*>(rowptrB.data()), const_cast<INT_TYPE*>(colidxB.data()), (DATA_TYPE *)nullptr, {});
+    ev_setC = oneapi::mkl::sparse::set_csr_data(queue, h->C, m, k, mat_index, const_cast<INT_TYPE*>(rowptrC.data()), (INT_TYPE *)nullptr, (DATA_TYPE *)nullptr, {});
+  }
+
+
+  oneapi::mkl::sparse::matmat_request req;
+  void *tempBuffer = nullptr, *tempBuffer2 = nullptr;
+
+  req          = oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size;
+  auto ev_webs = oneapi::mkl::sparse::matmat(queue, h->A, h->B, h->C, req, h->descr, sizeTempBuffer,
+					     nullptr, {ev_setA, ev_setB, ev_setC});
+
+  ev_webs.wait();
+  tempBuffer = reinterpret_cast<void*>(sycl::malloc_shared<std::uint8_t>(sizeTempBuffer[0], queue));
+
+  req        = oneapi::mkl::sparse::matmat_request::work_estimation;
+  auto ev_we = oneapi::mkl::sparse::matmat(queue, h->A, h->B, h->C, req, h->descr, sizeTempBuffer,
+					   tempBuffer, {ev_webs});
+
+  req             = oneapi::mkl::sparse::matmat_request::get_compute_structure_buf_size;
+  auto ev_csbs = oneapi::mkl::sparse::matmat(queue, h->A, h->B, h->C, req, h->descr, sizeTempBuffer,
+					     nullptr, {ev_we});
+
+  ev_csbs.wait();
+  tempBuffer2 = reinterpret_cast<void*>(sycl::malloc_shared<std::uint8_t>(sizeTempBuffer[0], queue));
+
+  req        = oneapi::mkl::sparse::matmat_request::compute_structure;
+  auto ev_cs = oneapi::mkl::sparse::matmat(queue, h->A, h->B, h->C, req, h->descr, sizeTempBuffer,
+					   tempBuffer2, {ev_csbs});
+
+  req                 = oneapi::mkl::sparse::matmat_request::get_nnz;
+  std::int64_t *c_nnz = sycl::malloc_shared<std::int64_t>(1, queue);
+
+  auto ev_get_nnz = oneapi::mkl::sparse::matmat(queue, h->A, h->B, h->C, req, h->descr, c_nnz, nullptr,
+						{ev_cs});
+  ev_get_nnz.wait();
+  handle->set_c_nnz(c_nnz[0]);
+}
+
 #define SPGEMM_SYMBOLIC_DECL_MKL_SYCL(SCALAR, ORDINAL, TPL_AVAIL)	       \
   template <>                                                                  \
   struct SPGEMM_SYMBOLIC<                                                      \
@@ -733,21 +813,21 @@ SPGEMM_SYMBOLIC_DECL_MKL_E(Kokkos::OpenMP)
       std::string label = "KokkosSparse::spgemm_symbolic[TPL_MKL," +           \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spgemm_symbolic_mkl(handle->get_spgemm_handle(), m, n, k, row_mapA,      \
+      spgemm_symbolic_onemkl(handle->get_spgemm_handle(), m, n, k, row_mapA,   \
                           entriesA, row_mapB, entriesB, row_mapC);             \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
 
-SPGEMM_SYMBOLIC_DECL_MKL_SYCL(float, std::int32_t)
-SPGEMM_SYMBOLIC_DECL_MKL_SYCL(double, std::int32_t)
-SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<float>, std::int32_t)
-SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<double>, std::int32_t)
+  SPGEMM_SYMBOLIC_DECL_MKL_SYCL(float, std::int32_t, true)
+  SPGEMM_SYMBOLIC_DECL_MKL_SYCL(double, std::int32_t, true)
+  SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<float>, std::int32_t, true)
+  SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<double>, std::int32_t, true)
 
-SPGEMM_SYMBOLIC_DECL_MKL_SYCL(float, std::int64_t)
-SPGEMM_SYMBOLIC_DECL_MKL_SYCL(double, std::int64_t)
-SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<float>, std::int64_t)
-SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<double>, std::int64_t)
+  SPGEMM_SYMBOLIC_DECL_MKL_SYCL(float, std::int64_t, true)
+  SPGEMM_SYMBOLIC_DECL_MKL_SYCL(double, std::int64_t, true)
+  SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<float>, std::int64_t, true)
+  SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<double>, std::int64_t, true)
 #endif  // KOKKOS_ENABLE_SYCL
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL

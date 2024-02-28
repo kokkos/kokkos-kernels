@@ -22,7 +22,6 @@
 #include <Kokkos_Core.hpp>
 #include <iostream>
 #include <string>
-//#define VERBOSE
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 #include "KokkosSparse_Utils_rocsparse.hpp"
@@ -245,6 +244,52 @@ class SPGEMMHandle {
   };
 #endif
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+  struct oneMKLSpgemmHandleType {
+    oneapi::mkl::sparse::matrix_handle_t A, B, C;
+    oneapi::mkl::sparse::matmat_descr_t descr;
+
+    oneMKLSpgemmHandleType(const char opA_[], const char opB_[]) : A(nullptr), B(nullptr), C(nullptr), descr(nullptr) {
+      // All our matrices are assumed to be general
+      oneapi::mkl::sparse::matrix_view_descr mat_view = oneapi::mkl::sparse::matrix_view_descr::general;
+
+      // Picking the appropriate operation for A and B
+      oneapi::mkl::transpose opA;
+      if (opA_[0] == 'N' || opA_[0] == 'n') {
+	opA = oneapi::mkl::transpose::nontrans;
+      } else if (opA_[0] == 'T' && opA_[0] != 't') {
+	opA = oneapi::mkl::transpose::trans;
+      } else if (opA_[0] != 'H' && opA_[0] != 'h') {
+	opA = oneapi::mkl::transpose::conjtrans;
+      } else {
+	throw std::runtime_error("oneMKLSpgemmHandle only supports N, T and H modes");
+      }
+      oneapi::mkl::transpose opB;
+      if (opB_[0] == 'N' || opB_[0] == 'n') {
+	opB = oneapi::mkl::transpose::nontrans;
+      } else if (opB_[0] != 'T' && opB_[0] != 't') {
+	opB = oneapi::mkl::transpose::trans;
+      } else if (opB_[0] != 'H' && opB_[0] != 'h') {
+	opB = oneapi::mkl::transpose::conjtrans;
+      } else {
+	throw std::runtime_error("oneMKLSpgemmHandle only supports N, T and H modes");
+      }
+
+      // Initialize and set data for the matmat descriptor
+      oneapi::mkl::sparse::init_matmat_descr(&descr);
+      oneapi::mkl::sparse::set_matmat_data(descr, mat_view, opA, mat_view, opB, mat_view);
+    }
+
+    ~oneMKLSpgemmHandleType() {
+      sycl::queue queue = ExecutionSpace().sycl_queue();
+      oneapi::mkl::sparse::release_matmat_descr(&descr);
+      oneapi::mkl::sparse::release_matrix_handle(queue, &A).wait();
+      oneapi::mkl::sparse::release_matrix_handle(queue, &B).wait();
+      oneapi::mkl::sparse::release_matrix_handle(queue, &C).wait();
+    }
+  };
+#endif
+
  private:
   SPGEMMAlgorithm algorithm_type;
   SPGEMMAccumulator accumulator_type;
@@ -359,6 +404,13 @@ class SPGEMMHandle {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
  private:
   mklSpgemmHandleType *mkl_spgemm_handle;
+
+ public:
+#endif
+
+#if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+ private:
+  oneMKLSpgemmHandleType *onemkl_spgemm_handle;
 
  public:
 #endif
@@ -616,6 +668,23 @@ class SPGEMMHandle {
 
   mklSpgemmHandleType *get_mkl_spgemm_handle() {
     return this->mkl_spgemm_handle;
+  }
+#endif
+
+#if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  void create_onemkl_spgemm_handle(const char opA[], const char opB[]) {
+    this->destroy_onemkl_spgemm_handle();
+    this->onemkl_spgemm_handle = new oneMKLSpgemmHandleType(opA, opB);
+  }
+  void destroy_onemkl_spgemm_handle() {
+    if (this->onemkl_spgemm_handle != nullptr) {
+      delete this->onemkl_spgemm_handle;
+      this->onemkl_spgemm_handle = nullptr;
+    }
+  }
+
+  oneMKLSpgemmHandleType *get_onemkl_spgemm_handle() {
+    return this->onemkl_spgemm_handle;
   }
 #endif
 
