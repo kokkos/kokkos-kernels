@@ -258,7 +258,7 @@ namespace Impl {
     }
     bool is_set_up = false;
     const SPMVAlgorithm algo = SPMV_DEFAULT;
-    TPL_SpMV_Data<ExecutionSpace>* tpl;
+    TPL_SpMV_Data<ExecutionSpace>* tpl = nullptr;
     // Expert tuning parameters for native SpMV
     // TODO: expose a proper Experimental interface to set these. Currently they can be assigned directly
     // in the SPMVHandle as they are public members.

@@ -188,12 +188,12 @@ void spmv(const ExecutionSpace& space,
 
   // Note: data_type of a View includes both the scalar and rank
   using XVector_Internal = Kokkos::View<
-        typename XVector::const_data_type, typename XVector::array_layout,
+        typename XVector::const_data_type, typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
         typename XVector::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
     using YVector_Internal = Kokkos::View<typename YVector::non_const_data_type,
-                         typename YVector::array_layout,
+                         typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
                          typename YVector::device_type,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
