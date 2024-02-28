@@ -39,17 +39,21 @@ inline void spmv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
                          Scalar beta, MKL_INT m, MKL_INT n, MKL_INT b,
                          const MKL_INT* Arowptrs, const MKL_INT* Aentries,
                          const Scalar* Avalues, const Scalar* x, Scalar* y) {
-  using MKLScalar = typename KokkosToMKLScalar<Scalar>::type;
-  MKL_SpMV_Data* subhandle;
+  using MKLScalar = typename KokkosSparse::Impl::KokkosToMKLScalar<Scalar>::type;
+  using ExecSpace = typename Handle::ExecutionSpaceType;
+  using Subhandle = KokkosSparse::Impl::MKL_SpMV_Data<ExecSpace>;
+  Subhandle* subhandle;
   const MKLScalar* x_mkl = reinterpret_cast<const MKLScalar*>(x);
   MKLScalar* y_mkl       = reinterpret_cast<MKLScalar*>(y);
   if (handle->is_set_up) {
-    subhandle = dynamic_cast<MKL_SpMV_Data*>(handle->tpl);
+    subhandle = dynamic_cast<Subhandle*>(handle->tpl);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
   } else {
-    subhandle             = new MKL_SpMV_Data(exec);
+    // Use the default execution space instance, as classic MKL does not use
+    // a specific instance.
+    subhandle             = new Subhandle(ExecSpace());
     handle->tpl           = subhandle;
     subhandle->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     subhandle->descr.mode = SPARSE_FILL_MODE_FULL;
@@ -60,29 +64,29 @@ inline void spmv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
         reinterpret_cast<MKLScalar*>(const_cast<Scalar*>(Avalues));
     if constexpr (std::is_same_v<Scalar, float>) {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(
-          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b,
+          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR,m, n, b,
           const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
           const_cast<MKL_INT*>(Aentries), Avalues_mkl));
     } else if constexpr (std::is_same_v<Scalar, double>) {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(
-          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b,
+          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR,m, n, b,
           const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
           const_cast<MKL_INT*>(Aentries), Avalues_mkl));
     } else if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(
-          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b,
+          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR,m, n, b,
           const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
           const_cast<MKL_INT*>(Aentries), Avalues_mkl));
     } else if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(
-          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b,
+          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR,m, n, b,
           const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
           const_cast<MKL_INT*>(Aentries), Avalues_mkl));
     }
     handle->is_set_up = true;
   }
-  MKLScalar alpha_mkl = KokkosToMKLScalar<Scalar>(alpha);
-  MKLScalar beta_mkl  = KokkosToMKLScalar<Scalar>(beta);
+  MKLScalar alpha_mkl = KokkosSparse::Impl::KokkosToMKLScalar<Scalar>(alpha);
+  MKLScalar beta_mkl  = KokkosSparse::Impl::KokkosToMKLScalar<Scalar>(beta);
   if constexpr (std::is_same_v<Scalar, float>) {
     KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_mv(op, alpha_mkl, subhandle->mat,
                                                 subhandle->descr, x_mkl,
@@ -109,17 +113,21 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
                             const MKL_INT* Arowptrs, const MKL_INT* Aentries,
                             const Scalar* Avalues, const Scalar* x,
                             MKL_INT colx, MKL_INT ldx, Scalar* y, MKL_INT ldy) {
-  using MKLScalar = typename KokkosToMKLScalar<Scalar>::type;
-  MKL_SpMV_Data* subhandle;
+  using MKLScalar = typename KokkosSparse::Impl::KokkosToMKLScalar<Scalar>::type;
+  using ExecSpace = typename Handle::ExecutionSpaceType;
+  using Subhandle = KokkosSparse::Impl::MKL_SpMV_Data<ExecSpace>;
+  Subhandle* subhandle;
   const MKLScalar* x_mkl = reinterpret_cast<const MKLScalar*>(x);
   MKLScalar* y_mkl       = reinterpret_cast<MKLScalar*>(y);
   if (handle->is_set_up) {
-    subhandle = dynamic_cast<MKL_SpMV_Data*>(handle->tpl);
+    subhandle = dynamic_cast<Subhandle*>(handle->tpl);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
   } else {
-    subhandle             = new MKL_SpMV_Data(exec);
+    // Use the default execution space instance, as classic MKL does not use
+    // a specific instance.
+    subhandle             = new Subhandle(ExecSpace());
     handle->tpl           = subhandle;
     subhandle->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     subhandle->descr.mode = SPARSE_FILL_MODE_FULL;
@@ -130,29 +138,29 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
         reinterpret_cast<MKLScalar*>(const_cast<Scalar*>(Avalues));
     if constexpr (std::is_same_v<Scalar, float>) {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(
-          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b,
+          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR,m, n, b,
           const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
           const_cast<MKL_INT*>(Aentries), Avalues_mkl));
     } else if constexpr (std::is_same_v<Scalar, double>) {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(
-          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b,
+          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR,m, n, b,
           const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
           const_cast<MKL_INT*>(Aentries), Avalues_mkl));
     } else if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(
-          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b,
+          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR,m, n, b,
           const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
           const_cast<MKL_INT*>(Aentries), Avalues_mkl));
     } else if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(
-          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b,
+          &subhandle->mat, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR,m, n, b,
           const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
           const_cast<MKL_INT*>(Aentries), Avalues_mkl));
     }
     handle->is_set_up = true;
   }
-  MKLScalar alpha_mkl = KokkosToMKLScalar<Scalar>(alpha);
-  MKLScalar beta_mkl  = KokkosToMKLScalar<Scalar>(beta);
+  MKLScalar alpha_mkl = KokkosSparse::Impl::KokkosToMKLScalar<Scalar>(alpha);
+  MKLScalar beta_mkl  = KokkosSparse::Impl::KokkosToMKLScalar<Scalar>(beta);
   if constexpr (std::is_same_v<Scalar, float>) {
     KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_mm(
         op, alpha_mkl, subhandle->mat, subhandle->descr,

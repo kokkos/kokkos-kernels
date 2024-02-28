@@ -578,16 +578,20 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
                      const MKL_INT* Aentries, const Scalar* Avalues,
                      const Scalar* x, Scalar* y) {
   using MKLScalar = typename KokkosToMKLScalar<Scalar>::type;
-  MKL_SpMV_Data* subhandle;
+  using ExecSpace = typename Handle::ExecutionSpaceType;
+  using Subhandle = MKL_SpMV_Data<ExecSpace>;
+  Subhandle* subhandle;
   const MKLScalar* x_mkl = reinterpret_cast<const MKLScalar*>(x);
   MKLScalar* y_mkl       = reinterpret_cast<MKLScalar*>(y);
   if (handle->is_set_up) {
-    subhandle = dynamic_cast<MKL_SpMV_Data*>(handle->tpl);
+    subhandle = dynamic_cast<Subhandle*>(handle->tpl);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL CRS");
   } else {
-    subhandle             = new MKL_SpMV_Data(exec);
+    // Use the default execution space instance, as classic MKL does not use
+    // a specific instance.
+    subhandle             = new Subhandle(ExecSpace());
     handle->tpl           = subhandle;
     subhandle->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     subhandle->descr.mode = SPARSE_FILL_MODE_FULL;
@@ -766,7 +770,7 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
   // expected semantics.
   if (!exec.sycl_queue().is_in_order()) exec.fence();
   oneapi::mkl::sparse::gemv(exec.sycl_queue(), mkl_mode, alpha, subhandle->mat,
-                            x.data(), beta, y.data());
+                            reinterpret_cast<const onemkl_scalar_type*>(x.data()), beta, reinterpret_cast<onemkl_scalar_type*>(y.data()));
 }
 
 #define KOKKOSSPARSE_SPMV_ONEMKL(SCALAR, ORDINAL, MEMSPACE, COMPILE_LIBRARY)      \

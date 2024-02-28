@@ -200,7 +200,7 @@ struct RocSparse_BSR_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
 // Data for classic MKL (both CRS and BSR)
 template <typename ExecutionSpace>
 struct MKL_SpMV_Data : public TPL_SpMV_Data<ExecutionSpace> {
-  MKL_SpMV_Data(const ExecutionSpac& exec_) : TPL_SpMV_Data(exec_) {}
+  MKL_SpMV_Data(const ExecutionSpace& exec_) : TPL_SpMV_Data<ExecutionSpace>(exec_) {}
   ~MKL_SpMV_Data() {
     KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(mat));
     // descr is just a plain-old-data struct, no cleanup to do
@@ -241,6 +241,7 @@ struct OneMKL_SpMV_Data : public TPL_SpMV_Data<Kokkos::Experimental::SYCL> {
 template <class ExecutionSpace, class MemorySpace, class Scalar, class Offset,
           class Ordinal>
 struct SPMVHandleImpl {
+  using ExecutionSpaceType = ExecutionSpace;
   // Do not allow const qualifier on Scalar, Ordinal, Offset (otherwise this
   // type won't match the ETI'd type). Users should not use SPMVHandleImpl
   // directly and SPMVHandle explicitly removes const, so this should never
