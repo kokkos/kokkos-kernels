@@ -96,11 +96,11 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(
       &vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
 
-    // use default cusparse algo for best performance
+  // use default cusparse algo for best performance
 #if CUSPARSE_VERSION >= 11400
-    cusparseSpMVAlg_t algo = CUSPARSE_SPMV_ALG_DEFAULT;
+  cusparseSpMVAlg_t algo = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
-    cusparseSpMVAlg_t algo = CUSPARSE_MV_ALG_DEFAULT;
+  cusparseSpMVAlg_t algo = CUSPARSE_MV_ALG_DEFAULT;
 #endif
 
   KokkosSparse::Impl::CuSparse10_SpMV_Data* subhandle;

@@ -495,9 +495,8 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
 
   static_assert(
       std::is_same_v<typename XVector::array_layout, Kokkos::LayoutLeft> &&
-      std::is_same_v<
-          typename YVector::array_layout,
-          Kokkos::LayoutLeft>, "cuSPARSE requires both X and Y to be LayoutLeft.");
+          std::is_same_v<typename YVector::array_layout, Kokkos::LayoutLeft>,
+      "cuSPARSE requires both X and Y to be LayoutLeft.");
 
   KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
 
