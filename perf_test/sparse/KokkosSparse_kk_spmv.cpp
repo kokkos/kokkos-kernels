@@ -38,11 +38,10 @@ typedef default_size_type Offset;
 template <typename Layout>
 void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop,
               int num_vecs, char mode, Scalar beta) {
-  typedef KokkosSparse::CrsMatrix<Scalar, Ordinal,
-                                  Kokkos::DefaultExecutionSpace, void, Offset>
-      matrix_type;
-  typedef typename Kokkos::View<Scalar**, Layout> mv_type;
-  typedef typename mv_type::HostMirror h_mv_type;
+  using matrix_type = KokkosSparse::CrsMatrix<Scalar, Ordinal,
+                                  Kokkos::DefaultExecutionSpace, void, Offset> ;
+  using mv_type = Kokkos::View<Scalar**, Layout> ;
+  using h_mv_type = mv_type::HostMirror ;
 
   srand(17312837);
   matrix_type A;
@@ -67,6 +66,7 @@ void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop,
 
   mv_type x("X", numCols, num_vecs);
   mv_type y("Y", numRows, num_vecs);
+
   h_mv_type h_x         = Kokkos::create_mirror_view(x);
   h_mv_type h_y         = Kokkos::create_mirror_view(y);
   h_mv_type h_y_compare = Kokkos::create_mirror(y);
@@ -82,14 +82,20 @@ void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop,
   // Benchmark
   auto x0 = Kokkos::subview(x, Kokkos::ALL(), 0);
   auto y0 = Kokkos::subview(y, Kokkos::ALL(), 0);
-  // Do 5 warm up calls (not timed)
+
+  // Create handles for both rank-1 and rank-2 cases,
+  // even though only 1 will get used below (depending on num_vecs)
+
+  KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, decltype(x0), decltype(y0)> handle_rank1;
+  KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, mv_type, mv_type> handle_rank2;
+  // Do 5 warm up calls (not timed). This will also initialize the handle.
   for (int i = 0; i < 5; i++) {
     if (num_vecs == 1) {
       // run the rank-1 version
-      KokkosSparse::spmv(&mode, 1.0, A, x0, beta, y0);
+      KokkosSparse::spmv(&handle_rank1, &mode, 1.0, A, x0, beta, y0);
     } else {
       // rank-2
-      KokkosSparse::spmv(&mode, 1.0, A, x, beta, y);
+      KokkosSparse::spmv(&handle_rank2, &mode, 1.0, A, x, beta, y);
     }
     Kokkos::DefaultExecutionSpace().fence();
   }
@@ -97,10 +103,10 @@ void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop,
   for (int i = 0; i < loop; i++) {
     if (num_vecs == 1) {
       // run the rank-1 version
-      KokkosSparse::spmv(&mode, 1.0, A, x0, beta, y0);
+      KokkosSparse::spmv(&handle_rank1, &mode, 1.0, A, x0, beta, y0);
     } else {
       // rank-2
-      KokkosSparse::spmv(&mode, 1.0, A, x, beta, y);
+      KokkosSparse::spmv(&handle_rank2, &mode, 1.0, A, x, beta, y);
     }
     Kokkos::DefaultExecutionSpace().fence();
   }

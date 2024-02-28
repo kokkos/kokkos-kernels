@@ -37,6 +37,16 @@ enum SPMVAlgorithm {
   SPMV_BSR_TC       /// Use experimental tensor core algorithm (for BsrMatrix only)
 }
 
+namespace Experimental
+{
+  /// Precision to use in the tensor core implementation of Bsr SpMV
+  enum class Bsr_TC_Precision {
+    Automatic,  ///< Use Double, unless operations match mixed precision
+    Double,     ///< fp64 += fp64 * fp64
+    Mixed       ///< fp32 += fp16 * fp16
+  };
+}
+
 /// Get the name of a SPMVAlgorithm enum constant
 inline const char* get_spmv_algorithm_name(SPMVAlgorithm a)
 {
@@ -249,20 +259,25 @@ namespace Impl {
     SPMVAlgorithm algo = SPMV_DEFAULT;
     TPL_SpMV_Data<ExecutionSpace>* tpl;
     // Expert tuning parameters for native SpMV
-    // TODO: expose public interface to set these. Currently they can be set directly.
+    // TODO: expose a proper Experimental interface to set these. Currently they can be assigned directly
+    // in the SPMVHandle as they are public members.
     int team_size = -1;
     int vector_length - 1;
     int64_t rows_per_thread -1;
     bool force_static_schedule = false;
     bool force_dynamic_schedule = false;
+    Experimental::Bsr_TC_Precision bsr_tc_precision = Experimental::Bsr_TC_Precision::Automatic;
   };
 }
 
+// clang-format off
 /// \class SPMVHandle
 /// \brief Opaque handle type for KokkosSparse::spmv. It passes the choice of
 ///    algorithm to the spmv implementation, and also may store internal data which can be used to
 ///    speed up the spmv computation.
-/// \tparam ExecutionSpace The space on which KokkosSparse::spmv will be run.
+/// \tparam DeviceType A Kokkos::Device or execution space where the spmv computation will be run.
+///    Does not necessarily need to match AMatrix's device type, but its execution space needs to be able
+///    to access the memory spaces of AMatrix, XVector and YVector.
 /// \tparam AMatrix A specialization of KokkosSparse::CrsMatrix or
 /// KokkosSparse::BsrMatrix.
 ///
@@ -277,10 +292,17 @@ namespace Impl {
 ///
 /// \warning However, all calls to spmv with a given instance of SPMVHandle must use the
 /// same matrix.
+// clang-format on
 
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector>
-class SPMVHandle : public Impl::SPMVHandleImpl<ExecutionSpace, typename AMatrix::memory_space, typename AMatrix::non_const_value_type, typename AMatrix::non_const_size_type, typename AMatrix::non_const_ordinal_type>
+template <class DeviceType, class AMatrix, class XVector, class YVector>
+class SPMVHandle : public Impl::SPMVHandleImpl<typename DeviceType::execution_space, typename AMatrix::memory_space, typename AMatrix::non_const_value_type, typename AMatrix::non_const_size_type, typename AMatrix::non_const_ordinal_type>
 {
+public:
+  // Note: these typedef names cannot shadow template parameters
+  using AMatrixType = AMatrix;
+  using XVectorType = XVector;
+  using YVectorType = YVector;
+  using ExecutionSpaceType = typename DeviceType::execution_space;
   // Check all template parameters for compatibility with each other
   // NOTE: we do not require that ExecutionSpace matches AMatrix::execution_space.
   // For example, if the matrix's device is <Cuda, CudaHostPinnedSpace> it is allowed to run spmv on Serial.
@@ -296,22 +318,22 @@ class SPMVHandle : public Impl::SPMVHandleImpl<ExecutionSpace, typename AMatrix:
   static_assert(XVector::rank() == size_t(1) || YVector::rank() == size_t(2),
                 "SPMVHandle: XVector and YVector must be both rank-1 or both rank-2.");
   static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
+      Kokkos::SpaceAccessibility<ExecutionSpaceType,
                                  typename AMatrix::memory_space>::accessible,
       "SPMVHandle: AMatrix must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
+      Kokkos::SpaceAccessibility<ExecutionSpaceType,
                                  typename XVector::memory_space>::accessible,
       "SPMVHandle: XVector must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
+      Kokkos::SpaceAccessibility<ExecutionSpaceType,
                                  typename YVector::memory_space>::accessible,
       "SPMVHandle: YVector must be accessible from ExecutionSpace");
+
   // Prevent copying (this object does not support reference counting)
   SPMVHandle(const SPMVHandle&) = delete;
   SPMVHandle& operator=(const SPMVHandle&) = delete;
 
- public:
   /// \brief Create a new SPMVHandle using the given algorithm.
   SPMVHandle(SPMVAlgorithm algo_ = SPMV_DEFAULT)
       : Impl::SPMVHandleImpl(algo_)
@@ -339,12 +361,6 @@ class SPMVHandle : public Impl::SPMVHandleImpl<ExecutionSpace, typename AMatrix:
 
   /// Get the SPMVAlgorithm used by this handle
   SPMVAlgorithm get_algorithm() const {return this->algo}
-
-  // Note: these typedef names cannot shadow template parameters
-  using AMatrixType = AMatrix;
-  using XVectorType = XVector;
-  using YVectorType = YVector;
-  using ExecutionSpaceType = ExecutionSpace;
 };
 
 }  // namespace KokkosSparse
