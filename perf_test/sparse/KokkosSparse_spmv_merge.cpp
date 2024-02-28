@@ -233,13 +233,13 @@ int main(int argc, char** argv) {
   Kokkos::initialize(argc, argv);
 
   {
-    if (std::is_same<Kokkos::Cuda, Kokkos::DefaultExecutionSpace>::value) {
       // Note that we template the matrix with entries=lno_t and offsets=lno_t
       // to make sure it verifies the cusparse requirements
       using matrix_type =
           KokkosSparse::CrsMatrix<Scalar, lno_t, Kokkos::DefaultExecutionSpace,
                                   void, lno_t>;
       using values_type   = typename matrix_type::values_type::non_const_type;
+      using handle_type = KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, values_type, values_type>;
       const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
       const Scalar alpha  = SC_ONE + SC_ONE;
       const Scalar beta   = alpha + SC_ONE;
@@ -252,16 +252,15 @@ int main(int argc, char** argv) {
       Kokkos::deep_copy(x, SC_ONE);
       Kokkos::deep_copy(y, SC_ONE);
 
-      KokkosKernels::Experimental::Controls controls;
-      controls.setParameter("algorithm", "merge");
+      handle_type handleMerge(KokkosSparse::SPMV_MERGE_PATH);
 
       // Perform a so called "warm-up" run
-      KokkosSparse::spmv(controls, "N", alpha, test_matrix, x, beta, y);
+      KokkosSparse::spmv(&handleMerge, "N", alpha, test_matrix, x, beta, y);
 
       double min_time = 1.0e32, max_time = 0.0, avg_time = 0.0;
       for (int iterIdx = 0; iterIdx < loop; ++iterIdx) {
         Kokkos::Timer timer;
-        KokkosSparse::spmv(controls, "N", alpha, test_matrix, x, beta, y);
+        KokkosSparse::spmv(&handleMerge, "N", alpha, test_matrix, x, beta, y);
         Kokkos::fence();
         double time = timer.seconds();
         avg_time += time;
@@ -269,21 +268,23 @@ int main(int argc, char** argv) {
         if (time < min_time) min_time = time;
       }
 
-      std::cout << "cuSPARSE Merge alg    ---  min: " << min_time
+      std::cout << "KK Merge alg    ---  min: " << min_time
                 << " max: " << max_time << " avg: " << avg_time / loop
                 << std::endl;
 
       // Run the cusparse default algorithm and native kokkos-kernels algorithm
       // then output timings for comparison
       if (compare) {
-        controls.setParameter("algorithm", "default");
+        handle_type handleDefault;
+        //Warm up
+        KokkosSparse::spmv(&handleDefault, "N", alpha, test_matrix, x, beta, y);
 
         min_time = 1.0e32;
         max_time = 0.0;
         avg_time = 0.0;
         for (int iterIdx = 0; iterIdx < loop; ++iterIdx) {
           Kokkos::Timer timer;
-          KokkosSparse::spmv(controls, "N", alpha, test_matrix, x, beta, y);
+          KokkosSparse::spmv(&handleDefault, "N", alpha, test_matrix, x, beta, y);
           Kokkos::fence();
           double time = timer.seconds();
           avg_time += time;
@@ -291,23 +292,19 @@ int main(int argc, char** argv) {
           if (time < min_time) min_time = time;
         }
 
-        std::cout << "cuSPARSE Default alg  ---  min: " << min_time
+        std::cout << "Default alg  ---  min: " << min_time
                   << " max: " << max_time << " avg: " << avg_time / loop
                   << std::endl;
 
-        controls.setParameter("algorithm", "native");
+        handle_type handleNative(KokkosSparse::SPMV_NATIVE);
+        KokkosSparse::spmv(&handleNative, "N", alpha, test_matrix, x, beta, y);
 
         min_time = 1.0e32;
         max_time = 0.0;
         avg_time = 0.0;
         for (int iterIdx = 0; iterIdx < loop; ++iterIdx) {
           Kokkos::Timer timer;
-          // KokkosSparse::spmv(controls, "N", alpha, test_matrix, x, beta, y);
-          KokkosSparse::Impl::spmv_beta<Kokkos::DefaultExecutionSpace,
-                                        matrix_type, values_type, values_type,
-                                        1>(Kokkos::DefaultExecutionSpace{},
-                                           controls, "N", alpha, test_matrix, x,
-                                           beta, y);
+          KokkosSparse::spmv(&handleNative, "N", alpha, test_matrix, x, beta, y);
           Kokkos::fence();
           double time = timer.seconds();
           avg_time += time;
@@ -315,14 +312,10 @@ int main(int argc, char** argv) {
           if (time < min_time) min_time = time;
         }
 
-        std::cout << "Kokkos Native alg     ---  min: " << min_time
+        std::cout << "KK Native alg     ---  min: " << min_time
                   << " max: " << max_time << " avg: " << avg_time / loop
                   << std::endl;
       }
-    } else {
-      std::cout << "The default execution space is not Cuda, nothing to do!"
-                << std::endl;
-    }
   }
 
   Kokkos::finalize();
