@@ -41,7 +41,7 @@ void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop,
   using matrix_type = KokkosSparse::CrsMatrix<Scalar, Ordinal,
                                   Kokkos::DefaultExecutionSpace, void, Offset> ;
   using mv_type = Kokkos::View<Scalar**, Layout> ;
-  using h_mv_type = mv_type::HostMirror ;
+  using h_mv_type = typename mv_type::HostMirror ;
 
   srand(17312837);
   matrix_type A;
