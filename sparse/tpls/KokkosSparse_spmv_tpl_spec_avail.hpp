@@ -190,8 +190,9 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int64_t,
   template <>                                                                \
   struct spmv_tpl_spec_avail<                                                \
       Kokkos::HIP,                                                           \
-      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::HIP, Kokkos::HIPSpace, SCALAR, \
-                                         rocsparse_int, rocsparse_int>,                    \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::HIP, Kokkos::HIPSpace,      \
+                                         SCALAR, rocsparse_int,              \
+                                         rocsparse_int>,                     \
       KokkosSparse::CrsMatrix<const SCALAR, const rocsparse_int,             \
                               Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,       \

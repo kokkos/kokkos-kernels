@@ -370,9 +370,7 @@ namespace KokkosSparse {
 namespace Impl {
 
 template <class Handle, class AMatrix, class XVector, class YVector>
-void spmv_rocsparse(const Kokkos::HIP& exec,
-                    Handle* handle,
-                    const char mode[],
+void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
                     typename YVector::non_const_value_type const& alpha,
                     const AMatrix& A, const XVector& x,
                     typename YVector::non_const_value_type const& beta,
