@@ -21,7 +21,7 @@ namespace KokkosSparse {
 namespace Impl {
 
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector,
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector, class YVector,
           const bool integerScalarType =
               std::is_integral_v<typename AMatrix::non_const_value_type>>
 struct spmv_mv_tpl_spec_avail {
@@ -33,6 +33,7 @@ struct spmv_mv_tpl_spec_avail {
   template <>                                                                  \
   struct spmv_mv_tpl_spec_avail<                                               \
       Kokkos::Cuda,                                                            \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, MEMSPACE, SCALAR, OFFSET, ORDINAL>, \
       KokkosSparse::CrsMatrix<                                                 \
           const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET>,              \

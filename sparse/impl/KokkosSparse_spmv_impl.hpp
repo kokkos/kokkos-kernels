@@ -24,6 +24,7 @@
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv_handle.hpp"
 #include "KokkosSparse_spmv_impl_omp.hpp"
 #include "KokkosSparse_spmv_impl_merge.hpp"
 #include "KokkosKernels_Error.hpp"
@@ -605,27 +606,24 @@ static void spmv_beta(const execution_space& exec,
                       typename YVector::const_value_type& beta,
                       const YVector& y) {
   if (mode[0] == NoTranspose[0]) {
-    if (handle->get_algorithm() == SPMV_MERGE_PATH) {
+    if (handle->algo == SPMV_MERGE_PATH) {
       SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
           exec, mode, alpha, A, x, beta, y);
     } else {
-      spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
-                             false>(exec, handle, alpha, A, x, beta, y);
+      spmv_beta_no_transpose<execution_space, Handle, AMatrix, XVector, YVector, dobeta, false>(exec, handle, alpha, A, x, beta, y);
     }
   } else if (mode[0] == Conjugate[0]) {
-    if (handle->get_algorithm() == SPMV_MERGE_PATH) {
+    if (handle->algo  == SPMV_MERGE_PATH) {
       SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
           exec, mode, alpha, A, x, beta, y);
     } else {
-      spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
+      spmv_beta_no_transpose<execution_space, Handle, AMatrix, XVector, YVector, dobeta,
                              true>(exec, handle, alpha, A, x, beta, y);
     }
   } else if (mode[0] == Transpose[0]) {
-    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
-                        false>(exec, alpha, A, x, beta, y);
+    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta, false>(exec, alpha, A, x, beta, y);
   } else if (mode[0] == ConjugateTranspose[0]) {
-    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
-                        true>(exec, alpha, A, x, beta, y);
+    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta, true>(exec, alpha, A, x, beta, y);
   } else {
     std::stringstream ss;
     ss << __FILE__ << ":" << __LINE__ << " Invalid transpose mode " << mode

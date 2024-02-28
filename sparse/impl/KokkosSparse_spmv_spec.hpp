@@ -21,7 +21,7 @@
 #include <Kokkos_ArithTraits.hpp>
 
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosKernels_Controls.hpp"
+#include "KokkosSparse_spmv_handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosSparse_spmv_impl.hpp>
@@ -105,9 +105,9 @@ namespace Impl {
 template <
     class ExecutionSpace, class Handle, class AMatrix, class XVector, class YVector,
     bool tpl_spec_avail =
-        spmv_tpl_spec_avail<ExecutionSpace, AMatrix, XVector, YVector>::value,
+        spmv_tpl_spec_avail<ExecutionSpace, Handle, AMatrix, XVector, YVector>::value,
     bool eti_spec_avail =
-        spmv_eti_spec_avail<ExecutionSpace, AMatrix, XVector, YVector>::value>
+        spmv_eti_spec_avail<ExecutionSpace, Handle, AMatrix, XVector, YVector>::value>
 struct SPMV {
   typedef typename YVector::non_const_value_type coefficient_type;
 
@@ -145,10 +145,8 @@ struct SPMV {
 template <class ExecutionSpace, class Handle, class AMatrix, class XVector, class YVector,
           const bool integerScalarType =
               std::is_integral_v<typename AMatrix::non_const_value_type>,
-          bool tpl_spec_avail = spmv_mv_tpl_spec_avail<ExecutionSpace, AMatrix,
-                                                       XVector, YVector>::value,
-          bool eti_spec_avail = spmv_mv_eti_spec_avail<ExecutionSpace, AMatrix,
-                                                       XVector, YVector>::value>
+          bool tpl_spec_avail = spmv_mv_tpl_spec_avail<ExecutionSpace, Handle, AMatrix, XVector, YVector>::value,
+          bool eti_spec_avail = spmv_mv_eti_spec_avail<ExecutionSpace, Handle, AMatrix, XVector, YVector>::value>
 struct SPMV_MV {
   typedef typename YVector::non_const_value_type coefficient_type;
 
@@ -206,9 +204,9 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, false,
     // To keep handle usage consistent, do not use a TPL even if one is available
     if(x.extent(0) == size_t(1))
     {
-      auto xsub = Kokkos::subview(x, Kokkos::ALL(), j);
-      auto ysub = Kokkos::subview(y, Kokkos::ALL(), j);
-      SPMV<ExecutionSpace, AMatrix, decltype(xsub), decltype(ysub),false>::spmv(space, handle, mode, alpha, A, x_j, beta, y_j);
+      auto x0 = Kokkos::subview(x, Kokkos::ALL(), 0);
+      auto y0 = Kokkos::subview(y, Kokkos::ALL(), 0);
+      SPMV<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),false>::spmv(space, handle, mode, alpha, A, x0, beta, y0);
     }
     else
     {
@@ -247,7 +245,7 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, true, false,
     for (typename AMatrix::non_const_size_type j = 0; j < x.extent(1); ++j) {
       auto x_j = Kokkos::subview(x, Kokkos::ALL(), j);
       auto y_j = Kokkos::subview(y, Kokkos::ALL(), j);
-      typedef SPMV<ExecutionSpace, AMatrix, decltype(x_j), decltype(y_j)>
+      typedef SPMV<ExecutionSpace, Handle, AMatrix, decltype(x_j), decltype(y_j)>
           impl_type;
       impl_type::spmv(space, handle, mode, alpha, A, x_j, beta, y_j);
     }

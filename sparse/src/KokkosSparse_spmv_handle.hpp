@@ -14,14 +14,16 @@
 //
 //@HEADER
 
+#ifndef KOKKOSSPARSE_SPMV_HANDLE_HPP_
+#define KOKKOSSPARSE_SPMV_HANDLE_HPP_
+
 #include <Kokkos_Core.hpp>
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_BsrMatrix.hpp"
 // Use TPL utilities for safely finalizing matrix descriptors, etc.
 #include "KokkosSparse_Utils_cusparse.hpp"
 #include "KokkosSparse_Utils_rocsparse.hpp"
 #include "KokkosSparse_Utils_mkl.hpp"
-
-#ifndef KOKKOSSPARSE_SPMV_HANDLE_HPP_
-#define KOKKOSSPARSE_SPMV_HANDLE_HPP_
 
 namespace KokkosSparse {
 
@@ -35,7 +37,7 @@ enum SPMVAlgorithm {
   SPMV_BSR_V41,     /// Use experimental version 4.1 algorithm (for BsrMatrix only)
   SPMV_BSR_V42,     /// Use experimental version 4.2 algorithm (for BsrMatrix only)
   SPMV_BSR_TC       /// Use experimental tensor core algorithm (for BsrMatrix only)
-}
+};
 
 namespace Experimental
 {
@@ -123,7 +125,6 @@ namespace Impl {
     // Disallow default construction: must provide the initial execution space
     TPL_SpMV_Data() = delete;
     TPL_SpMV_Data(const ExecutionSpace& exec_) : exec(exec) {}
-    void set_apply_called() { apply_called = true; }
     void set_exec_space(const ExecutionSpace& new_exec) {
       // Check if new_exec is different from (old) exec.
       // If it is, fence the old exec now.
@@ -256,17 +257,17 @@ namespace Impl {
       if (tpl) tpl->set_exec_space(exec);
     }
     bool is_set_up = false;
-    SPMVAlgorithm algo = SPMV_DEFAULT;
+    const SPMVAlgorithm algo = SPMV_DEFAULT;
     TPL_SpMV_Data<ExecutionSpace>* tpl;
     // Expert tuning parameters for native SpMV
     // TODO: expose a proper Experimental interface to set these. Currently they can be assigned directly
     // in the SPMVHandle as they are public members.
     int team_size = -1;
-    int vector_length - 1;
-    int64_t rows_per_thread -1;
+    int vector_length = -1;
+    int64_t rows_per_thread = -1;
     bool force_static_schedule = false;
     bool force_dynamic_schedule = false;
-    Experimental::Bsr_TC_Precision bsr_tc_precision = Experimental::Bsr_TC_Precision::Automatic;
+    KokkosSparse::Experimental::Bsr_TC_Precision bsr_tc_precision = KokkosSparse::Experimental::Bsr_TC_Precision::Automatic;
   };
 }
 
@@ -295,9 +296,9 @@ namespace Impl {
 // clang-format on
 
 template <class DeviceType, class AMatrix, class XVector, class YVector>
-class SPMVHandle : public Impl::SPMVHandleImpl<typename DeviceType::execution_space, typename AMatrix::memory_space, typename AMatrix::non_const_value_type, typename AMatrix::non_const_size_type, typename AMatrix::non_const_ordinal_type>
+struct SPMVHandle : public Impl::SPMVHandleImpl<typename DeviceType::execution_space, typename AMatrix::memory_space, typename AMatrix::non_const_value_type, typename AMatrix::non_const_size_type, typename AMatrix::non_const_ordinal_type>
 {
-public:
+  using ImplType = Impl::SPMVHandleImpl<typename DeviceType::execution_space, typename AMatrix::memory_space, typename AMatrix::non_const_value_type, typename AMatrix::non_const_size_type, typename AMatrix::non_const_ordinal_type>;
   // Note: these typedef names cannot shadow template parameters
   using AMatrixType = AMatrix;
   using XVectorType = XVector;
@@ -306,7 +307,7 @@ public:
   // Check all template parameters for compatibility with each other
   // NOTE: we do not require that ExecutionSpace matches AMatrix::execution_space.
   // For example, if the matrix's device is <Cuda, CudaHostPinnedSpace> it is allowed to run spmv on Serial.
-  static_assert(is_crs_matrix_v<AMatrix> || is_bsr_matrix_v<AMatrix>,
+  static_assert(is_crs_matrix_v<AMatrix> || Experimental::is_bsr_matrix_v<AMatrix>,
                 "SPMVHandle: AMatrix must be a specialization of CrsMatrix or "
                 "BsrMatrix.");
   static_assert(Kokkos::is_view<XVector>::value,
@@ -336,7 +337,7 @@ public:
 
   /// \brief Create a new SPMVHandle using the given algorithm.
   SPMVHandle(SPMVAlgorithm algo_ = SPMV_DEFAULT)
-      : Impl::SPMVHandleImpl(algo_)
+      : ImplType(algo_)
   {
     //Validate the choice of algorithm based on A's type
     if constexpr(is_crs_matrix_v<AMatrixType>)
@@ -347,6 +348,7 @@ public:
         case SPMV_BSR_V42:
         case SPMV_BSR_TC:
           throw std::invalid_argument(std::string("SPMVHandle: algorithm ") + get_spmv_algorithm_name(get_algorithm()) + " cannot be used if A is a CrsMatrix");
+      default:;
       }
     }
     else
@@ -355,12 +357,13 @@ public:
       {
         case SPMV_MERGE_PATH:
           throw std::invalid_argument(std::string("SPMVHandle: algorithm ") + get_spmv_algorithm_name(get_algorithm()) + " cannot be used if A is a BsrMatrix");
+      default:;
       }
     }
   }
 
   /// Get the SPMVAlgorithm used by this handle
-  SPMVAlgorithm get_algorithm() const {return this->algo}
+  SPMVAlgorithm get_algorithm() const {return this->algo;}
 };
 
 }  // namespace KokkosSparse

@@ -21,7 +21,7 @@
 #include <Kokkos_ArithTraits.hpp>
 
 #include "KokkosSparse_BsrMatrix.hpp"
-#include "KokkosKernels_Controls.hpp"
+#include "KokkosSparse_spmv_handle.hpp"
 #include "KokkosKernels_Error.hpp"
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosSparse_spmv_bsrmatrix_impl.hpp>
@@ -33,12 +33,12 @@ namespace Experimental {
 namespace Impl {
 
 // default is no eti available
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector>
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector, class YVector>
 struct spmv_bsrmatrix_eti_spec_avail {
   enum : bool { value = false };
 };
 
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector,
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector, class YVector,
           const bool integerScalarType =
               std::is_integral_v<typename AMatrix::non_const_value_type>>
 struct spmv_mv_bsrmatrix_eti_spec_avail {
@@ -103,9 +103,9 @@ namespace Impl {
 // declaration
 template <class ExecutionSpace, class Handle, class AMatrix, class XVector, class YVector,
           bool tpl_spec_avail = spmv_bsrmatrix_tpl_spec_avail<
-              ExecutionSpace, AMatrix, XVector, YVector>::value,
+              ExecutionSpace, Handle, AMatrix, XVector, YVector>::value,
           bool eti_spec_avail = spmv_bsrmatrix_eti_spec_avail<
-              ExecutionSpace, AMatrix, XVector, YVector>::value>
+              ExecutionSpace, Handle, AMatrix, XVector, YVector>::value>
 struct SPMV_BSRMATRIX {
   typedef typename YVector::non_const_value_type YScalar;
 
@@ -121,9 +121,9 @@ template <class ExecutionSpace, class Handle, class AMatrix, class XVector, clas
           const bool integerScalarType =
               std::is_integral_v<typename AMatrix::non_const_value_type>,
           bool tpl_spec_avail = spmv_mv_bsrmatrix_tpl_spec_avail<
-              ExecutionSpace, AMatrix, XVector, YVector>::value,
+              ExecutionSpace, Handle, AMatrix, XVector, YVector>::value,
           bool eti_spec_avail = spmv_mv_bsrmatrix_eti_spec_avail<
-              ExecutionSpace, AMatrix, XVector, YVector>::value>
+              ExecutionSpace, Handle, AMatrix, XVector, YVector>::value>
 struct SPMV_MV_BSRMATRIX {
   typedef typename YVector::non_const_value_type YScalar;
 
@@ -153,7 +153,7 @@ struct SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, false,
     const bool modeIsTrans          = (mode[0] == Transpose[0]);
 
     // use V41 if requested
-    if (handle->get_algorithm() == SPMV_BSR_V41) {
+    if (handle->algo == SPMV_BSR_V41) {
       if (modeIsNoTrans || modeIsConjugate) {
         return Bsr::spMatVec_no_transpose(space, handle, alpha, A, X, beta, Y,
                                           modeIsConjugate);
@@ -165,7 +165,7 @@ struct SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, false,
 
     // use V42 if possible
     if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>() ||
-        handle->get_algorithm() == SPMV_BSR_V42) {
+        handle->algo == SPMV_BSR_V42) {
       if (modeIsNoTrans) {
         ::KokkosSparse::Impl::apply_v42(space, alpha, A, X, beta, Y);
         return;
@@ -211,7 +211,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
     Method method = Method::Fallback;
     {
       // try to use tensor cores if requested
-      if (handle->get_algorithm() == SPMV_BSR_TC)
+      if (handle->algo == SPMV_BSR_TC)
         method = Method::TensorCores;
       if (!KokkosSparse::Experimental::Impl::TensorCoresAvailable<
               ExecutionSpace, AMatrix, XVector, YVector>::value) {
@@ -297,7 +297,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
     const bool modeIsTrans          = (mode[0] == Transpose[0]);
 
     // use V41 if requested
-    if(handle->get_algorithm() == SPMV_BSR_V41) {
+    if(handle->algo == SPMV_BSR_V41) {
       if (modeIsNoTrans || modeIsConjugate) {
         return Bsr::spMatMultiVec_no_transpose(space, handle, alpha, A, X,
                                                beta, Y, modeIsConjugate);
@@ -309,7 +309,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
 
     // use V42 if possible
     if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>() ||
-        handle->get_algorithm() == SPMV_BSR_V42) {
+        handle->algo == SPMV_BSR_V42) {
       if (modeIsNoTrans) {
         ::KokkosSparse::Impl::apply_v42(space, alpha, A, X, beta, Y);
         return;
@@ -350,11 +350,9 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, true
     for (typename AMatrix::non_const_size_type j = 0; j < X.extent(1); ++j) {
       const auto x_j = Kokkos::subview(X, Kokkos::ALL(), j);
       auto y_j       = Kokkos::subview(Y, Kokkos::ALL(), j);
-      typedef SPMV_BSRMATRIX<ExecutionSpace, AMatrix, decltype(x_j),
-                             decltype(y_j)>
+      typedef SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, decltype(x_j), decltype(y_j)>
           impl_type;
-      impl_type::spmv_bsrmatrix(space, handle, mode, alpha, A, x_j, beta,
-                                y_j);
+      impl_type::spmv_bsrmatrix(space, handle, mode, alpha, A, x_j, beta, y_j);
     }
   }
 };

@@ -210,6 +210,7 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
   template <>                                                                 \
   struct SPMV_MV<                                                             \
       Kokkos::Cuda,                                                           \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, ORDINAL>, \
       KokkosSparse::CrsMatrix<                                                \
           SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>,   \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, OFFSET const>,             \

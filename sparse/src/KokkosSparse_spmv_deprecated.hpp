@@ -181,7 +181,7 @@ using SPMV2D1D
 
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls"]]
+[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
 void spmv(const ExecutionSpace& space,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
@@ -204,7 +204,7 @@ void spmv(const ExecutionSpace& space,
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls"]]
+[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y) {
@@ -213,7 +213,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls"]]
+[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
     void spmv(const ExecutionSpace& space,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
@@ -224,7 +224,7 @@ template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls"]]
+[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_ONE&) {
@@ -233,7 +233,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls"]]
+[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
 void spmv(const ExecutionSpace& space,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
@@ -244,7 +244,7 @@ void spmv(const ExecutionSpace& space,
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
-[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls"]]
+[[deprecated("Use the version of spmv that takes a SPMVHandle instead of Controls")]]
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO&) {
