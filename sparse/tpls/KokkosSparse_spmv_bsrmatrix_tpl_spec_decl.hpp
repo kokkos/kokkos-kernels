@@ -20,6 +20,7 @@
 #include "KokkosKernels_AlwaysFalse.hpp"
 #include "KokkosSparse_Utils_mkl.hpp"
 #include "KokkosSparse_Utils_cusparse.hpp"
+#include "KokkosKernels_tpl_handles_decl.hpp"
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && (__INTEL_MKL__ > 2017)
 #include <mkl.h>
@@ -355,7 +356,8 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
   using value_type  = typename AMatrix::non_const_value_type;
 
   /* initialize cusparse library */
-  cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
+  cusparseHandle_t cusparseHandle =
+      KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;
   /* Set cuSPARSE to use the given stream until this function exits */
   KokkosSparse::Impl::TemporarySetCusparseStream(cusparseHandle, exec);
 
@@ -381,7 +383,6 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
     /* create and set the subhandle and matrix descriptor */
     subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
     handle->tpl = subhandle;
-    cusparseMatDescr_t descrA = 0;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
@@ -435,7 +436,7 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
         reinterpret_cast<cuDoubleComplex const*>(&beta),
         reinterpret_cast<cuDoubleComplex*>(y.data())));
   } else {
-    static_assert(false,
+    static_assert(KokkosKernels::Impl::always_false_v<value_type>,
                   "Trying to call cusparse[*]bsrmv with a scalar type not "
                   "float/double, nor complex of either!");
   }
@@ -470,7 +471,8 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
   using value_type  = typename AMatrix::non_const_value_type;
 
   /* initialize cusparse library */
-  cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
+  cusparseHandle_t cusparseHandle =
+      KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;
   /* Set cuSPARSE to use the given stream until this function exits */
   KokkosSparse::Impl::TemporarySetCusparseStream(cusparseHandle, exec);
 
@@ -495,8 +497,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
       std::is_same_v<typename XVector::array_layout, Kokkos::LayoutLeft> &&
       std::is_same_v<
           typename YVector::array_layout,
-          Kokkos::
-              LayoutLeft> "cuSPARSE requires both X and Y to be LayoutLeft.");
+          Kokkos::LayoutLeft>, "cuSPARSE requires both X and Y to be LayoutLeft.");
 
   KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
 
@@ -510,7 +511,6 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
     /* create and set the subhandle and matrix descriptor */
     subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
     handle->tpl = subhandle;
-    cusparseMatDescr_t descrA = 0;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
@@ -525,7 +525,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
       std::is_same_v<int, offset_type> && std::is_same_v<int, entry_type>,
       "With cuSPARSE non-generic API, offset and entry types must both be int. "
       "Something wrong with TPL avail logic.");
-  if constexpr (std::is_same<value_type, float>::value) {
+  if constexpr (std::is_same_v<value_type, float>) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmm(
         cusparseHandle, dirA, myCusparseOperation,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
@@ -535,7 +535,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
         reinterpret_cast<float const*>(x.data()), ldx,
         reinterpret_cast<float const*>(&beta),
         reinterpret_cast<float*>(y.data()), ldy));
-  } else if constexpr (std::is_same<value_type, double>::value) {
+  } else if constexpr (std::is_same_v<value_type, double>) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmm(
         cusparseHandle, dirA, myCusparseOperation,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
@@ -545,7 +545,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
         reinterpret_cast<double const*>(x.data()), ldx,
         reinterpret_cast<double const*>(&beta),
         reinterpret_cast<double*>(y.data()), ldy));
-  } else if constexpr (std::is_same<value_type, Kokkos::complex<float>>) {
+  } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmm(
         cusparseHandle, dirA, myCusparseOperation,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
@@ -567,7 +567,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
         reinterpret_cast<cuDoubleComplex const*>(&beta),
         reinterpret_cast<cuDoubleComplex*>(y.data()), ldy));
   } else {
-    static_assert(false,
+    static_assert(KokkosKernels::Impl::always_false_v<value_type>,
                   "Trying to call cusparse[*]bsrmm with a scalar type not "
                   "float/double, nor complex of either!");
   }

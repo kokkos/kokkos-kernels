@@ -119,7 +119,7 @@ template <typename ExecutionSpace>
 struct TPL_SpMV_Data {
   // Disallow default construction: must provide the initial execution space
   TPL_SpMV_Data() = delete;
-  TPL_SpMV_Data(const ExecutionSpace& exec_) : exec(exec) {}
+  TPL_SpMV_Data(const ExecutionSpace& exec_) : exec(exec_) {}
   void set_exec_space(const ExecutionSpace& new_exec) {
     // Check if new_exec is different from (old) exec.
     // If it is, fence the old exec now.
@@ -140,7 +140,7 @@ struct TPL_SpMV_Data {
 // (SpMM).
 // TODO: in future, this can also be used for BSR (cuSPARSE >=12.2)
 struct CuSparse10_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
-  CuSparse10_SpMV_Data(const Kokkos::Cuda& exec) : TPL_SpMV_Data(exec) {}
+  CuSparse10_SpMV_Data(const Kokkos::Cuda& exec_) : TPL_SpMV_Data(exec_) {}
   ~CuSparse10_SpMV_Data() {
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeAsync(buffer, exec.cuda_stream()));
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(mat));
@@ -154,7 +154,7 @@ struct CuSparse10_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
 
 // Data used by cuSPARSE <10.3 for CRS, and >=9 for BSR
 struct CuSparse9_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
-  CuSparse9_SpMV_Data(const Kokkos::Cuda& exec) : TPL_SpMV_Data(exec) {}
+  CuSparse9_SpMV_Data(const Kokkos::Cuda& exec_) : TPL_SpMV_Data(exec_) {}
   ~CuSparse9_SpMV_Data() {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(mat));
   }
@@ -165,7 +165,7 @@ struct CuSparse9_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 struct RocSparse_CRS_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
-  RocSparse_CRS_SpMV_Data(const Kokkos::HIP& exec) : TPL_SpMV_Data(exec) {}
+  RocSparse_CRS_SpMV_Data(const Kokkos::HIP& exec_) : TPL_SpMV_Data(exec_) {}
   ~RocSparse_CRS_SpMV_Data() {
     // note: hipFree includes an implicit device synchronize
     KOKKOS_IMPL_HIP_SAFE_CALL(hipFree(buffer));
@@ -178,7 +178,7 @@ struct RocSparse_CRS_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
 };
 
 struct RocSparse_BSR_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
-  RocSparse_BSR_SpMV_Data(const Kokkos::HIP& exec) : TPL_SpMV_Data(exec) {}
+  RocSparse_BSR_SpMV_Data(const Kokkos::HIP& exec_) : TPL_SpMV_Data(exec_) {}
   ~RocSparse_BSR_SpMV_Data() {
     KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_mat_descr(descr));
 #if (KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
@@ -200,7 +200,7 @@ struct RocSparse_BSR_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
 // Data for classic MKL (both CRS and BSR)
 template <typename ExecutionSpace>
 struct MKL_SpMV_Data : public TPL_SpMV_Data<ExecutionSpace> {
-  MKL_SpMV_Data(const ExecutionSpac& exec) : TPL_SpMV_Data(exec) {}
+  MKL_SpMV_Data(const ExecutionSpac& exec_) : TPL_SpMV_Data(exec_) {}
   ~MKL_SpMV_Data() {
     KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(mat));
     // descr is just a plain-old-data struct, no cleanup to do
@@ -214,8 +214,8 @@ struct MKL_SpMV_Data : public TPL_SpMV_Data<ExecutionSpace> {
 #if defined(KOKKOS_ENABLE_SYCL) && \
     !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE)
 struct OneMKL_SpMV_Data : public TPL_SpMV_Data<Kokkos::Experimental::SYCL> {
-  OneMKL_SpMV_Data(const Kokkos::Experimental::SYCL& exec)
-      : TPL_SpMV_Data(exec) {}
+  OneMKL_SpMV_Data(const Kokkos::Experimental::SYCL& exec_)
+      : TPL_SpMV_Data(exec_) {}
   ~OneMKL_SpMV_Data() {
     // Make sure no spmv is still running with this handle, if exec uses an
     // out-of-order queue (rare case)

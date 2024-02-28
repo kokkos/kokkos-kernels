@@ -18,6 +18,7 @@
 #define KOKKOSPARSE_SPMV_TPL_SPEC_DECL_HPP_
 
 #include <sstream>
+#include "KokkosKernels_tpl_handles_decl.hpp"
 
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
@@ -95,6 +96,13 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(
       &vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
 
+    // use default cusparse algo for best performance
+#if CUSPARSE_VERSION >= 11400
+    cusparseSpMVAlg_t algo = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
+    cusparseSpMVAlg_t algo = CUSPARSE_MV_ALG_DEFAULT;
+#endif
+
   KokkosSparse::Impl::CuSparse10_SpMV_Data* subhandle;
 
   if (handle->is_set_up) {
@@ -106,13 +114,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   } else {
     subhandle   = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
     handle->tpl = subhandle;
-
-    // use default cusparse algo for best performance
-#if CUSPARSE_VERSION >= 11400
-    cusparseSpMVAlg_t algo = CUSPARSE_SPMV_ALG_DEFAULT;
-#else
-    cusparseSpMVAlg_t algo = CUSPARSE_MV_ALG_DEFAULT;
-#endif
 
     /* create matrix */
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
@@ -204,7 +205,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
         reinterpret_cast<cuDoubleComplex*>(y.data())));
   } else {
     static_assert(
-        false,
+      static_assert(KokkosKernels::Impl::always_false_v<value_type>,
         "Trying to call cusparse SpMV with a scalar type not float/double, "
         "nor complex of either!");
   }

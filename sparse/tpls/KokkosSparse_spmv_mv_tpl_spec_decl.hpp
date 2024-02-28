@@ -18,6 +18,7 @@
 #define KOKKOSPARSE_SPMV_MV_TPL_SPEC_DECL_HPP_
 
 #include <sstream>
+#include "KokkosKernels_tpl_handles_decl.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
@@ -107,7 +108,8 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
   using y_value_type = typename YVector::non_const_value_type;
 
   /* initialize cusparse library */
-  cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
+  cusparseHandle_t cusparseHandle =
+      KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;
   /* Set cuSPARSE to use the given stream until this function exits */
   TemporarySetCusparseStream(cusparseHandle, exec);
 
@@ -189,7 +191,7 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
 
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMM_bufferSize(
         cusparseHandle, opA, opB, &alpha, subhandle->mat, vecX, &beta, vecY,
-        computeType, alg, &subhandle->bufferSize));
+        computeType, algo, &subhandle->bufferSize));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(
         cudaMalloc(&subhandle->buffer, subhandle->bufferSize));
@@ -199,7 +201,7 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
 
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMM(cusparseHandle, opA, opB, &alpha,
                                          subhandle->mat, vecX, &beta, vecY,
-                                         computeType, alg, subhandle->buffer));
+                                         computeType, algo, subhandle->buffer));
 
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecX));
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecY));
