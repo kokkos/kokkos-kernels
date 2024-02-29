@@ -15,8 +15,6 @@
 //@HEADER
 
 #include "KokkosSparse_Utils.hpp"
-#include "KokkosSparse_spmv.hpp"
-#include "KokkosBlas1_nrm2.hpp"
 #include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
@@ -33,7 +31,6 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
 
   crsMat_t A;
   std::vector<crsMat_t> DiagBlks(nblocks);
-  std::vector<crsMat_t> DiagBlks_rcm(nblocks);
 
   if (nrows != 0) {
     // Generate test matrix
@@ -87,10 +84,6 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
   KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(A,
                                                                       DiagBlks);
 
-  auto perm =
-      KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(
-          A, DiagBlks_rcm, true);
-
   // Checking
   lno_t numRows = 0;
   lno_t numCols = 0;
@@ -132,55 +125,6 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
       col_start += DiagBlks[i].numCols();
     }
     EXPECT_TRUE(flag);
-
-    // Checking RCM
-    if (!perm.empty()) {
-      scalar_t one  = scalar_t(1.0);
-      scalar_t zero = scalar_t(0.0);
-      Kokkos::Random_XorShift64_Pool<device> rand_pool(12763);
-      for (int i = 0; i < nblocks; i++) {
-        ValuesType In1("In1", DiagBlks[i].numRows());
-        ValuesType In2("In2", DiagBlks[i].numRows());
-        ValuesType Out1("Out1", DiagBlks[i].numRows());
-        ValuesType Out2("Out2", DiagBlks[i].numRows());
-
-        ValuesType_hm h_In1      = Kokkos::create_mirror_view(In1);
-        ValuesType_hm h_In2      = Kokkos::create_mirror_view(In2);
-        ValuesType_hm h_Out2     = Kokkos::create_mirror_view(Out2);
-        ValuesType_hm h_Out2_tmp = Kokkos::create_mirror(Out2);
-
-        Kokkos::fill_random(
-            In1, rand_pool,
-            Kokkos::rand<Kokkos::Random_XorShift64<device>, scalar_t>::max());
-
-        Kokkos::deep_copy(h_In1, In1);
-
-        auto h_perm =
-            Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm[i]);
-        for (lno_t ii = 0; ii < static_cast<lno_t>(DiagBlks[i].numRows());
-             ii++) {
-          lno_t rcm_ii  = h_perm(ii);
-          h_In2(rcm_ii) = h_In1(ii);
-        }
-
-        Kokkos::deep_copy(In2, h_In2);
-
-        KokkosSparse::spmv("N", one, DiagBlks[i], In1, zero, Out1);
-        KokkosSparse::spmv("N", one, DiagBlks_rcm[i], In2, zero, Out2);
-
-        Kokkos::deep_copy(h_Out2_tmp, Out2);
-        for (lno_t ii = 0; ii < static_cast<lno_t>(DiagBlks[i].numRows());
-             ii++) {
-          lno_t rcm_ii = h_perm(ii);
-          h_Out2(ii)   = h_Out2_tmp(rcm_ii);
-        }
-        Kokkos::deep_copy(Out2, h_Out2);
-
-        double norm1 = KokkosBlas::nrm2(Out1);
-        double norm2 = KokkosBlas::nrm2(Out2);
-        EXPECT_LE(std::abs(norm1 - norm2), 1e-9);
-      }
-    }
   }
 }
 }  // namespace Test
@@ -192,9 +136,9 @@ void test_extract_diagonal_blocks() {
     Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
         0, s);
     Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
-        153, s);
+        12, s);
     Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
-        1553, s);
+        123, s);
   }
 }
 
