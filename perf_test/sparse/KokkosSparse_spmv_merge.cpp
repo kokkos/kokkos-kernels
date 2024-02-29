@@ -148,9 +148,8 @@ matrix_type generate_unbalanced_matrix(
 
 void print_help() {
   printf("SPMV merge benchmark code written by Luc Berger-Vergiat.\n");
-  printf(
-      "The goal is to test cusSPARSE's merge algorithm on imbalanced "
-      "matrices.");
+  printf("The goal is to compare the merge path algorithm vs.\n");
+  printf("TPLs and the KK native algorithm on imbalanced matrices.\n");
   printf("Options:\n");
   printf(
       "  --compare       : Compare the performance of the merge algo with the "
@@ -234,7 +233,7 @@ int main(int argc, char** argv) {
 
   {
     // Note that we template the matrix with entries=lno_t and offsets=lno_t
-    // to make sure it verifies the cusparse requirements
+    // so that TPLs can be used
     using matrix_type =
         KokkosSparse::CrsMatrix<Scalar, lno_t, Kokkos::DefaultExecutionSpace,
                                 void, lno_t>;
@@ -270,9 +269,8 @@ int main(int argc, char** argv) {
       if (time < min_time) min_time = time;
     }
 
-    std::cout << "KK Merge alg    ---  min: " << min_time
-              << " max: " << max_time << " avg: " << avg_time / loop
-              << std::endl;
+    std::cout << "KK Merge alg  ---  min: " << min_time << " max: " << max_time
+              << " avg: " << avg_time / loop << std::endl;
 
     // Run the cusparse default algorithm and native kokkos-kernels algorithm
     // then output timings for comparison
@@ -294,8 +292,9 @@ int main(int argc, char** argv) {
         if (time < min_time) min_time = time;
       }
 
-      std::cout << "Default alg  ---  min: " << min_time << " max: " << max_time
-                << " avg: " << avg_time / loop << std::endl;
+      std::cout << "Default alg   ---  min: " << min_time
+                << " max: " << max_time << " avg: " << avg_time / loop
+                << std::endl;
 
       handle_type handleNative(KokkosSparse::SPMV_NATIVE);
       KokkosSparse::spmv(&handleNative, "N", alpha, test_matrix, x, beta, y);
@@ -313,7 +312,7 @@ int main(int argc, char** argv) {
         if (time < min_time) min_time = time;
       }
 
-      std::cout << "KK Native alg     ---  min: " << min_time
+      std::cout << "KK Native alg ---  min: " << min_time
                 << " max: " << max_time << " avg: " << avg_time / loop
                 << std::endl;
     }
