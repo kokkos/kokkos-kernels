@@ -746,7 +746,8 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for OneMKL CRS");
   } else {
-    subhandle = new OneMKL_SpMV_Data(exec);
+    subhandle   = new OneMKL_SpMV_Data(exec);
+    handle->tpl = subhandle;
     oneapi::mkl::sparse::init_matrix_handle(&subhandle->mat);
     // Even for out-of-order SYCL queue, the inputs here do not depend on
     // kernels being sequenced
@@ -769,8 +770,10 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
   // enqueued kernels finish before starting this one. So fence exec to get the
   // expected semantics.
   if (!exec.sycl_queue().is_in_order()) exec.fence();
-  oneapi::mkl::sparse::gemv(exec.sycl_queue(), mkl_mode, alpha, subhandle->mat,
-                            reinterpret_cast<const onemkl_scalar_type*>(x.data()), beta, reinterpret_cast<onemkl_scalar_type*>(y.data()));
+  oneapi::mkl::sparse::gemv(
+      exec.sycl_queue(), mkl_mode, alpha, subhandle->mat,
+      reinterpret_cast<const onemkl_scalar_type*>(x.data()), beta,
+      reinterpret_cast<onemkl_scalar_type*>(y.data()));
 }
 
 #define KOKKOSSPARSE_SPMV_ONEMKL(SCALAR, ORDINAL, MEMSPACE, COMPILE_LIBRARY)      \
