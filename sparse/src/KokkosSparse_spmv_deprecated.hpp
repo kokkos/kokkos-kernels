@@ -188,19 +188,51 @@ spmv(const ExecutionSpace& space,
      KokkosKernels::Experimental::Controls controls, const char mode[],
      const AlphaType& alpha, const AMatrix& A, const XVector& x,
      const BetaType& beta, const YVector& y) {
-  // Translate the algorithm choice in controls to a SPMVHandle algo enum.
-  // Also since this interface does not allow reuse, use native instead of
-  // rocSPARSE
+  // Default to fast setup, since this handle can't be reused
   SPMVAlgorithm algo = SPMV_FAST_SETUP;
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-  if constexpr (std::is_same_v<typename AMatrix::execution_space, Kokkos::HIP>)
-    algo = SPMV_NATIVE;
-#endif
+  // Translate the Controls algorithm selection to the SPMVHandle algorithm.
+  // This maintains the old behavior, where any manually set name that isn't
+  // "tpl" gives native.
+  //
+  // This also uses the behavior set by #2021: "merge" was a hint to use
+  // cuSPARSE merge path, but that path is gone so just use the normal TPL.
+  // "merge-path" means to use the KK merge-path implementation.
+  //
+  // And also support the 3 different BSR algorithms by their old names.
   if (controls.isParameter("algorithm")) {
-    if (controls.getParameter("algorithm") != "tpl") algo = SPMV_NATIVE;
+    std::string algoName = controls.getParameter("algorithm");
+    if (algoName == "merge" || algoName == "tpl")
+      algo = SPMV_FAST_SETUP;
+    else if (algoName == "native-merge")
+      algo = SPMV_MERGE_PATH;
+    else if (algoName == "v4.1")
+      algo = SPMV_BSR_V41;
+    else if (algoName == "v4.2")
+      algo = SPMV_BSR_V41;
+    else if (algoName == "experimental_bsr_tc")
+      algo = SPMV_BSR_TC;
+    else
+      throw std::invalid_argument(
+          std::string("KokkosSparse::spmv: controls algorithm name '") +
+          algoName + "' is not supported.\n");
   }
   KokkosSparse::SPMVHandle<ExecutionSpace, AMatrix, XVector, YVector> handle(
       algo);
+  // Pull out any expert tuning parameters
+  if (controls.isParameter("schedule")) {
+    if (controls.getParameter("schedule") == "dynamic") {
+      handle.force_dynamic_schedule = true;
+    } else if (controls.getParameter("schedule") == "static") {
+      handle.force_static_schedule = true;
+    }
+  }
+  if (controls.isParameter("team size"))
+    handle.team_size = std::stoi(controls.getParameter("team size"));
+  if (controls.isParameter("vector length"))
+    handle.vector_length = std::stoi(controls.getParameter("vector length"));
+  if (controls.isParameter("rows per thread"))
+    handle.rows_per_thread =
+        std::stoll(controls.getParameter("rows per thread"));
   spmv(space, &handle, mode, alpha, A, x, beta, y);
 }
 
