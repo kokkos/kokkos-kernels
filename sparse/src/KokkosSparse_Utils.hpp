@@ -2416,11 +2416,13 @@ void kk_extract_subblock_crsmatrix_sequential(
  * @tparam crsMat_t The type of the CRS matrix.
  * @param A [in] The square CrsMatrix. It is expected that column indices are
  * in ascending order
+ * @param UseRCMReordering [in] Boolean indicating whether applying (true) RCM reordering to diagonal blocks or not (false) (default: false)
  * @param DiagBlk_v [out] The vector of the extracted the CRS diagonal blocks
  * (1 <= the number of diagonal blocks <= A_nrows)
+ * @return a vector of lists of vertices in RCM order (a list per a diagonal block) if UseRCMReordering is true, or an empty vector if UseRCMReordering is false
  *
  * Usage Example:
- *    kk_extract_diagonal_blocks_crsmatrix_sequential(A_in, diagBlk_in_b);
+ *    perm = kk_extract_diagonal_blocks_crsmatrix_sequential(A_in, diagBlk_out, UseRCMReordering);
  */
 template <typename crsMat_t>
 std::vector<typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type>
@@ -2471,6 +2473,7 @@ kk_extract_diagonal_blocks_crsmatrix_sequential(
 
   if (n_blocks == 1) {
     // One block case: simply shallow copy A to DiagBlk_v[0]
+    // Note: always not applying RCM reordering, for now
     DiagBlk_v[0] = crsMat_t(A);
   } else {
     // n_blocks > 1
