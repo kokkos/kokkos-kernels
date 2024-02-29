@@ -1554,6 +1554,7 @@ class coarse_builder {
           ordinal_t u         = vcmap.graph.entries(outer_idx);
           edge_offset_t start = g.graph.row_map(outer_idx);
           edge_offset_t end   = g.graph.row_map(outer_idx + 1);
+          auto g_values       = g.values;
           Kokkos::parallel_for(
               Kokkos::TeamThreadRange(thread, start, end),
               [=](const edge_offset_t idx) {
@@ -1567,7 +1568,7 @@ class coarse_builder {
                   offset += source_bucket_offset(u);
 
                   dest_by_source(offset) = v;
-                  wgt_by_source(offset)  = g.values(idx);
+                  wgt_by_source(offset)  = g_values(idx);
                 }
               });
         });
@@ -1649,6 +1650,7 @@ class coarse_builder {
           ordinal_t u         = vcmap.graph.entries(outer_idx);
           edge_offset_t start = g.graph.row_map(outer_idx);
           edge_offset_t end   = g.graph.row_map(outer_idx + 1);
+          auto g_values       = g.values;
           Kokkos::parallel_for(
               Kokkos::TeamThreadRange(thread, start, end),
               [=](const edge_offset_t idx) {
@@ -1662,7 +1664,7 @@ class coarse_builder {
                   offset += row_map_copy(outer_idx);
 
                   dest_fine(offset) = v;
-                  wgt_fine(offset)  = g.values(idx);
+                  wgt_fine(offset)  = g_values(idx);
                 }
               });
         });

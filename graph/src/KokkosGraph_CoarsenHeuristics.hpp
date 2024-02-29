@@ -699,20 +699,23 @@ class coarsen_heuristics {
             rand_pool.free_state(generator);
           });
     } else {
+      auto g_row_map = g.graph.row_map;
+      auto g_entries = g.graph.entries;
+      auto g_values  = g.values;
       Kokkos::parallel_for(
           "Heaviest HN", team_policy_t(n, Kokkos::AUTO),
           KOKKOS_LAMBDA(const member& thread) {
             ordinal_t i        = thread.league_rank();
-            ordinal_t adj_size = g.graph.row_map(i + 1) - g.graph.row_map(i);
+            ordinal_t adj_size = g_row_map(i + 1) - g_row_map(i);
             if (adj_size > 0) {
-              edge_offset_t end = g.graph.row_map(i + 1);
+              edge_offset_t end = g_row_map(i + 1);
               typename Kokkos::MaxLoc<scalar_t, edge_offset_t,
                                       Device>::value_type argmax{};
               Kokkos::parallel_reduce(
-                  Kokkos::TeamThreadRange(thread, g.graph.row_map(i), end),
+                  Kokkos::TeamThreadRange(thread, g_row_map(i), end),
                   [=](const edge_offset_t idx,
                       Kokkos::ValLocScalar<scalar_t, edge_offset_t>& local) {
-                    scalar_t wgt = g.values(idx);
+                    scalar_t wgt = g_values(idx);
                     if (wgt >= local.val) {
                       local.val = wgt;
                       local.loc = idx;
@@ -720,7 +723,7 @@ class coarsen_heuristics {
                   },
                   Kokkos::MaxLoc<scalar_t, edge_offset_t, Device>(argmax));
               Kokkos::single(Kokkos::PerTeam(thread), [=]() {
-                ordinal_t h = g.graph.entries(argmax.loc);
+                ordinal_t h = g_entries(argmax.loc);
                 hn(i)       = h;
               });
             } else {
@@ -1016,6 +1019,8 @@ class coarsen_heuristics {
         Kokkos::View<ordinal_t, Device> unmappedIdx("unmapped index");
         hasher_t hasher;
         // compute digests of adjacency lists
+        auto g_row_map = g.graph.row_map;
+        auto g_entries = g.graph.entries;
         Kokkos::parallel_for(
             "create digests", team_policy_t(n, Kokkos::AUTO),
             KOKKOS_LAMBDA(const member& thread) {
@@ -1023,10 +1028,10 @@ class coarsen_heuristics {
               if (vcmap(u) == ORD_MAX) {
                 uint32_t hash = 0;
                 Kokkos::parallel_reduce(
-                    Kokkos::TeamThreadRange(thread, g.graph.row_map(u),
-                                            g.graph.row_map(u + 1)),
+                    Kokkos::TeamThreadRange(thread, g_row_map(u),
+                                            g_row_map(u + 1)),
                     [=](const edge_offset_t j, uint32_t& thread_sum) {
-                      thread_sum += hasher(g.graph.entries(j));
+                      thread_sum += hasher(g_entries(j));
                     },
                     hash);
                 Kokkos::single(Kokkos::PerTeam(thread), [=]() {

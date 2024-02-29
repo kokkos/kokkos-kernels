@@ -326,6 +326,16 @@ struct SparseRowViewConst {
   }
 };
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+// foward declaration
+struct cuSparseSpMVHelper;
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+// foward declaration
+struct rocSparseSpMVHelper;
+#endif
+
 /// \class CrsMatrix
 /// \brief Compressed sparse row implementation of a sparse matrix.
 /// \tparam ScalarType The type of entries in the sparse matrix.
@@ -439,6 +449,14 @@ class CrsMatrix {
   /// state mechanism.
   DeviceConfig dev_config;
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  std::shared_ptr<rocSparseSpMVHelper> roc_spmv_helper;
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  std::shared_ptr<cuSparseSpMVHelper> cuda_spmv_helper;
+#endif
+
   /// \brief Default constructor; constructs an empty sparse matrix.
   ///
   /// FIXME (mfh 09 Aug 2013) numCols and nnz should be properties of
@@ -456,7 +474,21 @@ class CrsMatrix {
       : graph(B.graph.entries, B.graph.row_map),
         values(B.values),
         numCols_(B.numCols()),
-        dev_config(B.dev_config) {
+        dev_config(B.dev_config)
+#ifdef KOKKOS_USE_CUSPARSE
+        ,
+        cusparse_handle(B.cusparse_handle),
+        cusparse_descr(B.cusparse_descr)
+#endif  // KOKKOS_USE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+        ,
+        cuda_spmv_helper(B.cuda_spmv_helper)
+#endif
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+        ,
+        roc_spmv_helper(B.roc_spmv_helper)
+#endif
+  {
     graph.row_block_offsets = B.graph.row_block_offsets;
     // TODO: MD 07/2017: Changed the copy constructor of graph
     // as the constructor of StaticCrsGraph does not allow copy from non const
@@ -466,9 +498,18 @@ class CrsMatrix {
   //! Deep copy constructor (can cross spaces)
   template <typename InScalar, typename InOrdinal, typename InDevice,
             typename InMemTraits, typename InSizeType>
-  CrsMatrix(const std::string&,
-            const CrsMatrix<InScalar, InOrdinal, InDevice, InMemTraits,
-                            InSizeType>& mat_) {
+  CrsMatrix(const std::string&, const CrsMatrix<InScalar, InOrdinal, InDevice,
+                                                InMemTraits, InSizeType>& mat_)
+      : numCols_(mat_.numCols())
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+        ,
+        cuda_spmv_helper(mat_.cuda_spmv_helper)
+#endif
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+        ,
+        roc_spmv_helper(mat_.roc_spmv_helper)
+#endif
+  {
     typename row_map_type::non_const_type rowmap(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap"),
         mat_.graph.row_map.extent(0));
@@ -482,6 +523,11 @@ class CrsMatrix {
 
     numCols_ = mat_.numCols();
     graph    = StaticCrsGraphType(cols, rowmap);
+
+#ifdef KOKKOS_USE_CUSPARSE
+    cusparseCreate(&cusparse_handle);
+    cusparseCreateMatDescr(&cusparse_descr);
+#endif  // KOKKOS_USE_CUSPARSE
   }
 
   /// \brief Construct with a graph that will be shared.
@@ -711,6 +757,12 @@ class CrsMatrix {
     graph      = mtx.graph;
     values     = mtx.values;
     dev_config = mtx.dev_config;
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    cuda_spmv_helper = mtx.cuda_spmv_helper;
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+    roc_spmv_helper = mtx.roc_spmv_helper;
+#endif
     return *this;
   }
 
@@ -726,8 +778,8 @@ class CrsMatrix {
   //! blocked, this is just the number of regular rows.
   KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const { return numRows(); }
 
-  //! The number of "point" (non-block) columns in the matrix. Since Crs is not
-  //! blocked, this is just the number of regular columns.
+  //! The number of "point" (non-block) columns in the matrix. Since Crs is
+  //! not blocked, this is just the number of regular columns.
   KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const { return numCols(); }
 
   //! The number of stored entries in the sparse matrix.
@@ -775,7 +827,8 @@ class CrsMatrix {
   /// \code
   /// for (ordinal_type lclRow = 0; lclRow < A.numRows (); ++lclRow) {
   ///   const ordinal_type numEnt =
-  ///     static_cast<ordinal_type> (A.graph.row_map(i+1) - A.graph.row_map(i));
+  ///     static_cast<ordinal_type> (A.graph.row_map(i+1) -
+  ///     A.graph.row_map(i));
   ///   for (ordinal_type k = 0; k < numEnt; ++k) {
   ///     // etc.
   ///   }
@@ -834,7 +887,8 @@ class CrsMatrix {
   /// \code
   /// for (ordinal_type lclRow = 0; lclRow < A.numRows (); ++lclRow) {
   ///   const ordinal_type numEnt =
-  ///     static_cast<ordinal_type> (A.graph.row_map(i+1) - A.graph.row_map(i));
+  ///     static_cast<ordinal_type> (A.graph.row_map(i+1) -
+  ///     A.graph.row_map(i));
   ///   for (ordinal_type k = 0; k < numEnt; ++k) {
   ///     // etc.
   ///   }
