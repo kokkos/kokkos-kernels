@@ -764,8 +764,10 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
         const_cast<ordinal_type*>(A.graph.entries.data()),
         reinterpret_cast<onemkl_scalar_type*>(
             const_cast<scalar_type*>(A.values.data())));
-    // for out-of-order queue: the fence before gemv below will make sure optimize_gemv has finished
-    oneapi::mkl::sparse::optimize_gemv(exec.sycl_queue(), mkl_mode, subhandle->mat, {ev});
+    // for out-of-order queue: the fence before gemv below will make sure
+    // optimize_gemv has finished
+    oneapi::mkl::sparse::optimize_gemv(exec.sycl_queue(), mkl_mode,
+                                       subhandle->mat, {ev});
     handle->is_set_up = true;
   }
 
