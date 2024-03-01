@@ -209,7 +209,7 @@ spmv(const ExecutionSpace& space,
       algo = SPMV_BSR_V41;
     else if (algoName == "v4.2")
       algo = SPMV_BSR_V41;
-    else if (algoName == "experimental_bsr_tc")
+    else if (algoName == "experimental_bsr_tc" || algoName == "experimental_tc")
       algo = SPMV_BSR_TC;
     else
       throw std::invalid_argument(
