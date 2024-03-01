@@ -739,6 +739,12 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
   using onemkl_scalar_type = typename KokkosToOneMKLScalar<scalar_type>::type;
   using ordinal_type       = typename matrix_type::non_const_ordinal_type;
 
+  // oneAPI doesn't directly support mode H with real values, but this is
+  // equivalent to mode T
+  if (mkl_mode == oneapi::mkl::transpose::conjtrans &&
+      !Kokkos::ArithTraits<scalar_type>::isComplex)
+    mkl_mode = oneapi::mkl::transpose::trans;
+
   OneMKL_SpMV_Data* subhandle;
   if (handle->is_set_up) {
     subhandle = dynamic_cast<OneMKL_SpMV_Data*>(handle->tpl);
@@ -751,21 +757,18 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
     oneapi::mkl::sparse::init_matrix_handle(&subhandle->mat);
     // Even for out-of-order SYCL queue, the inputs here do not depend on
     // kernels being sequenced
-    oneapi::mkl::sparse::set_csr_data(
+    auto ev = oneapi::mkl::sparse::set_csr_data(
         exec.sycl_queue(), subhandle->mat, A.numRows(), A.numCols(),
         oneapi::mkl::index_base::zero,
         const_cast<ordinal_type*>(A.graph.row_map.data()),
         const_cast<ordinal_type*>(A.graph.entries.data()),
         reinterpret_cast<onemkl_scalar_type*>(
             const_cast<scalar_type*>(A.values.data())));
+    // for out-of-order queue: the fence before gemv below will make sure optimize_gemv has finished
+    oneapi::mkl::sparse::optimize_gemv(exec.sycl_queue(), mkl_mode, subhandle->mat, {ev});
     handle->is_set_up = true;
   }
 
-  // oneAPI doesn't directly support mode H with real values, but this is
-  // equivalent to mode T
-  if (mkl_mode == oneapi::mkl::transpose::conjtrans &&
-      !Kokkos::ArithTraits<scalar_type>::isComplex)
-    mkl_mode = oneapi::mkl::transpose::trans;
   // Uncommon case: an out-of-order SYCL queue does not promise that previously
   // enqueued kernels finish before starting this one. So fence exec to get the
   // expected semantics.
