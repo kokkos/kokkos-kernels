@@ -137,48 +137,33 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
     if (!perm.empty()) {
       scalar_t one  = scalar_t(1.0);
       scalar_t zero = scalar_t(0.0);
-      Kokkos::Random_XorShift64_Pool<device> rand_pool(12763);
+      scalar_t mone = scalar_t(-1.0);
       for (int i = 0; i < nblocks; i++) {
-        ValuesType In1("In1", DiagBlks[i].numRows());
-        ValuesType In2("In2", DiagBlks[i].numRows());
-        ValuesType Out1("Out1", DiagBlks[i].numRows());
-        ValuesType Out2("Out2", DiagBlks[i].numRows());
+        ValuesType In("In", DiagBlks[i].numRows());
+        ValuesType Out("Out", DiagBlks[i].numRows());
 
-        ValuesType_hm h_In1      = Kokkos::create_mirror_view(In1);
-        ValuesType_hm h_In2      = Kokkos::create_mirror_view(In2);
-        ValuesType_hm h_Out2     = Kokkos::create_mirror_view(Out2);
-        ValuesType_hm h_Out2_tmp = Kokkos::create_mirror(Out2);
+        ValuesType_hm h_Out     = Kokkos::create_mirror_view(Out);
+        ValuesType_hm h_Out_tmp = Kokkos::create_mirror(Out);
 
-        Kokkos::fill_random(
-            In1, rand_pool,
-            Kokkos::rand<Kokkos::Random_XorShift64<device>, scalar_t>::max());
-
-        Kokkos::deep_copy(h_In1, In1);
+        Kokkos::deep_copy(In, one);
 
         auto h_perm =
             Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm[i]);
-        for (lno_t ii = 0; ii < static_cast<lno_t>(DiagBlks[i].numRows());
-             ii++) {
-          lno_t rcm_ii  = h_perm(ii);
-          h_In2(rcm_ii) = h_In1(ii);
-        }
 
-        Kokkos::deep_copy(In2, h_In2);
+        KokkosSparse::spmv("N", one, DiagBlks_rcm[i], In, zero, Out);
 
-        KokkosSparse::spmv("N", one, DiagBlks[i], In1, zero, Out1);
-        KokkosSparse::spmv("N", one, DiagBlks_rcm[i], In2, zero, Out2);
-
-        Kokkos::deep_copy(h_Out2_tmp, Out2);
+        Kokkos::deep_copy(h_Out_tmp, Out);
         for (lno_t ii = 0; ii < static_cast<lno_t>(DiagBlks[i].numRows());
              ii++) {
           lno_t rcm_ii = h_perm(ii);
-          h_Out2(ii)   = h_Out2_tmp(rcm_ii);
+          h_Out(ii)    = h_Out_tmp(rcm_ii);
         }
-        Kokkos::deep_copy(Out2, h_Out2);
+        Kokkos::deep_copy(Out, h_Out);
 
-        double norm1 = KokkosBlas::nrm2(Out1);
-        double norm2 = KokkosBlas::nrm2(Out2);
-        EXPECT_LE(std::abs(norm1 - norm2), 1e-9);
+        KokkosSparse::spmv("N", one, DiagBlks[i], In, mone, Out);
+
+        double nrm_val = KokkosBlas::nrm2(Out);
+        EXPECT_LE(nrm_val, 1e-9);
       }
     }
   }
