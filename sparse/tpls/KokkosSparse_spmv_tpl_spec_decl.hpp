@@ -827,12 +827,14 @@ KOKKOSSPARSE_SPMV_ONEMKL(float, std::int32_t,
 KOKKOSSPARSE_SPMV_ONEMKL(double, std::int32_t,
                          Kokkos::Experimental::SYCLDeviceUSMSpace,
                          KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+/*
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<float>, std::int32_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace,
-                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                       Kokkos::Experimental::SYCLDeviceUSMSpace,
+                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<double>, std::int32_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace,
-                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                       Kokkos::Experimental::SYCLDeviceUSMSpace,
+                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+*/
 
 KOKKOSSPARSE_SPMV_ONEMKL(float, std::int64_t,
                          Kokkos::Experimental::SYCLDeviceUSMSpace,
@@ -840,12 +842,14 @@ KOKKOSSPARSE_SPMV_ONEMKL(float, std::int64_t,
 KOKKOSSPARSE_SPMV_ONEMKL(double, std::int64_t,
                          Kokkos::Experimental::SYCLDeviceUSMSpace,
                          KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+/*
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<float>, std::int64_t,
                          Kokkos::Experimental::SYCLDeviceUSMSpace,
                          KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<double>, std::int64_t,
                          Kokkos::Experimental::SYCLDeviceUSMSpace,
                          KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+*/
 #endif
 }  // namespace Impl
 }  // namespace KokkosSparse

@@ -279,27 +279,37 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
     enum : bool { value = true };                                              \
   };
 
+// intel-oneapi-mkl/2023.2.0: spmv with complex data types produce:
+// oneapi::mkl::sparse::gemv: unimplemented functionality: currently does not
+// support complex data types.
+// TODO: Revisit with later versions and selectively enable this if it's
+// working.
+
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
     float, std::int32_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
     double, std::int32_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
+/*
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
     Kokkos::complex<float>, std::int32_t,
     Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
     Kokkos::complex<double>, std::int32_t,
     Kokkos::Experimental::SYCLDeviceUSMSpace)
+*/
 
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
     float, std::int64_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
     double, std::int64_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
+/*
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
     Kokkos::complex<float>, std::int64_t,
     Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
     Kokkos::complex<double>, std::int64_t,
     Kokkos::Experimental::SYCLDeviceUSMSpace)
+*/
 #endif
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
