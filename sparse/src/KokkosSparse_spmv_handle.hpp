@@ -87,8 +87,7 @@ namespace Impl {
 // This is a conservative check for whether e1 and e2 are known to be the
 // same. If it cannot be determined, assume they are different.
 template <typename ExecutionSpace>
-inline bool exec_spaces_same(const ExecutionSpace&,
-                             const ExecutionSpace&) {
+inline bool exec_spaces_same(const ExecutionSpace&, const ExecutionSpace&) {
   return false;
 }
 
