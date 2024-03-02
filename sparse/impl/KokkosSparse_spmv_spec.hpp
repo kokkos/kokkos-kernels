@@ -207,17 +207,37 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, false,
                       const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y) {
-    // Intercept special case: if x/y have only 1 column, use the non-MV impl
-    // To keep handle usage consistent, do not use a TPL even if one is
-    // available
-    if (x.extent(0) == size_t(1)) {
-      auto x0 = Kokkos::subview(x, Kokkos::ALL(), 0);
-      auto y0 = Kokkos::subview(y, Kokkos::ALL(), 0);
-      SPMV<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),
-           false>::spmv(space, handle, mode, alpha, A, x0, beta, y0);
+    typedef Kokkos::ArithTraits<coefficient_type> KAT;
+    // Intercept special case: if x/y have only 1 column and both are
+    // contiguous, use the more efficient single-vector impl.
+    //
+    // We cannot do this if x or y is noncontiguous, because the column subview
+    // must be LayoutStride which is not ETI'd.
+    //
+    // Do not use a TPL even if one is available for the types:
+    // we don't want the same handle being used in both TPL and non-TPL versions
+    if (x.extent(1) == size_t(1) && x.span_is_contiguous() &&
+        y.span_is_contiguous()) {
+      Kokkos::View<typename XVector::const_value_type*, default_layout,
+                   typename XVector::device_type>
+          x0(x.data(), x.extent(0));
+      Kokkos::View<typename YVector::non_const_value_type*, default_layout,
+                   typename YVector::device_type>
+          y0(y.data(), y.extent(0));
+      if (beta == KAT::zero()) {
+        spmv_beta<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),
+                  0>(space, handle, mode, alpha, A, x0, beta, y0);
+      } else if (beta == KAT::one()) {
+        spmv_beta<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),
+                  1>(space, handle, mode, alpha, A, x0, beta, y0);
+      } else if (beta == -KAT::one()) {
+        spmv_beta<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),
+                  -1>(space, handle, mode, alpha, A, x0, beta, y0);
+      } else {
+        spmv_beta<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),
+                  2>(space, handle, mode, alpha, A, x0, beta, y0);
+      }
     } else {
-      typedef Kokkos::ArithTraits<coefficient_type> KAT;
-
       if (alpha == KAT::zero()) {
         spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 0>(
             space, mode, alpha, A, x, beta, y);
