@@ -87,8 +87,8 @@ namespace Impl {
 // This is a conservative check for whether e1 and e2 are known to be the
 // same. If it cannot be determined, assume they are different.
 template <typename ExecutionSpace>
-inline bool exec_spaces_same(const ExecutionSpace& e1,
-                             const ExecutionSpace& e2) {
+inline bool exec_spaces_same(const ExecutionSpace&,
+                             const ExecutionSpace&) {
   return false;
 }
 
@@ -142,7 +142,16 @@ struct TPL_SpMV_Data {
 struct CuSparse10_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
   CuSparse10_SpMV_Data(const Kokkos::Cuda& exec_) : TPL_SpMV_Data(exec_) {}
   ~CuSparse10_SpMV_Data() {
+    // Prefer cudaFreeAsync on the stream that last executed a spmv, but
+    // async memory management was introduced in 11.2
+#if (CUDA_VERSION >= 11020)
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeAsync(buffer, exec.cuda_stream()));
+#else
+    // Fence here to ensure spmv is not still using buffer
+    // (cudaFree does not do a device synchronize)
+    exec.fence();
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer));
+#endif
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(mat));
   }
 

@@ -126,8 +126,13 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(
         cusparseHandle, myCusparseOperation, &alpha, subhandle->mat, vecX,
         &beta, vecY, myCudaDataType, algo, &subhandle->bufferSize));
+  //  Async memory management introduced in CUDA 11.2
+#if (CUDA_VERSION >= 11020)
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMallocAsync(
         &subhandle->buffer, subhandle->bufferSize, exec.cuda_stream()));
+    #else
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&subhandle->buffer, subhandle->bufferSize));
+  #endif
     handle->is_set_up = true;
   }
 
