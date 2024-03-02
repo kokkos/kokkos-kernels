@@ -200,7 +200,8 @@ struct RocSparse_BSR_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
 // Data for classic MKL (both CRS and BSR)
 template <typename ExecutionSpace>
 struct MKL_SpMV_Data : public TPL_SpMV_Data<ExecutionSpace> {
-  MKL_SpMV_Data(const ExecutionSpace& exec_) : TPL_SpMV_Data<ExecutionSpace>(exec_) {}
+  MKL_SpMV_Data(const ExecutionSpace& exec_)
+      : TPL_SpMV_Data<ExecutionSpace>(exec_) {}
   ~MKL_SpMV_Data() {
     KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(mat));
     // descr is just a plain-old-data struct, no cleanup to do

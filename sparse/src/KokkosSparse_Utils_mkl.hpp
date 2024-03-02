@@ -122,14 +122,15 @@ struct KokkosToOneMKLScalar {
   // Note: we happen to use the same set of types in classic MKL and OneMKL.
   // If that changes, update this logic.
   static_assert(mkl_is_supported_value_type<Scalar>::value,
-                "Scalar type not supported by OneMKL"); using type = Scalar;
+                "Scalar type not supported by OneMKL");
+  using type = Scalar;
 };
 
 template <typename Mag>
 struct KokkosToOneMKLScalar<Kokkos::complex<Mag>> {
   static_assert(mkl_is_supported_value_type<Kokkos::complex<Mag>>::value,
-                "Scalar type not supported by OneMKL"); using type =
-      std::complex<Mag>;
+                "Scalar type not supported by OneMKL");
+  using type = std::complex<Mag>;
 };
 
 // MKLSparseMatrix provides thin wrapper around MKL matrix handle
