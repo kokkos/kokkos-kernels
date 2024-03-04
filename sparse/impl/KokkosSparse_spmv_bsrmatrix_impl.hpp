@@ -677,13 +677,12 @@ struct BSR_GEMV_Functor {
 // spMatVec_no_transpose: version for CPU execution spaces
 // (RangePolicy or trivial serial impl used)
 //
-template <class AT, class AO, class AD, class AS, class AlphaType,
+template <class Handle, class AT, class AO, class AD, class AS, class AlphaType,
           class XVector, class BetaType, class YVector,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatVec_no_transpose(
-    const typename AD::execution_space &exec,
-    const KokkosKernels::Experimental::Controls &controls,
+    const typename AD::execution_space &exec, Handle *handle,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
@@ -704,15 +703,8 @@ void spMatVec_no_transpose(
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
+  bool use_dynamic_schedule = handle->force_dynamic_schedule;
+  bool use_static_schedule  = handle->force_static_schedule;
 
   BSR_GEMV_Functor<AMatrix_Internal, XVector, YVector> func(
       alpha, A, x, beta, y, A.blockDim(), useConjugate);
@@ -738,13 +730,12 @@ void spMatVec_no_transpose(
 //
 // spMatVec_no_transpose: version for GPU execution spaces (TeamPolicy used)
 //
-template <class AT, class AO, class AD, class AS, class AlphaType,
+template <class Handle, class AT, class AO, class AD, class AS, class AlphaType,
           class XVector, class BetaType, class YVector,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatVec_no_transpose(
-    const typename AD::execution_space &exec,
-    const KokkosKernels::Experimental::Controls &controls,
+    const typename AD::execution_space &exec, Handle *handle,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
@@ -758,15 +749,9 @@ void spMatVec_no_transpose(
       AMatrix_Internal;
   typedef typename AMatrix_Internal::execution_space execution_space;
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
+  bool use_dynamic_schedule = handle->force_dynamic_schedule;
+  bool use_static_schedule  = handle->force_static_schedule;
+
   int team_size        = -1;
   int vector_length    = -1;
   const auto block_dim = A.blockDim();
@@ -788,14 +773,10 @@ void spMatVec_no_transpose(
   int64_t worksets = A.numRows();
 
   //
-  // Use the controls to allow the user to pass in some tuning parameters.
+  // Use the handle to allow the user to pass in some tuning parameters.
   //
-  if (controls.isParameter("team size")) {
-    team_size = std::stoi(controls.getParameter("team size"));
-  }
-  if (controls.isParameter("vector length")) {
-    vector_length = std::stoi(controls.getParameter("vector length"));
-  }
+  if (handle->team_size != -1) team_size = handle->team_size;
+  if (handle->vector_length != -1) vector_length = handle->vector_length;
 
   BSR_GEMV_Functor<AMatrix_Internal, XVector, YVector> func(
       alpha, A, x, beta, y, block_dim, useConjugate);
@@ -990,13 +971,12 @@ struct BSR_GEMV_Transpose_Functor {
 
 /// \brief  spMatVec_transpose: version for CPU execution spaces (RangePolicy or
 /// trivial serial impl used)
-template <class AT, class AO, class AD, class AS, class AlphaType,
+template <class Handle, class AT, class AO, class AD, class AS, class AlphaType,
           class XVector, class BetaType, class YVector,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatVec_transpose(
-    const typename AD::execution_space &exec,
-    const KokkosKernels::Experimental::Controls &controls,
+    const typename AD::execution_space &exec, Handle *handle,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
@@ -1019,15 +999,8 @@ void spMatVec_transpose(
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
+  bool use_dynamic_schedule = handle->force_dynamic_schedule;
+  bool use_static_schedule  = handle->force_static_schedule;
 
   BSR_GEMV_Transpose_Functor<AMatrix_Internal, XVector, YVector> func(
       alpha, A, x, y, useConjugate);
@@ -1051,15 +1024,14 @@ void spMatVec_transpose(
 //
 // spMatVec_transpose: version for GPU execution spaces (TeamPolicy used)
 //
-template <class AMatrix, class AlphaType, class XVector, class BetaType,
-          class YVector,
+template <class Handle, class AMatrix, class AlphaType, class XVector,
+          class BetaType, class YVector,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatVec_transpose(const typename AMatrix::execution_space &exec,
-                        const KokkosKernels::Experimental::Controls &controls,
-                        const AlphaType &alpha, const AMatrix &A,
-                        const XVector &x, const BetaType &beta, YVector &y,
-                        bool useConjugate) {
+                        Handle *handle, const AlphaType &alpha,
+                        const AMatrix &A, const XVector &x,
+                        const BetaType &beta, YVector &y, bool useConjugate) {
   if (A.numRows() <= 0) {
     return;
   }
@@ -1073,17 +1045,10 @@ void spMatVec_transpose(const typename AMatrix::execution_space &exec,
   else if (beta != Kokkos::ArithTraits<BetaType>::one())
     KokkosBlas::scal(exec, y, beta, y);
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
-  int team_size     = -1;
-  int vector_length = -1;
+  bool use_dynamic_schedule = handle->force_dynamic_schedule;
+  bool use_static_schedule  = handle->force_static_schedule;
+  int team_size             = -1;
+  int vector_length         = -1;
 
   int64_t worksets = A.numRows();
 
@@ -1104,14 +1069,10 @@ void spMatVec_transpose(const typename AMatrix::execution_space &exec,
   }
 
   //
-  // Use the controls to allow the user to pass in some tuning parameters.
+  // Use the handle to allow the user to pass in some tuning parameters.
   //
-  if (controls.isParameter("team size")) {
-    team_size = std::stoi(controls.getParameter("team size"));
-  }
-  if (controls.isParameter("vector length")) {
-    vector_length = std::stoi(controls.getParameter("vector length"));
-  }
+  if (handle->team_size != -1) team_size = handle->team_size;
+  if (handle->vector_length != -1) vector_length = handle->vector_length;
 
   BSR_GEMV_Transpose_Functor<AMatrix, XVector, YVector> func(alpha, A, x, y,
                                                              useConjugate);
@@ -1319,13 +1280,12 @@ struct BSR_GEMM_Functor {
 // spMatMultiVec_no_transpose: version for CPU execution spaces
 // (RangePolicy or trivial serial impl used)
 //
-template <class AT, class AO, class AD, class AS, class AlphaType,
+template <class Handle, class AT, class AO, class AD, class AS, class AlphaType,
           class XVector, class BetaType, class YVector,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatMultiVec_no_transpose(
-    const typename AD::execution_space &exec,
-    const KokkosKernels::Experimental::Controls &controls,
+    const typename AD::execution_space &exec, Handle *handle,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
@@ -1344,15 +1304,8 @@ void spMatMultiVec_no_transpose(
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
+  bool use_dynamic_schedule = handle->force_dynamic_schedule;
+  bool use_static_schedule  = handle->force_static_schedule;
 
   BSR_GEMM_Functor<AMatrix_Internal, XVector, YVector> func(alpha, A, x, beta,
                                                             y, useConjugate);
@@ -1379,13 +1332,12 @@ void spMatMultiVec_no_transpose(
 // spMatMultiVec_no_transpose: version for GPU execution spaces (TeamPolicy
 // used)
 //
-template <class AT, class AO, class AD, class AS, class AlphaType,
+template <class Handle, class AT, class AO, class AD, class AS, class AlphaType,
           class XVector, class BetaType, class YVector,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatMultiVec_no_transpose(
-    const typename AD::execution_space &exec,
-    const KokkosKernels::Experimental::Controls &controls,
+    const typename AD::execution_space &exec, Handle *handle,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
@@ -1399,15 +1351,10 @@ void spMatMultiVec_no_transpose(
       AMatrix_Internal;
   typedef typename AMatrix_Internal::execution_space execution_space;
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
+  bool use_dynamic_schedule =
+      handle->force_dynamic_schedule;  // Forces the use of a dynamic schedule
+  bool use_static_schedule =
+      handle->force_static_schedule;  // Forces the use of a static schedule
 
   int team_size     = -1;
   int vector_length = -1;
@@ -1429,14 +1376,10 @@ void spMatMultiVec_no_transpose(
   }
 
   //
-  // Use the controls to allow the user to pass in some tuning parameters.
+  // Use the handle to allow the user to pass in some tuning parameters.
   //
-  if (controls.isParameter("team size")) {
-    team_size = std::stoi(controls.getParameter("team size"));
-  }
-  if (controls.isParameter("vector length")) {
-    vector_length = std::stoi(controls.getParameter("vector length"));
-  }
+  if (handle->team_size != -1) team_size = handle->team_size;
+  if (handle->vector_length != -1) vector_length = handle->vector_length;
 
   BSR_GEMM_Functor<AMatrix_Internal, XVector, YVector> func(alpha, A, x, beta,
                                                             y, useConjugate);
@@ -1649,14 +1592,13 @@ struct BSR_GEMM_Transpose_Functor {
 
 /// \brief  spMatMultiVec_transpose: version for CPU execution spaces
 /// (RangePolicy or trivial serial impl used)
-template <class execution_space, class AT, class AO, class AD, class AS,
-          class AlphaType, class XVector, class BetaType, class YVector,
+template <class execution_space, class Handle, class AT, class AO, class AD,
+          class AS, class AlphaType, class XVector, class BetaType,
+          class YVector,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatMultiVec_transpose(
-    const execution_space &exec,
-    const KokkosKernels::Experimental::Controls &controls,
-    const AlphaType &alpha,
+    const execution_space &exec, Handle *handle, const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
     const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
@@ -1674,15 +1616,8 @@ void spMatMultiVec_transpose(
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
+  bool use_dynamic_schedule = handle->force_dynamic_schedule;
+  bool use_static_schedule  = handle->force_static_schedule;
 
   BSR_GEMM_Transpose_Functor<execution_space, AMatrix_Internal, XVector,
                              YVector>
@@ -1705,15 +1640,14 @@ void spMatMultiVec_transpose(
 //
 // spMatMultiVec_transpose: version for GPU execution spaces (TeamPolicy used)
 //
-template <class execution_space, class AMatrix, class AlphaType, class XVector,
-          class BetaType, class YVector,
+template <class execution_space, class Handle, class AMatrix, class AlphaType,
+          class XVector, class BetaType, class YVector,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
               execution_space>()>::type * = nullptr>
-void spMatMultiVec_transpose(
-    const execution_space &exec,
-    const KokkosKernels::Experimental::Controls &controls,
-    const AlphaType &alpha, const AMatrix &A, const XVector &x,
-    const BetaType &beta, YVector &y, bool useConjugate) {
+void spMatMultiVec_transpose(const execution_space &exec, Handle *handle,
+                             const AlphaType &alpha, const AMatrix &A,
+                             const XVector &x, const BetaType &beta, YVector &y,
+                             bool useConjugate) {
   if (A.numRows() <= 0) {
     return;
   }
@@ -1723,18 +1657,11 @@ void spMatMultiVec_transpose(
   else if (beta != Kokkos::ArithTraits<BetaType>::one())
     KokkosBlas::scal(exec, y, beta, y);
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
-  int team_size     = -1;
-  int vector_length = -1;
-  int64_t worksets  = A.numRows();
+  bool use_dynamic_schedule = handle->force_dynamic_schedule;
+  bool use_static_schedule  = handle->force_static_schedule;
+  int team_size             = -1;
+  int vector_length         = -1;
+  int64_t worksets          = A.numRows();
 
   const auto block_dim = A.blockDim();
   if (block_dim <= 4) {
@@ -1752,15 +1679,10 @@ void spMatMultiVec_transpose(
   }
 
   //
-  // Use the controls to allow the user to pass in some tuning
-  // parameters.
+  // Use the handle to allow the user to pass in some tuning parameters.
   //
-  if (controls.isParameter("team size")) {
-    team_size = std::stoi(controls.getParameter("team size"));
-  }
-  if (controls.isParameter("vector length")) {
-    vector_length = std::stoi(controls.getParameter("vector length"));
-  }
+  if (handle->team_size != -1) team_size = handle->team_size;
+  if (handle->vector_length != -1) vector_length = handle->vector_length;
 
   BSR_GEMM_Transpose_Functor<execution_space, AMatrix, XVector, YVector> func(
       alpha, A, x, y, useConjugate);
