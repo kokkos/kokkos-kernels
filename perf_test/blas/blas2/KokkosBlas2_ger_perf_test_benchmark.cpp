@@ -183,7 +183,7 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   state.counters[tExecSpace::name()] = 1;
   state.counters["Avg GER time (s):"] =
       benchmark::Counter(total_time, benchmark::Counter::kAvgIterations);
-  size_t flopsPerRun                = (size_t)2 * m * n;
+  size_t flopsPerRun                = (size_t)3 * m * n;
   state.counters["Avg GER FLOP/s:"] = benchmark::Counter(
       flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
 
