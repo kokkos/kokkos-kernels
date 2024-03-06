@@ -252,7 +252,8 @@ template <class ExecutionSpace, class MemorySpace, class Scalar, class Offset,
 struct SPMVHandleImpl {
   using ExecutionSpaceType = ExecutionSpace;
   // This is its own ImplType
-  using ImplType = SPMVHandleImpl <ExecutionSpace, MemorySpace, Scalar, Offset, Ordinal>;
+  using ImplType =
+      SPMVHandleImpl<ExecutionSpace, MemorySpace, Scalar, Offset, Ordinal>;
   // Do not allow const qualifier on Scalar, Ordinal, Offset (otherwise this
   // type won't match the ETI'd type). Users should not use SPMVHandleImpl
   // directly and SPMVHandle explicitly removes const, so this should never
@@ -392,17 +393,17 @@ struct SPMVHandle
 
   /// Get the SPMVAlgorithm used by this handle
   SPMVAlgorithm get_algorithm() const {
-    // Note: get_algorithm is also a method of parent ImplType, but for documentation
-    // purposes it should appear directly in the public interface of SPMVHandle
+    // Note: get_algorithm is also a method of parent ImplType, but for
+    // documentation purposes it should appear directly in the public interface
+    // of SPMVHandle
     return this->algo;
   }
 
   /// Get pointer to this as the impl type
-  ImplType* get_impl() {return static_cast<ImplType*>(this);} 
+  ImplType* get_impl() { return static_cast<ImplType*>(this); }
 };
 
-namespace Impl
-{
+namespace Impl {
 template <typename>
 struct is_spmv_handle : public std::false_type {};
 template <typename... P>
@@ -412,7 +413,7 @@ struct is_spmv_handle<const SPMVHandle<P...>> : public std::true_type {};
 
 template <typename T>
 inline constexpr bool is_spmv_handle_v = is_spmv_handle<T>::value;
-}
+}  // namespace Impl
 
 }  // namespace KokkosSparse
 

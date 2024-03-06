@@ -113,18 +113,18 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
   // But only check this if Handle is the user-facing type (SPMVHandle).
   // We may internally call spmv with SPMVHandleImpl, which does not include
   // the matrix and vector types.
-  if constexpr(KokkosSparse::Impl::is_spmv_handle_v<std::remove_pointer_t<Handle>>)
-  {
-  static_assert(
-      std::is_same_v<AMatrix, typename Handle::AMatrixType>,
-      "KokkosSparse::spmv: AMatrix must be identical to Handle::AMatrixType");
-  static_assert(
-      std::is_same_v<XVector, typename Handle::XVectorType>,
-      "KokkosSparse::spmv: XVector must be identical to Handle::XVectorType");
-  static_assert(
-      std::is_same_v<YVector, typename Handle::YVectorType>,
-      "KokkosSparse::spmv: YVector must be identical to Handle::YVectorType");
-}
+  if constexpr (KokkosSparse::Impl::is_spmv_handle_v<
+                    std::remove_pointer_t<Handle>>) {
+    static_assert(
+        std::is_same_v<AMatrix, typename Handle::AMatrixType>,
+        "KokkosSparse::spmv: AMatrix must be identical to Handle::AMatrixType");
+    static_assert(
+        std::is_same_v<XVector, typename Handle::XVectorType>,
+        "KokkosSparse::spmv: XVector must be identical to Handle::XVectorType");
+    static_assert(
+        std::is_same_v<YVector, typename Handle::YVectorType>,
+        "KokkosSparse::spmv: YVector must be identical to Handle::YVectorType");
+  }
 
   constexpr bool isBSR = Experimental::is_bsr_matrix_v<AMatrix>;
 
@@ -193,16 +193,16 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
   // and cuSPARSE actually errors out in that case.
   //
   // This relies on the fact that this codepath will always be taken for
-  // this particular matrix (so internally, this handle is only ever used for Crs)
-  if constexpr (isBSR)
-  {
-    if(A.blockDim() == 1)
-    {
+  // this particular matrix (so internally, this handle is only ever used for
+  // Crs)
+  if constexpr (isBSR) {
+    if (A.blockDim() == 1) {
       // Construct an ACrs_Internal (unmanaged memory) from A's views
       typename ACrs_Internal::row_map_type rowmap(A.graph.row_map);
       typename ACrs_Internal::index_type entries(A.graph.entries);
       typename ACrs_Internal::values_type values(A.values);
-      ACrs_Internal ACrs(std::string{}, A.numRows(), A.numCols(), A.nnz(), values, rowmap, entries);
+      ACrs_Internal ACrs(std::string{}, A.numRows(), A.numCols(), A.nnz(),
+                         values, rowmap, entries);
       spmv(space, handle->get_impl(), mode, alpha, ACrs, x, beta, y);
       return;
     }
