@@ -215,8 +215,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector,
     {
       // try to use tensor cores if requested
       if (handle->algo == SPMV_BSR_TC) method = Method::TensorCores;
-      if (!KokkosSparse::Impl::TensorCoresAvailable<
-              ExecutionSpace, AMatrix, XVector, YVector>::value) {
+      if (!KokkosSparse::Impl::TensorCoresAvailable<ExecutionSpace, AMatrix,
+                                                    XVector, YVector>::value) {
         method = Method::Fallback;
       }
       // can't use tensor cores unless mode is no-transpose

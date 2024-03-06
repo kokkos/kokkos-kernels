@@ -337,16 +337,17 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
                 typename AMatrix_Internal::non_const_value_type>::name() +
             "]";
         Kokkos::Profiling::pushRegion(label);
-        Impl::SPMV_BSRMATRIX<
-            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
-            YVector_Internal, false>::spmv_bsrmatrix(space, handle, mode, alpha,
-                                                     A_i, x_i, beta, y_i);
+        Impl::SPMV_BSRMATRIX<ExecutionSpace, HandleImpl, AMatrix_Internal,
+                             XVector_Internal, YVector_Internal,
+                             false>::spmv_bsrmatrix(space, handle, mode, alpha,
+                                                    A_i, x_i, beta, y_i);
         Kokkos::Profiling::popRegion();
       } else {
-        Impl::SPMV_BSRMATRIX<
-            ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
-            YVector_Internal>::spmv_bsrmatrix(space, handle, mode, alpha, A_i,
-                                              x_i, beta, y_i);
+        Impl::SPMV_BSRMATRIX<ExecutionSpace, HandleImpl, AMatrix_Internal,
+                             XVector_Internal,
+                             YVector_Internal>::spmv_bsrmatrix(space, handle,
+                                                               mode, alpha, A_i,
+                                                               x_i, beta, y_i);
       }
     } else {
       /////////////////
