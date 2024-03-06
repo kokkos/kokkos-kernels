@@ -355,7 +355,6 @@ KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 #include "KokkosSparse_Utils_cusparse.hpp"
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 
 template <class Handle, class AMatrix, class XVector, class YVector>
@@ -761,7 +760,6 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
 #undef KOKKOSSPARSE_SPMV_MV_CUSPARSE
 
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 #endif  // (9000 <= CUDA_VERSION)
 
@@ -777,7 +775,6 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
 #include "KokkosSparse_Utils_rocsparse.hpp"
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 
 template <class Handle, class AMatrix, class XVector, class YVector>
@@ -1097,7 +1094,6 @@ KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, rocsparse_int,
 #undef KOKKOSSPARSE_SPMV_ROCSPARSE
 
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif  // defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)

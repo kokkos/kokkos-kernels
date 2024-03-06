@@ -29,7 +29,6 @@
 #endif
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 
 // default is no eti available
@@ -48,7 +47,6 @@ struct spmv_mv_bsrmatrix_eti_spec_avail {
 };
 
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #define KOKKOSSPARSE_SPMV_BSRMATRIX_ETI_SPEC_AVAIL(                        \
@@ -103,7 +101,6 @@ struct spmv_mv_bsrmatrix_eti_spec_avail {
 #include <generated_specializations_hpp/KokkosSparse_spmv_mv_bsrmatrix_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 
 // declaration
@@ -218,7 +215,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector,
     {
       // try to use tensor cores if requested
       if (handle->algo == SPMV_BSR_TC) method = Method::TensorCores;
-      if (!KokkosSparse::Experimental::Impl::TensorCoresAvailable<
+      if (!KokkosSparse::Impl::TensorCoresAvailable<
               ExecutionSpace, AMatrix, XVector, YVector>::value) {
         method = Method::Fallback;
       }
@@ -365,7 +362,6 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector,
 #endif  // !defined(KOKKOSKERNELS_ETI_ONLY) ||
         // KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 
 // declare / instantiate the vector version
