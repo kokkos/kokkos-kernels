@@ -26,12 +26,9 @@
 #include <mkl.h>
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 
 // MKL 2018 and above: use new interface: sparse_matrix_t and mkl_sparse_?_mv()
-
-using KokkosSparse::Impl::mode_kk_to_mkl;
 
 // Note: Scalar here is the Kokkos type, not the MKL type
 template <typename Scalar, typename Handle>
@@ -338,7 +335,6 @@ KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 #undef KOKKOSSPARSE_SPMV_MV_MKL
 
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif  // defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && (__INTEL_MKL__ > 2017)
