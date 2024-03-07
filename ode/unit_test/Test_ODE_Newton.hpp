@@ -238,7 +238,7 @@ void test_newton_status() {
   scalar_type solution[3] = {2.0, -1.0, 0.0};
 #endif
   newton_solver_status newton_status[3] = {
-      newton_solver_status::NLS_SUCCESS, newton_solver_status::MAX_ITER,
+      newton_solver_status::NLS_SUCCESS, newton_solver_status::NLS_DIVERGENCE,
       newton_solver_status::LIN_SOLVE_FAIL};
   vec_type x("solution vector", 1), rhs("right hand side vector", 1);
   auto x_h = Kokkos::create_mirror_view(x);
