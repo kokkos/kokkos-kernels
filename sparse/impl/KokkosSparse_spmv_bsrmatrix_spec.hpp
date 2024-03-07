@@ -46,9 +46,6 @@ struct spmv_mv_bsrmatrix_eti_spec_avail {
   enum : bool { value = false };
 };
 
-}  // namespace Impl
-}  // namespace KokkosSparse
-
 #define KOKKOSSPARSE_SPMV_BSRMATRIX_ETI_SPEC_AVAIL(                        \
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,  \
     MEM_SPACE_TYPE)                                                        \
@@ -94,6 +91,9 @@ struct spmv_mv_bsrmatrix_eti_spec_avail {
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {             \
     enum : bool { value = true };                                          \
   };
+
+}  // namespace Impl
+}  // namespace KokkosSparse
 
 // Include which ETIs are available
 #include <KokkosSparse_spmv_bsrmatrix_tpl_spec_avail.hpp>

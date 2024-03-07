@@ -377,7 +377,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
                 typename AMatrix_Internal::non_const_value_type>::name() +
             "]";
         Kokkos::Profiling::pushRegion(label);
-        Experimental::Impl::SPMV_MV_BSRMATRIX<
+        Impl::SPMV_MV_BSRMATRIX<
             ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
             YVector_Internal,
             std::is_integral<
@@ -386,7 +386,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
                                       beta, y_i);
         Kokkos::Profiling::popRegion();
       } else {
-        Experimental::Impl::SPMV_MV_BSRMATRIX<
+        Impl::SPMV_MV_BSRMATRIX<
             ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
             YVector_Internal,
             std::is_integral<typename AMatrix_Internal::const_value_type>::
