@@ -189,7 +189,7 @@ SPGEMM_NUMERIC_AVAIL_MKL_E(Kokkos::OpenMP)
   template <>                                                                \
   struct spgemm_numeric_tpl_spec_avail<                                      \
       KokkosKernels::Experimental::KokkosKernelsHandle<                      \
-          const ORDINAL, const ORDINAL, const SCALAR,                        \ 
+          const ORDINAL, const ORDINAL, const SCALAR,                        \
           Kokkos::Experimental::SYCL,					     \
           Kokkos::Experimental::SYCLDeviceUSMSpace,			     \
           Kokkos::Experimental::SYCLDeviceUSMSpace>,                         \

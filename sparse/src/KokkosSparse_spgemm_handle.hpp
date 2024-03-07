@@ -253,6 +253,8 @@ class SPGEMMHandle {
       // All our matrices are assumed to be general
       oneapi::mkl::sparse::matrix_view_descr mat_view = oneapi::mkl::sparse::matrix_view_descr::general;
 
+      Kokkos::fence("spgemm handle onemkl constructor");
+
       // Picking the appropriate operation for A and B
       oneapi::mkl::transpose opA;
       if (opA_[0] == 'N' || opA_[0] == 'n') {
@@ -274,6 +276,8 @@ class SPGEMMHandle {
       } else {
 	throw std::runtime_error("oneMKLSpgemmHandle only supports N, T and H modes");
       }
+
+      std::cout << "spgemm onemkl handle parameters set" << std::endl;
 
       // Initialize and set data for the matmat descriptor
       oneapi::mkl::sparse::init_matmat_descr(&descr);
