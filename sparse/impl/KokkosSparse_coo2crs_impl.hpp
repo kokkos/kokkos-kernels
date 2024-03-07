@@ -15,11 +15,6 @@
 //@HEADER
 #ifndef KOKKOSSPARSE_COO2CRS_IMPL_HPP
 #define KOKKOSSPARSE_COO2CRS_IMPL_HPP
-// The unorderedmap changes necessary for this to work
-// have not made it into Kokkos 4.0.00 pr 4.0.01 will
-// need to see if it happens in 4.1.00 to have a final
-// version check here.
-#if KOKKOS_VERSION >= 40099
 
 #include <Kokkos_StdAlgorithms.hpp>
 #include "Kokkos_UnorderedMap.hpp"
@@ -279,7 +274,5 @@ class Coo2Crs {
 };
 }  // namespace Impl
 }  // namespace KokkosSparse
-
-#endif  // KOKKOS_VERSION >= 40099
 
 #endif  // KOKKOSSPARSE_COO2CRS_IMPL_HPP
