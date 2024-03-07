@@ -21,7 +21,8 @@
 
 namespace Test {
 
-template <class system_type, class mat_type, class vec_type, class status_view, class scale_type>
+template <class system_type, class mat_type, class vec_type, class status_view,
+          class scale_type>
 struct NewtonSolve_wrapper {
   using newton_params = KokkosODE::Experimental::Newton_params;
 
@@ -38,7 +39,7 @@ struct NewtonSolve_wrapper {
                       const vec_type& x_, const vec_type& rhs_,
                       const vec_type& update_, const mat_type& J_,
                       const mat_type& tmp_, const status_view& status_,
-		      const scale_type& scale_)
+                      const scale_type& scale_)
       : my_nls(my_nls_),
         params(params_),
         x(x_),
@@ -47,7 +48,7 @@ struct NewtonSolve_wrapper {
         J(J_),
         tmp(tmp_),
         status(status_),
-	scale(scale_) {}
+        scale(scale_) {}
 
   KOKKOS_FUNCTION
   void operator()(const int idx) const {
@@ -75,8 +76,8 @@ struct NewtonSolve_wrapper {
 
     // Run Newton nonlinear solver
     status(idx) = KokkosODE::Experimental::Newton::Solve(
-	my_nls, params, local_J, local_tmp, local_x, local_rhs, local_update,
-	scale);
+        my_nls, params, local_J, local_tmp, local_x, local_rhs, local_update,
+        scale);
   }
 };
 

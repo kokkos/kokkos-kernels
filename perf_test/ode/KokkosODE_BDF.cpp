@@ -51,33 +51,38 @@ struct StiffChemistry {
                                          const double /*dt*/, const vec_type& y,
                                          const mat_type& jac) const {
     jac(0, 0) = -0.04;
-    jac(0, 1) =  1.e4 * y(2);
-    jac(0, 2) =  1.e4 * y(1);
-    jac(1, 0) =  0.04;
+    jac(0, 1) = 1.e4 * y(2);
+    jac(0, 2) = 1.e4 * y(1);
+    jac(1, 0) = 0.04;
     jac(1, 1) = -1.e4 * y(2) - 3.e7 * 2.0 * y(1);
     jac(1, 2) = -1.e4 * y(1);
-    jac(2, 0) =  0.0;
-    jac(2, 1) =  3.e7 * 2.0 * y(1);
-    jac(2, 2) =  0.0;
+    jac(2, 0) = 0.0;
+    jac(2, 1) = 3.e7 * 2.0 * y(1);
+    jac(2, 2) = 0.0;
   }
 };
 
 template <class ode_type, class mat_type, class vec_type, class scalar_type>
 struct BDF_Solve_wrapper {
-
   const ode_type my_ode;
   const scalar_type t_start, t_end, dt, max_step;
   const vec_type y0, y_new;
   const mat_type temp, temp2;
 
   BDF_Solve_wrapper(const ode_type& my_ode_, const scalar_type& t_start_,
-		    const scalar_type& t_end_, const scalar_type& dt_,
-		    const scalar_type& max_step_, const vec_type& y0_,
-		    const vec_type& y_new_, const mat_type& temp_,
-		    const mat_type& temp2_)
-    : my_ode(my_ode_), t_start(t_start_), t_end(t_end_), dt(dt_),
-      max_step(max_step_), y0(y0_), y_new(y_new_), temp(temp_),
-      temp2(temp2_) {}
+                    const scalar_type& t_end_, const scalar_type& dt_,
+                    const scalar_type& max_step_, const vec_type& y0_,
+                    const vec_type& y_new_, const mat_type& temp_,
+                    const mat_type& temp2_)
+      : my_ode(my_ode_),
+        t_start(t_start_),
+        t_end(t_end_),
+        dt(dt_),
+        max_step(max_step_),
+        y0(y0_),
+        y_new(y_new_),
+        temp(temp_),
+        temp2(temp2_) {}
 
   KOKKOS_FUNCTION void operator()(const int idx) const {
     auto subTemp  = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::ALL(), idx);
@@ -85,22 +90,21 @@ struct BDF_Solve_wrapper {
     auto subY0    = Kokkos::subview(y0, Kokkos::ALL(), idx);
     auto subYnew  = Kokkos::subview(y_new, Kokkos::ALL(), idx);
 
-    KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt,
-				      max_step, subY0, subYnew, subTemp, subTemp2);
+    KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt, max_step,
+                                      subY0, subYnew, subTemp, subTemp2);
   }
 };
 
-}  // namespace Anonymous
+}  // namespace
 
 struct bdf_input_parameters {
   int num_odes;
   int repeat;
   bool verbose;
 
-  bdf_input_parameters(const int num_odes_, const int repeat_, const bool verbose_)
-      : num_odes(num_odes_),
-        repeat(repeat_),
-        verbose(verbose_){};
+  bdf_input_parameters(const int num_odes_, const int repeat_,
+                       const bool verbose_)
+      : num_odes(num_odes_), repeat(repeat_), verbose(verbose_){};
 };
 
 template <class execution_space>
@@ -116,23 +120,25 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   const int num_odes = inputs.num_odes;
   const int neqs     = mySys.neqs;
 
-  const scalar_type t_start = KAT::zero(), t_end = 350*KAT::one();
+  const scalar_type t_start = KAT::zero(), t_end = 350 * KAT::one();
   scalar_type dt = KAT::zero();
   vec_type y0("initial conditions", neqs, num_odes);
   vec_type y_new("solution", neqs, num_odes);
 
   // Set initial conditions
   auto y0_h = Kokkos::create_mirror(y0);
-  for(int sysIdx = 0; sysIdx < num_odes; ++sysIdx) {
+  for (int sysIdx = 0; sysIdx < num_odes; ++sysIdx) {
     y0_h(0, sysIdx) = KAT::one();
     y0_h(1, sysIdx) = KAT::zero();
     y0_h(2, sysIdx) = KAT::zero();
   }
 
-  mat_type temp("buffer1", neqs, 23 + 2*neqs + 4, num_odes), temp2("buffer2", 6, 7, num_odes);
+  mat_type temp("buffer1", neqs, 23 + 2 * neqs + 4, num_odes),
+      temp2("buffer2", 6, 7, num_odes);
 
-  if(verbose) {
-    std::cout << "Number of problems solved in parallel: " << num_odes << std::endl;
+  if (verbose) {
+    std::cout << "Number of problems solved in parallel: " << num_odes
+              << std::endl;
   }
 
   Kokkos::RangePolicy<execution_space> policy(0, num_odes);
@@ -150,8 +156,8 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
     Kokkos::deep_copy(temp, KAT::zero());
     Kokkos::deep_copy(temp2, KAT::zero());
     BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt,
-				  (t_end - t_start) / 10,
-				  y0, y_new, temp, temp2);
+                                  (t_end - t_start) / 10, y0, y_new, temp,
+                                  temp2);
     state.ResumeTiming();
 
     // Actually run the time integrator
@@ -163,7 +169,7 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
 
   Kokkos::deep_copy(y0_h, y0);
   double error;
-  for(int odeIdx = 0; odeIdx < num_odes; ++odeIdx) {
+  for (int odeIdx = 0; odeIdx < num_odes; ++odeIdx) {
     error = 0;
     // error += Kokkos::abs(y0_h(0, odeIdx) - 0.4193639) / 0.4193639;
     // error += Kokkos::abs(y0_h(1, odeIdx) - 0.000002843646) / 0.000002843646;
@@ -173,8 +179,9 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
     error += Kokkos::abs(y0_h(2, odeIdx) - 0.537030) / 0.537030;
     error = error / 3;
 
-    if(error > 1e-6) {
-      std::cout << "Large error in problem " << odeIdx << ": " << error << std::endl;
+    if (error > 1e-6) {
+      std::cout << "Large error in problem " << odeIdx << ": " << error
+                << std::endl;
     }
   }
 }
@@ -213,7 +220,8 @@ int parse_inputs(bdf_input_parameters& params, int argc, char** argv) {
 }  // parse_inputs
 
 template <class execution_space>
-void run_benchmark_wrapper(benchmark::State& state, bdf_input_parameters params) {
+void run_benchmark_wrapper(benchmark::State& state,
+                           bdf_input_parameters params) {
   run_ode_chem<execution_space>(state, params);
 }
 
@@ -233,19 +241,19 @@ int main(int argc, char** argv) {
 
     if (0 < common_params.repeat) {
       benchmark::RegisterBenchmark(
-				   bench_name.c_str(),
-				   run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, params)
-        ->UseRealTime()
-        ->ArgNames({"n"})
-        ->Args({params.num_odes})
-        ->Iterations(common_params.repeat);
+          bench_name.c_str(),
+          run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, params)
+          ->UseRealTime()
+          ->ArgNames({"n"})
+          ->Args({params.num_odes})
+          ->Iterations(common_params.repeat);
     } else {
       benchmark::RegisterBenchmark(
-				   bench_name.c_str(),
-				   run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, params)
-        ->UseRealTime()
-        ->ArgNames({"n"})
-        ->Args({params.num_odes});
+          bench_name.c_str(),
+          run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, params)
+          ->UseRealTime()
+          ->ArgNames({"n"})
+          ->Args({params.num_odes});
     }
 
     benchmark::RunSpecifiedBenchmarks();

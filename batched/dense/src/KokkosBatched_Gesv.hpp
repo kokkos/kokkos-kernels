@@ -70,11 +70,9 @@ struct SerialGesv {
                                            const MatrixType tmp);
 
   template <typename MatrixType, typename VectorType>
-  [[deprecated]]
-  KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A,
-                                           const VectorType X,
-                                           const VectorType Y,
-                                           const MatrixType tmp) {
+  [[deprecated]] KOKKOS_INLINE_FUNCTION static int invoke(
+      const MatrixType A, const VectorType X, const VectorType Y,
+      const MatrixType tmp) {
     return invoke(A, X, Y, tmp);
   }
 };

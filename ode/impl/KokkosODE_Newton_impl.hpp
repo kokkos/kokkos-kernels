@@ -30,10 +30,12 @@
 namespace KokkosODE {
 namespace Impl {
 
-  template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_type, class update_type, class scale_type>
+template <class system_type, class mat_type, class ini_vec_type,
+          class rhs_vec_type, class update_type, class scale_type>
 KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     system_type& sys, const KokkosODE::Experimental::Newton_params& params,
-    mat_type& J, mat_type& tmp, ini_vec_type& y0, rhs_vec_type& rhs, update_type& update, const scale_type& scale) {
+    mat_type& J, mat_type& tmp, ini_vec_type& y0, rhs_vec_type& rhs,
+    update_type& update, const scale_type& scale) {
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
   using value_type           = typename ini_vec_type::non_const_value_type;
 
@@ -48,8 +50,9 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   norm_type norm_new    = Kokkos::ArithTraits<norm_type>::zero();
   norm_type rate        = Kokkos::ArithTraits<norm_type>::zero();
 
-  const norm_type tol = Kokkos::max(10 * Kokkos::ArithTraits<norm_type>::eps() / params.rel_tol,
-				    Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
+  const norm_type tol =
+      Kokkos::max(10 * Kokkos::ArithTraits<norm_type>::eps() / params.rel_tol,
+                  Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
 
   // LBV - 07/24/2023: for now assume that we take
   // a full Newton step. Eventually this value can
@@ -80,16 +83,18 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     norm = KokkosBlas::serial_nrm2(rhs);
 
     // Compute rms norm of the scaled update
-    for(int idx = 0; idx < sys.neqs; ++idx) {
+    for (int idx = 0; idx < sys.neqs; ++idx) {
       norm_new = (update(idx) * update(idx)) / (scale(idx) * scale(idx));
     }
     norm_new = Kokkos::sqrt(norm_new / sys.neqs);
-    if((it > 0) && norm_old > Kokkos::ArithTraits<norm_type>::zero()) {
+    if ((it > 0) && norm_old > Kokkos::ArithTraits<norm_type>::zero()) {
       rate = norm_new / norm_old;
-      if((rate >= 1) || Kokkos::pow(rate, params.max_iters - it) / (1 - rate) * norm_new > tol) {
-	return newton_solver_status::NLS_DIVERGENCE;
-      } else if((norm_new == 0) || ((rate / (1 - rate)) * norm_new < tol)) {
-	return newton_solver_status::NLS_SUCCESS;
+      if ((rate >= 1) ||
+          Kokkos::pow(rate, params.max_iters - it) / (1 - rate) * norm_new >
+              tol) {
+        return newton_solver_status::NLS_DIVERGENCE;
+      } else if ((norm_new == 0) || ((rate / (1 - rate)) * norm_new < tol)) {
+        return newton_solver_status::NLS_SUCCESS;
       }
     }
 
