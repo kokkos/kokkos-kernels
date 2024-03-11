@@ -82,37 +82,6 @@ inline bool is_spmv_algorithm_native(SPMVAlgorithm a) {
 }
 
 namespace Impl {
-// Execution spaces do not support operator== in public interface, even though
-// in practice the major async/GPU spaces do have the feature.
-// This is a conservative check for whether e1 and e2 are known to be the
-// same. If it cannot be determined, assume they are different.
-template <typename ExecutionSpace>
-inline bool exec_spaces_same(const ExecutionSpace&, const ExecutionSpace&) {
-  return false;
-}
-
-#ifdef KOKKOS_ENABLE_CUDA
-template <>
-inline bool exec_spaces_same<Kokkos::Cuda>(const Kokkos::Cuda& e1,
-                                           const Kokkos::Cuda& e2) {
-  return e1.impl_internal_space_instance() == e2.impl_internal_space_instance();
-}
-#endif
-#ifdef KOKKOS_ENABLE_HIP
-template <>
-inline bool exec_spaces_same<Kokkos::HIP>(const Kokkos::HIP& e1,
-                                          const Kokkos::HIP& e2) {
-  return e1.impl_internal_space_instance() == e2.impl_internal_space_instance();
-}
-#endif
-#ifdef KOKKOS_ENABLE_SYCL
-template <>
-inline bool exec_spaces_same<Kokkos::Experimental::SYCL>(
-    const Kokkos::Experimental::SYCL& e1,
-    const Kokkos::Experimental::SYCL& e2) {
-  return e1.impl_internal_space_instance() == e2.impl_internal_space_instance();
-}
-#endif
 
 template <typename ExecutionSpace>
 struct TPL_SpMV_Data {
@@ -124,7 +93,7 @@ struct TPL_SpMV_Data {
     // If it is, fence the old exec now.
     // That way, SPMVHandle cleanup doesn't need
     // to worry about resources still being in use on the old exec.
-    if (!exec_spaces_same(exec, new_exec)) {
+    if (exec != new_exec) {
       exec.fence();
       exec = new_exec;
     }
