@@ -41,7 +41,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   cusparseHandle_t cusparseHandle =
       KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;
   /* Set cuSPARSE to use the given stream until this function exits */
-  TemporarySetCusparseStream(cusparseHandle, exec);
+  TemporarySetCusparseStream tscs(cusparseHandle, exec);
 
   /* Set the operation mode */
   cusparseOperation_t myCusparseOperation;
@@ -389,7 +389,7 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
   rocsparse_handle rocsparseHandle =
       KokkosKernels::Impl::RocsparseSingleton::singleton().rocsparseHandle;
   /* Set rocsparse to use the given stream until this function exits */
-  TemporarySetRocsparseStream(rocsparseHandle, exec);
+  TemporarySetRocsparseStream tsrs(rocsparseHandle, exec);
 
   /* Set the operation mode */
   rocsparse_operation myRocsparseOperation = mode_kk_to_rocsparse(mode);

@@ -111,7 +111,7 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
   cusparseHandle_t cusparseHandle =
       KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;
   /* Set cuSPARSE to use the given stream until this function exits */
-  TemporarySetCusparseStream(cusparseHandle, exec);
+  TemporarySetCusparseStream tscs(cusparseHandle, exec);
 
   /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
   const cusparseIndexType_t myCusparseOffsetType =
