@@ -74,12 +74,7 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     KokkosBlas::SerialScale::invoke(-1, update);
 
     if (linSolverStat == 1) {
-#if KOKKOS_VERSION < 40199
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-          "NewtonFunctor: Linear solve gesv returned failure! \n");
-#else
       Kokkos::printf("NewtonFunctor: Linear solve gesv returned failure! \n");
-#endif
       return newton_solver_status::LIN_SOLVE_FAIL;
     }
 
