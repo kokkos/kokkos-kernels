@@ -62,8 +62,14 @@ inline void mkl_internal_safe_call(sparse_status_t mkl_status, const char *name,
   }
 }
 
+}  // namespace Impl
+}  // namespace KokkosSparse
+
 #define KOKKOSKERNELS_MKL_SAFE_CALL(call) \
   KokkosSparse::Impl::mkl_internal_safe_call(call, #call, __FILE__, __LINE__)
+
+namespace KokkosSparse {
+namespace Impl {
 
 inline sparse_operation_t mode_kk_to_mkl(char mode_kk) {
   switch (toupper(mode_kk)) {

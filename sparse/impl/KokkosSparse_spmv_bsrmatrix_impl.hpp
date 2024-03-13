@@ -27,7 +27,6 @@
 #include <mma.h>
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 
 struct BsrMatrixSpMVTensorCoreFunctorParams {
@@ -519,7 +518,6 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 };
 
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif  // #if CUDA && (VOLTA || AMPERE)
@@ -537,7 +535,6 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 namespace Bsr {
 
@@ -1735,9 +1732,7 @@ void spMatMultiVec_transpose(const execution_space &exec, Handle *handle,
 /* ******************* */
 
 }  // namespace Bsr
-
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif  // KOKKOSSPARSE_IMPL_SPMV_BSRMATRIX_IMPL_HPP_

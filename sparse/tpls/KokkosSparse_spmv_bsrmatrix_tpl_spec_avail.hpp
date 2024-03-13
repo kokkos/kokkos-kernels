@@ -22,7 +22,6 @@
 #endif
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
 template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
@@ -348,7 +347,6 @@ KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>,
 #endif  // defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
 
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif  // KOKKOSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_HPP_

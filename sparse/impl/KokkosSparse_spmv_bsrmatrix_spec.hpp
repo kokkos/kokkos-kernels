@@ -29,7 +29,6 @@
 #endif
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 
 // default is no eti available
@@ -46,10 +45,6 @@ template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
 struct spmv_mv_bsrmatrix_eti_spec_avail {
   enum : bool { value = false };
 };
-
-}  // namespace Impl
-}  // namespace Experimental
-}  // namespace KokkosSparse
 
 #define KOKKOSSPARSE_SPMV_BSRMATRIX_ETI_SPEC_AVAIL(                        \
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,  \
@@ -97,13 +92,15 @@ struct spmv_mv_bsrmatrix_eti_spec_avail {
     enum : bool { value = true };                                          \
   };
 
+}  // namespace Impl
+}  // namespace KokkosSparse
+
 // Include which ETIs are available
 #include <KokkosSparse_spmv_bsrmatrix_tpl_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spmv_bsrmatrix_eti_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spmv_mv_bsrmatrix_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 
 // declaration
@@ -218,8 +215,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector,
     {
       // try to use tensor cores if requested
       if (handle->algo == SPMV_BSR_TC) method = Method::TensorCores;
-      if (!KokkosSparse::Experimental::Impl::TensorCoresAvailable<
-              ExecutionSpace, AMatrix, XVector, YVector>::value) {
+      if (!KokkosSparse::Impl::TensorCoresAvailable<ExecutionSpace, AMatrix,
+                                                    XVector, YVector>::value) {
         method = Method::Fallback;
       }
       // can't use tensor cores unless mode is no-transpose
@@ -365,7 +362,6 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector,
 #endif  // !defined(KOKKOSKERNELS_ETI_ONLY) ||
         // KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 
 // declare / instantiate the vector version
