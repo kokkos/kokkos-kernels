@@ -191,8 +191,11 @@ void print_help() {
       "  --layout left|right   : memory layout of x/y. Default depends on "
       "build's default execution space\n");
   printf(
-      "  -m N|T                : matrix apply mode: N (normal, default), T "
-      "(transpose)\n");
+      "  -m N|T|H|C            : matrix apply mode:\n"
+      "                          N - normal, default\n"
+      "                          T - transpose\n"
+      "                          H - conjugate transpose\n"
+      "                          C - conjugate\n");
   printf(
       "  -f [file],-fb [file]  : Read in Matrix Market (.mtx), or binary "
       "(.bin) matrix file.\n");
