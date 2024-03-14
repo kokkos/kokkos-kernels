@@ -257,7 +257,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector,
                                                                  A, X, beta, Y);
             return;
           }
-          case KokkosSparse::Experimental::Bsr_TC_Precision::Automatic:  // fallthrough
+          case KokkosSparse::Experimental::Bsr_TC_Precision::Automatic:
           default: {
             constexpr bool operandsHalfHalfFloat =
                 std::is_same<AScalar, Half>::value &&
