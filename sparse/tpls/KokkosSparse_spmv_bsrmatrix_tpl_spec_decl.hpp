@@ -372,7 +372,7 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
   cusparseHandle_t cusparseHandle =
       KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;
   /* Set cuSPARSE to use the given stream until this function exits */
-  KokkosSparse::Impl::TemporarySetCusparseStream(cusparseHandle, exec);
+  KokkosSparse::Impl::TemporarySetCusparseStream tscs(cusparseHandle, exec);
 
   /* Set the operation mode */
   cusparseOperation_t myCusparseOperation;
@@ -487,7 +487,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
   cusparseHandle_t cusparseHandle =
       KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;
   /* Set cuSPARSE to use the given stream until this function exits */
-  KokkosSparse::Impl::TemporarySetCusparseStream(cusparseHandle, exec);
+  KokkosSparse::Impl::TemporarySetCusparseStream tscs(cusparseHandle, exec);
 
   /* Set the operation mode */
   cusparseOperation_t myCusparseOperation;
