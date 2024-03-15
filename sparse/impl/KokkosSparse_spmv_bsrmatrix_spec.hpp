@@ -243,21 +243,21 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector,
       if (Method::TensorCores == method) {
         auto precision = handle->bsr_tc_precision;
         switch (precision) {
-          case Bsr_TC_Precision::Mixed: {
+          case KokkosSparse::Experimental::Bsr_TC_Precision::Mixed: {
             BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, half,
                                               XVector, half, YVector, float, 16,
                                               16, 16>::dispatch(space, alpha, A,
                                                                 X, beta, Y);
             return;
           }
-          case Bsr_TC_Precision::Double: {
+          case KokkosSparse::Experimental::Bsr_TC_Precision::Double: {
             BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, double,
                                               XVector, double, YVector, double,
                                               8, 8, 4>::dispatch(space, alpha,
                                                                  A, X, beta, Y);
             return;
           }
-          case Bsr_TC_Precision::Automatic:  // fallthrough
+          case KokkosSparse::Experimental::Bsr_TC_Precision::Automatic:
           default: {
             constexpr bool operandsHalfHalfFloat =
                 std::is_same<AScalar, Half>::value &&
