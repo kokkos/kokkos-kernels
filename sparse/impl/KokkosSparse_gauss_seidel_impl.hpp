@@ -1548,7 +1548,7 @@ class PointGaussSeidel {
     }
     if (init_zero_x_vector) {
       KokkosKernels::Impl::zero_vector<
-          MyExecSpace, scalar_persistent_work_view2d_t, MyExecSpace>(
+          MyExecSpace, scalar_persistent_work_view2d_t>(
           my_exec_space, num_cols * block_size, Permuted_Xvector);
     } else {
       KokkosKernels::Impl::permute_block_vector<
@@ -1665,7 +1665,7 @@ class PointGaussSeidel {
     }
     if (init_zero_x_vector) {
       KokkosKernels::Impl::zero_vector<
-          MyExecSpace, scalar_persistent_work_view2d_t, MyExecSpace>(
+          MyExecSpace, scalar_persistent_work_view2d_t>(
           my_exec_space, num_cols, Permuted_Xvector);
     } else {
       KokkosKernels::Impl::permute_vector<
