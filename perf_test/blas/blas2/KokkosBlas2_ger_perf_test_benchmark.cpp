@@ -28,6 +28,7 @@
 #include <benchmark/benchmark.h>
 
 struct blas2_ger_params : public perf_test::CommonInputParams {
+  int verbosity          = 0;
   int m                  = 5000;
   int n                  = 5000;
   bool layoutLeft        = true;
@@ -39,7 +40,9 @@ struct blas2_ger_params : public perf_test::CommonInputParams {
     perf_test::parse_common_options(argc, argv, params);
 
     for (int i = 1; i < argc; ++i) {
-      if (perf_test::check_arg_int(i, argc, argv, "--m", params.m)) {
+      if (perf_test::check_arg_int(i, argc, argv, "--verbosity", params.verbosity)) {
+        ++i;
+      } else if (perf_test::check_arg_int(i, argc, argv, "--m", params.m)) {
         ++i;
       } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.n)) {
         ++i;
@@ -115,18 +118,21 @@ struct blas2_ger_params : public perf_test::CommonInputParams {
 
 template <typename tScalar, typename tLayout, typename tExecSpace>
 static void KokkosBlas2_GER(benchmark::State& state) {
-  const auto m            = state.range(0);
-  const auto n            = state.range(1);
-  const auto yIsTranspose = state.range(2);
+  const auto verbosity    = state.range(0);
+  const auto m            = state.range(1);
+  const auto n            = state.range(2);
+  const auto yIsTranspose = state.range(3);
   tScalar a(0.);
 
-  // std::cout << "Entering KokkosBlas2_GER()"
-  //          << ": m = "            << m
-  //          << ", n = "            << n
-  //          << ", yIsTranspose = " << yIsTranspose
-  //          << ", tScalar = "      << typeid(tScalar).name()
-  //          << ", tLayout = "      << typeid(tLayout).name()
-  //          << std::endl;
+  if (verbosity > 0) {
+    std::cout << "Entering KokkosBlas2_GER()"
+              << ": m = "            << m
+              << ", n = "            << n
+              << ", yIsTranspose = " << yIsTranspose
+              << ", tScalar = "      << Kokkos::ArithTraits<tScalar>::name()
+              << ", tLayout = "      << typeid(tLayout).name()
+              << std::endl;
+  }
 
   using MemSpace = typename tExecSpace::memory_space;
   using Device   = Kokkos::Device<tExecSpace, MemSpace>;
@@ -140,29 +146,35 @@ static void KokkosBlas2_GER(benchmark::State& state) {
 
   Kokkos::Random_XorShift64_Pool<tExecSpace> pool(123);
 
-  // Fill 'A', 'x', and 'y' with samples from an uniform random variable with
-  // range [1,10)
-  Kokkos::fill_random(A, pool, 10.0);
-  Kokkos::fill_random(x, pool, 10.0);
-  Kokkos::fill_random(y, pool, 10.0);
-
   char yMode('t');
   if (!yIsTranspose) yMode = 'H';
 
-  if constexpr (std::is_same_v<tScalar, std::int32_t> ||
-                std::is_same_v<tScalar, std::int64_t>) {
+  tScalar rangeValue(0.);
+  if constexpr (Kokkos::ArithTraits<tScalar>::isOrdinal) {
+    rangeValue = 10;
     a = 3;
-  } else if constexpr (std::is_same_v<tScalar, float> ||
-                       std::is_same_v<tScalar, double>) {
-    a = 2.5;
-  } else {
+  } else if constexpr (Kokkos::ArithTraits<tScalar>::is_complex) {
+    rangeValue.real() = 10.;
+    rangeValue.imag() = 10.;
     a = tScalar(2.5, 3.6);
+  } else {
+    rangeValue = 10.;
+    a = 2.5;
   }
 
-  // std::cout << "In KokkosBlas2_GER()"
-  //          << ": yMode = " << yMode
-  //          << ", a = "     << a
-  //          << std::endl;
+  // Fill 'A', 'x', and 'y' with samples from an uniform random variable with
+  // range [1,rangeValue)
+  Kokkos::fill_random(A, pool, rangeValue);
+  Kokkos::fill_random(x, pool, rangeValue);
+  Kokkos::fill_random(y, pool, rangeValue);
+
+  if (verbosity > 0) {
+    std::cout << "In KokkosBlas2_GER()"
+              << ": yMode = "      << yMode
+              << ", a = "          << a
+              << ", rangeValue = " << rangeValue
+              << std::endl;
+  }
 
   // Do a warm-up run
   KokkosBlas::ger(&yMode, a, x, y, A);
@@ -187,15 +199,17 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   state.counters["Avg GER FLOP/s:"] = benchmark::Counter(
       flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
 
-  // std::cout << "Leaving KokkosBlas2_GER()" << std::endl;
+  if (verbosity > 0) {
+    std::cout << "Leaving KokkosBlas2_GER()" << std::endl;
+  }
 }
 
 template <typename tExecSpace>
 void run(const blas2_ger_params& params) {
   const auto name      = "KokkosBlas2_GER";
   const auto arg_names = std::vector<std::string>{
-      "m", "n", "yMode", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
-  const auto args = std::vector<int64_t>{params.m, params.n,
+    "verbosity", "m", "n", "yMode", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
+  const auto args = std::vector<int64_t>{params.verbosity, params.m, params.n,
                                          (params.yMode == "transpose"), 1};
 
   if (params.layoutLeft) {
