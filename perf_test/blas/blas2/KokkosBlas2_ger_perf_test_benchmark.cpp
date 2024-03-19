@@ -123,7 +123,7 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   const auto m            = state.range(1);
   const auto n            = state.range(2);
   const auto yIsTranspose = state.range(3);
-  tScalar a(0.);
+  tScalar a(Kokkos::ArithTraits<tScalar>::zero());
 
   if (verbosity > 0) {
     std::cout << "Entering KokkosBlas2_GER()"
@@ -148,7 +148,7 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   char yMode('t');
   if (!yIsTranspose) yMode = 'H';
 
-  tScalar rangeValue(0.);
+  tScalar rangeValue(Kokkos::ArithTraits<tScalar>::zero());
   if constexpr (Kokkos::ArithTraits<tScalar>::isOrdinal) {
     rangeValue = 10;
     a          = 3;
