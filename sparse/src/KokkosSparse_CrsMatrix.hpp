@@ -339,9 +339,7 @@ struct SparseRowViewConst {
 /// storage for sparse matrices, as described, for example, in Saad
 /// (2nd ed.).
 template <class ScalarType, class OrdinalType, class Device,
-          class MemoryTraits = void,
-          class SizeType     = typename Kokkos::ViewTraits<OrdinalType*, Device,
-                                                       void, void>::size_type>
+          class MemoryTraits = void, class SizeType = default_size_type>
 class CrsMatrix {
   static_assert(
       std::is_signed<OrdinalType>::value,
