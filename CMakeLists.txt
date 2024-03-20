@@ -133,7 +133,7 @@ ELSE()
         MESSAGE(WARNING "Configuring with Kokkos ${Kokkos_VERSION} which is newer than the expected develop branch - version check may need update")
       ENDIF()
     ELSE()
-      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires 4.2.00 or greater")
+      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 4.2.00 or greater (found ${Kokkos_VERSION})")
     ENDIF()
   ENDIF()
 
