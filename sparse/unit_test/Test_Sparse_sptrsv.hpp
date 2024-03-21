@@ -113,8 +113,8 @@ struct SptrsvTest {
   };
 
   static void run_test_sptrsv() {
-    scalar_t ZERO = scalar_t(0);
-    scalar_t ONE  = scalar_t(1);
+    const scalar_t ZERO = Kokkos::ArithTraits<scalar_t>::zero();
+    const scalar_t ONE  = Kokkos::ArithTraits<scalar_t>::one();
 
     const size_type nrows = 5;
     const size_type nnz   = 10;
@@ -236,24 +236,47 @@ struct SptrsvTest {
       if (std::is_same<size_type, int>::value &&
           std::is_same<lno_t, int>::value &&
           std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
-        Kokkos::deep_copy(lhs, ZERO);
-        KernelHandle kh;
-        bool is_lower_tri = false;
-        kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
-                                is_lower_tri);
+	{
+	  Kokkos::deep_copy(lhs, ZERO);
+	  KernelHandle kh;
+	  bool is_lower_tri = false;
+	  kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
+				  is_lower_tri);
 
-        sptrsv_symbolic(&kh, row_map, entries, values);
-        Kokkos::fence();
+	  sptrsv_symbolic(&kh, row_map, entries, values);
+	  Kokkos::fence();
 
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
+	  sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+	  Kokkos::fence();
 
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
+	  scalar_t sum = 0.0;
+	  Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
+				  ReductionCheck(lhs), sum);
+	  EXPECT_EQ(sum, lhs.extent(0));
 
-        kh.destroy_sptrsv_handle();
+	  kh.destroy_sptrsv_handle();
+	}
+	{
+	  Kokkos::deep_copy(lhs, ZERO);
+	  KernelHandle kh;
+	  bool is_lower_tri = false;
+	  kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows,
+				  is_lower_tri);
+
+	  sptrsv_symbolic(&kh, row_map, entries, values);
+	  Kokkos::fence();
+
+	  sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+	  Kokkos::fence();
+
+	  scalar_t sum = 0.0;
+	  Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
+	  			  ReductionCheck(lhs), sum);
+	  EXPECT_EQ(sum, lhs.extent(0));
+	  
+
+	  kh.destroy_sptrsv_handle();
+	}
       }
 #endif
 
@@ -817,6 +840,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_sptrsv() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
   TestStruct::run_test_sptrsv();
+  std::cout << "Done with test_sptrsv" << std::endl;
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
@@ -842,12 +866,16 @@ void test_sptrsv_streams() {
     TestStruct::run_test_sptrsv_streams(2, 4);
   }
 #endif
+  std::cout << "Done with test_sptrsv_streams" << std::endl;
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \
   TEST_F(TestCategory,                                                     \
          sparse##_##sptrsv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     test_sptrsv<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
+  }									   \
+  TEST_F(TestCategory,                                                     \
+         sparse##_##sptrsv_streams##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     test_sptrsv_streams<SCALAR, ORDINAL, OFFSET, DEVICE>();                \
   }
 
