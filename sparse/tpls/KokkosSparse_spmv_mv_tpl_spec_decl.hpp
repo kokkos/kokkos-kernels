@@ -24,8 +24,12 @@
 
 /* CUSPARSE_VERSION < 10301 either doesn't have cusparseSpMM
    or the non-tranpose version produces incorrect results.
+
+   Version 11702 corresponds to CUDA 11.6.1, which also produces incorrect
+   results. 11701 (CUDA 11.6.0) is OK.
 */
-#if defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION)
+#if defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION) && \
+    (CUSPARSE_VERSION != 11702)
 #include "cusparse.h"
 #include "KokkosSparse_Utils_cusparse.hpp"
 
@@ -63,9 +67,14 @@ inline cudaDataType compute_type<Kokkos::Experimental::half_t>() {
 */
 template <typename ViewType, std::enable_if_t<ViewType::rank == 2, bool> = true>
 cusparseDnMatDescr_t make_cusparse_dn_mat_descr_t(ViewType &view) {
-  const int64_t rows = view.extent(0);
-  const int64_t cols = view.extent(1);
-  const int64_t ld   = view.extent(0);
+  // If the view is LayoutRight, we still need to create descr as column-major
+  // but it should be an implicit transpose, meaning dimensions and strides are
+  // swapped
+  bool transpose =
+      std::is_same_v<typename ViewType::array_layout, Kokkos::LayoutRight>;
+  const int64_t rows = transpose ? view.extent(1) : view.extent(0);
+  const int64_t cols = transpose ? view.extent(0) : view.extent(1);
+  const int64_t ld   = transpose ? view.stride(0) : view.stride(1);
 
   // cusparseCreateCsr notes it is safe to const_cast this away for input
   // pointers to a descriptor as long as that descriptor is not an output
@@ -143,6 +152,9 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
   constexpr bool xIsLR =
       std::is_same<typename XVector::array_layout, Kokkos::LayoutRight>::value;
   static_assert(xIsLL || xIsLR, "X multivector was not LL or LR (TPL error)");
+  static_assert(
+      std::is_same_v<typename YVector::array_layout, Kokkos::LayoutLeft>,
+      "Y multivector was not LL (TPL error)");
   cusparseDnMatDescr_t vecX = make_cusparse_dn_mat_descr_t(x);
   cusparseDnMatDescr_t vecY = make_cusparse_dn_mat_descr_t(y);
   cusparseOperation_t opB =
