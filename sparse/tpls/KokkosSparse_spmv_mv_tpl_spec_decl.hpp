@@ -72,9 +72,9 @@ cusparseDnMatDescr_t make_cusparse_dn_mat_descr_t(ViewType &view) {
   // swapped
   bool transpose =
       std::is_same_v<typename ViewType::array_layout, Kokkos::LayoutRight>;
-  const int64_t rows = transpose ? view.extent(1) : view.extent(0);
-  const int64_t cols = transpose ? view.extent(0) : view.extent(1);
-  const int64_t ld   = transpose ? view.stride(0) : view.stride(1);
+  const size_t rows = transpose ? view.extent(1) : view.extent(0);
+  const size_t cols = transpose ? view.extent(0) : view.extent(1);
+  const size_t ld   = transpose ? view.stride(0) : view.stride(1);
 
   // cusparseCreateCsr notes it is safe to const_cast this away for input
   // pointers to a descriptor as long as that descriptor is not an output
@@ -92,8 +92,9 @@ cusparseDnMatDescr_t make_cusparse_dn_mat_descr_t(ViewType &view) {
   const cusparseOrder_t order = CUSPARSE_ORDER_COL;
 
   cusparseDnMatDescr_t descr;
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseCreateDnMat(&descr, rows, cols, ld, values, valueType, order));
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnMat(
+      &descr, static_cast<int64_t>(rows), static_cast<int64_t>(cols),
+      static_cast<int64_t>(ld), values, valueType, order));
 
   return descr;
 }
