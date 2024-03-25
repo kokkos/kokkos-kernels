@@ -19,6 +19,8 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
+#include <regex>
+
 namespace KokkosSparse {
 namespace Impl {
 
@@ -1063,6 +1065,135 @@ int read_mtx(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne,
   return 0;
 }
 
+/**
+ * Read a matrix from a file using the Harwell-Boeing Exchange Format
+ */
+template <typename lno_t, typename size_type, typename scalar_t>
+int read_hb(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne,
+             size_type **xadj, lno_t **adj, scalar_t **ew) {
+  std::ifstream mmf(fileName, std::ifstream::in);
+  if (!mmf.is_open()) {
+    throw std::runtime_error("File cannot be opened\n");
+  }
+
+  // Get the title line, don't need to do anything with that data
+  std::string fline = "";
+  getline(mmf, fline);
+
+  // Get metadata, rhs_lines is optional
+  getline(mmf, fline);
+  std::istringstream ss(fline);
+  size_type total_lines = 0,
+    ptr_lines = 0,
+    col_lines = 0,
+    val_lines = 0,
+    rhs_lines = 0;
+
+  ss >> total_lines >> ptr_lines >> col_lines >> val_lines >> rhs_lines;
+
+  if (total_lines == 0 || ptr_lines == 0 || col_lines == 0) {
+    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", Line 2 did not have valid values");
+  }
+
+  if (rhs_lines > 0) {
+    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", reader does not support RHS info at this time.");
+  }
+
+  // Get next line of metadata, neltvl is optional
+  getline(mmf, fline);
+  ss = std::istringstream(fline);
+  std::string matrix_type;
+  size_type nrow = 0,
+    ncol = 0,
+    nnz  = 0,
+    neltvl = 0;
+
+  ss >> matrix_type >> nrow >> ncol >> nnz >> neltvl;
+
+  if (nrow == 0 || ncol == 0 || nnz == 0) {
+    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", Line 3 did not have valid values: " + fline);
+  }
+
+  // Get next line of metadata
+  getline(mmf, fline);
+  ss = std::istringstream(fline);
+  std::string ptrfmt, indfmt, valfmt, rhsfmt;
+  ss >> ptrfmt >> indfmt >> valfmt >> rhsfmt;
+
+  if (ptrfmt == "" || indfmt == "" || valfmt == "") {
+    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", Line 4 did not have valid values");
+  }
+
+  // Set outputs
+  *nrows = nrow;
+  *ncols = ncol;
+  *ne    = nnz;
+  //*xadj = new idx[nr + 1];
+  KokkosKernels::Impl::md_malloc<size_type>(xadj, nrow + 1);
+  //*adj = new idx[nE];
+  KokkosKernels::Impl::md_malloc<lno_t>(adj, nnz);
+  //*ew = new wt[nE];
+  KokkosKernels::Impl::md_malloc<scalar_t>(ew, nnz);
+
+  // Read row_idx
+  size_type idx = 0;
+  for (size_type i = 0; i < ptr_lines; ++i) {
+    getline(mmf, fline);
+    ss = std::istringstream(fline);
+    size_type val;
+    while (ss >> val) {
+      (*xadj)[idx++] = (val - 1); // HB uses 1-based indexing
+    }
+  }
+  if (idx != nrow+1) {
+    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", did not find expected number of col ptrs");
+  }
+
+  // Read cols
+  idx = 0;
+  for (size_type i = 0; i < col_lines; ++i) {
+    getline(mmf, fline);
+    ss = std::istringstream(fline);
+    lno_t val;
+    while (ss >> val) {
+      (*adj)[idx++] = (val - 1); // HB uses 1-based indexing
+    }
+  }
+  if (idx != nnz) {
+    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", did not find expected number of cols");
+  }
+
+  // Read vals if not pattern only
+  if (matrix_type[0] != 'P') {
+    idx = 0;
+    for (size_type i = 0; i < val_lines; ++i) {
+      getline(mmf, fline);
+      // The 'e' before the exponent is needed for the stringstream to read
+      // the value correctly
+      fline = std::regex_replace(fline, std::regex("([0-9])([+-])"), "$1e$2");
+      ss = std::istringstream(fline);
+      while (ss) {
+        auto val = MM::readScalar<scalar_t>(ss);
+        // Subtle: ss will eval true even if only whitespace is left
+        if (ss) {
+          (*ew)[idx++] = val;
+        }
+      }
+    }
+    if (idx != nnz) {
+      throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", did not find expected number of values");
+    }
+  }
+  else {
+    // Initialize to zero?
+    for (size_type i = 0; i < nnz; ++i) {
+      (*ew)[i] = 0;
+    }
+  }
+
+  return 0;
+}
+
 // Version of read_mtx which does not capture the number of columns.
 // This is the old interface; it's kept for backwards compatibility.
 template <typename lno_t, typename size_type, typename scalar_t>
@@ -1084,6 +1215,12 @@ void read_matrix(lno_t *nv, size_type *ne, size_type **xadj, lno_t **adj,
     read_mtx(filename, nv, ne, xadj, adj, ew, false, false, false);
   }
 
+  else if (KokkosKernels::Impl::endswith(strfilename, ".rsa") ||
+           KokkosKernels::Impl::endswith(strfilename, ".hb")) {
+    lno_t ncol;  // will discard
+    read_hb(filename, nv, &ncol, ne, xadj, adj, ew);
+  }
+
   else if (KokkosKernels::Impl::endswith(strfilename, ".bin")) {
     read_graph_bin(nv, ne, xadj, adj, ew, filename);
   }
@@ -1102,7 +1239,8 @@ crsMat_t read_kokkos_crst_matrix(const char *filename_) {
   std::string strfilename(filename_);
   bool isMatrixMarket = KokkosKernels::Impl::endswith(strfilename, ".mtx") ||
                         KokkosKernels::Impl::endswith(strfilename, ".mm");
-
+  bool isHB = KokkosKernels::Impl::endswith(strfilename, ".rsa") ||
+              KokkosKernels::Impl::endswith(strfilename, ".hb");
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type cols_view_t;
@@ -1117,9 +1255,12 @@ crsMat_t read_kokkos_crst_matrix(const char *filename_) {
   scalar_t *values;
 
   if (isMatrixMarket) {
-    // MatrixMarket file contains the exact number of columns
+    // MatrixMarket and HBE files contain the exact number of columns
     read_mtx<lno_t, size_type, scalar_t>(filename_, &nr, &nc, &nnzA, &xadj,
                                          &adj, &values, false, false, false);
+  } else if (isHB) {
+    read_hb<lno_t, size_type, scalar_t>(filename_, &nr, &nc, &nnzA, &xadj,
+                                        &adj, &values);
   } else {
     //.crs and .bin files don't contain #cols, so will compute it later based on
     // the entries
@@ -1146,7 +1287,7 @@ crsMat_t read_kokkos_crst_matrix(const char *filename_) {
     Kokkos::deep_copy(values_view, hv);
   }
 
-  if (!isMatrixMarket) {
+  if (!(isMatrixMarket || isHB)) {
     KokkosKernels::Impl::kk_view_reduce_max<cols_view_t,
                                             typename crsMat_t::execution_space>(
         nnzA, columns_view, nc);
