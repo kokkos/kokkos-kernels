@@ -183,8 +183,8 @@ int test_bsr_matrix_single_vec(
       Kokkos::deep_copy(ycrs, h_ycrs);
       Kokkos::Timer timer;
       KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
-      time_crs += timer.seconds();
       Kokkos::fence();
+      time_crs += timer.seconds();
     }
 
     // Create the output vector
@@ -212,8 +212,8 @@ int test_bsr_matrix_single_vec(
       Kokkos::deep_copy(ybsr, h_ybsr);
       Kokkos::Timer timer;
       KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
-      time_bsr += timer.seconds();
       Kokkos::fence();
+      time_bsr += timer.seconds();
     }
 
     // Check that the numerical result is matching
@@ -350,8 +350,8 @@ int test_bsr_matrix_vec(
       Kokkos::deep_copy(ycrs, h_ycrs);
       Kokkos::Timer timer;
       KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
-      time_crs += timer.seconds();
       Kokkos::fence();
+      time_crs += timer.seconds();
     }
 
     // Create the BsrMatrix variable
@@ -380,8 +380,8 @@ int test_bsr_matrix_vec(
       Kokkos::deep_copy(ybsr, h_ybsr);
       Kokkos::Timer timer;
       KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
-      time_bsr += timer.seconds();
       Kokkos::fence();
+      time_bsr += timer.seconds();
     }
 
     // Check that the result is matching
