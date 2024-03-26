@@ -51,7 +51,14 @@ struct spmv_mv_tpl_spec_avail {
 non-transpose that produces incorrect result. This is cusparse distributed with
 CUDA 10.1.243. The bug seems to be resolved by CUSPARSE 10301 (present by
 CUDA 10.2.89) */
-#if defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION)
+
+/* cusparseSpMM also produces incorrect results for some inputs in CUDA 11.6.1.
+ * (CUSPARSE_VERSION 11702).
+ * ALG1 and ALG3 produce completely incorrect results for one set of inputs.
+ * ALG2 works for that case, but has low numerical accuracy in another case.
+ */
+#if defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION) && \
+    (CUSPARSE_VERSION != 11702)
 KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_CUSPARSE(double, int, int,
                                              Kokkos::LayoutLeft,
                                              Kokkos::LayoutLeft,
