@@ -218,8 +218,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
 #endif  // CUDA_VERSION
 }
 
-#define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE,    \
-                                   COMPILE_LIBRARY)                           \
+#define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE)    \
   template <>                                                                 \
   struct SPMV<                                                                \
       Kokkos::Cuda,                                                           \
@@ -233,7 +232,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,    \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, SPACE>,      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      true, COMPILE_LIBRARY> {                                                \
+      true> {                                                                 \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;            \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;        \
     using Handle =                                                            \
@@ -262,103 +261,71 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
 
 #if (9000 <= CUDA_VERSION)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
-                           Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutRight,
-                           Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int, int, Kokkos::LayoutLeft,
-                           Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int, int, Kokkos::LayoutRight,
-                           Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, int,
-                           Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, int,
-                           Kokkos::LayoutRight, Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft,
-                           Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
-                           Kokkos::LayoutRight, Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
-                           Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutRight,
-                           Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int, int, Kokkos::LayoutLeft,
-                           Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int, int, Kokkos::LayoutRight,
-                           Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, int,
-                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, int,
-                           Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft,
-                           Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
-                           Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft,
-                           Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight,
-                           Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutLeft,
-                           Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutRight,
-                           Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t,
-                           Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t,
-                           Kokkos::LayoutRight, Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
-                           Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
-                           Kokkos::LayoutRight, Kokkos::CudaSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft,
-                           Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight,
-                           Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutLeft,
-                           Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutRight,
-                           Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t,
-                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t,
-                           Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
-                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
-                           Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
-                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                           Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 #endif  // defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 #endif  // 9000 <= CUDA_VERSION
 
@@ -499,7 +466,7 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnvec_descr(vecX));
 }
 
-#define KOKKOSSPARSE_SPMV_ROCSPARSE(SCALAR, LAYOUT, COMPILE_LIBRARY)                     \
+#define KOKKOSSPARSE_SPMV_ROCSPARSE(SCALAR, LAYOUT)                                      \
   template <>                                                                            \
   struct SPMV<                                                                           \
       Kokkos::HIP,                                                                       \
@@ -517,7 +484,7 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
       Kokkos::View<SCALAR*, LAYOUT,                                                      \
                    Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,                        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                             \
-      true, COMPILE_LIBRARY> {                                                           \
+      true> {                                                                            \
     using device_type       = Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>;             \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;                   \
     using Handle            = KokkosSparse::Impl::SPMVHandleImpl<                        \
@@ -544,22 +511,14 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
     }                                                                                    \
   };
 
-KOKKOSSPARSE_SPMV_ROCSPARSE(double, Kokkos::LayoutLeft,
-                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_ROCSPARSE(double, Kokkos::LayoutRight,
-                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_ROCSPARSE(float, Kokkos::LayoutLeft,
-                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_ROCSPARSE(float, Kokkos::LayoutRight,
-                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, Kokkos::LayoutRight,
-                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutRight,
-                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_ROCSPARSE(double, Kokkos::LayoutLeft)
+KOKKOSSPARSE_SPMV_ROCSPARSE(double, Kokkos::LayoutRight)
+KOKKOSSPARSE_SPMV_ROCSPARSE(float, Kokkos::LayoutLeft)
+KOKKOSSPARSE_SPMV_ROCSPARSE(float, Kokkos::LayoutRight)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, Kokkos::LayoutLeft)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, Kokkos::LayoutRight)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutLeft)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutRight)
 
 #undef KOKKOSSPARSE_SPMV_ROCSPARSE
 
@@ -652,7 +611,7 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
 
 // Note: classic MKL runs on Serial/OpenMP but can't use our execution space
 // instances
-#define KOKKOSSPARSE_SPMV_MKL(SCALAR, EXECSPACE, COMPILE_LIBRARY)              \
+#define KOKKOSSPARSE_SPMV_MKL(SCALAR, EXECSPACE)                               \
   template <>                                                                  \
   struct SPMV<EXECSPACE,                                                       \
               KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, \
@@ -668,7 +627,7 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
               Kokkos::View<SCALAR*, Kokkos::LayoutLeft,                        \
                            Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,       \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
-              true, COMPILE_LIBRARY> {                                         \
+              true> {                                                          \
     using device_type = Kokkos::Device<EXECSPACE, Kokkos::HostSpace>;          \
     using Handle =                                                             \
         KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace,       \
@@ -698,23 +657,17 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
-KOKKOSSPARSE_SPMV_MKL(float, Kokkos::Serial, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(double, Kokkos::Serial,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<float>, Kokkos::Serial,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::Serial,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_MKL(float, Kokkos::Serial)
+KOKKOSSPARSE_SPMV_MKL(double, Kokkos::Serial)
+KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<float>, Kokkos::Serial)
+KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::Serial)
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-KOKKOSSPARSE_SPMV_MKL(float, Kokkos::OpenMP, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(double, Kokkos::OpenMP,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<float>, Kokkos::OpenMP,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_MKL(float, Kokkos::OpenMP)
+KOKKOSSPARSE_SPMV_MKL(double, Kokkos::OpenMP)
+KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<float>, Kokkos::OpenMP)
+KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
 #endif
 
 #undef KOKKOSSPARSE_SPMV_MKL
@@ -787,7 +740,7 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
       reinterpret_cast<onemkl_scalar_type*>(y.data()));
 }
 
-#define KOKKOSSPARSE_SPMV_ONEMKL(SCALAR, ORDINAL, MEMSPACE, COMPILE_LIBRARY)      \
+#define KOKKOSSPARSE_SPMV_ONEMKL(SCALAR, ORDINAL, MEMSPACE)                       \
   template <>                                                                     \
   struct SPMV<                                                                    \
       Kokkos::Experimental::SYCL,                                                 \
@@ -804,7 +757,7 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
       Kokkos::View<SCALAR*, Kokkos::LayoutLeft,                                   \
                    Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                      \
-      true, COMPILE_LIBRARY> {                                                    \
+      true> {                                                                     \
     using execution_space = Kokkos::Experimental::SYCL;                           \
     using device_type     = Kokkos::Device<execution_space, MEMSPACE>;            \
     using Handle          = KokkosSparse::Impl::SPMVHandleImpl<                   \
@@ -833,33 +786,27 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
   };
 
 KOKKOSSPARSE_SPMV_ONEMKL(float, std::int32_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace,
-                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                         Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSSPARSE_SPMV_ONEMKL(double, std::int32_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace,
-                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                         Kokkos::Experimental::SYCLDeviceUSMSpace)
 /*
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<float>, std::int32_t,
-                       Kokkos::Experimental::SYCLDeviceUSMSpace,
-                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                       Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<double>, std::int32_t,
-                       Kokkos::Experimental::SYCLDeviceUSMSpace,
-                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                       Kokkos::Experimental::SYCLDeviceUSMSpace)
 */
 
 KOKKOSSPARSE_SPMV_ONEMKL(float, std::int64_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace,
-                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                         Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSSPARSE_SPMV_ONEMKL(double, std::int64_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace,
-                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                         Kokkos::Experimental::SYCLDeviceUSMSpace)
 /*
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<float>, std::int64_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace,
-                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                         Kokkos::Experimental::SYCLDeviceUSMSpace
+                         )
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<double>, std::int64_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace,
-                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                         Kokkos::Experimental::SYCLDeviceUSMSpace
+                         )
 */
 #endif
 }  // namespace Impl
