@@ -1102,16 +1102,37 @@ int read_hb(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne,
   // Get next line of metadata, neltvl is optional
   getline(mmf, fline);
   ss = std::istringstream(fline);
-  std::string matrix_type;
+  std::string matrix_info;
   size_type nrow = 0,
     ncol = 0,
     nnz  = 0,
     neltvl = 0;
 
-  ss >> matrix_type >> nrow >> ncol >> nnz >> neltvl;
+  ss >> matrix_info >> nrow >> ncol >> nnz >> neltvl;
 
-  if (nrow == 0 || ncol == 0 || nnz == 0) {
+  if (matrix_info.size() != 3 || nrow == 0 || ncol == 0 || nnz == 0) {
     throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", Line 3 did not have valid values: " + fline);
+  }
+
+  const char matrix_scalar   = matrix_info[0];
+  const char matrix_type     = matrix_info[1];
+  const char matrix_assembly = matrix_info[2];
+
+  // check matrix_type matches scalar_t
+  if (matrix_scalar == 'R') {
+    if (!(std::is_same<scalar_t, Kokkos::Experimental::half_t>::value ||
+          std::is_same<scalar_t, Kokkos::Experimental::bhalf_t>::value ||
+          std::is_floating_point<scalar_t>::value)) {
+        throw std::runtime_error(
+          std::string("Problem reading HB file ") + fileName + ", scalar_t in read_hb() incompatible with float or double typed HB file.");
+    }
+  }
+  else if (matrix_scalar == 'C') {
+    if (!(std::is_same<scalar_t, Kokkos::complex<float>>::value ||
+          std::is_same<scalar_t, Kokkos::complex<double>>::value)) {
+        throw std::runtime_error(
+          std::string("Problem reading HB file ") + fileName + ", scalar_t in read_hb() incompatible with complex-typed HB file.");
+    }
   }
 
   // Get next line of metadata
@@ -1164,22 +1185,23 @@ int read_hb(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne,
   }
 
   // Read vals if not pattern only
-  if (matrix_type[0] != 'P') {
+  if (matrix_scalar != 'P') {
     idx = 0;
     for (size_type i = 0; i < val_lines; ++i) {
       getline(mmf, fline);
       // The 'e' before the exponent is needed for the stringstream to read
       // the value correctly
       fline = std::regex_replace(fline, std::regex("([0-9])([+-])"), "$1e$2");
+      // rstrip so that ss evals to false when the last item is read
+      fline.erase(std::find_if(fline.rbegin(), fline.rend(), [](unsigned char ch) {
+            return !std::isspace(ch);
+          }).base(), fline.end());
       ss = std::istringstream(fline);
       while (ss) {
-        auto val = MM::readScalar<scalar_t>(ss);
-        // Subtle: ss will eval true even if only whitespace is left
-        if (ss) {
-          (*ew)[idx++] = val;
-        }
+        (*ew)[idx++] = MM::readScalar<scalar_t>(ss);
       }
     }
+    // For many matrix types, we may need to symmetrize
     if (idx != nnz) {
       throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", did not find expected number of values");
     }
@@ -1187,7 +1209,7 @@ int read_hb(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne,
   else {
     // Initialize to zero?
     for (size_type i = 0; i < nnz; ++i) {
-      (*ew)[i] = 0;
+      (*ew)[i] = Kokkos::ArithTraits<scalar_t>::one();
     }
   }
 
