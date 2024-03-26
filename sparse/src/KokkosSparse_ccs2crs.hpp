@@ -102,6 +102,14 @@ template <class OrdinalType, class SizeType, class ValViewType,
           class ColMapViewType, class RowIdViewType>
 auto ccs2crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
              ValViewType vals, ColMapViewType col_map, RowIdViewType row_ids) {
+  static_assert(
+      std::is_same_v<SizeType, typename ColMapViewType::non_const_value_type>,
+      "ccs2crs: SizeType (type of nnz) must match the element type of "
+      "ColMapViewType");
+  static_assert(
+      std::is_same_v<OrdinalType, typename RowIdViewType::non_const_value_type>,
+      "ccs2crs: OrdinalType (type of nrows, ncols) must match the element type "
+      "of RowIdViewType");
   using Ccs2crsType = Impl::Ccs2Crs<OrdinalType, SizeType, ValViewType,
                                     ColMapViewType, RowIdViewType>;
   Ccs2crsType ccs2Crs(nrows, ncols, nnz, vals, col_map, row_ids);

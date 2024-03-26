@@ -643,9 +643,7 @@ class RandCooMat {
 /// \tparam LayoutType
 /// \tparam Device
 template <class ScalarType, class LayoutType, class Device,
-          typename Ordinal = int64_t,
-          typename Size    = typename Kokkos::ViewTraits<Ordinal*, Device, void,
-                                                      void>::size_type>
+          typename Ordinal = int64_t, typename Size = default_size_type>
 class RandCsMatrix {
  public:
   using value_type   = ScalarType;
@@ -765,7 +763,7 @@ class RandCsMatrix {
 
   // O(c), where c is a constant.
   ScalarType operator()(Size idx) { return __vals(idx); }
-  size_t get_nnz() { return size_t(__nnz); }
+  Size get_nnz() { return __nnz; }
   // dimension2: This is either columns for a Crs matrix or rows for a Ccs
   // matrix.
   Ordinal get_dim2() { return __dim2; }

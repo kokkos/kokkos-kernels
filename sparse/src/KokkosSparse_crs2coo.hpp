@@ -134,6 +134,14 @@ template <class OrdinalType, class SizeType, class ValViewType,
           class RowMapViewType, class ColIdViewType>
 auto crs2coo(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
              ValViewType vals, RowMapViewType row_map, ColIdViewType col_ids) {
+  static_assert(
+      std::is_same_v<SizeType, typename RowMapViewType::non_const_value_type>,
+      "crs2coo: SizeType (type of nnz) must match the element type of "
+      "RowMapViewType");
+  static_assert(
+      std::is_same_v<OrdinalType, typename ColIdViewType::non_const_value_type>,
+      "crs2coo: OrdinalType (type of nrows, ncols) must match the element type "
+      "of ColIdViewType");
   using Crs2cooType = Impl::Crs2Coo<OrdinalType, SizeType, ValViewType,
                                     RowMapViewType, ColIdViewType>;
   Crs2cooType crs2Coo(nrows, ncols, nnz, vals, row_map, col_ids);

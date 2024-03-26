@@ -134,9 +134,9 @@ Bsr bsr_random(const int blockSize, const int blockRows, const int blockCols) {
       rcs(blockRows, blockCols, scalar_type(0), max_a<scalar_type>());
 
   const auto colids = Kokkos::subview(
-      rcs.get_ids(), Kokkos::make_pair(size_t(0), rcs.get_nnz()));
+      rcs.get_ids(), Kokkos::make_pair(size_type(0), rcs.get_nnz()));
   const auto vals = Kokkos::subview(
-      rcs.get_vals(), Kokkos::make_pair(size_t(0), rcs.get_nnz()));
+      rcs.get_vals(), Kokkos::make_pair(size_type(0), rcs.get_nnz()));
   Graph graph(colids, rcs.get_map());
   Crs crs("crs", blockCols, vals, graph);
 

@@ -34,6 +34,7 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_Error.hpp"
+#include "KokkosKernels_default_types.hpp"
 
 namespace KokkosSparse {
 
@@ -325,9 +326,7 @@ struct BsrRowViewConst {
 /// storage for sparse matrices, as described, for example, in Saad
 /// (2nd ed.).
 template <class ScalarType, class OrdinalType, class Device,
-          class MemoryTraits = void,
-          class SizeType     = typename Kokkos::ViewTraits<OrdinalType*, Device,
-                                                       void, void>::size_type>
+          class MemoryTraits = void, class SizeType = default_size_type>
 class BsrMatrix {
   static_assert(
       std::is_signed<OrdinalType>::value,
