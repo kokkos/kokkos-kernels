@@ -81,8 +81,9 @@ struct TestIOUtils {
     }
   }
 
-  static void write_as_hb(const RowMapType& row_map, const EntriesType& entries,
-                          const ValuesType& values, const std::string& filename,
+  template <typename RowMapView, typename EntriesView, typename ValuesView>
+  static void write_as_hb(const RowMapView& row_map, const EntriesView& entries, const ValuesView& values,
+                          const std::string& filename,
                           const char mtx_type) {
     std::ofstream out(filename);
     size_type nrows = row_map.size() - 1;
@@ -101,11 +102,11 @@ struct TestIOUtils {
       out << row_map(row_idx) + 1 << " ";
     }
     out << "\n";
-    for (int n = 0; n < nnz; ++n) {
+    for (size_type n = 0; n < nnz; ++n) {
       out << entries[n] + 1 << " ";
     }
     out << "\n";
-    for (int n = 0; n < nnz; ++n) {
+    for (size_type n = 0; n < nnz; ++n) {
       out << values[n] << " ";
     }
     out << "\n";
@@ -113,9 +114,10 @@ struct TestIOUtils {
     out.close();
   }
 
-  static void write_as_mtx(const RowMapType& row_map,
-                           const EntriesType& entries, const ValuesType& values,
-                           const std::string& filename, const char mtx_type) {
+  template <typename RowMapView, typename EntriesView, typename ValuesView>
+  static void write_as_mtx(const RowMapView& row_map, const EntriesView& entries, const ValuesView& values,
+                           const std::string& filename,
+                           const char mtx_type) {
     std::ofstream out(filename);
     size_type nrows = row_map.size() - 1;
 
@@ -150,19 +152,22 @@ struct TestIOUtils {
     sp_matrix_type A("A", row_map.size() - 1, row_map.size() - 1,
                      values.extent(0), values, row_map, entries);
     const bool is_symmetric = mtx_type != 'U';
-    if (is_symmetric) {
-      sp_matrix_type L = KokkosSparse::Impl::kk_get_lower_triangle(
-          A, NULL, false, 4, true, true);
-      row_map = *reinterpret_cast<RowMapType*>(
-          &L.graph.row_map);  // cast away constness
-      entries = *reinterpret_cast<EntriesType*>(&L.graph.entries);
-      values  = L.values;
-    }
-
     std::string hb_file = filename_root + ".hb";
-    write_as_hb(row_map, entries, values, hb_file, mtx_type);
     std::string mtx_file = filename_root + ".mtx";
-    write_as_mtx(row_map, entries, values, mtx_file, mtx_type);
+
+    if (is_symmetric) {
+      sp_matrix_type L = KokkosSparse::Impl::kk_get_lower_triangle(A, NULL, false, 4, true, true);
+      auto lrow_map = L.graph.row_map;
+      auto lentries = L.graph.entries;
+      auto lvalues  = L.values;
+
+      write_as_hb(lrow_map, lentries, lvalues, hb_file, mtx_type);
+      write_as_mtx(lrow_map, lentries, lvalues, mtx_file, mtx_type);
+    }
+    else {
+      write_as_hb(row_map, entries, values, hb_file, mtx_type);
+      write_as_mtx(row_map, entries, values, mtx_file, mtx_type);
+    }
 
     auto Ahb = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(
         hb_file.c_str());

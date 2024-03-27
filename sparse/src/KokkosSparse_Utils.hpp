@@ -1142,9 +1142,9 @@ struct LowerTriangularMatrix {
             if (permutation != NULL) {
               colperm = permutation[colIndex];
             }
-            if ((is_lower && row_perm > colIndex) ||
-                (!is_lower && row_perm < colIndex) ||
-                (incl_diag && row_perm == colIndex)) {
+            if ((is_lower && row_perm > colperm) ||
+                (!is_lower && row_perm < colperm) ||
+                (incl_diag && row_perm == colperm)) {
               if (in_vals != NULL) {
                 t_vals[write_begin + w] = in_vals[adjind];
               }

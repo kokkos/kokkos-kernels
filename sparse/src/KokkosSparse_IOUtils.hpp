@@ -1137,6 +1137,10 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
           ", scalar_t in read_hb() incompatible with complex-typed HB file.");
     }
   }
+  if (matrix_assembly != 'A') {
+    throw std::runtime_error(
+      std::string("Problem reading HB file ") + fileName + ", only assembled matrices are supported.");
+  }
 
   // Get next line of metadata
   getline(mmf, fline);
@@ -1162,7 +1166,6 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
   std::vector<size_type> raw_rows(nrow + 1);
   std::vector<lno_t> raw_cols(nnz_raw);
   std::vector<scalar_t> raw_vals(nnz_raw);
-  size_type ndiag = 0;
 
   // Read row_idx
   size_type idx = 0;
@@ -1232,7 +1235,6 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
     // numEdges is only an upper bound (diagonal entries may be removed)
     std::vector<struct KokkosKernels::Impl::Edge<lno_t, scalar_t>> edges(
         numEdges);
-    lno_t numDiagonal = 0;
     for (size_type row_idx = 0; row_idx < nrow; ++row_idx) {
       const size_type row_nnz_begin = raw_rows[row_idx];
       const size_type row_nnz_end   = raw_rows[row_idx + 1];
@@ -1246,7 +1248,7 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
           col_idx, (lno_t)row_idx, symmetryFlip<scalar_t>(val, matrix_type)
         };  // symmetric edge
         edges[nnz++] = tmp;
-        if (row_idx != col_idx) {  // non-diagonal
+        if (row_idx != (size_type)col_idx) {  // non-diagonal
           edges[nnz++] = tmp2;
         }
       }
@@ -1260,7 +1262,7 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
     size_type curr_nnz = 0;
     for (size_type i = 0; i < nrow; ++i) {
       (*xadj)[i] = curr_nnz;
-      while (curr_nnz < nnz && edges[curr_nnz].src == i) {
+      while (curr_nnz < nnz && static_cast<size_type>(edges[curr_nnz].src) == i) {
         (*adj)[curr_nnz] = edges[curr_nnz].dst;
         (*ew)[curr_nnz]  = edges[curr_nnz].ew;
         ++curr_nnz;
