@@ -1246,24 +1246,16 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
     KokkosKernels::Impl::md_malloc<lno_t>(adj, nnz);
     KokkosKernels::Impl::md_malloc<scalar_t>(ew, nnz);
 
-    size_type eind   = 0;
-    size_type actual = 0;
+    size_type curr_nnz = 0;
     for (size_type i = 0; i < nrow; ++i) {
-      (*xadj)[i]    = actual;
-      bool is_first = true;
-      while (eind < nnz && edges[eind].src == i) {
-        if (is_first || eind == 0 ||
-            (eind > 0 && edges[eind - 1].dst != edges[eind].dst)) {
-          (*adj)[actual] = edges[eind].dst;
-          (*ew)[actual]  = edges[eind].ew;
-          ++actual;
-        }
-        is_first = false;
-        ++eind;
+      (*xadj)[i]    = curr_nnz;
+      while (curr_nnz < nnz && edges[curr_nnz].src == i) {
+        (*adj)[curr_nnz] = edges[curr_nnz].dst;
+        (*ew)[curr_nnz]  = edges[curr_nnz].ew;
+        ++curr_nnz;
       }
     }
-    (*xadj)[nrow] = actual;
-    nnz           = actual;
+    (*xadj)[nrow] = nnz;
   }
   else {
     KokkosKernels::Impl::md_malloc<size_type>(xadj, nrow + 1);
