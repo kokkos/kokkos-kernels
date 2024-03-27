@@ -340,19 +340,11 @@ struct IsRelativelyIdenticalFunctor {
     }
 
     if (val_diff > mag_type(eps)) {
-#if KOKKOS_VERSION < 40199
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-          "Values at index %d, %.6f + %.6fi and %.6f + %.6fi, differ too much "
-          "(eps = %e)\n",
-          (int)i, KAT::real(view1(i)), KAT::imag(view1(i)), KAT::real(view2(i)),
-          KAT::imag(view2(i)), eps);
-#else
       Kokkos::printf(
           "Values at index %d, %.6f + %.6fi and %.6f + %.6fi, differ too much "
           "(eps = %e)\n",
           (int)i, KAT::real(view1(i)), KAT::imag(view1(i)), KAT::real(view2(i)),
           KAT::imag(view2(i)), eps);
-#endif
       num_diffs++;
     }
   }
