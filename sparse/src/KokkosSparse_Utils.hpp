@@ -1085,9 +1085,9 @@ struct LowerTriangularMatrix {
                 if (permutation != NULL) {
                   colIndex = permutation[colIndex];
                 }
-                if ( (is_lower  && row_perm > colIndex) ||
-                     (!is_lower && row_perm < colIndex) ||
-                     (incl_diag && row_perm == colIndex) ) {
+                if ((is_lower && row_perm > colIndex) ||
+                    (!is_lower && row_perm < colIndex) ||
+                    (incl_diag && row_perm == colIndex)) {
                   rowsize_ += 1;
                 }
               },
@@ -1142,9 +1142,9 @@ struct LowerTriangularMatrix {
             if (permutation != NULL) {
               colperm = permutation[colIndex];
             }
-            if ( (is_lower  && row_perm > colIndex) ||
-                 (!is_lower && row_perm < colIndex) ||
-                 (incl_diag && row_perm == colIndex) ) {
+            if ((is_lower && row_perm > colIndex) ||
+                (!is_lower && row_perm < colIndex) ||
+                (incl_diag && row_perm == colIndex)) {
               if (in_vals != NULL) {
                 t_vals[write_begin + w] = in_vals[adjind];
               }
@@ -1381,7 +1381,8 @@ void kk_get_lower_triangle_fill(lno_t nv, size_type ne,
                                 lno_t *out_adj, scalar_t *out_vals,
                                 const lno_t *new_indices    = NULL,
                                 bool use_dynamic_scheduling = false,
-                                bool chunksize = 4, bool is_lower = true, bool incl_diag = false) {
+                                bool chunksize = 4, bool is_lower = true,
+                                bool incl_diag = false) {
   // Kokkos::Timer timer1;
 
   kk_get_lower_triangle_fill_parallel<size_type, lno_t, ExecutionSpace,
@@ -1443,7 +1444,8 @@ crstmat_t kk_get_lower_triangle(
 
   kk_get_lower_triangle_fill<size_type, lno_t, scalar_t, exec_space>(
       nr, ne, rowmap, entries, vals, new_row_map.data(), new_entries.data(),
-      new_values.data(), new_indices, use_dynamic_scheduling, chunksize, is_lower, incl_diag);
+      new_values.data(), new_indices, use_dynamic_scheduling, chunksize,
+      is_lower, incl_diag);
 
   graph_t g(new_entries, new_row_map);
   crstmat_t new_ll_mtx("lower triangle", in_crs_matrix.numCols(), new_values,
@@ -1455,15 +1457,13 @@ template <typename row_map_view_t, typename cols_view_t, typename values_view_t,
           typename out_row_map_view_t, typename out_cols_view_t,
           typename out_values_view_t, typename new_indices_t,
           typename exec_space>
-void kk_get_lower_triangle(typename cols_view_t::non_const_value_type nr,
-                           row_map_view_t in_rowmap, cols_view_t in_entries,
-                           values_view_t in_values,
-                           out_row_map_view_t &out_rowmap,
-                           out_cols_view_t &out_entries,
-                           out_values_view_t &out_values,
-                           new_indices_t &new_indices,
-                           bool use_dynamic_scheduling = false,
-                           bool chunksize = 4, bool is_lower = true, bool incl_diag = false) {
+void kk_get_lower_triangle(
+    typename cols_view_t::non_const_value_type nr, row_map_view_t in_rowmap,
+    cols_view_t in_entries, values_view_t in_values,
+    out_row_map_view_t &out_rowmap, out_cols_view_t &out_entries,
+    out_values_view_t &out_values, new_indices_t &new_indices,
+    bool use_dynamic_scheduling = false, bool chunksize = 4,
+    bool is_lower = true, bool incl_diag = false) {
   // typedef typename row_map_view_t::const_type const_row_map_view_t;
   // typedef typename cols_view_t::const_type   const_cols_view_t;
   // typedef typename values_view_t::const_type const_values_view_t;

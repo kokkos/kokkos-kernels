@@ -1070,7 +1070,7 @@ int read_mtx(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne,
  */
 template <typename lno_t, typename size_type, typename scalar_t>
 int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
-             size_type **xadj, lno_t **adj, scalar_t **ew) {
+            size_type **xadj, lno_t **adj, scalar_t **ew) {
   using namespace MM;
 
   std::ifstream mmf(fileName, std::ifstream::in);
@@ -1085,35 +1085,34 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
   // Get metadata, rhs_lines is optional
   getline(mmf, fline);
   std::istringstream ss(fline);
-  size_type total_lines = 0,
-    ptr_lines = 0,
-    col_lines = 0,
-    val_lines = 0,
-    rhs_lines = 0;
+  size_type total_lines = 0, ptr_lines = 0, col_lines = 0, val_lines = 0,
+            rhs_lines = 0;
 
   ss >> total_lines >> ptr_lines >> col_lines >> val_lines >> rhs_lines;
 
   if (total_lines == 0 || ptr_lines == 0 || col_lines == 0) {
-    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", Line 2 did not have valid values");
+    throw std::runtime_error(std::string("Problem reading HB file ") +
+                             fileName + ", Line 2 did not have valid values");
   }
 
   if (rhs_lines > 0) {
-    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", reader does not support RHS info at this time.");
+    throw std::runtime_error(
+        std::string("Problem reading HB file ") + fileName +
+        ", reader does not support RHS info at this time.");
   }
 
   // Get next line of metadata, neltvl is optional
   getline(mmf, fline);
   ss = std::istringstream(fline);
   std::string matrix_info;
-  size_type nrow = 0,
-    ncol = 0,
-    nnz_raw  = 0,
-    neltvl = 0;
+  size_type nrow = 0, ncol = 0, nnz_raw = 0, neltvl = 0;
 
   ss >> matrix_info >> nrow >> ncol >> nnz_raw >> neltvl;
 
   if (matrix_info.size() != 3 || nrow == 0 || ncol == 0 || nnz_raw == 0) {
-    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", Line 3 did not have valid values: " + fline);
+    throw std::runtime_error(std::string("Problem reading HB file ") +
+                             fileName +
+                             ", Line 3 did not have valid values: " + fline);
   }
 
   const char matrix_scalar   = matrix_info[0];
@@ -1125,15 +1124,17 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
     if (!(std::is_same<scalar_t, Kokkos::Experimental::half_t>::value ||
           std::is_same<scalar_t, Kokkos::Experimental::bhalf_t>::value ||
           std::is_floating_point<scalar_t>::value)) {
-        throw std::runtime_error(
-          std::string("Problem reading HB file ") + fileName + ", scalar_t in read_hb() incompatible with float or double typed HB file.");
+      throw std::runtime_error(std::string("Problem reading HB file ") +
+                               fileName +
+                               ", scalar_t in read_hb() incompatible with "
+                               "float or double typed HB file.");
     }
-  }
-  else if (matrix_scalar == 'C') {
+  } else if (matrix_scalar == 'C') {
     if (!(std::is_same<scalar_t, Kokkos::complex<float>>::value ||
           std::is_same<scalar_t, Kokkos::complex<double>>::value)) {
-        throw std::runtime_error(
-          std::string("Problem reading HB file ") + fileName + ", scalar_t in read_hb() incompatible with complex-typed HB file.");
+      throw std::runtime_error(
+          std::string("Problem reading HB file ") + fileName +
+          ", scalar_t in read_hb() incompatible with complex-typed HB file.");
     }
   }
 
@@ -1144,21 +1145,23 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
   ss >> ptrfmt >> indfmt >> valfmt >> rhsfmt;
 
   if (ptrfmt == "" || indfmt == "" || valfmt == "") {
-    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", Line 4 did not have valid values");
+    throw std::runtime_error(std::string("Problem reading HB file ") +
+                             fileName + ", Line 4 did not have valid values");
   }
 
   // Examine mtx properties
   const bool pattern_only = matrix_scalar == 'P';
-  MtxSym matrix_type = MtxSym::GENERAL;
+  MtxSym matrix_type      = MtxSym::GENERAL;
   if (matrix_type_raw == 'S') matrix_type = MtxSym::SYMMETRIC;
   if (matrix_type_raw == 'H') matrix_type = MtxSym::HERMITIAN;
   if (matrix_type_raw == 'Z') matrix_type = MtxSym::SKEW_SYMMETRIC;
-  const bool symmetrize   = matrix_type_raw == 'S' || matrix_type_raw == 'H' || matrix_type_raw == 'Z';
+  const bool symmetrize = matrix_type_raw == 'S' || matrix_type_raw == 'H' ||
+                          matrix_type_raw == 'Z';
 
   // Allocate temp storage
   std::vector<size_type> raw_rows(nrow + 1);
-  std::vector<lno_t>     raw_cols(nnz_raw);
-  std::vector<scalar_t>  raw_vals(nnz_raw);
+  std::vector<lno_t> raw_cols(nnz_raw);
+  std::vector<scalar_t> raw_vals(nnz_raw);
   size_type ndiag = 0;
 
   // Read row_idx
@@ -1168,11 +1171,13 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
     ss = std::istringstream(fline);
     size_type val;
     while (ss >> val) {
-      raw_rows[idx++] = (val - 1); // HB uses 1-based indexing
+      raw_rows[idx++] = (val - 1);  // HB uses 1-based indexing
     }
   }
-  if (idx != nrow+1) {
-    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", did not find expected number of col ptrs");
+  if (idx != nrow + 1) {
+    throw std::runtime_error(std::string("Problem reading HB file ") +
+                             fileName +
+                             ", did not find expected number of col ptrs");
   }
 
   // Read cols
@@ -1182,11 +1187,13 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
     ss = std::istringstream(fline);
     lno_t val;
     while (ss >> val) {
-      raw_cols[idx++] = (val - 1); // HB uses 1-based indexing
+      raw_cols[idx++] = (val - 1);  // HB uses 1-based indexing
     }
   }
   if (idx != nnz_raw) {
-    throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", did not find expected number of cols");
+    throw std::runtime_error(std::string("Problem reading HB file ") +
+                             fileName +
+                             ", did not find expected number of cols");
   }
 
   // Read vals if not pattern only
@@ -1197,7 +1204,7 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
       // The 'e' before the exponent is needed for the stringstream to read
       // the value correctly
       fline = std::regex_replace(fline, std::regex("([0-9])([+-])"), "$1e$2");
-      ss = std::istringstream(fline);
+      ss    = std::istringstream(fline);
       while (ss) {
         auto val = readScalar<scalar_t>(ss);
         // ss will be false if we read past the end
@@ -1207,10 +1214,11 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
       }
     }
     if (idx != nnz_raw) {
-      throw std::runtime_error(std::string("Problem reading HB file ") + fileName + ", did not find expected number of values");
+      throw std::runtime_error(std::string("Problem reading HB file ") +
+                               fileName +
+                               ", did not find expected number of values");
     }
-  }
-  else {
+  } else {
     // Initialize to one
     for (size_type i = 0; i < nnz_raw; ++i) {
       raw_vals[i] = Kokkos::ArithTraits<scalar_t>::one();
@@ -1218,24 +1226,27 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
   }
 
   // Process raw data
-  size_type nnz = 0; // real nnz, differs from nnz_raw if symmetrize
+  size_type nnz = 0;  // real nnz, differs from nnz_raw if symmetrize
   if (symmetrize) {
     const size_type numEdges = 2 * nnz_raw;
     // numEdges is only an upper bound (diagonal entries may be removed)
     std::vector<struct KokkosKernels::Impl::Edge<lno_t, scalar_t>> edges(
-      numEdges);
+        numEdges);
     lno_t numDiagonal = 0;
     for (size_type row_idx = 0; row_idx < nrow; ++row_idx) {
       const size_type row_nnz_begin = raw_rows[row_idx];
       const size_type row_nnz_end   = raw_rows[row_idx + 1];
-      for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-        const lno_t col_idx  = raw_cols[row_nnz];
-        const scalar_t val   = raw_vals[row_nnz];
-        struct KokkosKernels::Impl::Edge<lno_t, scalar_t>
-          tmp  = {(lno_t)row_idx, col_idx, val},
-          tmp2 = {col_idx, (lno_t)row_idx, symmetryFlip<scalar_t>(val, matrix_type)}; // symmetric edge
+      for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end;
+           ++row_nnz) {
+        const lno_t col_idx = raw_cols[row_nnz];
+        const scalar_t val  = raw_vals[row_nnz];
+        struct KokkosKernels::Impl::Edge<lno_t, scalar_t> tmp = {(lno_t)row_idx,
+                                                                 col_idx, val},
+                                                          tmp2 = {
+          col_idx, (lno_t)row_idx, symmetryFlip<scalar_t>(val, matrix_type)
+        };  // symmetric edge
         edges[nnz++] = tmp;
-        if (row_idx != col_idx) { // non-diagonal
+        if (row_idx != col_idx) {  // non-diagonal
           edges[nnz++] = tmp2;
         }
       }
@@ -1248,7 +1259,7 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
 
     size_type curr_nnz = 0;
     for (size_type i = 0; i < nrow; ++i) {
-      (*xadj)[i]    = curr_nnz;
+      (*xadj)[i] = curr_nnz;
       while (curr_nnz < nnz && edges[curr_nnz].src == i) {
         (*adj)[curr_nnz] = edges[curr_nnz].dst;
         (*ew)[curr_nnz]  = edges[curr_nnz].ew;
@@ -1256,15 +1267,14 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
       }
     }
     (*xadj)[nrow] = nnz;
-  }
-  else {
+  } else {
     KokkosKernels::Impl::md_malloc<size_type>(xadj, nrow + 1);
     KokkosKernels::Impl::md_malloc<lno_t>(adj, nnz_raw);
     KokkosKernels::Impl::md_malloc<scalar_t>(ew, nnz_raw);
 
     std::memcpy(*xadj, raw_rows.data(), raw_rows.size() * sizeof(size_type));
-    std::memcpy(*adj,  raw_cols.data(), raw_cols.size() * sizeof(lno_t));
-    std::memcpy(*ew,   raw_vals.data(), raw_vals.size() * sizeof(scalar_t));
+    std::memcpy(*adj, raw_cols.data(), raw_cols.size() * sizeof(lno_t));
+    std::memcpy(*ew, raw_vals.data(), raw_vals.size() * sizeof(scalar_t));
 
     nnz = nnz_raw;
   }
@@ -1342,8 +1352,8 @@ crsMat_t read_kokkos_crst_matrix(const char *filename_) {
     read_mtx<lno_t, size_type, scalar_t>(filename_, &nr, &nc, &nnzA, &xadj,
                                          &adj, &values, false, false, false);
   } else if (isHB) {
-    read_hb<lno_t, size_type, scalar_t>(filename_, nr, nc, nnzA, &xadj,
-                                        &adj, &values);
+    read_hb<lno_t, size_type, scalar_t>(filename_, nr, nc, nnzA, &xadj, &adj,
+                                        &values);
   } else {
     //.crs and .bin files don't contain #cols, so will compute it later based on
     // the entries
