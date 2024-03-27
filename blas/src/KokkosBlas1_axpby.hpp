@@ -17,9 +17,9 @@
 #ifndef KOKKOSBLAS1_AXPBY_HPP_
 #define KOKKOSBLAS1_AXPBY_HPP_
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
 #include <iostream>
-#endif
+#endif  // KOKKOSKERNELS_DEBUG_LEVEL
 
 #include <KokkosBlas1_axpby_spec.hpp>
 #include <KokkosBlas_serial_axpy.hpp>
@@ -73,9 +73,9 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X,
   // Perform compile time checks and run time checks.
   // **********************************************************************
   AxpbyTraits::performChecks(a, X, b, Y);
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   AxpbyTraits::printInformation(std::cout, "axpby(), unif information");
-#endif
+#endif  // KOKKOSKERNELS_DEBUG_LEVEL
 
   // **********************************************************************
   // Call Impl::Axpby<...>::axpby(...)
