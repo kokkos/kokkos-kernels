@@ -1138,8 +1138,9 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
     }
   }
   if (matrix_assembly != 'A') {
-    throw std::runtime_error(
-      std::string("Problem reading HB file ") + fileName + ", only assembled matrices are supported.");
+    throw std::runtime_error(std::string("Problem reading HB file ") +
+                             fileName +
+                             ", only assembled matrices are supported.");
   }
 
   // Get next line of metadata
@@ -1262,7 +1263,8 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
     size_type curr_nnz = 0;
     for (size_type i = 0; i < nrow; ++i) {
       (*xadj)[i] = curr_nnz;
-      while (curr_nnz < nnz && static_cast<size_type>(edges[curr_nnz].src) == i) {
+      while (curr_nnz < nnz &&
+             static_cast<size_type>(edges[curr_nnz].src) == i) {
         (*adj)[curr_nnz] = edges[curr_nnz].dst;
         (*ew)[curr_nnz]  = edges[curr_nnz].ew;
         ++curr_nnz;
