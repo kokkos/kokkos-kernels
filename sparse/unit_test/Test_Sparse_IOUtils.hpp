@@ -84,15 +84,15 @@ struct TestIOUtils {
 
   static void write_as_hb(const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
                           const std::string& filename,
-                          const bool is_symmetric)
+                          const char mtx_type)
   {
     std::ofstream out(filename);
     size_type nrows = row_map.size() - 1;
     size_type nnz   = entries.size();
 
-    out << "1SYMMETRIC MATRIX, FE APPROXIMATION TO BIHARMONIC OPERATOR ON BEAM.     NOS1    \n";
+    out << "1SYMMETRIC MATRIX, FE APPROXIMATION TO BIHARMONIC OPERATOR ON BEAM.     NOS1    \n"; // Title is inaccurate, but doesn't matter
     out << "             3             1             1             1             0          \n";
-    out << "R" << (is_symmetric ? 'S' : 'U') << "A                        " << nrows << "             " << nrows << "            " << nnz << "             0          \n";
+    out << "R" << mtx_type << "A                        " << nrows << "             " << nrows << "             " << nnz << "             0          \n";
     out << "(16I5)          (16I5)          (5E16.8)                                        \n";
     for (size_type row_idx = 0; row_idx < nrows+1; ++row_idx) {
       out << row_map(row_idx) + 1 << " ";
@@ -112,13 +112,20 @@ struct TestIOUtils {
 
   static void write_as_mtx(const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
                            const std::string& filename,
-                           const bool is_symmetric)
+                           const char mtx_type)
   {
     std::ofstream out(filename);
     size_type nrows = row_map.size() - 1;
 
-    out << "%%MatrixMarket matrix coordinate real "
-        << (is_symmetric ? "symmetric" : "general") << "\n";
+    std::map<char, std::string> type_name_map = {
+      {'U', "general"},
+      {'S', "symmetric"},
+      {'H', "hermitian"},
+      {'Z', "skew-symmetric"}
+    };
+    std::string type_name = type_name_map[mtx_type];
+
+    out << "%%MatrixMarket matrix coordinate real " << type_name << "\n";
     out << nrows << " " << nrows << " " << entries.size() << "\n";
     for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
       const size_type row_nnz_begin = row_map(row_idx);
@@ -133,10 +140,9 @@ struct TestIOUtils {
     out.close();
   }
 
-
   static void full_test(const std::vector<std::vector<scalar_t>>& fixture,
                         const std::string& filename_root,
-                        const bool is_symmetric)
+                        const char mtx_type)
   {
     RowMapType row_map;
     EntriesType entries;
@@ -144,6 +150,7 @@ struct TestIOUtils {
     compress_matrix(row_map, entries, values, fixture);
     sp_matrix_type A("A", row_map.size() - 1, row_map.size() - 1, values.extent(0), values,
                      row_map, entries);
+    const bool is_symmetric = mtx_type != 'U';
     if (is_symmetric) {
       sp_matrix_type L = KokkosSparse::Impl::kk_get_lower_triangle(A, NULL, false, 4, true, true);
       row_map = *reinterpret_cast<RowMapType*>(&L.graph.row_map); // cast away constness
@@ -152,14 +159,19 @@ struct TestIOUtils {
     }
 
     std::string hb_file = filename_root + ".hb";
-    write_as_hb(row_map, entries, values, hb_file, is_symmetric);
+    write_as_hb(row_map, entries, values, hb_file, mtx_type);
     std::string mtx_file = filename_root + ".mtx";
-    write_as_mtx(row_map, entries, values, mtx_file, is_symmetric);
+    write_as_mtx(row_map, entries, values, mtx_file, mtx_type);
 
     auto Ahb  = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(hb_file.c_str());
     auto Amtx = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(mtx_file.c_str());
-    compare_matrices(Ahb,  A);
-    compare_matrices(Amtx, A);
+    if (mtx_type == 'Z') {
+      compare_matrices(Ahb,  Amtx);
+    }
+    else {
+      compare_matrices(Ahb,  A);
+      compare_matrices(Amtx, A);
+    }
   }
 
   static void test()
@@ -167,8 +179,10 @@ struct TestIOUtils {
     const std::string filename_root = "test_sparse_ioutils";
     auto sym_fix = get_sym_fixture();
     auto asym_fix = get_asym_fixture();
-    full_test(asym_fix, filename_root + "_asym", false);
-    full_test(sym_fix,  filename_root + "_sym",  true);
+    full_test(asym_fix, filename_root + "_asym",  'U');
+    full_test(sym_fix,  filename_root + "_sym",   'S');
+    full_test(sym_fix,  filename_root + "_herm",  'H');
+    full_test(sym_fix,  filename_root + "_skew",  'Z');
   }
 
 };
