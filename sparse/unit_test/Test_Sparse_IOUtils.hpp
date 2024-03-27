@@ -13,7 +13,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-
 #include "KokkosSparse_IOUtils.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "Test_vector_fixtures.hpp"
@@ -70,10 +69,10 @@ struct TestIOUtils {
     auto row_map2 = A2.graph.row_map;
     auto entries2 = A2.graph.entries;
     auto values2  = A2.values;
-    EXPECT_EQ(row_map1.size(), row_map2.size());
-    EXPECT_EQ(entries1.size(), entries2.size());
-    EXPECT_EQ(values1.size(),  values2.size());
-    EXPECT_EQ(values1.size(),  entries1.size());
+    ASSERT_EQ(row_map1.size(), row_map2.size());
+    ASSERT_EQ(entries1.size(), entries2.size());
+    ASSERT_EQ(values1.size(),  values2.size());
+    ASSERT_EQ(values1.size(),  entries1.size());
     for (size_type i = 0; i < row_map1.size(); ++i) {
       EXPECT_EQ(row_map1(i), row_map2(i));
     }
@@ -93,7 +92,7 @@ struct TestIOUtils {
 
     out << "1SYMMETRIC MATRIX, FE APPROXIMATION TO BIHARMONIC OPERATOR ON BEAM.     NOS1    \n";
     out << "             3             1             1             1             0          \n";
-    out << "R" << (is_symmetric ? 'S' : 'U') << "A                        " << nrows << "            " << nrows << "          " << nnz << "             0          \n";
+    out << "R" << (is_symmetric ? 'S' : 'U') << "A                        " << nrows << "             " << nrows << "            " << nnz << "             0          \n";
     out << "(16I5)          (16I5)          (5E16.8)                                        \n";
     for (size_type row_idx = 0; row_idx < nrows+1; ++row_idx) {
       out << row_map(row_idx) + 1 << " ";
@@ -120,6 +119,7 @@ struct TestIOUtils {
 
     out << "%%MatrixMarket matrix coordinate real "
         << (is_symmetric ? "symmetric" : "general") << "\n";
+    out << nrows << " " << nrows << " " << entries.size() << "\n";
     for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
       const size_type row_nnz_begin = row_map(row_idx);
       const size_type row_nnz_end   = row_map(row_idx + 1);
@@ -146,21 +146,20 @@ struct TestIOUtils {
                      row_map, entries);
     if (is_symmetric) {
       sp_matrix_type L = KokkosSparse::Impl::kk_get_lower_triangle(A, NULL, false, 4, true, true);
-      row_map = (RowMapType)  L.graph.row_map;
-      entries = (EntriesType) L.graph.entries;
-      values  = (ValuesType)  L.graph.values;
+      row_map = *reinterpret_cast<RowMapType*>(&L.graph.row_map); // cast away constness
+      entries = *reinterpret_cast<EntriesType*>(&L.graph.entries);
+      values  = L.values;
     }
 
-    hb_file = filename_root + ".hb";
+    std::string hb_file = filename_root + ".hb";
     write_as_hb(row_map, entries, values, hb_file, is_symmetric);
-    mtx_file = filename_root + ".mtx";
-    write_as_mtx(row_map, entries, values, mm_file, is_symmetric);
+    std::string mtx_file = filename_root + ".mtx";
+    write_as_mtx(row_map, entries, values, mtx_file, is_symmetric);
 
     auto Ahb  = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(hb_file.c_str());
     auto Amtx = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(mtx_file.c_str());
-    EXPECT_EQ(Ahb.numRows(), fixture.size());
-    compare_matrices(Ahb, Amtx);
-    compare_matrices(Ahb, A);
+    compare_matrices(Ahb,  A);
+    compare_matrices(Amtx, A);
   }
 
   static void test()
