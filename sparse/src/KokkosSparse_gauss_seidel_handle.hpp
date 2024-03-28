@@ -767,9 +767,18 @@ class TwoStageGaussSeidelHandle
 
   void initVectors(int nrows_, int nrhs_) {
     if (this->nrows != nrows_ || this->nrhs != nrhs_) {
-      this->localR = vector_view_t("temp", nrows_, nrhs_);
-      this->localT = vector_view_t("temp", nrows_, nrhs_);
-      this->localZ = vector_view_t("temp", nrows_, nrhs_);
+      vector_view_t r(
+          Kokkos::view_alloc(this->execution_space, std::string("temp")),
+          nrows_, nrhs_);
+      this->localR = r;
+      vector_view_t t(
+          Kokkos::view_alloc(this->execution_space, std::string("temp")),
+          nrows_, nrhs_);
+      this->localT = t;
+      vector_view_t z(
+          Kokkos::view_alloc(this->execution_space, std::string("temp")),
+          nrows_, nrhs_);
+      this->localZ = z;
       this->nrows  = nrows_;
       this->nrhs   = nrhs_;
     }
