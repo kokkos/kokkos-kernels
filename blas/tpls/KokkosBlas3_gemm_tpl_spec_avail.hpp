@@ -182,6 +182,46 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
                                         Kokkos::LayoutRight, Kokkos::HIPSpace)
 
 #endif
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+
+#define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(SCALAR, LAYOUT, MEMSPACE)    \
+  template <>                                                            \
+  struct gemm_tpl_spec_avail<                                            \
+      Kokkos::Experimental::SYCL,                                        \
+      Kokkos::View<const SCALAR**, LAYOUT,                               \
+                   Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,            \
+      Kokkos::View<const SCALAR**, LAYOUT,                               \
+                   Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,            \
+      Kokkos::View<SCALAR**, LAYOUT,                                     \
+                   Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {         \
+    enum : bool { value = true };                                        \
+  };
+
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(double, Kokkos::LayoutLeft,
+                                    Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(float, Kokkos::LayoutLeft,
+                                    Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                                    Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(Kokkos::complex<float>, Kokkos::LayoutLeft,
+                                    Kokkos::Experimental::SYCLDeviceUSMSpace)
+
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(double, Kokkos::LayoutRight,
+                                    Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(float, Kokkos::LayoutRight,
+                                    Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
+                                    Kokkos::LayoutRight,
+                                    Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(Kokkos::complex<float>, Kokkos::LayoutRight,
+                                    Kokkos::Experimental::SYCLDeviceUSMSpace)
+
+#endif
+
 }  // namespace Impl
 }  // namespace KokkosBlas
 
