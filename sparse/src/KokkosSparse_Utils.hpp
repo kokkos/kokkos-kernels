@@ -1001,33 +1001,6 @@ void graph_min_max_degree(const rowmap_t &rowmap, ordinal_t &min_degree,
   max_degree = result.max_val;
 }
 
-template <typename size_type, typename lno_t>
-void kk_get_lower_triangle_count_sequential(const lno_t nv,
-                                            const size_type *in_xadj,
-                                            const lno_t *in_adj,
-                                            size_type *out_xadj,
-                                            const lno_t *new_indices = NULL) {
-  for (lno_t i = 0; i < nv; ++i) {
-    lno_t row_index = i;
-
-    if (new_indices) row_index = new_indices[i];
-
-    out_xadj[i]     = 0;
-    size_type begin = in_xadj[i];
-    lno_t rowsize   = in_xadj[i + 1] - begin;
-
-    for (lno_t j = 0; j < rowsize; ++j) {
-      lno_t col       = in_adj[j + begin];
-      lno_t col_index = col;
-      if (new_indices) col_index = new_indices[col];
-
-      if (row_index > col_index) {
-        ++out_xadj[i];
-      }
-    }
-  }
-}
-
 template <typename size_type, typename lno_t, typename ExecutionSpace,
           typename scalar_t = double>
 struct LowerTriangularMatrix {
@@ -1063,12 +1036,14 @@ struct LowerTriangularMatrix {
   const lno_t team_work_size;
   const KokkosKernels::Impl::ExecSpaceType exec_space;
   const bool is_lower;
+  const bool incl_diag;
 
   LowerTriangularMatrix(const lno_t num_rows_, const size_type *xadj_,
                         const lno_t *adj_, const scalar_t *in_vals_,
                         const lno_t *permutation_, size_type *t_xadj_,
                         lno_t *t_adj_, scalar_t *out_vals_,
-                        const lno_t team_row_work_size_, bool is_lower_ = true)
+                        const lno_t team_row_work_size_, bool is_lower_ = true,
+                        bool incl_diag_ = false)
       : num_rows(num_rows_),
         xadj(xadj_),
         adj(adj_),
@@ -1080,7 +1055,8 @@ struct LowerTriangularMatrix {
         team_work_size(team_row_work_size_),
         exec_space(
             KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>()),
-        is_lower(is_lower_) {}
+        is_lower(is_lower_),
+        incl_diag(incl_diag_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const CountTag &,
@@ -1109,14 +1085,10 @@ struct LowerTriangularMatrix {
                 if (permutation != NULL) {
                   colIndex = permutation[colIndex];
                 }
-                if (is_lower) {
-                  if (row_perm > colIndex) {
-                    rowsize_ += 1;
-                  }
-                } else {
-                  if (row_perm < colIndex) {
-                    rowsize_ += 1;
-                  }
+                if ((is_lower && row_perm > colIndex) ||
+                    (!is_lower && row_perm < colIndex) ||
+                    (incl_diag && row_perm == colIndex)) {
+                  rowsize_ += 1;
                 }
               },
               lower_row_size);
@@ -1170,20 +1142,13 @@ struct LowerTriangularMatrix {
             if (permutation != NULL) {
               colperm = permutation[colIndex];
             }
-            if (is_lower) {
-              if (row_perm > colperm) {
-                if (in_vals != NULL) {
-                  t_vals[write_begin + w] = in_vals[adjind];
-                }
-                t_adj[write_begin + w++] = colIndex;
+            if ((is_lower && row_perm > colperm) ||
+                (!is_lower && row_perm < colperm) ||
+                (incl_diag && row_perm == colperm)) {
+              if (in_vals != NULL) {
+                t_vals[write_begin + w] = in_vals[adjind];
               }
-            } else {
-              if (row_perm < colperm) {
-                if (in_vals != NULL) {
-                  t_vals[write_begin + w] = in_vals[adjind];
-                }
-                t_adj[write_begin + w++] = colIndex;
-              }
+              t_adj[write_begin + w++] = colIndex;
             }
           }
         });
@@ -1194,7 +1159,7 @@ void kk_get_lower_triangle_count_parallel(
     const lno_t nv, const size_type ne, const size_type *in_xadj,
     const lno_t *in_adj, size_type *out_xadj, const lno_t *new_indices = NULL,
     bool use_dynamic_scheduling = false, int chunksize = 4,
-    bool is_lower = true) {
+    bool is_lower = true, bool incl_diag = false) {
   const int vector_size = kk_get_suggested_vector_size(
       nv, ne, KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>());
   const int suggested_team_size = kk_get_suggested_team_size(
@@ -1204,7 +1169,7 @@ void kk_get_lower_triangle_count_parallel(
   typedef LowerTriangularMatrix<size_type, lno_t, ExecutionSpace> ltm_t;
 
   ltm_t ltm(nv, in_xadj, in_adj, NULL, new_indices, out_xadj, NULL, NULL,
-            team_work_chunk_size, is_lower);
+            team_work_chunk_size, is_lower, incl_diag);
 
   typedef typename ltm_t::team_count_policy_t count_tp_t;
   typedef typename ltm_t::dynamic_team_count_policy_t d_count_tp_t;
@@ -1360,7 +1325,7 @@ void kk_get_lower_triangle_fill_parallel(
     const lno_t *in_adj, const scalar_t *in_vals, size_type *out_xadj,
     lno_t *out_adj, scalar_t *out_vals, const lno_t *new_indices = NULL,
     bool use_dynamic_scheduling = false, bool chunksize = 4,
-    bool is_lower = true) {
+    bool is_lower = true, bool incl_diag = false) {
   const int vector_size = kk_get_suggested_vector_size(
       nv, ne, KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>());
   const int suggested_team_size = kk_get_suggested_team_size(
@@ -1371,7 +1336,7 @@ void kk_get_lower_triangle_fill_parallel(
   typedef LowerTriangularMatrix<size_type, lno_t, ExecutionSpace, scalar_t>
       ltm_t;
   ltm_t ltm(nv, in_xadj, in_adj, in_vals, new_indices, out_xadj, out_adj,
-            out_vals, team_work_chunk_size, is_lower);
+            out_vals, team_work_chunk_size, is_lower, incl_diag);
 
   typedef typename ltm_t::team_fill_policy_t fill_p_t;
   typedef typename ltm_t::dynamic_team_fill_policy_t d_fill_p_t;
@@ -1391,48 +1356,20 @@ void kk_get_lower_triangle_fill_parallel(
   }
   ExecutionSpace().fence();
 }
-template <typename size_type, typename lno_t, typename scalar_t>
-void kk_get_lower_triangle_fill_sequential(lno_t nv, const size_type *in_xadj,
-                                           const lno_t *in_adj,
-                                           const scalar_t *in_vals,
-                                           const size_type *out_xadj,
-                                           lno_t *out_adj, scalar_t *out_vals,
-                                           const lno_t *new_indices = NULL) {
-  for (lno_t i = 0; i < nv; ++i) {
-    lno_t row_index = i;
 
-    if (new_indices) row_index = new_indices[i];
-    size_type write_index = out_xadj[i];
-    size_type begin       = in_xadj[i];
-    lno_t rowsize         = in_xadj[i + 1] - begin;
-    for (lno_t j = 0; j < rowsize; ++j) {
-      lno_t col       = in_adj[j + begin];
-      lno_t col_index = col;
-      if (new_indices) col_index = new_indices[col];
-
-      if (row_index > col_index) {
-        if (in_vals != NULL && out_vals != NULL) {
-          out_vals[write_index] = in_vals[j + begin];
-        }
-        out_adj[write_index++] = col;
-      }
-    }
-  }
-}
 template <typename size_type, typename lno_t, typename ExecutionSpace>
 void kk_get_lower_triangle_count(const lno_t nv, const size_type ne,
                                  const size_type *in_xadj, const lno_t *in_adj,
                                  size_type *out_xadj,
                                  const lno_t *new_indices    = NULL,
                                  bool use_dynamic_scheduling = false,
-                                 bool chunksize = 4, bool is_lower = true) {
+                                 bool chunksize = 4, bool is_lower = true,
+                                 bool incl_diag = false) {
   // Kokkos::Timer timer1;
 
-  // kk_get_lower_triangle_count_sequential(nv, in_xadj, in_adj, out_xadj,
-  // new_indices);
   kk_get_lower_triangle_count_parallel<size_type, lno_t, ExecutionSpace>(
       nv, ne, in_xadj, in_adj, out_xadj, new_indices, use_dynamic_scheduling,
-      chunksize, is_lower);
+      chunksize, is_lower, incl_diag);
   // double count = timer1.seconds();
   // std::cout << "lower count time:" << count<< std::endl;
 }
@@ -1444,23 +1381,14 @@ void kk_get_lower_triangle_fill(lno_t nv, size_type ne,
                                 lno_t *out_adj, scalar_t *out_vals,
                                 const lno_t *new_indices    = NULL,
                                 bool use_dynamic_scheduling = false,
-                                bool chunksize = 4, bool is_lower = true) {
+                                bool chunksize = 4, bool is_lower = true,
+                                bool incl_diag = false) {
   // Kokkos::Timer timer1;
-  /*
-    kk_get_lower_triangle_fill_sequential(
-      nv, in_xadj, in_adj,
-      in_vals,
-      out_xadj,
-      out_adj,
-      out_vals,
-      new_indices
-      );
-  */
 
   kk_get_lower_triangle_fill_parallel<size_type, lno_t, ExecutionSpace,
                                       scalar_t>(
       nv, ne, in_xadj, in_adj, in_vals, out_xadj, out_adj, out_vals,
-      new_indices, use_dynamic_scheduling, chunksize, is_lower);
+      new_indices, use_dynamic_scheduling, chunksize, is_lower, incl_diag);
 
   // double fill = timer1.seconds();
   // std::cout << "lower fill time:" << fill<< std::endl;
@@ -1470,7 +1398,8 @@ template <typename crstmat_t>
 crstmat_t kk_get_lower_triangle(
     crstmat_t in_crs_matrix,
     typename crstmat_t::index_type::value_type *new_indices = NULL,
-    bool use_dynamic_scheduling = false, bool chunksize = 4) {
+    bool use_dynamic_scheduling = false, bool chunksize = 4,
+    bool is_lower = true, bool incl_diag = false) {
   typedef typename crstmat_t::execution_space exec_space;
   typedef typename crstmat_t::StaticCrsGraphType graph_t;
   typedef typename crstmat_t::row_map_type::non_const_type row_map_view_t;
@@ -1495,7 +1424,7 @@ crstmat_t kk_get_lower_triangle(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), nr + 1);
   kk_get_lower_triangle_count<size_type, lno_t, exec_space>(
       nr, ne, rowmap, entries, new_row_map.data(), new_indices,
-      use_dynamic_scheduling, chunksize);
+      use_dynamic_scheduling, chunksize, is_lower, incl_diag);
 
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<exec_space>(
       nr + 1, new_row_map);
@@ -1515,132 +1444,26 @@ crstmat_t kk_get_lower_triangle(
 
   kk_get_lower_triangle_fill<size_type, lno_t, scalar_t, exec_space>(
       nr, ne, rowmap, entries, vals, new_row_map.data(), new_entries.data(),
-      new_values.data(), new_indices, use_dynamic_scheduling, chunksize);
+      new_values.data(), new_indices, use_dynamic_scheduling, chunksize,
+      is_lower, incl_diag);
 
   graph_t g(new_entries, new_row_map);
   crstmat_t new_ll_mtx("lower triangle", in_crs_matrix.numCols(), new_values,
                        g);
   return new_ll_mtx;
-}
-
-template <typename crstmat_t>
-crstmat_t kk_get_lower_crs_matrix(
-    crstmat_t in_crs_matrix,
-    typename crstmat_t::index_type::value_type *new_indices = NULL,
-    bool use_dynamic_scheduling = false, bool chunksize = 4) {
-  typedef typename crstmat_t::execution_space exec_space;
-  typedef typename crstmat_t::StaticCrsGraphType graph_t;
-  typedef typename crstmat_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename crstmat_t::index_type::non_const_type cols_view_t;
-  typedef typename crstmat_t::values_type::non_const_type values_view_t;
-  // typedef typename crstmat_t::row_map_type::const_type const_row_map_view_t;
-  // typedef typename crstmat_t::index_type::const_type   const_cols_view_t;
-  // typedef typename crstmat_t::values_type::const_type const_values_view_t;
-
-  typedef typename row_map_view_t::non_const_value_type size_type;
-  typedef typename cols_view_t::non_const_value_type lno_t;
-  typedef typename values_view_t::non_const_value_type scalar_t;
-
-  lno_t nr = in_crs_matrix.numRows();
-
-  const scalar_t *vals    = in_crs_matrix.values.data();
-  const size_type *rowmap = in_crs_matrix.graph.row_map.data();
-  const lno_t *entries    = in_crs_matrix.graph.entries.data();
-  const size_type ne      = in_crs_matrix.graph.entries.extent(0);
-
-  row_map_view_t new_row_map(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), nr + 1);
-  kk_get_lower_triangle_count<size_type, lno_t, exec_space>(
-      nr, ne, rowmap, entries, new_row_map.data(), new_indices,
-      use_dynamic_scheduling, chunksize);
-
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<exec_space>(
-      nr + 1, new_row_map);
-  exec_space().fence();
-
-  auto ll_size   = Kokkos::subview(new_row_map, nr);
-  auto h_ll_size = Kokkos::create_mirror_view(ll_size);
-  Kokkos::deep_copy(h_ll_size, ll_size);
-  size_type ll_nnz_size = h_ll_size();
-
-  // cols_view_t new_entries ("LL", ll_nnz_size);
-  // values_view_t new_values ("LL", ll_nnz_size);
-  cols_view_t new_entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"),
-                          ll_nnz_size);
-  values_view_t new_values(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), ll_nnz_size);
-
-  kk_get_lower_triangle_fill<size_type, lno_t, scalar_t, exec_space>(
-      nr, ne, rowmap, entries, vals, new_row_map.data(), new_entries.data(),
-      new_values.data(), new_indices, use_dynamic_scheduling, chunksize);
-
-  graph_t g(new_entries, new_row_map);
-  crstmat_t new_ll_mtx("lower triangle", in_crs_matrix.numCols(), new_values,
-                       g);
-  return new_ll_mtx;
-}
-
-template <typename graph_t>
-graph_t kk_get_lower_crs_graph(graph_t in_crs_matrix,
-                               typename graph_t::data_type *new_indices = NULL,
-                               bool /*use_dynamic_scheduling*/          = false,
-                               bool /*chunksize*/                       = 4) {
-  typedef typename graph_t::execution_space exec_space;
-
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type cols_view_t;
-
-  // typedef typename graph_t::row_map_type::const_type const_row_map_view_t;
-  // typedef typename graph_t::entries_type::const_type   const_cols_view_t;
-
-  typedef typename row_map_view_t::non_const_value_type size_type;
-  typedef typename cols_view_t::non_const_value_type lno_t;
-
-  lno_t nr                = in_crs_matrix.numRows();
-  const size_type *rowmap = in_crs_matrix.row_map.data();
-  const lno_t *entries    = in_crs_matrix.entries.data();
-
-  const size_type ne = in_crs_matrix.graph.entries.extent(0);
-
-  row_map_view_t new_row_map(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), nr + 1);
-  kk_get_lower_triangle_count<size_type, lno_t, exec_space>(
-      nr, ne, rowmap, entries, new_row_map.data(), new_indices);
-
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<exec_space>(
-      nr + 1, new_row_map);
-  exec_space().fence();
-
-  auto ll_size   = Kokkos::subview(new_row_map, nr);
-  auto h_ll_size = Kokkos::create_mirror_view(ll_size);
-  Kokkos::deep_copy(h_ll_size, ll_size);
-  size_type ll_nnz_size = h_ll_size();
-
-  cols_view_t new_entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"),
-                          ll_nnz_size);
-
-  kk_get_lower_triangle_fill<size_type, lno_t, lno_t, exec_space>(
-      nr, ne, rowmap, entries, NULL, new_row_map.data(), new_entries.data(),
-      NULL, new_indices);
-
-  graph_t g(new_entries, new_row_map);
-
-  return g;
 }
 
 template <typename row_map_view_t, typename cols_view_t, typename values_view_t,
           typename out_row_map_view_t, typename out_cols_view_t,
           typename out_values_view_t, typename new_indices_t,
           typename exec_space>
-void kk_get_lower_triangle(typename cols_view_t::non_const_value_type nr,
-                           row_map_view_t in_rowmap, cols_view_t in_entries,
-                           values_view_t in_values,
-                           out_row_map_view_t &out_rowmap,
-                           out_cols_view_t &out_entries,
-                           out_values_view_t &out_values,
-                           new_indices_t &new_indices,
-                           bool use_dynamic_scheduling = false,
-                           bool chunksize = 4, bool is_lower = true) {
+void kk_get_lower_triangle(
+    typename cols_view_t::non_const_value_type nr, row_map_view_t in_rowmap,
+    cols_view_t in_entries, values_view_t in_values,
+    out_row_map_view_t &out_rowmap, out_cols_view_t &out_entries,
+    out_values_view_t &out_values, new_indices_t &new_indices,
+    bool use_dynamic_scheduling = false, bool chunksize = 4,
+    bool is_lower = true, bool incl_diag = false) {
   // typedef typename row_map_view_t::const_type const_row_map_view_t;
   // typedef typename cols_view_t::const_type   const_cols_view_t;
   // typedef typename values_view_t::const_type const_values_view_t;
@@ -1658,7 +1481,7 @@ void kk_get_lower_triangle(typename cols_view_t::non_const_value_type nr,
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), nr + 1);
   kk_get_lower_triangle_count<size_type, lno_t, exec_space>(
       nr, ne, rowmap, entries, out_rowmap.data(), new_indices.data(),
-      use_dynamic_scheduling, chunksize, is_lower);
+      use_dynamic_scheduling, chunksize, is_lower, incl_diag);
 
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<exec_space>(nr + 1,
                                                                     out_rowmap);
@@ -1681,7 +1504,7 @@ void kk_get_lower_triangle(typename cols_view_t::non_const_value_type nr,
   kk_get_lower_triangle_fill<size_type, lno_t, scalar_t, exec_space>(
       nr, ne, rowmap, entries, vals, out_rowmap.data(), out_entries.data(),
       out_values.data(), new_indices.data(), use_dynamic_scheduling, chunksize,
-      is_lower);
+      is_lower, incl_diag);
 }
 
 template <typename row_map_view_t, typename cols_view_t,
