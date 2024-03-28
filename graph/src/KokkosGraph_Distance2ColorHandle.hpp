@@ -209,10 +209,10 @@ class GraphColorDistance2Handle {
    */
   void set_defaults(const GraphColoringAlgorithmDistance2& col_algo) {
     switch (col_algo) {
-      case COLORING_D2_SERIAL:
-      case COLORING_D2_VB:
-      case COLORING_D2_VB_BIT:
-      case COLORING_D2_VB_BIT_EF:
+      case COLORING_D2_SERIAL: [[fallthrough]];
+      case COLORING_D2_VB: [[fallthrough]];
+      case COLORING_D2_VB_BIT: [[fallthrough]];
+      case COLORING_D2_VB_BIT_EF: [[fallthrough]];
       case COLORING_D2_NB_BIT:
         this->tictoc                   = false;
         this->vb_edge_filtering        = false;

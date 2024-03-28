@@ -558,11 +558,11 @@ class GraphColoringHandle {
    */
   void set_defaults(const ColoringAlgorithm &col_algo) {
     switch (col_algo) {
-      case COLORING_VB:
-      case COLORING_VBBIT:
-      case COLORING_VBCS:
-      case COLORING_VBD:
-      case COLORING_VBDBIT:
+      case COLORING_VB: [[fallthrough]];
+      case COLORING_VBBIT: [[fallthrough]];
+      case COLORING_VBCS: [[fallthrough]];
+      case COLORING_VBD: [[fallthrough]];
+      case COLORING_VBDBIT: [[fallthrough]];
       case COLORING_SERIAL:
         this->conflict_list_type             = COLORING_ATOMIC;
         this->min_reduction_for_conflictlist = 0.35;

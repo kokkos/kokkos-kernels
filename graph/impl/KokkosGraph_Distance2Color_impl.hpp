@@ -157,8 +157,8 @@ class GraphColorDistance2 {
       colors_out = color_view_type("Graph Colors", this->nr);
     }
     switch (this->gc_handle->get_coloring_algo_type()) {
-      case COLORING_D2_VB_BIT_EF: using_edge_filtering = true;
-      case COLORING_D2_VB_BIT:
+      case COLORING_D2_VB_BIT_EF: using_edge_filtering = true; [[fallthrough]];
+      case COLORING_D2_VB_BIT: [[fallthrough]];
       case COLORING_D2_VB: compute_d2_coloring_vb(colors_out); break;
       case COLORING_D2_NB_BIT: compute_d2_coloring_nb(colors_out); break;
       case COLORING_D2_SERIAL: compute_d2_coloring_serial(colors_out); break;

@@ -164,9 +164,9 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
   spgemmHandleType *sh = handle->get_spgemm_handle();
   switch (sh->get_algorithm_type()) {
     // case SPGEMM_KK_TRIANGLE_LL:
-    case SPGEMM_KK_TRIANGLE_AI:
-    case SPGEMM_KK_TRIANGLE_IA:
-    case SPGEMM_KK_TRIANGLE_IA_UNION:
+    case SPGEMM_KK_TRIANGLE_AI: [[fallthrough]];
+    case SPGEMM_KK_TRIANGLE_IA: [[fallthrough]];
+    case SPGEMM_KK_TRIANGLE_IA_UNION: [[fallthrough]];
     default: {
       KokkosSparse::Impl::KokkosSPGEMM<
           KernelHandle, alno_row_view_t_, alno_nnz_view_t_,
@@ -316,7 +316,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
   switch (sh->get_algorithm_type()) {
     // IF it is one of below, we perform I^T x (A) or (L).
     // so create the transpose of I.
-    case SPGEMM_KK_TRIANGLE_IA_UNION:
+    case SPGEMM_KK_TRIANGLE_IA_UNION: [[fallthrough]];
     case SPGEMM_KK_TRIANGLE_IA: {
       // these are the algorithms that requires transpose of the incidence
       // matrix.
@@ -362,8 +362,8 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
                           sh->get_lower_triangular_permutation(),
                           handle->is_dynamic_scheduling());
     } break;
-    case SPGEMM_KK_TRIANGLE_LU:
-    case SPGEMM_KK_TRIANGLE_LL:
+    case SPGEMM_KK_TRIANGLE_LU: [[fallthrough]];
+    case SPGEMM_KK_TRIANGLE_LL: [[fallthrough]];
     default: {
       break;
     }
@@ -430,7 +430,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
     }
 
     break;
-    case SPGEMM_KK_TRIANGLE_IA_UNION:
+    case SPGEMM_KK_TRIANGLE_IA_UNION: [[fallthrough]];
     case SPGEMM_KK_TRIANGLE_IA: {
       if (create_lower_triangular) {
         KokkosSparse::Impl::KokkosSPGEMM<

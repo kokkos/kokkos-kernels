@@ -103,10 +103,10 @@ void Trsm(const int NN) {
   // when m == n, lower upper does not matter (unit and nonunit)
   double flop = 0;
   switch (test) {
-    case 0:
+    case 0: [[fallthrough]];
     case 1: flop = FlopCountLower(BlkSize, NumCols); break;
-    case 2:
-    case 3:
+    case 2: [[fallthrough]];
+    case 3: [[fallthrough]];
     case 4: flop = FlopCountUpper(BlkSize, NumCols); break;
   }
   flop *= (N * VectorLength);
