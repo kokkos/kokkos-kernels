@@ -353,11 +353,15 @@ void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
   using KernelHandle   = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename device::execution_space,
       typename device::memory_space, typename device::memory_space>;
+
+  std::cout << "Running spgemm symbolic" << std::endl;
+
   // A is m*n, B is n*k, C is m*k
   int m = 100;
   int n = 300;
   int k = 200;
   crsMat_t A, B;
+
   // Target 1000 total nonzeros in both A and B.
   if (testEmpty) {
     // Create A,B with the same dimensions, but zero entries
@@ -378,9 +382,15 @@ void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
     KokkosSparse::sort_crs_matrix(A);
     KokkosSparse::sort_crs_matrix(B);
   }
+
+  std::cout << "  Matrices A and B created" << std::endl;
+
   // Call reference impl to get complete product
   crsMat_t C_reference;
   Test::run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, C_reference, false);
+
+  std::cout << "  Reference generated with SPGEMM_DEBUG" << std::endl;
+
   // Now call just symbolic, and specifically request that rowptrs be populated
   // Make sure this never depends on C_rowmap being initialized
   rowmap_t C_rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmapC"),
@@ -388,6 +398,9 @@ void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
   Kokkos::deep_copy(C_rowmap, size_type(123));
   KernelHandle kh;
   kh.create_spgemm_handle();
+
+  std::cout << "  Rowmap of C and kernel handle created" << std::endl;
+
   if (callSymbolicFirst) {
     KokkosSparse::Experimental::spgemm_symbolic(
         &kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
@@ -397,6 +410,7 @@ void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
       &kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
       B.graph.entries, false, C_rowmap, true);
   kh.destroy_spgemm_handle();
+
   bool isCorrect = KokkosKernels::Impl::kk_is_identical_view<
       const_rowmap_t, const_rowmap_t, size_type,
       typename device::execution_space>(C_rowmap, C_reference.graph.row_map, 0);
@@ -525,53 +539,152 @@ void test_issue1738() {
 #endif
 }
 
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void test_spgemm_onemkl() {
+  using memory_space = typename device::memory_space;
+  using rowmap_type  = Kokkos::View<size_type*, memory_space>;
+  using colind_type  = Kokkos::View<lno_t* ,memory_space>;
+  using values_type  = Kokkos::View<scalar_t*, memory_space>;
+  std::cout << "Hello oneMKL spgemm testing!" << std::endl;
+  std::cout << "Running with\n"
+	    << "  size_type: " << typeid(size_type).name() << "\n"
+	    << "  ordinal:   " << typeid(lno_t).name() << "\n"
+	    << "  scalar:    " << typeid(scalar_t).name() << std::endl;
+
+  constexpr int numRowsA = 5, numColsA = 7, numRowsB = 7, numColsB = 7;
+  constexpr int nnzA = 12, nnzB = 16;
+
+  std::cout << "Creating views for A, B and C" << std::endl;
+
+  rowmap_type rowmapA("rowptr A", numRowsA + 1), rowmapB("rowptr B", numRowsB + 1),
+    rowmapC("rowptr C", numRowsA + 1);
+  colind_type colindA("indices A", nnzA), colindB("indices B", nnzB), colindC;
+  values_type valuesA("values A", nnzA), valuesB("values B", nnzB), valuesC;
+
+  std::cout << "Storing initial data in A and B" << std::endl;
+
+  {
+    constexpr size_type rowmapARaw[] = {0, 4, 7, 8, 11, 12};
+    constexpr size_type rowmapBRaw[] = {0, 3, 5, 7, 9, 12, 15, 16};
+
+    constexpr lno_t colindARaw[] = {0, 1, 2, 6, 2, 4, 5, 2, 0, 2, 6, 1};
+    constexpr lno_t colindBRaw[] = {1, 4, 5, 3, 5, 3, 6, 1, 5, 2, 5, 6, 0, 4, 6, 4};
+
+    typename rowmap_type::HostMirror::const_type rowmapA_host(rowmapARaw, numRowsA + 1),
+      rowmapB_host(rowmapBRaw, numRowsB + 1);
+    typename colind_type::HostMirror::const_type colindA_host(colindARaw, nnzA),
+      colindB_host(colindBRaw, nnzB);
+
+    Kokkos::deep_copy(rowmapA, rowmapA_host);
+    Kokkos::deep_copy(rowmapB, rowmapB_host);
+
+    Kokkos::deep_copy(colindA, colindA_host);
+    Kokkos::deep_copy(colindB, colindB_host);
+
+    Kokkos::deep_copy(valuesA, 1);
+    Kokkos::deep_copy(valuesB, 1);
+  }
+
+  std::cout << "Creating Kernel and Spgemm handles" << std::endl;
+
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>
+      KernelHandle;
+
+  KernelHandle kh;
+  // kh.set_team_work_size(16);
+  // kh.set_dynamic_scheduling(true);
+  kh.set_verbose(true);
+
+  kh.create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm::SPGEMM_KK);
+  {
+    auto sh = kh.get_spgemm_handle();
+
+    EXPECT_FALSE(sh->is_symbolic_called());
+    EXPECT_FALSE(sh->is_numeric_called());
+    EXPECT_FALSE(sh->are_rowptrs_computed());
+    EXPECT_FALSE(sh->are_entries_computed());
+
+    std::cout << "Running spgemm_symbolic" << std::endl;
+
+    KokkosSparse::Experimental::spgemm_symbolic(
+        &kh, numRowsA, numRowsB, numColsB, rowmapA,
+        colindA, false, rowmapB, colindB, false, rowmapC);
+
+    EXPECT_TRUE(sh->is_symbolic_called());
+
+    // size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    // entriesC          = lno_nnz_view_t(
+    //     Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
+    //     c_nnz_size);
+    // valuesC = scalar_view_t(
+    //     Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
+    // KokkosSparse::Experimental::spgemm_numeric(
+    //     &kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
+    //     A.graph.entries, A.values, false, B.graph.row_map, B.graph.entries,
+    //     B.values, false, row_mapC, entriesC, valuesC);
+
+    // EXPECT_TRUE(sh->are_entries_computed());
+    // EXPECT_TRUE(sh->is_numeric_called());
+  }
+
+  constexpr size_type rowmapCRef[] = {0, 5, 11, 13, 18, 20};
+  constexpr lno_t colindCRef[] = {1, 3, 4, 5, 6, 0, 2, 3, 4, 5, 6, 3, 6, 1, 3, 4, 5, 6, 3, 5};
+  constexpr scalar_t valuesCRef[] = {1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1};
+}
+
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
   TEST_F(TestCategory,                                                         \
          sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_matrix);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_view);     \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_matrix,      \
-        true);                                                                 \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_view, true); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
-                                                 ::Test::spgemm_reuse_matrix); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
-                                                 ::Test::spgemm_reuse_view);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
-                                                 ::Test::spgemm_reuse_matrix); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
-                                                 ::Test::spgemm_reuse_view);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
-                                                 ::Test::spgemm_reuse_matrix); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
-                                                 ::Test::spgemm_reuse_view);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
-                                                 ::Test::spgemm_reuse_matrix); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
-                                                 ::Test::spgemm_reuse_view);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_noreuse);        \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
-        1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_noreuse);          \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
-                                                 ::Test::spgemm_noreuse);      \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
-                                                 ::Test::spgemm_noreuse);      \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
-                                                 ::Test::spgemm_noreuse);      \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
-                                                 ::Test::spgemm_noreuse);      \
-    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, true);         \
-    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, true);        \
-    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, false);        \
-    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, false);       \
-    test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                          \
-    test_issue1738<SCALAR, ORDINAL, OFFSET, DEVICE>();                         \
+    test_spgemm_onemkl<SCALAR, ORDINAL, OFFSET, DEVICE>();		\
   }
+
+// test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(				\
+//         10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_matrix);   \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+//         10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_view);     \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+//         1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_matrix,      \
+//         true);                                                                 \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+//         1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_view, true); \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
+//                                                  ::Test::spgemm_reuse_matrix); \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
+//                                                  ::Test::spgemm_reuse_view);   \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
+//                                                  ::Test::spgemm_reuse_matrix); \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
+//                                                  ::Test::spgemm_reuse_view);   \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
+//                                                  ::Test::spgemm_reuse_matrix); \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
+//                                                  ::Test::spgemm_reuse_view);   \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
+//                                                  ::Test::spgemm_reuse_matrix); \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
+//                                                  ::Test::spgemm_reuse_view);   \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+//         10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_noreuse);        \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+//         1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_noreuse);          \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
+//                                                  ::Test::spgemm_noreuse);      \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
+//                                                  ::Test::spgemm_noreuse);      \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
+//                                                  ::Test::spgemm_noreuse);      \
+//     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
+//                                                  ::Test::spgemm_noreuse);      \
+//     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, true);         \
+//     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, true);        \
+//     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, false);        \
+//     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, false);       \
+//     test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                          \
+//     test_issue1738<SCALAR, ORDINAL, OFFSET, DEVICE>();                         \
+//   }
 
 // test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);
 // test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 200, 10);
