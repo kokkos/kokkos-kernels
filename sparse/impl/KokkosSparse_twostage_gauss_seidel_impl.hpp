@@ -1053,7 +1053,6 @@ class TwostageGaussSeidel {
                            one, tempR);
         // > initial vector for the inner loop is zero
         Kokkos::deep_copy(my_exec_space, localZ, zero);
-        my_exec_space.fence();
         using Norm_Functor_t =
             TwostageGaussSeidel_functor<row_map_view_t, entries_view_t,
                                         values_view_t>;

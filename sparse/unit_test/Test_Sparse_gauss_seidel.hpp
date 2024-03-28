@@ -859,12 +859,6 @@ void test_gauss_seidel_streams_rank1(
           << "on stream_idx: " << i;
     }
   }
-
-  for (int i = 0; i < nstreams; i++) {
-    kh_psgs_v[i].destroy_gs_handle();
-    kh_tsgs_v[i].destroy_gs_handle();
-    kh_tsgs_classic_v[i].destroy_gs_handle();
-  }
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                    \
