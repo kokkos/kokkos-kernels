@@ -1089,7 +1089,7 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
             rhs_lines = 0;
 
   ss >> total_lines >> ptr_lines >> col_lines >> val_lines >> rhs_lines;
-
+  ss.sync();  // This fixes tests on kokkos-dev/ipcp.
   if (total_lines == 0 || ptr_lines == 0 || col_lines == 0) {
     throw std::runtime_error(std::string("Problem reading HB file ") +
                              fileName + ", Line 2 did not have valid values");
@@ -1108,7 +1108,6 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne,
   size_type nrow = 0, ncol = 0, nnz_raw = 0, neltvl = 0;
 
   ss >> matrix_info >> nrow >> ncol >> nnz_raw >> neltvl;
-
   if (matrix_info.size() != 3 || nrow == 0 || ncol == 0 || nnz_raw == 0) {
     throw std::runtime_error(std::string("Problem reading HB file ") +
                              fileName +
