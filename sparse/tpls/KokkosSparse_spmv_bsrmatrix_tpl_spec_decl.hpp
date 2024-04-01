@@ -48,6 +48,7 @@ inline void spmv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
+    subhandle->set_exec_space(exec);
   } else {
     // Use the default execution space instance, as classic MKL does not use
     // a specific instance.
@@ -127,6 +128,7 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
+    subhandle->set_exec_space(exec);
   } else {
     // Use the default execution space instance, as classic MKL does not use
     // a specific instance.
@@ -378,6 +380,7 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
+    subhandle->set_exec_space(exec);
   } else {
     /* create and set the subhandle and matrix descriptor */
     subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
@@ -505,6 +508,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
+    subhandle->set_exec_space(exec);
   } else {
     /* create and set the subhandle and matrix descriptor */
     subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
@@ -855,6 +859,7 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for rocsparse BSR");
+    subhandle->set_exec_space(exec);
   } else {
     subhandle   = new KokkosSparse::Impl::RocSparse_BSR_SpMV_Data(exec);
     handle->tpl = subhandle;
