@@ -497,12 +497,6 @@ void test_spmv_algorithms(lno_t numRows, size_type nnz, lno_t bandwidth,
     test_spmv<scalar_t, lno_t, size_type, Device>(algo, numRows, nnz, bandwidth,
                                                   row_size_variance, heavy);
   }
-  {
-    KokkosKernels::Experimental::Controls controls;
-    controls.setParameter("algorithm", "native-merge");
-    test_spmv<scalar_t, lno_t, size_type, Device>(
-        controls, numRows, nnz, bandwidth, row_size_variance, heavy);
-  }
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
