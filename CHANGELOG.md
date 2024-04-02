@@ -15,7 +15,7 @@
   - Fix rocSOLVER issue with Trilinos dependency [\#2037](https://github.com/kokkos/kokkos-kernels/pull/2037)
 - Lapack - SVD [\#2092](https://github.com/kokkos/kokkos-kernels/pull/2092)
   - Adding benchmark for SVD [\#2103](https://github.com/kokkos/kokkos-kernels/pull/2103)
-  - Quick return to fix cuSPARSE and improve performance [\#2107](https://github.com/kokkos/kokkos-kernels/pull/2107)
+  - Quick return to fix cuSOLVER and improve performance [\#2107](https://github.com/kokkos/kokkos-kernels/pull/2107)
   - Fix Intel MKL tolerance for SVD tests [\#2110](https://github.com/kokkos/kokkos-kernels/pull/2110)
 
 #### Sparse updates
