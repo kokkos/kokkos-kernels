@@ -73,7 +73,7 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X,
   // Perform compile time checks and run time checks.
   // **********************************************************************
   AxpbyTraits::performChecks(a, X, b, Y);
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 1)
   AxpbyTraits::printInformation(std::cout, "axpby(), unif information");
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL
 

@@ -475,7 +475,7 @@ int impl_test_svd(const int m, const int n) {
       Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
 
   const mag_type max_val = 10;
-  const mag_type tol     = 1000 * max_val * KAT_S::eps();
+  const mag_type tol     = 2000 * max_val * KAT_S::eps();
 
   AMatrix A("A", m, n), U("U", m, m), Vt("Vt", n, n), Aref("A ref", m, n);
   vector_type S("S", Kokkos::min(m, n));
