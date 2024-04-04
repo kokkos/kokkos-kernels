@@ -157,6 +157,12 @@ struct IlukWrap {
                      [&]() { L_values(nnz) = scalar_t(1.0); });
     }
 
+    // assign
+    KOKKOS_INLINE_FUNCTION
+    void assign(scalar_t& lhs, const scalar_t& rhs) const {
+      lhs = rhs;
+    }
+
     // divide. lhs /= rhs
     KOKKOS_INLINE_FUNCTION
     void divide(const member_type &team, scalar_t &lhs,
@@ -170,6 +176,19 @@ struct IlukWrap {
     void divide_left(scalar_t &lhs,
                 const scalar_t &rhs, scalar_t*) const {
       lhs /= rhs;
+    }
+
+    // invert.
+    KOKKOS_INLINE_FUNCTION
+    void invert(const member_type& team, scalar_t &item, scalar_t*, scalar_t*) const {
+      Kokkos::single(Kokkos::PerTeam(team), [&]() { item = 1.0/item; });
+      team.team_barrier();
+    }
+
+    // multiply. A *= B
+    KOKKOS_INLINE_FUNCTION
+    void multiply(scalar_t &A, const scalar_t &B, scalar_t*) const {
+      A *= B;
     }
 
     // multiply_subtract. C -= A * B
@@ -296,11 +315,7 @@ struct IlukWrap {
     KOKKOS_INLINE_FUNCTION
     void lset(const size_type block, const ABlock &rhs) const {
       auto lblock = lget(block);
-      for (size_type i = 0; i < block_size; ++i) {
-        for (size_type j = 0; j < block_size; ++j) {
-          lblock(i, j) = rhs(i, j);
-        }
-      }
+      assign(lblock, rhs);
     }
 
     // uset
@@ -312,17 +327,23 @@ struct IlukWrap {
     KOKKOS_INLINE_FUNCTION
     void uset(const size_type block, const ABlock &rhs) const {
       auto ublock = uget(block);
-      for (size_type i = 0; i < block_size; ++i) {
-        for (size_type j = 0; j < block_size; ++j) {
-          ublock(i, j) = rhs(i, j);
-        }
-      }
+      assign(ublock, rhs);
     }
 
     // lset_id
     KOKKOS_INLINE_FUNCTION
     void lset_id(const member_type &team, const size_type block) const {
       KokkosBatched::TeamSetIdentity<member_type>::invoke(team, lget(block));
+    }
+
+    // assign
+    KOKKOS_INLINE_FUNCTION
+    void assign(LBlock& lhs, const ABlock& rhs) const {
+      for (size_type i = 0; i < block_size; ++i) {
+        for (size_type j = 0; j < block_size; ++j) {
+          lhs(i, j) = rhs(i, j);
+        }
+      }
     }
 
     // divide. lhs /= rhs
@@ -335,23 +356,11 @@ struct IlukWrap {
       // print(rhs);
 
       LBlock LU(buff, block_size, block_size);
-
-      for (size_type i = 0; i < block_size; ++i) {
-        for (size_type j = 0; j < block_size; ++j) {
-          LU(i, j) = rhs(i, j);
-        }
-      }
+      assign(LU, rhs);
       KokkosBatched::TeamLU<member_type, KokkosBatched::Algo::LU::Blocked>::
         invoke(team, LU);
       // std::cout << "LU" << std::endl;
       // print(LU);
-
-      KokkosBatched::TeamTrsm<
-        member_type, KokkosBatched::Side::Right, KokkosBatched::Uplo::Lower,
-        KokkosBatched::Trans::NoTranspose,
-        KokkosBatched::Diag::Unit,
-        KokkosBatched::Algo::Trsm::Blocked>::
-      invoke(team, 1.0, LU, lhs);
 
       // std::cout << "Intermediate" << std::endl;
       // print(lhs);
@@ -362,6 +371,13 @@ struct IlukWrap {
         KokkosBatched::Diag::NonUnit,
         KokkosBatched::Algo::Trsm::Blocked>::
         invoke(team, 1.0, LU, lhs);
+
+      KokkosBatched::TeamTrsm<
+        member_type, KokkosBatched::Side::Right, KokkosBatched::Uplo::Lower,
+        KokkosBatched::Trans::NoTranspose,
+        KokkosBatched::Diag::Unit,
+        KokkosBatched::Algo::Trsm::Blocked>::
+      invoke(team, 1.0, LU, lhs);
 
       // std::cout << "Result:" << std::endl;
       // print(lhs);
@@ -376,16 +392,14 @@ struct IlukWrap {
       // print(rhs);
 
       LBlock LU(buff, block_size, block_size);
-
-      for (size_type i = 0; i < block_size; ++i) {
-        for (size_type j = 0; j < block_size; ++j) {
-          LU(i, j) = rhs(i, j);
-        }
-      }
+      assign(LU, rhs);
       KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Blocked>::
         invoke(LU);
       // std::cout << "LU" << std::endl;
       // print(LU);
+
+      // std::cout << "Intermediate" << std::endl;
+      // print(lhs);
 
       KokkosBatched::SerialTrsm<
         KokkosBatched::Side::Left, KokkosBatched::Uplo::Lower,
@@ -393,9 +407,6 @@ struct IlukWrap {
         KokkosBatched::Diag::Unit,
         KokkosBatched::Algo::Trsm::Blocked>::
       invoke(1.0, LU, lhs);
-
-      // std::cout << "Intermediate" << std::endl;
-      // print(lhs);
 
       KokkosBatched::SerialTrsm<
         KokkosBatched::Side::Left, KokkosBatched::Uplo::Upper,
@@ -406,6 +417,27 @@ struct IlukWrap {
 
       // std::cout << "Result:" << std::endl;
       // print(lhs);
+    }
+
+    // invert.
+    KOKKOS_INLINE_FUNCTION
+    void invert(const member_type& team, UBlock &item, scalar_t* buff1, scalar_t* buff2) const {
+      LBlock tmp_id(buff1, block_size, block_size);
+      KokkosBatched::TeamSetIdentity<member_type>::invoke(team, tmp_id);
+      team.team_barrier();
+      divide(team, tmp_id, item, buff2);
+    }
+
+    // multiply. A *= B. Add team support later
+    KOKKOS_INLINE_FUNCTION
+    void multiply(LBlock &A, const UBlock &B, scalar_t* buff) const {
+      LBlock tmp(buff, block_size, block_size);
+      KokkosBatched::SerialGemm
+        <KokkosBatched::Trans::NoTranspose,
+         KokkosBatched::Trans::NoTranspose,
+         KokkosBatched::Algo::Gemm::Blocked>::invoke
+        (1.0, A, B, 0.0, tmp);
+      assign(A, tmp);
     }
 
     // multiply_subtract. C -= A * B
@@ -433,11 +465,7 @@ struct IlukWrap {
     LBlock lcopy(const size_type block, scalar_t* buff) const {
       LBlock result(buff, block_size, block_size);
       auto lblock = lget(block);
-      for (size_type i = 0; i < block_size; ++i) {
-        for (size_type j = 0; j < block_size; ++j) {
-          result(i, j) = lblock(i, j);
-        }
-      }
+      assign(result, lblock);
       return result;
     }
 
@@ -446,11 +474,7 @@ struct IlukWrap {
     UBlock ucopy(const size_type block, scalar_t* buff) const {
       UBlock result(buff, block_size, block_size);
       auto ublock = uget(block);
-      for (size_type i = 0; i < block_size; ++i) {
-        for (size_type j = 0; j < block_size; ++j) {
-          result(i, j) = ublock(i, j);
-        }
-      }
+      assign(result, ublock);
       return result;
     }
 
@@ -584,6 +608,8 @@ struct IlukWrap {
         const auto prev_row = Base::L_entries(k);
         const auto udiag    = Base::uget(Base::U_row_map(prev_row));
         auto fact           = Base::lcopy(k, &buff4[0]);
+        // typename Base::reftype tmpl = Base::lget(k);
+        // Base::multiply(tmpl, udiag, &buff1[0]);
         Base::divide(team, Base::lget(k), udiag, &buff1[0]);
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(team, Base::U_row_map(prev_row) + 1,
@@ -605,14 +631,24 @@ struct IlukWrap {
         team.team_barrier();
       }  // end for k
 
-      Kokkos::single(Kokkos::PerTeam(team), [&]() {
-        const auto ipos = Base::iw(my_team, rowid);
-        if (Base::uequal(ipos, 0.0)) {
-          Base::uset(ipos, 1e6);
-        }
-      });
+      // // Invert diag of U
+      // const auto ipos = Base::iw(my_team, rowid);
+      // typename Base::reftype udiag = Base::uget(ipos);
+      // Base::invert(team, udiag, &buff1[0], &buff4[0]);
+      // team.team_barrier();
 
-      team.team_barrier();
+      // // Multiply all other items in U by diag
+      // k1 = Base::U_row_map(rowid) + 1; // skip diag
+      // k2 = Base::U_row_map(rowid + 1);
+      // Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
+      //                      [&](const size_type k) {
+      //   auto udiagcp = Base::ucopy(ipos, &buff1[0]);
+      //   typename Base::reftype tmpu = Base::uget(k);
+      //   Base::multiply(udiagcp, tmpu, &buff4[0]);
+      //   Base::assign(tmpu, udiagcp);
+      // });
+
+      // team.team_barrier();
 
       // Reset
       k1 = Base::L_row_map(rowid);
