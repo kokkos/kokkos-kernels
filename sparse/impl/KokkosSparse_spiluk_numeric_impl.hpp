@@ -165,6 +165,13 @@ struct IlukWrap {
       team.team_barrier();
     }
 
+    // divide_left. lhs /= rhs
+    KOKKOS_INLINE_FUNCTION
+    void divide_left(scalar_t &lhs,
+                const scalar_t &rhs, scalar_t*) const {
+      lhs /= rhs;
+    }
+
     // multiply_subtract. C -= A * B
     KOKKOS_INLINE_FUNCTION
     void multiply_subtract(const scalar_t &A, const scalar_t &B,
@@ -176,9 +183,13 @@ struct IlukWrap {
     KOKKOS_INLINE_FUNCTION
     scalar_t &lget(const size_type nnz) const { return L_values(nnz); }
 
-    // lget
+    // lcopy
     KOKKOS_INLINE_FUNCTION
     scalar_t lcopy(const size_type nnz, scalar_t*) const { return L_values(nnz); }
+
+    // ucopy
+    KOKKOS_INLINE_FUNCTION
+    scalar_t ucopy(const size_type nnz, scalar_t*) const { return U_values(nnz); }
 
     // uget
     KOKKOS_INLINE_FUNCTION
@@ -356,6 +367,47 @@ struct IlukWrap {
       // print(lhs);
     }
 
+    KOKKOS_INLINE_FUNCTION
+    void divide_left(const LBlock &lhs,
+                     const UBlock &rhs, scalar_t* buff) const {
+      // std::cout << "Lhs" << std::endl;
+      // print(lhs);
+      // std::cout << "Rhs" << std::endl;
+      // print(rhs);
+
+      LBlock LU(buff, block_size, block_size);
+
+      for (size_type i = 0; i < block_size; ++i) {
+        for (size_type j = 0; j < block_size; ++j) {
+          LU(i, j) = rhs(i, j);
+        }
+      }
+      KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Blocked>::
+        invoke(LU);
+      // std::cout << "LU" << std::endl;
+      // print(LU);
+
+      KokkosBatched::SerialTrsm<
+        KokkosBatched::Side::Left, KokkosBatched::Uplo::Lower,
+        KokkosBatched::Trans::NoTranspose,
+        KokkosBatched::Diag::Unit,
+        KokkosBatched::Algo::Trsm::Blocked>::
+      invoke(1.0, LU, lhs);
+
+      // std::cout << "Intermediate" << std::endl;
+      // print(lhs);
+
+      KokkosBatched::SerialTrsm<
+        KokkosBatched::Side::Left, KokkosBatched::Uplo::Upper,
+        KokkosBatched::Trans::NoTranspose,
+        KokkosBatched::Diag::NonUnit,
+        KokkosBatched::Algo::Trsm::Blocked>::
+        invoke(1.0, LU, lhs);
+
+      // std::cout << "Result:" << std::endl;
+      // print(lhs);
+    }
+
     // multiply_subtract. C -= A * B
     template <typename CView>
     KOKKOS_INLINE_FUNCTION void multiply_subtract(const UBlock &A,
@@ -384,6 +436,19 @@ struct IlukWrap {
       for (size_type i = 0; i < block_size; ++i) {
         for (size_type j = 0; j < block_size; ++j) {
           result(i, j) = lblock(i, j);
+        }
+      }
+      return result;
+    }
+
+    // ucopy
+    KOKKOS_INLINE_FUNCTION
+    UBlock ucopy(const size_type block, scalar_t* buff) const {
+      UBlock result(buff, block_size, block_size);
+      auto ublock = uget(block);
+      for (size_type i = 0; i < block_size; ++i) {
+        for (size_type j = 0; j < block_size; ++j) {
+          result(i, j) = ublock(i, j);
         }
       }
       return result;
@@ -463,7 +528,8 @@ struct IlukWrap {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const member_type &team) const {
-      scalar_t buff[Base::BUFF_SIZE];
+      scalar_t buff1[Base::BUFF_SIZE];
+      scalar_t buff4[Base::BUFF_SIZE];
 
       const auto my_team = team.league_rank();
       const auto rowid =
@@ -517,8 +583,8 @@ struct IlukWrap {
       for (auto k = k1; k < k2; k++) {
         const auto prev_row = Base::L_entries(k);
         const auto udiag    = Base::uget(Base::U_row_map(prev_row));
-        Base::divide(team, Base::lget(k), udiag, &buff[0]);
-        auto fact           = Base::lget(k);
+        auto fact           = Base::lcopy(k, &buff4[0]);
+        Base::divide(team, Base::lget(k), udiag, &buff1[0]);
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(team, Base::U_row_map(prev_row) + 1,
                                     Base::U_row_map(prev_row + 1)),
@@ -526,9 +592,13 @@ struct IlukWrap {
               const auto col  = Base::U_entries(kk);
               const auto ipos = Base::iw(my_team, col);
               if (ipos != -1) {
+                scalar_t buff2[Base::BUFF_SIZE];
+                scalar_t buff3[Base::BUFF_SIZE];
+                auto ucopy = Base::ucopy(kk, &buff2[0]);
+                Base::divide_left(ucopy, udiag, &buff3[0]);
                 typename Base::reftype C =
                     col < rowid ? Base::lget(ipos) : Base::uget(ipos);
-                Base::multiply_subtract(fact, Base::uget(kk), C);
+                Base::multiply_subtract(fact, ucopy, C);
               }
             });  // end for kk
 
