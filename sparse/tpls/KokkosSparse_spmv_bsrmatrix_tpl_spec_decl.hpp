@@ -48,7 +48,8 @@ inline void spmv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
-    subhandle->set_exec_space(exec);
+    // note: classic mkl only runs on synchronous host exec spaces, so no need
+    // to call set_exec_space on the subhandle here
   } else {
     // Use the default execution space instance, as classic MKL does not use
     // a specific instance.
@@ -128,7 +129,8 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
-    subhandle->set_exec_space(exec);
+    // note: classic mkl only runs on synchronous host exec spaces, so no need
+    // to call set_exec_space on the subhandle here
   } else {
     // Use the default execution space instance, as classic MKL does not use
     // a specific instance.
