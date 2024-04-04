@@ -594,11 +594,11 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
   MKLScalar* y_mkl       = reinterpret_cast<MKLScalar*>(y);
   if (handle->is_set_up) {
     subhandle = dynamic_cast<Subhandle*>(handle->tpl);
-    // note: classic mkl only runs on synchronous host exec spaces, so no need
-    // to call set_exec_space on the subhandle here
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL CRS");
+    // note: classic mkl only runs on synchronous host exec spaces, so no need
+    // to call set_exec_space on the subhandle here
   } else {
     // Use the default execution space instance, as classic MKL does not use
     // a specific instance.
