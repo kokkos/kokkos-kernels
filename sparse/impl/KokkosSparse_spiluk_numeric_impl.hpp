@@ -114,6 +114,15 @@ struct IlukWrap {
 
     static constexpr size_type BUFF_SIZE = 1;
 
+    struct SBlock {
+      template <typename T>
+      KOKKOS_INLINE_FUNCTION
+      SBlock(T, size_type, size_type) {}
+
+      KOKKOS_INLINE_FUNCTION
+      scalar_t* data() { return nullptr; }
+    };
+
     Common(const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
            const AValuesType &A_values_, const LRowMapType &L_row_map_,
            const LEntriesType &L_entries_, LValuesType &L_values_,
@@ -136,6 +145,9 @@ struct IlukWrap {
       KK_REQUIRE_MSG(block_size_ == 0,
                      "Tried to use blocks with the unblocked Common?");
     }
+
+    KOKKOS_INLINE_FUNCTION
+    size_type get_block_size() const { return 0; }
 
     // lset
     KOKKOS_INLINE_FUNCTION
@@ -225,6 +237,34 @@ struct IlukWrap {
   struct Common<ARowMapType, AEntriesType, AValuesType, LRowMapType,
                 LEntriesType, LValuesType, URowMapType, UEntriesType,
                 UValuesType, true> {
+
+    // BSR data is in LayoutRight!
+    using Layout      = Kokkos::LayoutRight;
+    using value_type  = typename LValuesType::value_type;
+    using cvalue_type = typename LValuesType::const_value_type;
+
+    using Block = Kokkos::View<
+        value_type **, Layout,
+        typename LValuesType::device_type,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
+    // const block
+    using CBlock = Kokkos::View<
+        cvalue_type **, Layout,
+        typename UValuesType::device_type,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
+    // scratch block
+    using SBlock = Kokkos::View<
+      value_type**, Layout,
+      typename execution_space::scratch_memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
+    using reftype = Block;
+    using valtype = Block;
+
+    static constexpr size_type BUFF_SIZE = 128;
+
     ARowMapType A_row_map;
     AEntriesType A_entries;
     AValuesType A_values;
@@ -239,26 +279,6 @@ struct IlukWrap {
     lno_t lev_start;
     size_type block_size;
     size_type block_items;
-
-    static constexpr size_type BUFF_SIZE = 128;
-
-    // BSR data is in LayoutRight!
-    using Layout      = Kokkos::LayoutRight;
-    using value_type  = typename LValuesType::value_type;
-    using cvalue_type = typename LValuesType::const_value_type;
-
-    using Block = Kokkos::View<
-        value_type **, Layout,
-        typename LValuesType::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-    using CBlock = Kokkos::View<
-        cvalue_type **, Layout,
-        typename UValuesType::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-    using reftype = Block;
-    using valtype = Block;
 
     Common(const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
            const AValuesType &A_values_, const LRowMapType &L_row_map_,
@@ -285,6 +305,9 @@ struct IlukWrap {
                      "Tried to use block_size=0 with the blocked Common?");
       KK_REQUIRE_MSG(block_size <= 11, "Max supported block size is 11");
     }
+
+    KOKKOS_INLINE_FUNCTION
+    size_type get_block_size() const { return block_size; }
 
     // lset
     KOKKOS_INLINE_FUNCTION
@@ -317,8 +340,9 @@ struct IlukWrap {
     }
 
     // assign
+    template <typename ViewT>
     KOKKOS_INLINE_FUNCTION
-    void assign(const Block& lhs, const CBlock& rhs) const {
+    void assign(const ViewT& lhs, const CBlock& rhs) const {
       for (size_type i = 0; i < block_size; ++i) {
         for (size_type j = 0; j < block_size; ++j) {
           lhs(i, j) = rhs(i, j);
@@ -493,8 +517,14 @@ struct IlukWrap {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const member_type &team) const {
+      // Thread-local buffers. Use for Serial (non-team) work
       scalar_t buff1[Base::BUFF_SIZE];
       scalar_t buff2[Base::BUFF_SIZE];
+      scalar_t buff3[Base::BUFF_SIZE];
+
+      // Team-shared buffer. Use for team work.
+      const auto block_size = Base::get_block_size();
+      typename Base::SBlock shared_buff(team.team_shmem(), block_size, block_size);
 
       const auto my_team = team.league_rank();
       const auto rowid =
@@ -551,7 +581,7 @@ struct IlukWrap {
         typename Base::valtype fact;
         if (BlockEnabled) {
           fact = Base::lcopy(k, &buff1[0]); // fact = copy(Lval(k))
-          Base::divide(team, Base::lget(k), udiag, &buff2[0]); // Lval(k) *= udiag^-1
+          Base::divide(team, Base::lget(k), udiag, shared_buff.data()); // Lval(k) *= udiag^-1
         }
         else {
           Base::divide(team, Base::lget(k), udiag, nullptr);
@@ -567,10 +597,8 @@ struct IlukWrap {
                 typename Base::reftype C =
                     col < rowid ? Base::lget(ipos) : Base::uget(ipos);
                 if (BlockEnabled) {
-                  scalar_t buff3[Base::BUFF_SIZE];
-                  scalar_t buff4[Base::BUFF_SIZE];
-                  auto ucopy = Base::ucopy(kk, &buff3[0]);
-                  Base::divide_left(ucopy, udiag, &buff4[0]); // ucopy = udiag^-1 * Uval(kk)
+                  auto ucopy = Base::ucopy(kk, &buff2[0]);
+                  Base::divide_left(ucopy, udiag, &buff3[0]); // ucopy = udiag^-1 * Uval(kk)
                   Base::multiply_subtract(fact, ucopy, C); // C -= Lval(k) * (udiag^-1 * Uval(kk))
                 }
                 else {
@@ -620,6 +648,8 @@ struct IlukWrap {
   if (be) {                                                                 \
     ftb functor(arow, aent, aval, lrow, lent, lval, urow, uent, uval, lidx, \
                 iwv, lstrt, bs);                                            \
+    const int scratch_size = ftb::SBlock::shmem_size(bs, bs);               \
+    polc = polc.set_scratch_size(0, Kokkos::PerTeam(scratch_size));         \
     Kokkos::parallel_for(name, polc, functor);                              \
   } else {                                                                  \
     ftf functor(arow, aent, aval, lrow, lent, lval, urow, uent, uval, lidx, \
