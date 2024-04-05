@@ -109,6 +109,14 @@ void lapackSvdWrapper(const ExecutionSpace& /* space */, const char jobu[],
   }
 }
 
+constexpr bool svd_tpl_lapack_enable() {
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+  return false;
+#else
+  return true;
+#endif
+}
+
 #define KOKKOSLAPACK_SVD_LAPACK(SCALAR, LAYOUT, EXEC_SPACE)                 \
   template <>                                                               \
   struct SVD<                                                               \
@@ -125,7 +133,7 @@ void lapackSvdWrapper(const ExecutionSpace& /* space */, const char jobu[],
       Kokkos::View<SCALAR**, LAYOUT,                                        \
                    Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,           \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
-      true,                                                                 \
+      svd_tpl_lapack_enable(),                                              \
       svd_eti_spec_avail<                                                   \
           EXEC_SPACE,                                                       \
           Kokkos::View<SCALAR**, LAYOUT,                                    \
