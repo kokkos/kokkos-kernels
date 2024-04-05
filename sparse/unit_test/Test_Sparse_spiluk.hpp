@@ -45,25 +45,22 @@ using kokkos_complex_double = Kokkos::complex<double>;
 using kokkos_complex_float  = Kokkos::complex<float>;
 
 // Comment this out to do focussed debugging
-//#define TEST_SPILUK_FULL_CHECKS
+#define TEST_SPILUK_FULL_CHECKS
 
 // Test verbosity level. 0 = none, 1 = print residuals, 2 = print L,U
-#define TEST_SPILUK_VERBOSE_LEVEL 1
+#define TEST_SPILUK_VERBOSE_LEVEL 0
 
-#define TEST_SPILUK_TINY_TEST
+// #define TEST_SPILUK_TINY_TEST
 
 namespace Test {
 
 #ifdef TEST_SPILUK_TINY_TEST
 template <typename scalar_t>
 std::vector<std::vector<scalar_t>> get_fixture() {
-  std::vector<std::vector<scalar_t>> A = {
-    {5.00, 1.00, 1.00, 1.00, 1.00, 1.00},
-    {1.00, 5.00, 0.00, 0.00, 0.00, 0.00},
-    {1.00, 0.00, 5.00, 0.00, 0.00, 0.00},
-    {1.00, 0.00, 0.00, 5.00, 0.00, 0.00},
-    {1.00, 0.00, 0.00, 0.00, 5.00, 0.00},
-    {1.00, 0.00, 0.00, 0.00, 0.00, 5.00}};
+  std::vector<std::vector<scalar_t>> A = {{10.00, 1.00, 0.00, 0.00},
+                                          {0.00, 11.00, 0.00, 0.00},
+                                          {0.00, 2.00, 12.00, 0.00},
+                                          {5.00, 0.00, 3.00, 13.00}};
   return A;
 }
 #else
@@ -375,7 +372,7 @@ struct SpilukTest {
     const size_type nrows      = A.size();
     const size_type nnz        = values.extent(0);
     const lno_t fill_lev       = 2;
-    const size_type block_size = 3;
+    const size_type block_size = nrows % 2 == 0 ? 2 : 3;
     ASSERT_EQ(nrows % block_size, 0);
 
     KernelHandle kh;
@@ -383,7 +380,7 @@ struct SpilukTest {
     Crs crs("crs for block spiluk test", nrows, nrows, nnz, values, row_map,
             entries);
 
-    std::vector<size_type> block_sizes = {block_size};
+    std::vector<size_type> block_sizes = {1, block_size};
 
     for (auto block_size_itr : block_sizes) {
       Bsr bsr(crs, block_size_itr);
@@ -408,9 +405,9 @@ struct SpilukTest {
     constexpr auto diagDominance = 2;
 
     size_type nnz = 10 * nrows;
-    auto A = KokkosSparse::Impl::read_kokkos_crst_matrix<Crs>("test_sparse_ioutils.hb");
-        // KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
-        //     nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
+    auto A =
+        KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
+            nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
 
     KokkosSparse::sort_crs_matrix(A);
 
@@ -442,14 +439,13 @@ struct SpilukTest {
     // const size_type block_size = 10;
 
     size_type nnz = 10 * nrows;
-    auto A = KokkosSparse::Impl::read_kokkos_crst_matrix<Crs>("test_sparse_ioutils.hb");
-    // auto A =
-    //     KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
-    //         nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
+    auto A =
+        KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
+            nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
 
     KokkosSparse::sort_crs_matrix(A);
 
-    std::vector<size_type> block_sizes = {3}; //{1, 2, 4, 10};
+    std::vector<size_type> block_sizes = {1, 2, 4, 10};
 
     for (auto block_size : block_sizes) {
       // Convert to BSR
@@ -719,7 +715,7 @@ struct SpilukTest {
     // Create a diagonally dominant sparse matrix to test:
     using sp_matrix_type = std::conditional_t<UseBlocks, Bsr, Crs>;
 
-    //constexpr auto nrows         = 5000;
+    constexpr auto nrows         = 5000;
     constexpr auto m             = 15;
     constexpr auto diagDominance = 2;
     constexpr auto tol           = 1e-5;
@@ -728,9 +724,8 @@ struct SpilukTest {
     if (UseBlocks) {
       // Skip test if not on host. block trsv only works on host
       static constexpr bool is_host =
-        std::is_same<execution_space,
-                     typename Kokkos::DefaultHostExecutionSpace>::value ||
-        std::is_same<execution_space, typename Kokkos::Serial>::value;
+          std::is_same<execution_space,
+                       typename Kokkos::DefaultHostExecutionSpace>::value;
       if (!is_host) {
         return;
       }
@@ -740,15 +735,14 @@ struct SpilukTest {
     EntriesType bentries;
     ValuesType bvalues;
 
-    //size_type nnz = 10 * nrows;
-    auto A_unblocked = KokkosSparse::Impl::read_kokkos_crst_matrix<Crs>("test_sparse_ioutils.hb");
-        // KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
-        //     nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
-    const auto nrows = A_unblocked.numRows();
+    size_type nnz = 10 * nrows;
+    auto A_unblocked =
+        KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
+            nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
 
     KokkosSparse::sort_crs_matrix(A_unblocked);
 
-    std::vector<size_type> block_sizes_blocked   = {3};//1, 2, 4, 10};
+    std::vector<size_type> block_sizes_blocked   = {1, 2, 4, 10};
     std::vector<size_type> block_sizes_unblocked = {1};
     std::vector<size_type> block_sizes =
         UseBlocks ? block_sizes_blocked : block_sizes_unblocked;
@@ -773,7 +767,7 @@ struct SpilukTest {
       using GMRESHandle =
           typename std::remove_reference<decltype(*gmres_handle)>::type;
 
-      for (lno_t fill_lev = 2; fill_lev < 3; ++fill_lev) {
+      for (lno_t fill_lev = 0; fill_lev < 4; ++fill_lev) {
         const auto [L_row_map, L_entries, L_values, U_row_map, U_entries,
                     U_values] =
             run_and_check_spiluk<UseBlocks>(kh, brow_map, bentries, bvalues,
@@ -810,8 +804,8 @@ struct SpilukTest {
           num_iters_plain      = gmres_handle->get_num_iters();
 
           EXPECT_GT(num_iters_plain, 0);
-          // EXPECT_LT(endRes, gmres_handle->get_tol());
-          // EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
+          EXPECT_LT(endRes, gmres_handle->get_tol());
+          EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
 
           if (TEST_SPILUK_VERBOSE_LEVEL > 0) {
             std::cout << "Without LUPrec, with block_size=" << block_size
@@ -865,10 +859,10 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spiluk() {
   using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
-  //TestStruct::run_test_spiluk();
-  // TestStruct::run_test_spiluk_blocks();
-  // TestStruct::run_test_spiluk_scale();
-  // TestStruct::run_test_spiluk_scale_blocks();
+  TestStruct::run_test_spiluk();
+  TestStruct::run_test_spiluk_blocks();
+  TestStruct::run_test_spiluk_scale();
+  TestStruct::run_test_spiluk_scale_blocks();
   TestStruct::template run_test_spiluk_precond<false>();
   TestStruct::template run_test_spiluk_precond<true>();
 }
@@ -878,19 +872,19 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_spiluk_streams() {
   using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
 
-  // TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 1);
-  // TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 2);
-  // TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 3);
-  // TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 4);
+  TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 1);
+  TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 2);
+  TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 3);
+  TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 4);
 
-  // TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
-  //                                            1);
-  // TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
-  //                                            2);
-  // TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
-  //                                            3);
-  // TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
-  //                                            4);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             1);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             2);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             3);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             4);
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \
