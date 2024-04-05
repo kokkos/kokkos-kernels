@@ -110,6 +110,7 @@ struct IlukWrap {
     lno_t lev_start;
 
     using reftype = scalar_t &;
+    using valtype = scalar_t;
 
     static constexpr size_type BUFF_SIZE = 1;
 
@@ -257,6 +258,7 @@ struct IlukWrap {
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
     using reftype = Block;
+    using valtype = Block;
 
     Common(const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
            const AValuesType &A_values_, const LRowMapType &L_row_map_,
@@ -492,7 +494,7 @@ struct IlukWrap {
     KOKKOS_INLINE_FUNCTION
     void operator()(const member_type &team) const {
       scalar_t buff1[Base::BUFF_SIZE];
-      scalar_t buff4[Base::BUFF_SIZE];
+      scalar_t buff2[Base::BUFF_SIZE];
 
       const auto my_team = team.league_rank();
       const auto rowid =
@@ -546,8 +548,15 @@ struct IlukWrap {
       for (auto k = k1; k < k2; k++) {
         const auto prev_row = Base::L_entries(k);
         const auto udiag    = Base::uget(Base::U_row_map(prev_row));
-        auto fact           = Base::lcopy(k, &buff4[0]);
-        Base::divide(team, Base::lget(k), udiag, &buff1[0]);
+        typename Base::valtype fact;
+        if (BlockEnabled) {
+          fact = Base::lcopy(k, &buff1[0]); // fact = copy(Lval(k))
+          Base::divide(team, Base::lget(k), udiag, &buff2[0]); // Lval(k) *= udiag^-1
+        }
+        else {
+          Base::divide(team, Base::lget(k), udiag, nullptr);
+          fact = Base::lget(k); // fact = Lval(k) / udiag
+        }
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(team, Base::U_row_map(prev_row) + 1,
                                     Base::U_row_map(prev_row + 1)),
@@ -555,13 +564,18 @@ struct IlukWrap {
               const auto col  = Base::U_entries(kk);
               const auto ipos = Base::iw(my_team, col);
               if (ipos != -1) {
-                scalar_t buff2[Base::BUFF_SIZE];
-                scalar_t buff3[Base::BUFF_SIZE];
-                auto ucopy = Base::ucopy(kk, &buff2[0]);
-                Base::divide_left(ucopy, udiag, &buff3[0]);
                 typename Base::reftype C =
                     col < rowid ? Base::lget(ipos) : Base::uget(ipos);
-                Base::multiply_subtract(fact, ucopy, C);
+                if (BlockEnabled) {
+                  scalar_t buff3[Base::BUFF_SIZE];
+                  scalar_t buff4[Base::BUFF_SIZE];
+                  auto ucopy = Base::ucopy(kk, &buff3[0]);
+                  Base::divide_left(ucopy, udiag, &buff4[0]); // ucopy = udiag^-1 * Uval(kk)
+                  Base::multiply_subtract(fact, ucopy, C); // C -= Lval(k) * (udiag^-1 * Uval(kk))
+                }
+                else {
+                  Base::multiply_subtract(fact, Base::uget(kk), C); // C -= (Lval(k) / udiag) * Uval(kk)
+                }
               }
             });  // end for kk
 
