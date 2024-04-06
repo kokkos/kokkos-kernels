@@ -523,8 +523,8 @@ struct IlukWrap {
       scalar_t buff3[Base::BUFF_SIZE];
 
       // Team-shared buffer. Use for team work.
-      const auto block_size = Base::get_block_size();
-      typename Base::SBlock shared_buff(team.team_shmem(), block_size, block_size);
+      const auto bs = Base::get_block_size();
+      typename Base::SBlock shared_buff(team.team_shmem(), bs, bs);
 
       const auto my_team = team.league_rank();
       const auto rowid =
