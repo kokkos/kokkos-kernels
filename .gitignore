@@ -13,3 +13,6 @@ TAGS
 compile_commands.json
 .cache/
 .vscode/
+
+#MacOS hidden files
+.DS_Store
