@@ -245,11 +245,7 @@ struct SpilukTest {
     }
 
     if (fill_lev > 1) {
-      if (UseBlocks) {
-        EXPECT_LT(result, 1e-2);
-      } else {
-        EXPECT_LT(result, 1e-4);
-      }
+      EXPECT_LT(result, 1e-4);
     }
   }
 
