@@ -183,8 +183,8 @@ jobs:
         working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
 
-  PR_BDW_GNU1020_OPENMP_SERIAL_LEFT_OPENBLAS_OPENLAPACK_REL:
-    name: PR_BDW_GNU1020_OPENMP_SERIAL_LEFT_OPENBLAS_OPENLAPACK_REL
+  PR_BDW_GNU1020_OPENMP_SERIAL_LEFT_OPENBLAS_REL:
+    name: PR_BDW_GNU1020_OPENMP_SERIAL_LEFT_OPENBLAS_REL
     runs-on: [kk-env-openblas-0.3.21-gcc-10.2.0-latest]
     
     steps:
