@@ -170,6 +170,7 @@ jobs:
             -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
             -DKokkosKernels_ENABLE_TPL_ROCSOLVER=ON \
             -DKokkosKernels_ENABLE_TPL_ROCSPARSE=ON \
+            -DKokkosKernels_ENABLE_TPL_ROCBLAS=ON \
             -DKokkosKernels_ENABLE_TPL_BLAS=ON \
             -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
             -DCMAKE_EXE_LINKER_FLAGS="" \
