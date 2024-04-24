@@ -153,7 +153,7 @@ jobs:
           HIPCC=$(which hipcc)
           cmake -DCMAKE_CXX_COMPILER=$HIPCC \
             -DKokkos_DIR=$PWD/../../kokkos/install/lib64/cmake/Kokkos \
-            -DCMAKE_CXX_FLAGS="-O3 " \
+            -DCMAKE_CXX_FLAGS="-O3 -I$ROCM_CORE_ROOT/include" \
             -DCMAKE_INSTALL_PREFIX= \
             -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
             -DKokkosKernels_ENABLE_TESTS=ON \
@@ -170,6 +170,7 @@ jobs:
             -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
             -DKokkosKernels_ENABLE_TPL_ROCSOLVER=ON \
             -DKokkosKernels_ENABLE_TPL_ROCSPARSE=ON \
+            -DKokkosKernels_ENABLE_TPL_ROCBLAS=ON \
             -DKokkosKernels_ENABLE_TPL_BLAS=ON \
             -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
             -DCMAKE_EXE_LINKER_FLAGS="" \
