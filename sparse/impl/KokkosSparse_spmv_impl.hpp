@@ -459,7 +459,9 @@ static void spmv_beta_transpose(const execution_space& exec,
 
   // We need to scale y first ("scaling" by zero just means filling
   // with zeros), since the functor works by atomic-adding into y.
-  if (dobeta != 1) {
+  if (0 == dobeta || 0 == beta) {
+    Kokkos::deep_copy(exec, y, 0);
+  } else if (dobeta != 1) {
     KokkosBlas::scal(exec, y, beta, y);
   }
 
@@ -549,7 +551,9 @@ static void spmv_beta_transpose(const execution_space& exec,
 
   // We need to scale y first ("scaling" by zero just means filling
   // with zeros), since the functor works by atomic-adding into y.
-  if (dobeta != 1) {
+  if (0 == dobeta || 0 == beta) {
+    Kokkos::deep_copy(exec, y, 0);
+  } else if (dobeta != 1) {
     KokkosBlas::scal(exec, y, beta, y);
   }
 
