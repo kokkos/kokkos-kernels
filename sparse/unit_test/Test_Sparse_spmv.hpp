@@ -119,6 +119,7 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   using size_type_view_t = typename graph_t::row_map_type;
   using lno_view_t       = typename graph_t::entries_type;
   using scalar_view_t    = typename crsMat_t::values_type::non_const_type;
+  using y_scalar_t       = typename y_vector_type::non_const_value_type;
 
   using size_type = typename size_type_view_t::non_const_value_type;
   using lno_t     = typename lno_view_t::non_const_value_type;
@@ -149,8 +150,8 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
   // first, scale y by beta
   for (size_t i = 0; i < h_y.extent(0); i++) {
-    if (beta == 0) {
-      h_y(i) = 0;
+    if (beta == y_scalar_t(0)) {
+      h_y(i) = y_scalar_t(0);
     } else {
       h_y(i) *= beta;
     }

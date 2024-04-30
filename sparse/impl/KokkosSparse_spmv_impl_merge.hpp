@@ -309,8 +309,8 @@ struct SpmvMergeHierarchical {
     static_assert(XVector::rank == 1, "");
     static_assert(YVector::rank == 1, "");
 
-    if (0 == beta) {
-      Kokkos::deep_copy(space, y, 0);
+    if (y_value_type(0) == beta) {
+      Kokkos::deep_copy(space, y, y_value_type(0));
     } else {
       KokkosBlas::scal(space, y, beta, y);
     }

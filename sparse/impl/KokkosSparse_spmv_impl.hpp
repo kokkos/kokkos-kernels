@@ -450,8 +450,9 @@ static void spmv_beta_transpose(const execution_space& exec,
                                 const AMatrix& A, const XVector& x,
                                 typename YVector::const_value_type& beta,
                                 const YVector& y) {
-  using ordinal_type = typename AMatrix::non_const_ordinal_type;
-  using size_type    = typename AMatrix::non_const_size_type;
+  using ordinal_type  = typename AMatrix::non_const_ordinal_type;
+  using size_type     = typename AMatrix::non_const_size_type;
+  using y_scalar_type = typename YVector::non_const_value_type;
 
   if (A.numRows() <= static_cast<ordinal_type>(0)) {
     return;
@@ -459,8 +460,8 @@ static void spmv_beta_transpose(const execution_space& exec,
 
   // We need to scale y first ("scaling" by zero just means filling
   // with zeros), since the functor works by atomic-adding into y.
-  if (0 == dobeta || 0 == beta) {
-    Kokkos::deep_copy(exec, y, 0);
+  if (0 == dobeta || y_scalar_type(0) == beta) {
+    Kokkos::deep_copy(exec, y, y_scalar_type(0));
   } else if (dobeta != 1) {
     KokkosBlas::scal(exec, y, beta, y);
   }
@@ -542,8 +543,9 @@ static void spmv_beta_transpose(const execution_space& exec,
                                 const AMatrix& A, const XVector& x,
                                 typename YVector::const_value_type& beta,
                                 const YVector& y) {
-  using ordinal_type = typename AMatrix::non_const_ordinal_type;
-  using size_type    = typename AMatrix::non_const_size_type;
+  using ordinal_type  = typename AMatrix::non_const_ordinal_type;
+  using size_type     = typename AMatrix::non_const_size_type;
+  using y_scalar_type = typename YVector::non_const_value_type;
 
   if (A.numRows() <= static_cast<ordinal_type>(0)) {
     return;
@@ -551,8 +553,8 @@ static void spmv_beta_transpose(const execution_space& exec,
 
   // We need to scale y first ("scaling" by zero just means filling
   // with zeros), since the functor works by atomic-adding into y.
-  if (0 == dobeta || 0 == beta) {
-    Kokkos::deep_copy(exec, y, 0);
+  if (0 == dobeta || y_scalar_type(0) == beta) {
+    Kokkos::deep_copy(exec, y, y_scalar_type(0));
   } else if (dobeta != 1) {
     KokkosBlas::scal(exec, y, beta, y);
   }
