@@ -18,7 +18,6 @@
 #define KOKKOSSPARSE_SPMV_IMPL_MERGE_HPP
 
 #include <sstream>
-#include <iostream>
 
 #include "KokkosKernels_Iota.hpp"
 #include "KokkosKernels_AlwaysFalse.hpp"
