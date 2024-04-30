@@ -18,6 +18,7 @@
 #define KOKKOSSPARSE_SPMV_IMPL_MERGE_HPP
 
 #include <sstream>
+#include <iostream>
 
 #include "KokkosKernels_Iota.hpp"
 #include "KokkosKernels_AlwaysFalse.hpp"
@@ -309,7 +310,11 @@ struct SpmvMergeHierarchical {
     static_assert(XVector::rank == 1, "");
     static_assert(YVector::rank == 1, "");
 
-    KokkosBlas::scal(y, beta, y);
+    if (0 == beta) {
+      Kokkos::deep_copy(space, y, 0);
+    } else {
+      KokkosBlas::scal(space, y, beta, y);
+    }
 
     /* determine launch parameters for different architectures
        On architectures where there is a natural execution hierarchy with true
