@@ -13,6 +13,11 @@ jobs:
   docs-check:
     runs-on: [macos-latest]
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@a4aa98b93cab29d9b1101a6143fb8bce00e2eac4 # v2.7.1
+        with:
+          egress-policy: audit
+
       - name: Install Dependencies
         run: |
           brew install doxygen
@@ -23,12 +28,12 @@ jobs:
           doxygen --version
 
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@v4
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@v4
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
           repository: kokkos/kokkos
           ref: develop
