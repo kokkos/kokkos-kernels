@@ -54,8 +54,10 @@ jobs:
         working-directory: kokkos/build
         run: make -j2 install
 
+      # sphinx needs to be available at configure time for the target to be generated
       - name: configure_kokkos_kernels
         run: |
+          . .venv/bin/activate
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           cmake \
