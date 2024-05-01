@@ -83,7 +83,7 @@ jobs:
          fi
 
       - name: build_kokkos_kernels_sphinx
-        working-directory: kokkos-kernels/build
         run: | 
-          . ../../.venv/bin/activate
+          . .venv/bin/activate
+          cd kokkos-kernels/build
           make Sphinx
