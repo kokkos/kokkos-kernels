@@ -12,7 +12,9 @@ on:
   schedule:
     - cron: '0 8 * * 0'
   push:
-    branches: ["develop"]
+    branches: [ "master", "develop"]
+  workflow_dispatch:
+  
 
 # Declare default permissions as read only.
 permissions: read-all
