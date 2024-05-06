@@ -407,8 +407,7 @@ Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(int mag) {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename Device>
 void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
-               lno_t bandwidth, lno_t row_size_variance, bool heavy,
-               const bool nans = false) {
+               lno_t bandwidth, lno_t row_size_variance, bool heavy) {
   using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device,
                                                     void, size_type>;
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
