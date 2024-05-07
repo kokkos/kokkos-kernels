@@ -8,7 +8,7 @@
 - magma: tpl interaction fixes [\#2176](https://github.com/kokkos/kokkos-kernels/pull/2176), [\#2178](https://github.com/kokkos/kokkos-kernels/pull/2178), [\#2181](https://github.com/kokkos/kokkos-kernels/pull/2181)
 - trsv: Add early return if numRows == 0 in trsv to avoid integer divide-by-zero error [\#2180](https://github.com/kokkos/kokkos-kernels/pull/2180)
 - blas tpl: resolve potential duplicate symbol [\#2183](https://github.com/kokkos/kokkos-kernels/pull/2183)
-- spmv: permformance fix, add special path for rank-2 x/y [\#2164](https://github.com/kokkos/kokkos-kernels/pull/2164), [\#2168](https://github.com/kokkos/kokkos-kernels/pull/2168)
+- spmv: permformance fix, add back special path for rank-2 x/y with 1 column [\#2164](https://github.com/kokkos/kokkos-kernels/pull/2164), [\#2168](https://github.com/kokkos/kokkos-kernels/pull/2168)
 - BsrMatrix: Fix HostMirror typedef [\#2196](https://github.com/kokkos/kokkos-kernels/pull/2196)
 - GA: Fix macOS docs build [\#2190](https://github.com/kokkos/kokkos-kernels/pull/2190)
 
