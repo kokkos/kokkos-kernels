@@ -16,9 +16,11 @@ jobs:
       - name: Install Dependencies
         run: |
           brew install doxygen
-          python3 -m pip install sphinx -v "sphinx==6.2.1"
-          python3 -m pip install breathe
-          python3 -m pip install sphinx-rtd-theme
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install sphinx -v "sphinx==6.2.1"
+          pip install breathe
+          pip install sphinx-rtd-theme
           sphinx-build --version
           doxygen --version
 
@@ -52,8 +54,10 @@ jobs:
         working-directory: kokkos/build
         run: make -j2 install
 
+      # sphinx needs to be available at configure time for the target to be generated
       - name: configure_kokkos_kernels
         run: |
+          . .venv/bin/activate
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           cmake \
@@ -81,5 +85,7 @@ jobs:
          fi
 
       - name: build_kokkos_kernels_sphinx
-        working-directory: kokkos-kernels/build
-        run: make Sphinx
+        run: | 
+          . .venv/bin/activate
+          cd kokkos-kernels/build
+          make Sphinx
