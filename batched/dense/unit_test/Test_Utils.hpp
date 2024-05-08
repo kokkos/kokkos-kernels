@@ -52,7 +52,6 @@ void create_banded_triangular_matrix(InViewType& in, OutViewType& out,
                                      int k = 1, bool band_storage = true) {
   auto h_in        = Kokkos::create_mirror_view(in);
   auto h_out       = Kokkos::create_mirror_view(out);
-  using value_type = typename InViewType::non_const_value_type;
   const int N = in.extent(0), BlkSize = in.extent(1);
 
   Kokkos::deep_copy(h_in, in);
