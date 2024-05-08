@@ -194,7 +194,6 @@ void check_spmv(
 
   const y_value_mag_type eps =
       10 * Kokkos::ArithTraits<y_value_mag_type>::eps();
-  bool transposed = (mode == "T") || (mode == "H");
 
   y_vector_type actual_y("actual_y", y.extent(0));
   y_vector_type expected_y("expected_y", y.extent(0));
