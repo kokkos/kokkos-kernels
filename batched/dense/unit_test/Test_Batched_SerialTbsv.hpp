@@ -176,13 +176,13 @@ void impl_test_batched_tbsv_analytical(const int N) {
   auto h_x_ref  = Kokkos::create_mirror_view(x_ref);
   auto h_x1_ref = Kokkos::create_mirror_view(x1_ref);
 
-  for (std::size_t ib = 0; ib < N; ib++) {
-    for (std::size_t i = 0; i < BlkSize; i++) {
-      for (std::size_t j = 0; j < BlkSize; j++) {
+  for (int ib = 0; ib < N; ib++) {
+    for (int i = 0; i < BlkSize; i++) {
+      for (int j = 0; j < BlkSize; j++) {
         h_ref(ib, i, j) = i + 1;
       }
     }
-    for (std::size_t n = 0; n < BlkSize; n++) {
+    for (int n = 0; n < BlkSize; n++) {
       h_x0(ib, n)        = 1;
       h_x1(ib, n * incx) = 1;
     }
