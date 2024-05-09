@@ -80,6 +80,7 @@ void sptrsv_solve_cusparse(ExecutionSpace& space,
 
     cusparseStatus_t status;
 
+    const idx_type nrows = sptrsv_handle->get_nrows();
     typename KernelHandle::SPTRSVcuSparseHandleType *h =
         sptrsv_handle->get_cuSparseHandle();
 
