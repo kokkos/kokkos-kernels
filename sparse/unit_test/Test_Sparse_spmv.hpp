@@ -416,6 +416,11 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
   using handle_t =
       KokkosSparse::SPMVHandle<Device, crsMat_t, x_vector_type, y_vector_type>;
 
+  using ExecSpace     = typename crsMat_t::execution_space;
+  using my_exec_space = Kokkos::RangePolicy<ExecSpace>;
+  using y_policy = Kokkos::RangePolicy<typename y_vector_type::execution_space>;
+  using x_policy = Kokkos::RangePolicy<typename x_vector_type::execution_space>;
+
   constexpr mag_t max_x   = static_cast<mag_t>(1);
   constexpr mag_t max_y   = static_cast<mag_t>(1);
   constexpr mag_t max_val = static_cast<mag_t>(1);
@@ -448,13 +453,13 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
   Kokkos::deep_copy(input_y_nans, input_y);
   Kokkos::deep_copy(input_yt_nans, input_yt);
   Kokkos::parallel_for(
-      input_y_nans.extent(0), KOKKOS_LAMBDA(const size_t i) {
+      y_policy(0, input_y_nans.extent(0)), KOKKOS_LAMBDA(const size_t i) {
         if (0 == (i % 19)) {
           input_y_nans(i) = NAN;
         }
       });
   Kokkos::parallel_for(
-      input_yt_nans.extent(0), KOKKOS_LAMBDA(const size_t i) {
+      y_policy(0, input_yt_nans.extent(0)), KOKKOS_LAMBDA(const size_t i) {
         if (0 == (i % 23)) {
           input_yt_nans(i) = Kokkos::nan("");
         }

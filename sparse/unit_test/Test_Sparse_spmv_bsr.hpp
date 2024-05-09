@@ -334,6 +334,8 @@ auto random_vecs_for_spmv(const char *mode, const Bsr &a,
   using scalar_type     = typename Bsr::non_const_value_type;
   using vector_type     = typename VectorTypeFor<Bsr>::type;
   using execution_space = typename Bsr::execution_space;
+  using policy_type =
+      Kokkos::RangePolicy<typename vector_type::execution_space>;
 
   size_t nx = a.numCols() * a.blockDim();
   size_t ny = a.numRows() * a.blockDim();
@@ -349,13 +351,13 @@ auto random_vecs_for_spmv(const char *mode, const Bsr &a,
 
   if (nans) {
     Kokkos::parallel_for(
-        x.extent(0), KOKKOS_LAMBDA(size_t i) {
+        policy_type(0, x.extent(0)), KOKKOS_LAMBDA(size_t i) {
           if (0 == (i % 17)) {
             x(i) = Kokkos::nan("");
           }
         });
     Kokkos::parallel_for(
-        y.extent(0), KOKKOS_LAMBDA(size_t i) {
+        policy_type(0, y.extent(0)), KOKKOS_LAMBDA(size_t i) {
           if (0 == (i % 17)) {
             y(i) = Kokkos::nan("");
           }
@@ -592,6 +594,8 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
   using scalar_type     = typename Bsr::non_const_value_type;
   using vector_type     = typename MultiVectorTypeFor<Layout, Bsr>::type;
   using execution_space = typename Bsr::execution_space;
+  using policy_type =
+      Kokkos::RangePolicy<typename vector_type::execution_space>;
 
   size_t nx = a.numCols() * a.blockDim();
   size_t ny = a.numRows() * a.blockDim();
@@ -608,7 +612,7 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
   // sprinkle some "random" NaNs in
   if (nans) {
     Kokkos::parallel_for(
-        x.extent(0), KOKKOS_LAMBDA(size_t i) {
+        policy_type(0, x.extent(0)), KOKKOS_LAMBDA(size_t i) {
           for (size_t j = 0; j < x.extent(1); ++j) {
             if (0 == ((i * x.extent(1) + j) % 13)) {
               x(i, j) = Kokkos::nan("");
@@ -616,7 +620,7 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
           }
         });
     Kokkos::parallel_for(
-        y.extent(0), KOKKOS_LAMBDA(size_t i) {
+        policy_type(0, y.extent(0)), KOKKOS_LAMBDA(size_t i) {
           for (size_t j = 0; j < y.extent(1); ++j) {
             if (0 == ((i * y.extent(1) + j) % 17)) {
               y(i, j) = Kokkos::nan("");
