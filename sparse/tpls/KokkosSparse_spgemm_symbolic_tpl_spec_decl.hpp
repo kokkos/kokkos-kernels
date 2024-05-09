@@ -387,7 +387,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
                                 bool, c_int_view_t row_mapB,                   \
                                 c_int_view_t entriesB, bool,                   \
                                 int_view_t row_mapC, bool computeRowptrs) {    \
-      std::string label = "KokkosSparse::spgemm[TPL_CUSPARSE," +               \
+      std::string label = "KokkosSparse::spgemm_symbolic[TPL_CUSPARSE," +      \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
       spgemm_symbolic_cusparse(handle->get_spgemm_handle(), m, n, k, row_mapA, \
@@ -549,7 +549,7 @@ void spgemm_symbolic_rocsparse(
                                 bool, c_int_view_t row_mapB,                  \
                                 c_int_view_t entriesB, bool,                  \
                                 int_view_t row_mapC, bool) {                  \
-      std::string label = "KokkosSparse::spgemm[TPL_ROCSPARSE," +             \
+      std::string label = "KokkosSparse::spgemm_symbolic[TPL_ROCSPARSE," +    \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";          \
       Kokkos::Profiling::pushRegion(label);                                   \
       spgemm_symbolic_rocsparse(handle->get_spgemm_handle(), m, n, k,         \
