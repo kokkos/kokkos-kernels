@@ -415,11 +415,7 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
   using mag_t         = typename Kokkos::ArithTraits<scalar_t>::mag_type;
   using handle_t =
       KokkosSparse::SPMVHandle<Device, crsMat_t, x_vector_type, y_vector_type>;
-
-  using ExecSpace     = typename crsMat_t::execution_space;
-  using my_exec_space = Kokkos::RangePolicy<ExecSpace>;
   using y_policy = Kokkos::RangePolicy<typename y_vector_type::execution_space>;
-  using x_policy = Kokkos::RangePolicy<typename x_vector_type::execution_space>;
 
   constexpr mag_t max_x   = static_cast<mag_t>(1);
   constexpr mag_t max_y   = static_cast<mag_t>(1);
