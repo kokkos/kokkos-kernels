@@ -41,6 +41,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
 #include "KokkosKernels_default_types.hpp"
+#include <KokkosKernels_NaN.hpp>
 
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
@@ -353,13 +354,13 @@ auto random_vecs_for_spmv(const char *mode, const Bsr &a,
     Kokkos::parallel_for(
         policy_type(0, x.extent(0)), KOKKOS_LAMBDA(size_t i) {
           if (0 == (i % 17)) {
-            x(i) = Kokkos::nan("");
+            x(i) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
           }
         });
     Kokkos::parallel_for(
         policy_type(0, y.extent(0)), KOKKOS_LAMBDA(size_t i) {
           if (0 == (i % 17)) {
-            y(i) = Kokkos::nan("");
+            y(i) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
           }
         });
   }
@@ -615,7 +616,7 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
         policy_type(0, x.extent(0)), KOKKOS_LAMBDA(size_t i) {
           for (size_t j = 0; j < x.extent(1); ++j) {
             if (0 == ((i * x.extent(1) + j) % 13)) {
-              x(i, j) = Kokkos::nan("");
+              x(i, j) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
             }
           }
         });
@@ -623,7 +624,7 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
         policy_type(0, y.extent(0)), KOKKOS_LAMBDA(size_t i) {
           for (size_t j = 0; j < y.extent(1); ++j) {
             if (0 == ((i * y.extent(1) + j) % 17)) {
-              y(i, j) = Kokkos::nan("");
+              y(i, j) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
             }
           }
         });

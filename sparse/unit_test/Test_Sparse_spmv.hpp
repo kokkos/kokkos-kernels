@@ -23,6 +23,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_IOUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
+#include <KokkosKernels_NaN.hpp>
 
 #include "KokkosKernels_default_types.hpp"
 
@@ -451,13 +452,13 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
   Kokkos::parallel_for(
       y_policy(0, input_y_nans.extent(0)), KOKKOS_LAMBDA(const size_t i) {
         if (0 == (i % 19)) {
-          input_y_nans(i) = NAN;
+          input_y_nans(i) = KokkosKernels::Impl::quiet_NaN<scalar_t>();
         }
       });
   Kokkos::parallel_for(
       y_policy(0, input_yt_nans.extent(0)), KOKKOS_LAMBDA(const size_t i) {
         if (0 == (i % 23)) {
-          input_yt_nans(i) = Kokkos::nan("");
+          input_yt_nans(i) = KokkosKernels::Impl::quiet_NaN<scalar_t>();
         }
       });
 
