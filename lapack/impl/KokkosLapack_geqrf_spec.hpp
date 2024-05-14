@@ -50,10 +50,7 @@ struct geqrf_eti_spec_avail {
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                           \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
-      Kokkos::View<int *, LAYOUT_TYPE,                                    \
+      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {            \
     enum : bool { value = true };                                         \
@@ -83,7 +80,7 @@ struct GEQRF {
 //! Full specialization of geqrf for multi vectors.
 // Unification layer
 template <class ExecutionSpace, class AMatrix, class TWArray>
-struct GEQRF<ExecutionSpace, AMatrix, TWArray, TWArray, false,
+struct GEQRF<ExecutionSpace, AMatrix, TWArray, false,
             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void geqrf(const ExecutionSpace & /* space */, const AMatrix & /* A */,
                    const TWArray & /* Tau */, const TWArray & /* Work */) {
@@ -115,9 +112,6 @@ struct GEQRF<ExecutionSpace, AMatrix, TWArray, TWArray, false,
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                           \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
       false, true>;
 
 #define KOKKOSLAPACK_GEQRF_ETI_SPEC_INST(SCALAR_TYPE, LAYOUT_TYPE,       \
@@ -125,9 +119,6 @@ struct GEQRF<ExecutionSpace, AMatrix, TWArray, TWArray, false,
   template struct GEQRF<                                                 \
       EXEC_SPACE_TYPE,                                                   \
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                          \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                           \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                           \

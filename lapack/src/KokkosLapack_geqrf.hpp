@@ -66,106 +66,56 @@ void geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
                                  typename AMatrix::memory_space>::accessible);
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename BXMV::memory_space>::accessible);
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-  if constexpr (!std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
-    static_assert(
-        Kokkos::SpaceAccessibility<ExecutionSpace,
-                                   typename IPIVV::memory_space>::accessible);
-  }
-#else
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename IPIVV::memory_space>::accessible);
-#endif
+                                 typename TWArray::memory_space>::accessible);
+
   static_assert(Kokkos::is_view<AMatrix>::value,
                 "KokkosLapack::geqrf: A must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<BXMV>::value,
-                "KokkosLapack::geqrf: B must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<IPIVV>::value,
-                "KokkosLapack::geqrf: IPIV must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<TWArray>::value,
+                "KokkosLapack::geqrf: Tau and Work must be Kokkos::View.");
   static_assert(static_cast<int>(AMatrix::rank) == 2,
                 "KokkosLapack::geqrf: A must have rank 2.");
-  static_assert(
-      static_cast<int>(BXMV::rank) == 1 || static_cast<int>(BXMV::rank) == 2,
-      "KokkosLapack::geqrf: B must have either rank 1 or rank 2.");
-  static_assert(static_cast<int>(IPIVV::rank) == 1,
-                "KokkosLapack::geqrf: IPIV must have rank 1.");
+  static_assert(static_cast<int>(TWArray::rank) == 1,
+                "KokkosLapack::geqrf: Tau and Work must have rank 1.");
 
-  int64_t IPIV0 = IPIV.extent(0);
-  int64_t A0    = A.extent(0);
-  int64_t A1    = A.extent(1);
-  int64_t B0    = B.extent(0);
+  int64_t m = A.extent(0);
+  int64_t n = A.extent(1);
 
-  // Check validity of pivot argument
-  bool valid_pivot =
-      (IPIV0 == A1) || ((IPIV0 == 0) && (IPIV.data() == nullptr));
-  if (!(valid_pivot)) {
+  // Check validity of dimensions
+  if (Tau.extent(0) != std::min(m,n)) {
     std::ostringstream os;
-    os << "KokkosLapack::geqrf: IPIV: " << IPIV0 << ". "
-       << "Valid options include zero-extent 1-D view (no pivoting), or 1-D "
-          "View with size of "
-       << A0 << " (partial pivoting).";
-g    KokkosKernels::Impl::throw_runtime_exception(os.str());
-  }
-
-  // Check for no pivoting case. Only MAGMA supports no pivoting interface
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
-  if ((!std::is_same<typename AMatrix::device_type::memory_space,
-                     Kokkos::CudaSpace>::value) &&
-      (IPIV0 == 0) && (IPIV.data() == nullptr)) {
-    std::ostringstream os;
-    os << "KokkosLapack::geqrf: IPIV: " << IPIV0 << ". "
-       << "LAPACK TPL does not support no pivoting.";
+    os << "KokkosLapack::geqrf: length of Tau must be equal to min(m,n): "
+       << " A: " << m << " x " << n << ", Tau length = " << Tau.extent(0);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
-#endif
-#else                                   // not have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // but have LAPACK TPL
-  if ((IPIV0 == 0) && (IPIV.data() == nullptr)) {
-    std::ostringstream os;
-    os << "KokkosLapack::geqrf: IPIV: " << IPIV0 << ". "
-       << "LAPACK TPL does not support no pivoting.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if ((m == 0) || (n == 0)) {
+    if (Work.extent(0) < 1) {
+      std::ostringstream os;
+      os << "KokkosLapack::geqrf: In case min(m,n) == 0, then Work must have length >= 1: "
+         << " A: " << m << " x " << n << ", Work length = " << Work.extent(0);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
-#endif
-#endif
-
-  // Check compatibility of dimensions at run time.
-  if ((A0 < A1) || (A0 != B0)) {
-    std::ostringstream os;
-    os << "KokkosLapack::geqrf: Dimensions of A, and B do not match: "
-       << " A: " << A.extent(0) << " x " << A.extent(1) << " B: " << B.extent(0)
-       << " x " << B.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  else {
+    if (Work.extent(0) < n) {
+      std::ostringstream os;
+      os << "KokkosLapack::geqrf: In case min(m,n) != 0, then Work must have length >= n: "
+         << " A: " << m << " x " << n << ", Work length = " << Work.extent(0);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   typedef Kokkos::View<
       typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       AMatrix_Internal;
-  typedef Kokkos::View<typename BXMV::non_const_value_type**,
-                       typename BXMV::array_layout, typename BXMV::device_type,
+  typedef Kokkos::View<typename TWArray::non_const_value_type*,
+                       typename TWArray::array_layout, typename TWArray::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      BXMV_Internal;
-  typedef Kokkos::View<
-      typename IPIVV::non_const_value_type*, typename IPIVV::array_layout,
-      typename IPIVV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      IPIVV_Internal;
-  AMatrix_Internal A_i = A;
-  // BXMV_Internal B_i = B;
-  IPIVV_Internal IPIV_i = IPIV;
-
-  if (BXMV::rank == 1) {
-    auto B_i = BXMV_Internal(B.data(), B.extent(0), 1);
-    KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, BXMV_Internal,
-                             IPIVV_Internal>::geqrf(space, A_i, B_i, IPIV_i);
-  } else {  // BXMV::rank == 2
-    auto B_i = BXMV_Internal(B.data(), B.extent(0), B.extent(1));
-    KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, BXMV_Internal,
-                             IPIVV_Internal>::geqrf(space, A_i, B_i, IPIV_i);
-  }
+      TWArray_Internal;
+  AMatrix_Internal A_i    = A;
+  TWArray_Internal Tau_i  = Tau;
+  TWArray_Internal Work_i = Work;
+  KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, TWArray_Internal>::geqrf(space, A_i, Tau_i, Work_i);
 }
 
 /// \brief Computes a QR factorization of a matrix A

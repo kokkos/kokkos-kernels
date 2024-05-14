@@ -35,8 +35,6 @@ struct geqrf_tpl_spec_avail {
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {           \
     enum : bool { value = true };                                          \
   };
@@ -66,8 +64,6 @@ namespace Impl {
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
     enum : bool { value = true };                                            \
   };
@@ -94,8 +90,6 @@ namespace Impl {
   struct geqrf_tpl_spec_avail<                                               \
       Kokkos::Cuda,                                                          \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
@@ -139,8 +133,6 @@ namespace Impl {
   struct geqrf_tpl_spec_avail<                                                \
       Kokkos::HIP,                                                            \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {              \
