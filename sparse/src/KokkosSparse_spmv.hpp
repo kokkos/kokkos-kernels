@@ -50,18 +50,15 @@ inline constexpr bool spmv_general_tpl_avail() {
     if constexpr (XVector::rank() == 1)
       return spmv_tpl_spec_avail<ExecutionSpace, Handle, AMatrix, XVector,
                                  YVector>::value;
-    else
-      return spmv_mv_tpl_spec_avail<ExecutionSpace, Handle, AMatrix, XVector,
-                                    YVector>::value;
-  } else {
-    // BSR
-    if constexpr (XVector::rank() == 1)
-      return spmv_bsrmatrix_tpl_spec_avail<ExecutionSpace, Handle, AMatrix,
-                                           XVector, YVector>::value;
-    else
-      return spmv_mv_bsrmatrix_tpl_spec_avail<ExecutionSpace, Handle, AMatrix,
-                                              XVector, YVector>::value;
+    return spmv_mv_tpl_spec_avail<ExecutionSpace, Handle, AMatrix, XVector,
+                                  YVector>::value;
   }
+  // BSR
+  if constexpr (XVector::rank() == 1)
+    return spmv_bsrmatrix_tpl_spec_avail<ExecutionSpace, Handle, AMatrix,
+                                         XVector, YVector>::value;
+  return spmv_mv_bsrmatrix_tpl_spec_avail<ExecutionSpace, Handle, AMatrix,
+                                          XVector, YVector>::value;
 }
 }  // namespace Impl
 
