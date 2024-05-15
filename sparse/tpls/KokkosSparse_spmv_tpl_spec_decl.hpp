@@ -96,11 +96,24 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(
       &vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
 
-  // use default cusparse algo for best performance
-#if CUSPARSE_VERSION >= 11400
-  cusparseSpMVAlg_t algo = CUSPARSE_SPMV_ALG_DEFAULT;
+  // Prior to CUDA 11.2.1, ALG2 was more performant than default for imbalanced
+  // matrices. After 11.2.1, the default is performant for imbalanced matrices,
+  // and ALG2 now means something else. CUDA >= 11.2.1 corresponds to
+  // CUSPARSE_VERSION >= 11402.
+#if CUSPARSE_VERSION >= 11402
+  const bool useAlg2 = false;
 #else
-  cusparseSpMVAlg_t algo = CUSPARSE_MV_ALG_DEFAULT;
+  const bool useAlg2 = handle->get_algorithm() == SPMV_MERGE_PATH;
+#endif
+
+  // In CUDA 11.2.0, the algorithm enums were renamed.
+  // This corresponds to CUSPARSE_VERSION >= 11400.
+#if CUSPARSE_VERSION >= 11400
+  cusparseSpMVAlg_t algo =
+      useAlg2 ? CUSPARSE_SPMV_CSR_ALG2 : CUSPARSE_SPMV_ALG_DEFAULT;
+#else
+  cusparseSpMVAlg_t algo =
+      useAlg2 ? CUSPARSE_CSRMV_ALG2 : CUSPARSE_MV_ALG_DEFAULT;
 #endif
 
   KokkosSparse::Impl::CuSparse10_SpMV_Data* subhandle;
