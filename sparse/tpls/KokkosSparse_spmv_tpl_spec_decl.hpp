@@ -118,16 +118,16 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
 
   KokkosSparse::Impl::CuSparse10_SpMV_Data* subhandle;
 
-  if (handle->is_set_up) {
-    subhandle =
-        dynamic_cast<KokkosSparse::Impl::CuSparse10_SpMV_Data*>(handle->tpl);
+  if (handle->tpl_rank1) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::CuSparse10_SpMV_Data*>(
+        handle->tpl_rank1);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
     subhandle->set_exec_space(exec);
   } else {
-    subhandle   = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
-    handle->tpl = subhandle;
+    subhandle         = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
+    handle->tpl_rank1 = subhandle;
 
     /* create matrix */
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
@@ -148,7 +148,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
     KOKKOS_IMPL_CUDA_SAFE_CALL(
         cudaMalloc(&subhandle->buffer, subhandle->bufferSize));
 #endif
-    handle->is_set_up = true;
   }
 
   /* perform SpMV */
@@ -163,24 +162,23 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
 
   KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
 
-  if (handle->is_set_up) {
-    subhandle =
-        dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(handle->tpl);
+  if (handle->tpl_rank1) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(
+        handle->tpl_rank1);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
     subhandle->set_exec_space(exec);
   } else {
     /* create and set the subhandle and matrix descriptor */
-    subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
-    handle->tpl = subhandle;
+    subhandle         = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
+    handle->tpl_rank1 = subhandle;
     cusparseMatDescr_t descrA = 0;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
-    handle->is_set_up = true;
   }
 
   /* perform the actual SpMV operation */
@@ -399,16 +397,16 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
   rocsparse_spmv_alg alg = rocsparse_spmv_alg_default;
 
   KokkosSparse::Impl::RocSparse_CRS_SpMV_Data* subhandle;
-  if (handle->is_set_up) {
-    subhandle =
-        dynamic_cast<KokkosSparse::Impl::RocSparse_CRS_SpMV_Data*>(handle->tpl);
+  if (handle->tpl_rank1) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::RocSparse_CRS_SpMV_Data*>(
+        handle->tpl_rank1);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for rocsparse CRS");
     subhandle->set_exec_space(exec);
   } else {
-    subhandle   = new KokkosSparse::Impl::RocSparse_CRS_SpMV_Data(exec);
-    handle->tpl = subhandle;
+    subhandle         = new KokkosSparse::Impl::RocSparse_CRS_SpMV_Data(exec);
+    handle->tpl_rank1 = subhandle;
     /* Create the rocsparse csr descr */
     // We need to do some casting to void*
     // Note that row_map is always a const view so const_cast is necessary,
@@ -456,7 +454,6 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
     KOKKOS_IMPL_HIP_SAFE_CALL(
         hipMalloc(&subhandle->buffer, subhandle->bufferSize));
 #endif
-    handle->is_set_up = true;
   }
 
   /* Perform the actual computation */
@@ -564,8 +561,8 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
   Subhandle* subhandle;
   const MKLScalar* x_mkl = reinterpret_cast<const MKLScalar*>(x);
   MKLScalar* y_mkl       = reinterpret_cast<MKLScalar*>(y);
-  if (handle->is_set_up) {
-    subhandle = dynamic_cast<Subhandle*>(handle->tpl);
+  if (handle->tpl_rank1) {
+    subhandle = dynamic_cast<Subhandle*>(handle->tpl_rank1);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL CRS");
@@ -575,7 +572,7 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
     // Use the default execution space instance, as classic MKL does not use
     // a specific instance.
     subhandle             = new Subhandle(ExecSpace());
-    handle->tpl           = subhandle;
+    handle->tpl_rank1     = subhandle;
     subhandle->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     subhandle->descr.mode = SPARSE_FILL_MODE_FULL;
     subhandle->descr.diag = SPARSE_DIAG_NON_UNIT;
@@ -604,7 +601,6 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
           const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
           const_cast<MKL_INT*>(Aentries), Avalues_mkl));
     }
-    handle->is_set_up = true;
   }
   MKLScalar alpha_mkl = KokkosToMKLScalar<Scalar>(alpha);
   MKLScalar beta_mkl  = KokkosToMKLScalar<Scalar>(beta);
@@ -722,15 +718,15 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
     mkl_mode = oneapi::mkl::transpose::trans;
 
   OneMKL_SpMV_Data* subhandle;
-  if (handle->is_set_up) {
-    subhandle = dynamic_cast<OneMKL_SpMV_Data*>(handle->tpl);
+  if (handle->tpl_rank1) {
+    subhandle = dynamic_cast<OneMKL_SpMV_Data*>(handle->tpl_rank1);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for OneMKL CRS");
     subhandle->set_exec_space(exec);
   } else {
-    subhandle   = new OneMKL_SpMV_Data(exec);
-    handle->tpl = subhandle;
+    subhandle         = new OneMKL_SpMV_Data(exec);
+    handle->tpl_rank1 = subhandle;
     oneapi::mkl::sparse::init_matrix_handle(&subhandle->mat);
     // Even for out-of-order SYCL queue, the inputs here do not depend on
     // kernels being sequenced
@@ -745,7 +741,6 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
     // optimize_gemv has finished
     oneapi::mkl::sparse::optimize_gemv(exec.sycl_queue(), mkl_mode,
                                        subhandle->mat, {ev});
-    handle->is_set_up = true;
   }
 
   // Uncommon case: an out-of-order SYCL queue does not promise that previously
