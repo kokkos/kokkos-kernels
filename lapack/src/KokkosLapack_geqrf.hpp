@@ -80,29 +80,31 @@ int geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
   static_assert(static_cast<int>(TWArray::rank) == 1,
                 "KokkosLapack::geqrf: Tau and Work must have rank 1.");
 
-  int64_t m = A.extent(0);
-  int64_t n = A.extent(1);
+  int64_t m     = A.extent(0);
+  int64_t n     = A.extent(1);
+  int64_t tau0  = Tau.extent(0);
+  int64_t work0 = Work.extent(0);
 
   // Check validity of dimensions
-  if (Tau.extent(0) != std::min(m,n)) {
+  if (tau0 != std::min(m,n)) {
     std::ostringstream os;
     os << "KokkosLapack::geqrf: length of Tau must be equal to min(m,n): "
-       << " A: " << m << " x " << n << ", Tau length = " << Tau.extent(0);
+       << " A: " << m << " x " << n << ", Tau length = " << tau0;
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   if ((m == 0) || (n == 0)) {
-    if (Work.extent(0) < 1) {
+    if (work0 < 1) {
       std::ostringstream os;
       os << "KokkosLapack::geqrf: In case min(m,n) == 0, then Work must have length >= 1: "
-         << " A: " << m << " x " << n << ", Work length = " << Work.extent(0);
+         << " A: " << m << " x " << n << ", Work length = " << work0;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
   else {
-    if (Work.extent(0) < n) {
+    if (work0 < n) {
       std::ostringstream os;
       os << "KokkosLapack::geqrf: In case min(m,n) != 0, then Work must have length >= n: "
-         << " A: " << m << " x " << n << ", Work length = " << Work.extent(0);
+         << " A: " << m << " x " << n << ", Work length = " << work0;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }

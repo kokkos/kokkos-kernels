@@ -58,8 +58,18 @@ void lapackGeqrfWrapper(const AViewType& A, const TWViewType& Tau,
   const int LDA   = A.stride(1);
   const int LWORK = static_cast<int>(Work.extent(0));
 
-  R() = HostLapack<Scalar>::geqrf(M, N, A.data(), LDA, Tau.data(), Work.data(),
-                                  LWORK);
+  if constexpr (Kokkos::ArithTraits<Scalar>::is_complex) {
+    using MagType = typename Kokkos::ArithTraits<Scalar>::mag_type;
+
+    R() = HostLapack<std::complex<MagType>>::geqrf(M, N,
+             reinterpret_cast<std::complex<MagType>*>(A.data()), LDA,
+             reinterpret_cast<std::complex<MagType>*>(Tau.data()),
+             reinterpret_cast<std::complex<MagType>*>(Work.data()), LWORK);
+  }
+  else {
+    R() = HostLapack<Scalar>::geqrf(M, N, A.data(), LDA, Tau.data(), Work.data(),
+                                    LWORK);
+  }
 }
 
 #define KOKKOSLAPACK_GEQRF_LAPACK(SCALAR, LAYOUT, EXECSPACE, MEM_SPACE)        \
