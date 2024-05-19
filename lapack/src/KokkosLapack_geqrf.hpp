@@ -44,16 +44,19 @@ namespace KokkosLapack {
 ///                   upper triangular if M >= N); the elements below the
 ///                   diagonal, with the array Tau, represent the unitary
 ///                   matrix Q as a product of min(M,N) elementary reflectors.
-/// \param Tau [out]  One-dimensional array of size min(M,N) that contain
+/// \param Tau [out]  One-dimensional array of size min(M,N) that contains
 ///                   the scalar factors of the elementary reflectors.
 /// \param Work [out] One-dimensional array of size max(1,LWORK).
 ///                   If min(M,N) == 0, then LWORK must be >= 1.
 ///                   If min(M,N) != 0, then LWORK must be >= N.
 ///                   If the QR factorization is successful, then the first
 ///                   position of Work contains the optimal LWORK.
+/// \return           = 0: successfull exit
+///                   < 0: if equal to '-i', the i-th argument had an illegal
+///                        value
 ///
 template <class ExecutionSpace, class AMatrix, class TWArray>
-void geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
+int geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
           const TWArray& Work) {
   // NOTE: Currently, KokkosLapack::geqrf only supports LAPACK, MAGMA and
   // rocSOLVER TPLs.
@@ -115,7 +118,18 @@ void geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
   AMatrix_Internal A_i    = A;
   TWArray_Internal Tau_i  = Tau;
   TWArray_Internal Work_i = Work;
-  KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, TWArray_Internal>::geqrf(space, A_i, Tau_i, Work_i);
+
+  // This is the return value type and should always reside on host
+  using RViewInternalType =
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+
+  int result;
+  RViewInternalType R = RViewInternalType(&result);
+
+  KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, TWArray_Internal, RViewInternalType>::geqrf(space, A_i, Tau_i, Work_i, R);
+
+  return result;
 }
 
 /// \brief Computes a QR factorization of a matrix A
@@ -129,18 +143,21 @@ void geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
 ///                   upper triangular if M >= N); the elements below the
 ///                   diagonal, with the array Tau, represent the unitary
 ///                   matrix Q as a product of min(M,N) elementary reflectors.
-/// \param Tau [out]  One-dimensional array of size min(M,N) that contain
+/// \param Tau [out]  One-dimensional array of size min(M,N) that contains
 ///                   the scalar factors of the elementary reflectors.
 /// \param Work [out] One-dimensional array of size max(1,LWORK).
 ///                   If min(M,N) == 0, then LWORK must be >= 1.
 ///                   If min(M,N) != 0, then LWORK must be >= N.
 ///                   If the QR factorization is successful, then the first
 ///                   position of Work contains the optimal LWORK.
+/// \return           = 0: successfull exit
+///                   < 0: if equal to '-i', the i-th argument had an illegal
+///                        value
 ///
 template <class AMatrix, class TWArray>
-void geqrf(const AMatrix& A, const TWArray& Tau, const TWArray& Work) {
+int geqrf(const AMatrix& A, const TWArray& Tau, const TWArray& Work) {
   typename AMatrix::execution_space space{};
-  geqrf(space, A, Tau, Work);
+  return geqrf(space, A, Tau, Work);
 }
 
 }  // namespace KokkosLapack

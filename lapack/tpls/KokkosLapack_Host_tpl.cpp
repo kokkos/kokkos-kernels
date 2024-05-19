@@ -82,6 +82,20 @@ void F77_BLAS_MANGLE(ctrtri, CTRTRI)(const char*, const char*, int*,
                                      const std::complex<float>*, int*, int*);
 void F77_BLAS_MANGLE(ztrtri, ZTRTRI)(const char*, const char*, int*,
                                      const std::complex<double>*, int*, int*);
+
+///
+/// Geqrf
+///
+
+void F77_BLAS_MANGLE(sgeqrf, SGEQRF)(int*, int*, float*, int*, float*, float*, int*,
+                                   int*);
+void F77_BLAS_MANGLE(dgeqrf, DGEQRF)(int*, int*, double*, int*, double*, double*,
+                                   int*, int*);
+void F77_BLAS_MANGLE(cgeqrf, CGEQRF)(int*, int*, std::complex<float>*, int*, std::complex<float>*,
+                                   std::complex<float>*, int*, int*);
+void F77_BLAS_MANGLE(zgeqrf, ZGEQRF)(int*, int*, std::complex<double>*, int*,
+                                   std::complex<double>*, std::complex<double>*, int*, int*);
+
 }
 
 #define F77_FUNC_SGESV F77_BLAS_MANGLE(sgesv, SGESV)
@@ -98,6 +112,11 @@ void F77_BLAS_MANGLE(ztrtri, ZTRTRI)(const char*, const char*, int*,
 #define F77_FUNC_DTRTRI F77_BLAS_MANGLE(dtrtri, DTRTRI)
 #define F77_FUNC_CTRTRI F77_BLAS_MANGLE(ctrtri, CTRTRI)
 #define F77_FUNC_ZTRTRI F77_BLAS_MANGLE(ztrtri, ZTRTRI)
+
+#define F77_FUNC_SGEQRF F77_BLAS_MANGLE(sgeqrf, SGEQRF)
+#define F77_FUNC_DGEQRF F77_BLAS_MANGLE(dgeqrf, DGEQRF)
+#define F77_FUNC_CGEQRF F77_BLAS_MANGLE(cgeqrf, CGEQRF)
+#define F77_FUNC_ZGEQRF F77_BLAS_MANGLE(zgeqrf, ZGEQRF)
 
 namespace KokkosLapack {
 namespace Impl {
@@ -127,6 +146,13 @@ int HostLapack<float>::trtri(const char uplo, const char diag, int n,
   F77_FUNC_STRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
 }
+template <>
+int HostLapack<float>::geqrf(int m, int n, float* a, int lda, float* tau,
+                             float* work, int lwork) {
+  int info = 0;
+  F77_FUNC_SGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
+  return info;
+}
 
 ///
 /// double
@@ -151,6 +177,13 @@ int HostLapack<double>::trtri(const char uplo, const char diag, int n,
                               const double* a, int lda) {
   int info = 0;
   F77_FUNC_DTRTRI(&uplo, &diag, &n, a, &lda, &info);
+  return info;
+}
+template <>
+int HostLapack<double>::geqrf(int m, int n, double* a, int lda, double* tau,
+                              double* work, int lwork) {
+  int info = 0;
+  F77_FUNC_DGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
   return info;
 }
 
@@ -182,6 +215,13 @@ int HostLapack<std::complex<float> >::trtri(const char uplo, const char diag,
   F77_FUNC_CTRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
 }
+template <>
+int HostLapack<std::complex<float>>::geqrf(int m, int n, std::complex<float>* a, int lda, std::complex<float>* tau,
+                                           std::complex<float>* work, int lwork) {
+  int info = 0;
+  F77_FUNC_CGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
+  return info;
+}
 
 ///
 /// std::complex<double>
@@ -210,6 +250,13 @@ int HostLapack<std::complex<double> >::trtri(const char uplo, const char diag,
                                              int lda) {
   int info = 0;
   F77_FUNC_ZTRTRI(&uplo, &diag, &n, a, &lda, &info);
+  return info;
+}
+template <>
+int HostLapack<std::complex<double>>::geqrf(int m, int n, std::complex<double>* a, int lda, std::complex<double>* tau,
+                                            std::complex<double>* work, int lwork) {
+  int info = 0;
+  F77_FUNC_ZGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
   return info;
 }
 

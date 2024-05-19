@@ -20,7 +20,7 @@
 namespace KokkosLapack {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class AMatrix, class TWArray>
+template <class ExecutionSpace, class AMatrix, class TWArray, class RType>
 struct geqrf_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -33,9 +33,11 @@ struct geqrf_tpl_spec_avail {
   struct geqrf_tpl_spec_avail<                                             \
       ExecSpace,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {           \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {             \
     enum : bool { value = true };                                          \
   };
 

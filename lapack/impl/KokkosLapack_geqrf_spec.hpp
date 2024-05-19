@@ -28,7 +28,7 @@
 namespace KokkosLapack {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class AVT, class TWVT>
+template <class ExecutionSpace, class AVT, class TWVT, class RT>
 struct geqrf_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -52,6 +52,8 @@ struct geqrf_eti_spec_avail {
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,           \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {            \
     enum : bool { value = true };                                         \
   };
@@ -64,26 +66,24 @@ namespace KokkosLapack {
 namespace Impl {
 
 // Unification layer
-/// \brief Implementation of KokkosLapack::geqrf.
-
-template <class ExecutionSpace, class AMatrix, class TWArray,
+template <class ExecutionSpace, class AMatrix, class TWArray, class RType,
           bool tpl_spec_avail =
-              geqrf_tpl_spec_avail<ExecutionSpace, AMatrix, TWArray>::value,
+              geqrf_tpl_spec_avail<ExecutionSpace, AMatrix, TWArray, RType>::value,
           bool eti_spec_avail =
-              geqrf_eti_spec_avail<ExecutionSpace, AMatrix, TWArray>::value>
+              geqrf_eti_spec_avail<ExecutionSpace, AMatrix, TWArray, RType>::value>
 struct GEQRF {
   static void geqrf(const ExecutionSpace &space, const AMatrix &A, const TWArray &Tau,
-                   const TWArray &Work);
+                    const TWArray &Work, const RType &R);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of geqrf for multi vectors.
 // Unification layer
-template <class ExecutionSpace, class AMatrix, class TWArray>
-struct GEQRF<ExecutionSpace, AMatrix, TWArray, false,
+template <class ExecutionSpace, class AMatrix, class TWArray, class RType>
+struct GEQRF<ExecutionSpace, AMatrix, TWArray, RType, false,
             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void geqrf(const ExecutionSpace & /* space */, const AMatrix & /* A */,
-                   const TWArray & /* Tau */, const TWArray & /* Work */) {
+                    const TWArray & /* Tau */, const TWArray & /* Work */, const RType & /* R */) {
     // NOTE: Might add the implementation of KokkosLapack::geqrf later
     throw std::runtime_error(
         "No fallback implementation of GEQRF (general QR factorization) "
@@ -112,6 +112,8 @@ struct GEQRF<ExecutionSpace, AMatrix, TWArray, false,
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                           \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,          \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
       false, true>;
 
 #define KOKKOSLAPACK_GEQRF_ETI_SPEC_INST(SCALAR_TYPE, LAYOUT_TYPE,       \
@@ -123,6 +125,8 @@ struct GEQRF<ExecutionSpace, AMatrix, TWArray, false,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                           \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
       false, true>;
 
