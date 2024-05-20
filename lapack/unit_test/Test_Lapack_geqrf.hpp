@@ -47,52 +47,124 @@ void impl_test_geqrf(int m, int n) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  int lwork(1);
-  if (std::min(m,n) != 0) {
+  int minMN( std::min(m,n) );
+  int lwork( 1 );
+  if (minMN != 0) {
     lwork = n;
   }
 
   // Create device views
   ViewTypeA  A   ("A", m, n);
-  ViewTypeTW Tau ("Tau", std::min(m,n));
+  ViewTypeTW Tau ("Tau", minMN);
   ViewTypeTW Work("Work", lwork);
 
   // Create host mirrors of device views.
+  typename ViewTypeA::HostMirror  h_A    = Kokkos::create_mirror_view(A);
   typename ViewTypeTW::HostMirror h_tau  = Kokkos::create_mirror_view(Tau);
-  typename ViewTypeTW::HostMirror h_work = Kokkos::create_mirror(Work);
+  typename ViewTypeTW::HostMirror h_work = Kokkos::create_mirror_view(Work);
 
   // Initialize data.
   if ((m == 3) && (n == 3)) {
+    if constexpr (Kokkos::ArithTraits<ScalarA>::is_complex) {
+      h_A(0, 0).real() = 12.;
+      h_A(0, 1).real() = -51.;
+      h_A(0, 2).real() = 4.;
+
+      h_A(1, 0).real() = 6.;
+      h_A(1, 1).real() = 167.;
+      h_A(1, 2).real() = -68.;
+
+      h_A(2, 0).real() = -4.;
+      h_A(2, 1).real() = 24.;
+      h_A(2, 2).real() = -41.;
+
+      for (int i(0); i < m; ++i) {
+        for (int j(0); j < n; ++j) {
+          h_A(i, j).imag() = 0.;
+	}
+      }
+    }
+    else {
+      h_A(0, 0) = 12.;
+      h_A(0, 1) = -51.;
+      h_A(0, 2) = 4.;
+
+      h_A(1, 0) = 6.;
+      h_A(1, 1) = 167.;
+      h_A(1, 2) = -68.;
+
+      h_A(2, 0) = -4.;
+      h_A(2, 1) = 24.;
+      h_A(2, 2) = -41.;
+    }
+
+    Kokkos::deep_copy(A, h_A);
   }
   else {
     Kokkos::fill_random( A
                        , rand_pool
                        , Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max()
                        );
+    Kokkos::deep_copy(h_A, A);
+  }
+
+  for (int i(0); i < m; ++i) {
+    for (int j(0); j < n; ++j) {
+      std::cout << "A(" << i << "," << j << ") = " << h_A(i,j) << std::endl;
+    }
   }
 
   Kokkos::fence();
 
-  // Deep copy device view to host view.
-  //Kokkos::deep_copy(h_X0, X0);
-
-  // Allocate IPIV view on host
-  using ViewTypeP = Kokkos::View<int*, Kokkos::LayoutLeft, execution_space>;
-  ViewTypeP ipiv;
-  int Nt = n;
-  ipiv = ViewTypeP("IPIV", Nt);
-
-  // Solve.
+  // Perform the QR factorization
+  int rc(0);
   try {
-    KokkosLapack::geqrf(space, A, Tau, Work);
+    rc = KokkosLapack::geqrf(space, A, Tau, Work);
   }
-  catch (const std::runtime_error& error) {
+  catch (const std::runtime_error & e) {
+    std::cout << "KokkosLapack::geqrf(): caught exception '" << e.what() << "'" << std::endl;
+    FAIL();
     return;
   }
   Kokkos::fence();
 
-  // Get the solution vector.
-  //Kokkos::deep_copy(h_B, B);
+  // Get the results
+  Kokkos::deep_copy(h_A, A);
+  Kokkos::deep_copy(h_tau, Tau);
+  Kokkos::deep_copy(h_work, Work);
+
+  std::cout << "rc = " << rc << std::endl;
+  for (int i(0); i < minMN; ++i) {
+    for (int j(0); j < n; ++j) {
+      std::cout << "R(" << i << "," << j << ") = " << h_A(i,j) << std::endl;
+    }
+  }
+  for (int i(0); i < minMN; ++i) {
+    std::cout << "tau(" << i << ") = " << h_tau[i] << std::endl;
+  }
+  for (int i(0); i < lwork; ++i) {
+    std::cout << "work(" << i << ") = " << h_work[i] << std::endl;
+  }
+
+  // Dense matrix-matrix multiply: C = beta*C + alpha*op(A)*op(B).
+  // void gemm( const execution_space                & space
+  //          , const char                             transA[]
+  //          , const char                             transB[]
+  //          , typename AViewType::const_value_type & alpha
+  //          , const AViewType                      & A
+  //          , const BViewType                      & B
+  //          , typename CViewType::const_value_type & beta
+  //          , const CViewType                      & C
+  //          );
+
+  // Rank-1 update of a general matrix: A = A + alpha * x * y^{T,H}.
+  // void ger( const ExecutionSpace                       & space
+  //         , const char                                   trans[]
+  //         , const typename AViewType::const_value_type & alpha
+  //         , const XViewType                            & x
+  //         , const YViewType                            & y
+  //         , const AViewType                            & A
+  //         );
 
   // Checking vs ref on CPU, this eps is about 10^-9
   //typedef typename ats::mag_type mag_type;

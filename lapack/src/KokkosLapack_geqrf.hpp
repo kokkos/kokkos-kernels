@@ -40,10 +40,17 @@ namespace KokkosLapack {
 ///                   the geqrf kernels.
 /// \param A [in,out] On entry, the M-by-N matrix to be factorized.
 ///                   On exit, the elements on and above the diagonal contain
-///                   the min(M,N)-by-N upper trapezoidal matrix R (R is
-///                   upper triangular if M >= N); the elements below the
-///                   diagonal, with the array Tau, represent the unitary
-///                   matrix Q as a product of min(M,N) elementary reflectors.
+///                   the min(M,N)-by-N upper trapezoidal matrix R (R is upper
+///                   triangular if M >= N); the elements below the diagonal,
+///                   with the array Tau, represent the unitary matrix Q as a
+///                   product of min(M,N) elementary reflectors. The matrix Q
+///                   is represented as a product of elementary reflectors
+///                     Q = H(1) H(2) . . . H(k), where k = min(M,N).
+///                   Each H(i) has the form
+///                     H(i) = I - Tau * v * v**H
+///                   where tau is a complex scalar, and v is a complex vector
+///                   with v(1:i-1) = 0 and v(i) = 1; v(i+1:M) is stored on
+///                   exit in A(i+1:M,i), and tau in Tau(i).
 /// \param Tau [out]  One-dimensional array of size min(M,N) that contains
 ///                   the scalar factors of the elementary reflectors.
 /// \param Work [out] One-dimensional array of size max(1,LWORK).
