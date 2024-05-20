@@ -32,9 +32,9 @@ namespace KokkosLapack {
 
 /// \brief Computes a QR factorization of a matrix A
 ///
-/// \tparam ExecutionSpace the space where the kernel will run.
-/// \tparam AMatrix Type of matrix A, as a 2-D Kokkos::View.
-/// \tparam TWArray Type of arrays Tau and Work, as a 1-D Kokkos::View.
+/// \tparam ExecutionSpace The space where the kernel will run.
+/// \tparam AMatrix        Type of matrix A, as a 2-D Kokkos::View.
+/// \tparam TWArray        Type of arrays Tau and Work, as a 1-D Kokkos::View.
 ///
 /// \param space [in] Execution space instance used to specified how to execute
 ///                   the geqrf kernels.
@@ -58,6 +58,7 @@ namespace KokkosLapack {
 ///                   If min(M,N) != 0, then LWORK must be >= N.
 ///                   If the QR factorization is successful, then the first
 ///                   position of Work contains the optimal LWORK.
+///
 /// \return           = 0: successfull exit
 ///                   < 0: if equal to '-i', the i-th argument had an illegal
 ///                        value
@@ -148,10 +149,17 @@ int geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
 ///
 /// \param A [in,out] On entry, the M-by-N matrix to be factorized.
 ///                   On exit, the elements on and above the diagonal contain
-///                   the min(M,N)-by-N upper trapezoidal matrix R (R is
-///                   upper triangular if M >= N); the elements below the
-///                   diagonal, with the array Tau, represent the unitary
-///                   matrix Q as a product of min(M,N) elementary reflectors.
+///                   the min(M,N)-by-N upper trapezoidal matrix R (R is upper
+///                   triangular if M >= N); the elements below the diagonal,
+///                   with the array Tau, represent the unitary matrix Q as a
+///                   product of min(M,N) elementary reflectors. The matrix Q
+///                   is represented as a product of elementary reflectors
+///                     Q = H(1) H(2) . . . H(k), where k = min(M,N).
+///                   Each H(i) has the form
+///                     H(i) = I - Tau * v * v**H
+///                   where tau is a complex scalar, and v is a complex vector
+///                   with v(1:i-1) = 0 and v(i) = 1; v(i+1:M) is stored on
+///                   exit in A(i+1:M,i), and tau in Tau(i).
 /// \param Tau [out]  One-dimensional array of size min(M,N) that contains
 ///                   the scalar factors of the elementary reflectors.
 /// \param Work [out] One-dimensional array of size max(1,LWORK).
@@ -159,6 +167,7 @@ int geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
 ///                   If min(M,N) != 0, then LWORK must be >= N.
 ///                   If the QR factorization is successful, then the first
 ///                   position of Work contains the optimal LWORK.
+///
 /// \return           = 0: successfull exit
 ///                   < 0: if equal to '-i', the i-th argument had an illegal
 ///                        value
