@@ -464,7 +464,7 @@ void rocsolverGeqrfWrapper(const ExecutionSpace& space, const TWViewType& Work,
                        Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                 \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
           Kokkos::View<SCALAR*, LAYOUT,                                        \
-                       Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                  \ 
+                       Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                 \ 
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
     using AViewType =                                                          \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
