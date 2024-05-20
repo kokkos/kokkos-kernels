@@ -87,15 +87,16 @@ void F77_BLAS_MANGLE(ztrtri, ZTRTRI)(const char*, const char*, int*,
 /// Geqrf
 ///
 
-void F77_BLAS_MANGLE(sgeqrf, SGEQRF)(int*, int*, float*, int*, float*, float*, int*,
-                                   int*);
-void F77_BLAS_MANGLE(dgeqrf, DGEQRF)(int*, int*, double*, int*, double*, double*,
-                                   int*, int*);
-void F77_BLAS_MANGLE(cgeqrf, CGEQRF)(int*, int*, std::complex<float>*, int*, std::complex<float>*,
-                                   std::complex<float>*, int*, int*);
+void F77_BLAS_MANGLE(sgeqrf, SGEQRF)(int*, int*, float*, int*, float*, float*,
+                                     int*, int*);
+void F77_BLAS_MANGLE(dgeqrf, DGEQRF)(int*, int*, double*, int*, double*,
+                                     double*, int*, int*);
+void F77_BLAS_MANGLE(cgeqrf, CGEQRF)(int*, int*, std::complex<float>*, int*,
+                                     std::complex<float>*, std::complex<float>*,
+                                     int*, int*);
 void F77_BLAS_MANGLE(zgeqrf, ZGEQRF)(int*, int*, std::complex<double>*, int*,
-                                   std::complex<double>*, std::complex<double>*, int*, int*);
-
+                                     std::complex<double>*,
+                                     std::complex<double>*, int*, int*);
 }
 
 #define F77_FUNC_SGESV F77_BLAS_MANGLE(sgesv, SGESV)
@@ -192,14 +193,14 @@ int HostLapack<double>::geqrf(int m, int n, double* a, int lda, double* tau,
 ///
 
 template <>
-void HostLapack<std::complex<float> >::gesv(int n, int rhs,
-                                            std::complex<float>* a, int lda,
-                                            int* ipiv, std::complex<float>* b,
-                                            int ldb, int info) {
+void HostLapack<std::complex<float>>::gesv(int n, int rhs,
+                                           std::complex<float>* a, int lda,
+                                           int* ipiv, std::complex<float>* b,
+                                           int ldb, int info) {
   F77_FUNC_CGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
 }
 template <>
-void HostLapack<std::complex<float> >::gesvd(
+void HostLapack<std::complex<float>>::gesvd(
     const char jobu, const char jobvt, const int m, const int n,
     std::complex<float>* a, const int lda, float* s, std::complex<float>* u,
     const int ldu, std::complex<float>* vt, const int ldvt,
@@ -208,16 +209,18 @@ void HostLapack<std::complex<float> >::gesvd(
                   &lwork, rwork, &info);
 }
 template <>
-int HostLapack<std::complex<float> >::trtri(const char uplo, const char diag,
-                                            int n, const std::complex<float>* a,
-                                            int lda) {
+int HostLapack<std::complex<float>>::trtri(const char uplo, const char diag,
+                                           int n, const std::complex<float>* a,
+                                           int lda) {
   int info = 0;
   F77_FUNC_CTRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
 }
 template <>
-int HostLapack<std::complex<float>>::geqrf(int m, int n, std::complex<float>* a, int lda, std::complex<float>* tau,
-                                           std::complex<float>* work, int lwork) {
+int HostLapack<std::complex<float>>::geqrf(int m, int n, std::complex<float>* a,
+                                           int lda, std::complex<float>* tau,
+                                           std::complex<float>* work,
+                                           int lwork) {
   int info = 0;
   F77_FUNC_CGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
   return info;
@@ -228,14 +231,14 @@ int HostLapack<std::complex<float>>::geqrf(int m, int n, std::complex<float>* a,
 ///
 
 template <>
-void HostLapack<std::complex<double> >::gesv(int n, int rhs,
-                                             std::complex<double>* a, int lda,
-                                             int* ipiv, std::complex<double>* b,
-                                             int ldb, int info) {
+void HostLapack<std::complex<double>>::gesv(int n, int rhs,
+                                            std::complex<double>* a, int lda,
+                                            int* ipiv, std::complex<double>* b,
+                                            int ldb, int info) {
   F77_FUNC_ZGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
 }
 template <>
-void HostLapack<std::complex<double> >::gesvd(
+void HostLapack<std::complex<double>>::gesvd(
     const char jobu, const char jobvt, const int m, const int n,
     std::complex<double>* a, const int lda, double* s, std::complex<double>* u,
     const int ldu, std::complex<double>* vt, const int ldvt,
@@ -244,17 +247,20 @@ void HostLapack<std::complex<double> >::gesvd(
                   &lwork, rwork, &info);
 }
 template <>
-int HostLapack<std::complex<double> >::trtri(const char uplo, const char diag,
-                                             int n,
-                                             const std::complex<double>* a,
-                                             int lda) {
+int HostLapack<std::complex<double>>::trtri(const char uplo, const char diag,
+                                            int n,
+                                            const std::complex<double>* a,
+                                            int lda) {
   int info = 0;
   F77_FUNC_ZTRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
 }
 template <>
-int HostLapack<std::complex<double>>::geqrf(int m, int n, std::complex<double>* a, int lda, std::complex<double>* tau,
-                                            std::complex<double>* work, int lwork) {
+int HostLapack<std::complex<double>>::geqrf(int m, int n,
+                                            std::complex<double>* a, int lda,
+                                            std::complex<double>* tau,
+                                            std::complex<double>* work,
+                                            int lwork) {
   int info = 0;
   F77_FUNC_ZGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
   return info;
