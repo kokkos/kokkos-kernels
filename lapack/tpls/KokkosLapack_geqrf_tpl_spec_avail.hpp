@@ -42,13 +42,13 @@ struct geqrf_tpl_spec_avail {
   };
 
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_LAPACK(double, Kokkos::LayoutLeft,
-                                        Kokkos::HostSpace)
+                                         Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_LAPACK(float, Kokkos::LayoutLeft,
-                                        Kokkos::HostSpace)
+                                         Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<double>,
-                                        Kokkos::LayoutLeft, Kokkos::HostSpace)
+                                         Kokkos::LayoutLeft, Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>,
-                                        Kokkos::LayoutLeft, Kokkos::HostSpace)
+                                         Kokkos::LayoutLeft, Kokkos::HostSpace)
 #endif
 }  // namespace Impl
 }  // namespace KokkosLapack
@@ -64,20 +64,20 @@ namespace Impl {
   struct geqrf_tpl_spec_avail<                                               \
       Kokkos::Cuda,                                                          \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {               \
     enum : bool { value = true };                                            \
   };
 
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft,
-                                       Kokkos::CudaSpace)
+                                        Kokkos::CudaSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft,
-                                       Kokkos::CudaSpace)
+                                        Kokkos::CudaSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>,
-                                       Kokkos::LayoutLeft, Kokkos::CudaSpace)
+                                        Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>,
-                                       Kokkos::LayoutLeft, Kokkos::CudaSpace)
+                                        Kokkos::LayoutLeft, Kokkos::CudaSpace)
 }  // namespace Impl
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
@@ -92,32 +92,34 @@ namespace Impl {
   struct geqrf_tpl_spec_avail<                                               \
       Kokkos::Cuda,                                                          \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {               \
     enum : bool { value = true };                                            \
   };
 
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(double, Kokkos::LayoutLeft,
-                                          Kokkos::CudaSpace)
+                                           Kokkos::CudaSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(float, Kokkos::LayoutLeft,
-                                          Kokkos::CudaSpace)
+                                           Kokkos::CudaSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<double>,
-                                          Kokkos::LayoutLeft, Kokkos::CudaSpace)
+                                           Kokkos::LayoutLeft,
+                                           Kokkos::CudaSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>,
-                                          Kokkos::LayoutLeft, Kokkos::CudaSpace)
+                                           Kokkos::LayoutLeft,
+                                           Kokkos::CudaSpace)
 
 #if defined(KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(double, Kokkos::LayoutLeft,
-                                          Kokkos::CudaUVMSpace)
+                                           Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(float, Kokkos::LayoutLeft,
-                                          Kokkos::CudaUVMSpace)
+                                           Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<double>,
-                                          Kokkos::LayoutLeft,
-                                          Kokkos::CudaUVMSpace)
+                                           Kokkos::LayoutLeft,
+                                           Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>,
-                                          Kokkos::LayoutLeft,
-                                          Kokkos::CudaUVMSpace)
+                                           Kokkos::LayoutLeft,
+                                           Kokkos::CudaUVMSpace)
 #endif
 
 }  // namespace Impl
@@ -135,20 +137,22 @@ namespace Impl {
   struct geqrf_tpl_spec_avail<                                                \
       Kokkos::HIP,                                                            \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                \
     enum : bool { value = true };                                             \
   };
 
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_ROCSOLVER(double, Kokkos::LayoutLeft,
-                                           Kokkos::HIPSpace)
+                                            Kokkos::HIPSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_ROCSOLVER(float, Kokkos::LayoutLeft,
-                                           Kokkos::HIPSpace)
+                                            Kokkos::HIPSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_ROCSOLVER(Kokkos::complex<double>,
-                                           Kokkos::LayoutLeft, Kokkos::HIPSpace)
+                                            Kokkos::LayoutLeft,
+                                            Kokkos::HIPSpace)
 KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_ROCSOLVER(Kokkos::complex<float>,
-                                           Kokkos::LayoutLeft, Kokkos::HIPSpace)
+                                            Kokkos::LayoutLeft,
+                                            Kokkos::HIPSpace)
 
 }  // namespace Impl
 }  // namespace KokkosLapack

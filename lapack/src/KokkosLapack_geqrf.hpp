@@ -94,7 +94,7 @@ int geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
   int64_t work0 = Work.extent(0);
 
   // Check validity of dimensions
-  if (tau0 != std::min(m,n)) {
+  if (tau0 != std::min(m, n)) {
     std::ostringstream os;
     os << "KokkosLapack::geqrf: length of Tau must be equal to min(m,n): "
        << " A: " << m << " x " << n << ", Tau length = " << tau0;
@@ -103,15 +103,16 @@ int geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
   if ((m == 0) || (n == 0)) {
     if (work0 < 1) {
       std::ostringstream os;
-      os << "KokkosLapack::geqrf: In case min(m,n) == 0, then Work must have length >= 1: "
+      os << "KokkosLapack::geqrf: In case min(m,n) == 0, then Work must have "
+            "length >= 1: "
          << " A: " << m << " x " << n << ", Work length = " << work0;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
-  }
-  else {
+  } else {
     if (work0 < n) {
       std::ostringstream os;
-      os << "KokkosLapack::geqrf: In case min(m,n) != 0, then Work must have length >= n: "
+      os << "KokkosLapack::geqrf: In case min(m,n) != 0, then Work must have "
+            "length >= n: "
          << " A: " << m << " x " << n << ", Work length = " << work0;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
@@ -121,9 +122,9 @@ int geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
       typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       AMatrix_Internal;
-  typedef Kokkos::View<typename TWArray::non_const_value_type*,
-                       typename TWArray::array_layout, typename TWArray::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<
+      typename TWArray::non_const_value_type*, typename TWArray::array_layout,
+      typename TWArray::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       TWArray_Internal;
   AMatrix_Internal A_i    = A;
   TWArray_Internal Tau_i  = Tau;
@@ -137,7 +138,9 @@ int geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
   int result;
   RViewInternalType R = RViewInternalType(&result);
 
-  KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, TWArray_Internal, RViewInternalType>::geqrf(space, A_i, Tau_i, Work_i, R);
+  KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, TWArray_Internal,
+                            RViewInternalType>::geqrf(space, A_i, Tau_i, Work_i,
+                                                      R);
 
   return result;
 }

@@ -26,11 +26,14 @@ inline void geqrf_print_specialization() {
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
   printf("KokkosLapack::geqrf<> TPL MAGMA specialization for < %s , %s, %s >\n",
-         typeid(AViewType).name(), typeid(TWViewType).name(), typeid(RType).name());
+         typeid(AViewType).name(), typeid(TWViewType).name(),
+         typeid(RType).name());
 #else
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
-  printf("KokkosLapack::geqrf<> TPL Lapack specialization for < %s , %s, %s >\n",
-         typeid(AViewType).name(), typeid(TWViewType).name(), typeid(RType).name());
+  printf(
+      "KokkosLapack::geqrf<> TPL Lapack specialization for < %s , %s, %s >\n",
+      typeid(AViewType).name(), typeid(TWViewType).name(),
+      typeid(RType).name());
 #endif
 #endif
 #endif
@@ -61,14 +64,13 @@ void lapackGeqrfWrapper(const AViewType& A, const TWViewType& Tau,
   if constexpr (Kokkos::ArithTraits<Scalar>::is_complex) {
     using MagType = typename Kokkos::ArithTraits<Scalar>::mag_type;
 
-    R() = HostLapack<std::complex<MagType>>::geqrf(M, N,
-             reinterpret_cast<std::complex<MagType>*>(A.data()), LDA,
-             reinterpret_cast<std::complex<MagType>*>(Tau.data()),
-             reinterpret_cast<std::complex<MagType>*>(Work.data()), LWORK);
-  }
-  else {
-    R() = HostLapack<Scalar>::geqrf(M, N, A.data(), LDA, Tau.data(), Work.data(),
-                                    LWORK);
+    R() = HostLapack<std::complex<MagType>>::geqrf(
+        M, N, reinterpret_cast<std::complex<MagType>*>(A.data()), LDA,
+        reinterpret_cast<std::complex<MagType>*>(Tau.data()),
+        reinterpret_cast<std::complex<MagType>*>(Work.data()), LWORK);
+  } else {
+    R() = HostLapack<Scalar>::geqrf(M, N, A.data(), LDA, Tau.data(),
+                                    Work.data(), LWORK);
   }
 }
 
@@ -97,13 +99,12 @@ void lapackGeqrfWrapper(const AViewType& A, const TWViewType& Tau,
     using TWViewType =                                                         \
         Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,    \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
-    using RType =                                                              \
-        Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,              \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    using RType = Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,    \
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
                                                                                \
     static void geqrf(const EXECSPACE& /* space */, const AViewType& A,        \
                       const TWViewType& Tau, const TWViewType& Work,           \
-                      const RType& R) {	                                       \
+                      const RType& R) {                                        \
       Kokkos::Profiling::pushRegion("KokkosLapack::geqrf[TPL_LAPACK," #SCALAR  \
                                     "]");                                      \
       geqrf_print_specialization<AViewType, TWViewType, RType>();              \
@@ -114,42 +115,42 @@ void lapackGeqrfWrapper(const AViewType& A, const TWViewType& Tau,
 
 #if defined(KOKKOS_ENABLE_SERIAL)
 KOKKOSLAPACK_GEQRF_LAPACK(float, Kokkos::LayoutLeft, Kokkos::Serial,
-                         Kokkos::HostSpace)
+                          Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_LAPACK(double, Kokkos::LayoutLeft, Kokkos::Serial,
-                         Kokkos::HostSpace)
+                          Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                         Kokkos::Serial, Kokkos::HostSpace)
+                          Kokkos::Serial, Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                         Kokkos::Serial, Kokkos::HostSpace)
+                          Kokkos::Serial, Kokkos::HostSpace)
 #endif
 
 #if defined(KOKKOS_ENABLE_OPENMP)
 KOKKOSLAPACK_GEQRF_LAPACK(float, Kokkos::LayoutLeft, Kokkos::OpenMP,
-                         Kokkos::HostSpace)
+                          Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_LAPACK(double, Kokkos::LayoutLeft, Kokkos::OpenMP,
-                         Kokkos::HostSpace)
+                          Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                         Kokkos::OpenMP, Kokkos::HostSpace)
+                          Kokkos::OpenMP, Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                         Kokkos::OpenMP, Kokkos::HostSpace)
+                          Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
 #if defined(KOKKOS_ENABLE_THREADS)
 KOKKOSLAPACK_GEQRF_LAPACK(float, Kokkos::LayoutLeft, Kokkos::Threads,
-                         Kokkos::HostSpace)
+                          Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_LAPACK(double, Kokkos::LayoutLeft, Kokkos::Threads,
-                         Kokkos::HostSpace)
+                          Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                         Kokkos::Threads, Kokkos::HostSpace)
+                          Kokkos::Threads, Kokkos::HostSpace)
 KOKKOSLAPACK_GEQRF_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                         Kokkos::Threads, Kokkos::HostSpace)
+                          Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 }  // namespace Impl
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
-#if 0 // AquiEEP
+#if 0  // AquiEEP
 
 // MAGMA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
@@ -207,33 +208,33 @@ void magmaGeqrfWrapper(const ExecSpace& space, const AViewType& A,
 }
 
 #define KOKKOSLAPACK_GEQRF_MAGMA(SCALAR, LAYOUT, MEM_SPACE)                    \
-  template <>                                                                 \
+  template <>                                                                  \
   struct GEQRF<                                                                \
-      Kokkos::Cuda,                                                           \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      true,                                                                   \
+      Kokkos::Cuda,                                                            \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      true,                                                                    \
       geqrf_eti_spec_avail<                                                    \
-          Kokkos::Cuda,                                                       \
-          Kokkos::View<SCALAR**, LAYOUT,                                      \
-                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,               \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
-          Kokkos::View<SCALAR*, LAYOUT,                                      \
-                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,               \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {    \
-    using AViewType = Kokkos::View<SCALAR**, LAYOUT,                          \
-                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,   \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-    using TWViewType = Kokkos::View<SCALAR*, LAYOUT,                          \
-                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,   \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-                                                                              \
+          Kokkos::Cuda,                                                        \
+          Kokkos::View<SCALAR**, LAYOUT,                                       \
+                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<SCALAR*, LAYOUT,                                        \
+                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT,                           \
+                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,    \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
+    using TWViewType =                                                         \
+        Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+                                                                               \
     static void geqrf(const Kokkos::Cuda& space, const AViewType& A,           \
-                     const TWViewType& Tau, const TWViewType& Work) {             \
-      magmaGeqrfWrapper(space, A, Tau, Work);                                    \
-    }                                                                         \
+                      const TWViewType& Tau, const TWViewType& Work) {         \
+      magmaGeqrfWrapper(space, A, Tau, Work);                                  \
+    }                                                                          \
   };
 
 KOKKOSLAPACK_GEQRF_MAGMA(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
@@ -339,39 +340,39 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const TWViewType& Work,
   KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSetStream(s.handle, NULL));
 }
 
-#define KOKKOSLAPACK_GEQRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                  \
-  template <>                                                                   \
-  struct GEQRF<                                                                 \
-      Kokkos::Cuda,                                                             \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                    \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                    \
-      true,                                                                     \
-      geqrf_eti_spec_avail<                                                     \
-          Kokkos::Cuda,                                                         \
-          Kokkos::View<SCALAR**, LAYOUT,                                        \
-                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                 \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
-          Kokkos::View<SCALAR*, LAYOUT,                                         \
-                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                 \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {      \
-    using AViewType = Kokkos::View<SCALAR**, LAYOUT,                            \
-                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,     \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;    \
-    using TWViewType = Kokkos::View<SCALAR*, LAYOUT,                            \
-                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,     \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;    \
-                                                                                \
-    static void geqrf(const Kokkos::Cuda& space, const AViewType& A,            \
-                     const TWViewType& Tau, const TWViewType& Work) {           \
-      Kokkos::Profiling::pushRegion("KokkosLapack::geqrf[TPL_CUSOLVER," #SCALAR \
-                                    "]");                                       \
-      geqrf_print_specialization<AViewType, TWViewType, RType>();               \
-                                                                                \
-      cusolverGeqrfWrapper(space, IPIV, A, B);                                  \
-      Kokkos::Profiling::popRegion();                                           \
-    }                                                                           \
+#define KOKKOSLAPACK_GEQRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                 \
+  template <>                                                                  \
+  struct GEQRF<                                                                \
+      Kokkos::Cuda,                                                            \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      true,                                                                    \
+      geqrf_eti_spec_avail<                                                    \
+          Kokkos::Cuda,                                                        \
+          Kokkos::View<SCALAR**, LAYOUT,                                       \
+                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<SCALAR*, LAYOUT,                                        \
+                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT,                           \
+                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,    \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
+    using TWViewType =                                                         \
+        Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+                                                                               \
+    static void geqrf(const Kokkos::Cuda& space, const AViewType& A,           \
+                      const TWViewType& Tau, const TWViewType& Work) {         \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosLapack::geqrf[TPL_CUSOLVER," #SCALAR "]");                    \
+      geqrf_print_specialization<AViewType, TWViewType, RType>();              \
+                                                                               \
+      cusolverGeqrfWrapper(space, IPIV, A, B);                                 \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
 KOKKOSLAPACK_GEQRF_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
@@ -448,39 +449,39 @@ void rocsolverGeqrfWrapper(const ExecutionSpace& space, const TWViewType& Work,
   KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));
 }
 
-#define KOKKOSLAPACK_GEQRF_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                 \
-  template <>                                                                   \
-  struct GEQRF<                                                                 \
-      Kokkos::HIP,                                                              \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                    \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                    \
-      true,                                                                     \
-      geqrf_eti_spec_avail<                                                     \
-          Kokkos::HIP,                                                          \
-          Kokkos::View<SCALAR**, LAYOUT,                                        \
-                       Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                  \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
-          Kokkos::View<SCALAR*, LAYOUT,                                         \
+#define KOKKOSLAPACK_GEQRF_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                \
+  template <>                                                                  \
+  struct GEQRF<                                                                \
+      Kokkos::HIP,                                                             \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      true,                                                                    \
+      geqrf_eti_spec_avail<                                                    \
+          Kokkos::HIP,                                                         \
+          Kokkos::View<SCALAR**, LAYOUT,                                       \
+                       Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                 \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<SCALAR*, LAYOUT,                                        \
                        Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                  \ 
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {      \
-    using AViewType =                                                           \
-        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,  \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                  \
-    using TWViewType =                                                          \
-        Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,   \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                  \
-                                                                                \
-    static void geqrf(const Kokkos::HIP& space, const AViewType& A,             \
-                     const TWViewType& Tau, const TWViewType& Work) {           \
-      Kokkos::Profiling::pushRegion(                                            \
-          "KokkosLapack::geqrf[TPL_ROCSOLVER," #SCALAR "]");                    \
-      geqrf_print_specialization<AViewType, TWViewType, RType>();               \
-                                                                                \
-      rocsolverGeqrfWrapper(space, IPIV, A, B);                                 \
-      Kokkos::Profiling::popRegion();                                           \
-    }                                                                           \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
+    using AViewType =                                                          \
+        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    using TWViewType =                                                         \
+        Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,  \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+                                                                               \
+    static void geqrf(const Kokkos::HIP& space, const AViewType& A,            \
+                      const TWViewType& Tau, const TWViewType& Work) {         \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosLapack::geqrf[TPL_ROCSOLVER," #SCALAR "]");                   \
+      geqrf_print_specialization<AViewType, TWViewType, RType>();              \
+                                                                               \
+      rocsolverGeqrfWrapper(space, IPIV, A, B);                                \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
 KOKKOSLAPACK_GEQRF_ROCSOLVER(float, Kokkos::LayoutLeft, Kokkos::HIPSpace)
@@ -494,6 +495,6 @@ KOKKOSLAPACK_GEQRF_ROCSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
 
-#endif // AquiEEP
+#endif  // AquiEEP
 
 #endif

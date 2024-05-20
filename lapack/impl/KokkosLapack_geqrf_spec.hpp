@@ -42,20 +42,20 @@ struct geqrf_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSLAPACK_GEQRF_ETI_SPEC_AVAIL(SCALAR_TYPE, LAYOUT_TYPE,       \
-                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
-  template <>                                                             \
-  struct geqrf_eti_spec_avail<                                            \
-      EXEC_SPACE_TYPE,                                                    \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {            \
-    enum : bool { value = true };                                         \
+#define KOKKOSLAPACK_GEQRF_ETI_SPEC_AVAIL(SCALAR_TYPE, LAYOUT_TYPE,        \
+                                          EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+  template <>                                                              \
+  struct geqrf_eti_spec_avail<                                             \
+      EXEC_SPACE_TYPE,                                                     \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                            \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,        \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                             \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,        \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {             \
+    enum : bool { value = true };                                          \
   };
 
 // Include the actual specialization declarations
@@ -66,14 +66,15 @@ namespace KokkosLapack {
 namespace Impl {
 
 // Unification layer
-template <class ExecutionSpace, class AMatrix, class TWArray, class RType,
-          bool tpl_spec_avail =
-              geqrf_tpl_spec_avail<ExecutionSpace, AMatrix, TWArray, RType>::value,
-          bool eti_spec_avail =
-              geqrf_eti_spec_avail<ExecutionSpace, AMatrix, TWArray, RType>::value>
+template <
+    class ExecutionSpace, class AMatrix, class TWArray, class RType,
+    bool tpl_spec_avail =
+        geqrf_tpl_spec_avail<ExecutionSpace, AMatrix, TWArray, RType>::value,
+    bool eti_spec_avail =
+        geqrf_eti_spec_avail<ExecutionSpace, AMatrix, TWArray, RType>::value>
 struct GEQRF {
-  static void geqrf(const ExecutionSpace &space, const AMatrix &A, const TWArray &Tau,
-                    const TWArray &Work, const RType &R);
+  static void geqrf(const ExecutionSpace &space, const AMatrix &A,
+                    const TWArray &Tau, const TWArray &Work, const RType &R);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -81,9 +82,10 @@ struct GEQRF {
 // Unification layer
 template <class ExecutionSpace, class AMatrix, class TWArray, class RType>
 struct GEQRF<ExecutionSpace, AMatrix, TWArray, RType, false,
-            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void geqrf(const ExecutionSpace & /* space */, const AMatrix & /* A */,
-                    const TWArray & /* Tau */, const TWArray & /* Work */, const RType & /* R */) {
+                    const TWArray & /* Tau */, const TWArray & /* Work */,
+                    const RType & /* R */) {
     // NOTE: Might add the implementation of KokkosLapack::geqrf later
     throw std::runtime_error(
         "No fallback implementation of GEQRF (general QR factorization) "
@@ -102,32 +104,32 @@ struct GEQRF<ExecutionSpace, AMatrix, TWArray, RType, false,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSLAPACK_GEQRF_ETI_SPEC_DECL(SCALAR_TYPE, LAYOUT_TYPE,       \
-                                        EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
-  extern template struct GEQRF<                                          \
-      EXEC_SPACE_TYPE,                                                   \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                          \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,          \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
+#define KOKKOSLAPACK_GEQRF_ETI_SPEC_DECL(SCALAR_TYPE, LAYOUT_TYPE,        \
+                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+  extern template struct GEQRF<                                           \
+      EXEC_SPACE_TYPE,                                                    \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                           \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,           \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
       false, true>;
 
-#define KOKKOSLAPACK_GEQRF_ETI_SPEC_INST(SCALAR_TYPE, LAYOUT_TYPE,       \
-                                        EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
-  template struct GEQRF<                                                 \
-      EXEC_SPACE_TYPE,                                                   \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                          \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,          \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
+#define KOKKOSLAPACK_GEQRF_ETI_SPEC_INST(SCALAR_TYPE, LAYOUT_TYPE,        \
+                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+  template struct GEQRF<                                                  \
+      EXEC_SPACE_TYPE,                                                    \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                           \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,           \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
       false, true>;
 
 #include <KokkosLapack_geqrf_tpl_spec_decl.hpp>

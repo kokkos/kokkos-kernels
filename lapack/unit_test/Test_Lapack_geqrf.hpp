@@ -17,7 +17,7 @@
 // Only enable this test where KokkosLapack supports geqrf:
 // CUDA+CUSOLVER, HIP+ROCSOLVER and HOST+LAPACK
 #if (defined(TEST_CUDA_LAPACK_CPP) &&                                       \
-      defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)) ||                        \
+     defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)) ||                         \
     (defined(TEST_HIP_LAPACK_CPP) &&                                        \
      defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) ||                        \
     (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                            \
@@ -38,26 +38,27 @@
 namespace Test {
 
 template <class ViewTypeA, class ViewTypeTW>
-void getQR( int                             const   m
-          , int                             const   n
-          , typename ViewTypeA::HostMirror  const & //h_A
-          , typename ViewTypeTW::HostMirror const & //h_tau
-          , typename ViewTypeTW::HostMirror const & //h_work
-          , typename ViewTypeA::HostMirror        & //h_Q
-          , typename ViewTypeA::HostMirror        & h_R
-          , typename ViewTypeA::HostMirror        & //h_QR
-          )
-{
+void getQR(int const m, int const n,
+           typename ViewTypeA::HostMirror const&  // h_A
+           ,
+           typename ViewTypeTW::HostMirror const&  // h_tau
+           ,
+           typename ViewTypeTW::HostMirror const&  // h_work
+           ,
+           typename ViewTypeA::HostMirror&  // h_Q
+           ,
+           typename ViewTypeA::HostMirror& h_R,
+           typename ViewTypeA::HostMirror&  // h_QR
+) {
   using ScalarA = typename ViewTypeA::value_type;
 
   for (int i(0); i < m; ++i) {
     for (int j(0); j < n; ++j) {
       if constexpr (Kokkos::ArithTraits<ScalarA>::is_complex) {
-        h_R(i,j).real() = 0.;
-        h_R(i,j).imag() = 0.;
-      }
-      else {
-        h_R(i,j) = 0.;
+        h_R(i, j).real() = 0.;
+        h_R(i, j).imag() = 0.;
+      } else {
+        h_R(i, j) = 0.;
       }
     }
   }
@@ -67,21 +68,18 @@ void getQR( int                             const   m
   for (int i(0); i < m; ++i) {
     for (int j(0); j < m; ++j) {
       if constexpr (Kokkos::ArithTraits<ScalarA>::is_complex) {
-	if (i == j) {
-          h_I(i,j).real() = 1.;
-	}
-	else {
-          h_I(i,j).real() = 0.;
-	}
-        h_I(i,j).imag() = 0.;
-      }
-      else {
-	if (i == j) {
-          h_I(i,j) = 1.;
-	}
-	else {
-          h_I(i,j) = 0.;
-	}
+        if (i == j) {
+          h_I(i, j).real() = 1.;
+        } else {
+          h_I(i, j).real() = 0.;
+        }
+        h_I(i, j).imag() = 0.;
+      } else {
+        if (i == j) {
+          h_I(i, j) = 1.;
+        } else {
+          h_I(i, j) = 0.;
+        }
       }
     }
   }
@@ -91,80 +89,77 @@ template <class ViewTypeA, class ViewTypeTW, class Device>
 void impl_test_geqrf(int m, int n) {
   using execution_space = typename Device::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  //using ats             = Kokkos::ArithTraits<ScalarA>;
+  // using ats             = Kokkos::ArithTraits<ScalarA>;
 
   execution_space space{};
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  int minMN( std::min(m,n) );
-  int lwork( 1 );
+  int minMN(std::min(m, n));
+  int lwork(1);
   if (minMN != 0) {
     lwork = n;
   }
 
   // Create device views
-  ViewTypeA  A   ("A", m, n);
-  ViewTypeTW Tau ("Tau", minMN);
+  ViewTypeA A("A", m, n);
+  ViewTypeTW Tau("Tau", minMN);
   ViewTypeTW Work("Work", lwork);
 
   // Create host mirrors of device views.
-  typename ViewTypeA::HostMirror  h_A     = Kokkos::create_mirror_view(A);
-  typename ViewTypeA::HostMirror  h_Aorig = Kokkos::create_mirror_view(A);
-  typename ViewTypeTW::HostMirror h_tau   = Kokkos::create_mirror_view(Tau);
-  typename ViewTypeTW::HostMirror h_work  = Kokkos::create_mirror_view(Work);
+  typename ViewTypeA::HostMirror h_A     = Kokkos::create_mirror_view(A);
+  typename ViewTypeA::HostMirror h_Aorig = Kokkos::create_mirror_view(A);
+  typename ViewTypeTW::HostMirror h_tau  = Kokkos::create_mirror_view(Tau);
+  typename ViewTypeTW::HostMirror h_work = Kokkos::create_mirror_view(Work);
 
   // Initialize data.
   if ((m == 3) && (n == 3)) {
     if constexpr (Kokkos::ArithTraits<ScalarA>::is_complex) {
-      h_A(0,0).real() = 12.;
-      h_A(0,1).real() = -51.;
-      h_A(0,2).real() = 4.;
+      h_A(0, 0).real() = 12.;
+      h_A(0, 1).real() = -51.;
+      h_A(0, 2).real() = 4.;
 
-      h_A(1,0).real() = 6.;
-      h_A(1,1).real() = 167.;
-      h_A(1,2).real() = -68.;
+      h_A(1, 0).real() = 6.;
+      h_A(1, 1).real() = 167.;
+      h_A(1, 2).real() = -68.;
 
-      h_A(2,0).real() = -4.;
-      h_A(2,1).real() = 24.;
-      h_A(2,2).real() = -41.;
+      h_A(2, 0).real() = -4.;
+      h_A(2, 1).real() = 24.;
+      h_A(2, 2).real() = -41.;
 
       for (int i(0); i < m; ++i) {
         for (int j(0); j < n; ++j) {
-          h_A(i,j).imag() = 0.;
-	}
+          h_A(i, j).imag() = 0.;
+        }
       }
-    }
-    else {
-      h_A(0,0) = 12.;
-      h_A(0,1) = -51.;
-      h_A(0,2) = 4.;
+    } else {
+      h_A(0, 0) = 12.;
+      h_A(0, 1) = -51.;
+      h_A(0, 2) = 4.;
 
-      h_A(1,0) = 6.;
-      h_A(1,1) = 167.;
-      h_A(1,2) = -68.;
+      h_A(1, 0) = 6.;
+      h_A(1, 1) = 167.;
+      h_A(1, 2) = -68.;
 
-      h_A(2,0) = -4.;
-      h_A(2,1) = 24.;
-      h_A(2,2) = -41.;
+      h_A(2, 0) = -4.;
+      h_A(2, 1) = 24.;
+      h_A(2, 2) = -41.;
     }
 
     Kokkos::deep_copy(A, h_A);
-  }
-  else {
-    Kokkos::fill_random( A
-                       , rand_pool
-                       , Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max()
-                       );
+  } else {
+    Kokkos::fill_random(A, rand_pool,
+                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+                                     ScalarA>::max());
     Kokkos::deep_copy(h_A, A);
   }
 
   Kokkos::deep_copy(h_Aorig, h_A);
 
-#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
+#if 1  // def HAVE_KOKKOSKERNELS_DEBUG
   for (int i(0); i < m; ++i) {
     for (int j(0); j < n; ++j) {
-      std::cout << "A(" << i << "," << j << ") = " << h_A(i,j) << std::endl;
+      std::cout << "A(" << i << "," << j << ") = " << h_A(i, j) << std::endl;
     }
   }
 #endif
@@ -175,9 +170,9 @@ void impl_test_geqrf(int m, int n) {
   int rc(0);
   try {
     rc = KokkosLapack::geqrf(space, A, Tau, Work);
-  }
-  catch (const std::runtime_error & e) {
-    std::cout << "KokkosLapack::geqrf(): caught exception '" << e.what() << "'" << std::endl;
+  } catch (const std::runtime_error& e) {
+    std::cout << "KokkosLapack::geqrf(): caught exception '" << e.what() << "'"
+              << std::endl;
     FAIL();
     return;
   }
@@ -191,11 +186,11 @@ void impl_test_geqrf(int m, int n) {
   Kokkos::deep_copy(h_tau, Tau);
   Kokkos::deep_copy(h_work, Work);
 
-#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
+#if 1  // def HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "rc = " << rc << std::endl;
   for (int i(0); i < minMN; ++i) {
     for (int j(0); j < n; ++j) {
-      std::cout << "R(" << i << "," << j << ") = " << h_A(i,j) << std::endl;
+      std::cout << "R(" << i << "," << j << ") = " << h_A(i, j) << std::endl;
     }
   }
   for (int i(0); i < minMN; ++i) {
@@ -206,8 +201,8 @@ void impl_test_geqrf(int m, int n) {
   }
 #endif
 
-  ViewTypeA Q ("Q",  m, m);
-  ViewTypeA R ("R",  m, n);
+  ViewTypeA Q("Q", m, m);
+  ViewTypeA R("R", m, n);
   ViewTypeA QR("QR", m, n);
 
   typename ViewTypeA::HostMirror h_Q  = Kokkos::create_mirror_view(Q);
@@ -216,20 +211,20 @@ void impl_test_geqrf(int m, int n) {
 
   getQR<ViewTypeA, ViewTypeTW>(m, n, h_A, h_tau, h_work, h_Q, h_R, h_QR);
 
-#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
+#if 1  // def HAVE_KOKKOSKERNELS_DEBUG
   for (int i(0); i < m; ++i) {
     for (int j(0); j < m; ++j) {
-      std::cout << "Q(" << i << "," << j << ") = " << h_Q(i,j) << std::endl;
+      std::cout << "Q(" << i << "," << j << ") = " << h_Q(i, j) << std::endl;
     }
   }
   for (int i(0); i < m; ++i) {
     for (int j(0); j < n; ++j) {
-      std::cout << "R(" << i << "," << j << ") = " << h_R(i,j) << std::endl;
+      std::cout << "R(" << i << "," << j << ") = " << h_R(i, j) << std::endl;
     }
   }
   for (int i(0); i < m; ++i) {
     for (int j(0); j < n; ++j) {
-      std::cout << "QR(" << i << "," << j << ") = " << h_QR(i,j) << std::endl;
+      std::cout << "QR(" << i << "," << j << ") = " << h_QR(i, j) << std::endl;
     }
   }
 #endif
@@ -258,9 +253,9 @@ void impl_test_geqrf(int m, int n) {
   //         );
 
   // Checking vs ref on CPU, this eps is about 10^-9
-  //typedef typename ats::mag_type mag_type;
-  //const mag_type eps = 3.0e7 * ats::epsilon();
-  bool test_flag     = true;
+  // typedef typename ats::mag_type mag_type;
+  // const mag_type eps = 3.0e7 * ats::epsilon();
+  bool test_flag = true;
   for (int i = 0; i < n; i++) {
 #if 0
     if (ats::abs(h_B(i) - h_X0(i)) > eps) {
@@ -284,7 +279,7 @@ void test_geqrf() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a_ll = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
+  using view_type_a_ll  = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
   using view_type_tw_ll = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;
 
   Test::impl_test_geqrf<view_type_a_ll, view_type_tw_ll, Device>(3, 3);
