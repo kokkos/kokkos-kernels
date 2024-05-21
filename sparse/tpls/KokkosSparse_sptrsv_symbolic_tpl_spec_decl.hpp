@@ -34,9 +34,9 @@ void sptrsv_analysis_cusparse(ExecutionSpace &space, KernelHandle *sptrsv_handle
 		     ain_nonzero_index_view_type entries,
 		     ain_values_scalar_view_type values, const bool trans) {
   using idx_type     = typename KernelHandle::nnz_lno_t;
-  using size_type    = typename KernelHandle::size_type;
   using scalar_type  = typename KernelHandle::scalar_t;
-  using memory_space = typename KernelHandle::memory_space;
+
+  const idx_type nrows = sptrsv_handle->get_nrows();
 
 #if (CUDA_VERSION >= 11030)
   using nnz_scalar_view_t = typename KernelHandle::nnz_scalar_view_t;
@@ -45,7 +45,6 @@ void sptrsv_analysis_cusparse(ExecutionSpace &space, KernelHandle *sptrsv_handle
   const bool is_lower = sptrsv_handle->is_lower_tri();
   sptrsv_handle->create_cuSPARSE_Handle(trans, is_lower);
 
-  const idx_type nrows = sptrsv_handle->get_nrows();
   typename KernelHandle::SPTRSVcuSparseHandleType *h =
     sptrsv_handle->get_cuSparseHandle();
 
@@ -122,11 +121,11 @@ void sptrsv_analysis_cusparse(ExecutionSpace &space, KernelHandle *sptrsv_handle
   int nnz = entries.extent_int(0);
   int pBufferSize;
 
-  const scalar_type *vals = values.data();
+  // const scalar_type *vals = values.data();
 
   if constexpr (std::is_same<scalar_type, double>::value) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
-							 values.data(), row_map.data(), entries.data(),
+							 const_cast<double*>(values.data()), row_map.data(), entries.data(),
 							 h->info, &pBufferSize));
 
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
@@ -140,9 +139,9 @@ void sptrsv_analysis_cusparse(ExecutionSpace &space, KernelHandle *sptrsv_handle
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrsv2_analysis(
 						       h->handle, h->transpose, nrows, nnz, h->descr, values.data(),
 						       row_map.data(), entries.data(), h->info, h->policy, h->pBuffer));
-  } else if (std::is_same<scalar_type, float>::value) {
+  } else if constexpr (std::is_same<scalar_type, float>::value) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
-							 values.data(), row_map.data(), entries.data(), h->info,
+							 const_cast<float*>(values.data()), row_map.data(), entries.data(), h->info,
 							 &pBufferSize));
 
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
@@ -155,9 +154,9 @@ void sptrsv_analysis_cusparse(ExecutionSpace &space, KernelHandle *sptrsv_handle
 
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrsv2_analysis(h->handle, h->transpose, nrows, nnz, h->descr, values.data(),
 						       row_map.data(), entries.data(), h->info, h->policy, h->pBuffer));
-  } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
+  } else if constexpr (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseZcsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
-							 reinterpret_cast<cuDoubleComplex *>(values.data()), row_map.data(),
+							 reinterpret_cast<cuDoubleComplex *>(const_cast<Kokkos::complex<double>*>(values.data())), row_map.data(),
 							 entries.data(), h->info, &pBufferSize));
 
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
@@ -169,11 +168,11 @@ void sptrsv_analysis_cusparse(ExecutionSpace &space, KernelHandle *sptrsv_handle
 		<< cudaGetErrorString(my_error) << std::endl;
 
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseZcsrsv2_analysis(h->handle, h->transpose, nrows, nnz,
-						       h->descr, reinterpret_cast<cuDoubleComplex *>(values.data()),
+						       h->descr, reinterpret_cast<cuDoubleComplex *>(const_cast<Kokkos::complex<double>*>(values.data())),
 						       row_map.data(), entries.data(), h->info, h->policy, h->pBuffer));
-  } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
+  } else if constexpr (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCcsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
-							 reinterpret_cast<cuComplex *>(values.data()),
+							 reinterpret_cast<cuComplex *>(const_cast<Kokkos::complex<float>*>(values.data())),
 							 row_map.data(), entries.data(), h->info, &pBufferSize));
 
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
@@ -186,7 +185,7 @@ void sptrsv_analysis_cusparse(ExecutionSpace &space, KernelHandle *sptrsv_handle
 
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCcsrsv2_analysis(
 						       h->handle, h->transpose, nrows, nnz, h->descr,
-						       reinterpret_cast<cuComplex *>(values.data()),
+						       reinterpret_cast<cuComplex *>(const_cast<Kokkos::complex<float>*>(values.data())),
 						       row_map.data(), entries.data(), h->info, h->policy, h->pBuffer));
   }
 #endif  // CUDA_VERSION >= 11030

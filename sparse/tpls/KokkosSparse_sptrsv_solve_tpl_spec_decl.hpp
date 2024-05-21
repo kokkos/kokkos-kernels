@@ -40,6 +40,8 @@ void sptrsv_solve_cusparse(ExecutionSpace& space,
   using size_type    = typename KernelHandle::size_type;
   using scalar_type  = typename KernelHandle::scalar_t;
 
+  const idx_type nrows = sptrsv_handle->get_nrows();
+
 #if (CUDA_VERSION >= 11030)
   using memory_space = typename KernelHandle::memory_space;
 
@@ -49,7 +51,7 @@ void sptrsv_solve_cusparse(ExecutionSpace& space,
 
   // cusparseDnVecDescr_t vecBDescr, vecXDescr;
 
-  const idx_type nrows = sptrsv_handle->get_nrows();
+  // const idx_type nrows = sptrsv_handle->get_nrows();
   typename KernelHandle::SPTRSVcuSparseHandleType *h =
     sptrsv_handle->get_cuSparseHandle();
 
@@ -80,7 +82,7 @@ void sptrsv_solve_cusparse(ExecutionSpace& space,
 
     cusparseStatus_t status;
 
-    const idx_type nrows = sptrsv_handle->get_nrows();
+    // const idx_type nrows = sptrsv_handle->get_nrows();
     typename KernelHandle::SPTRSVcuSparseHandleType *h =
         sptrsv_handle->get_cuSparseHandle();
 
@@ -108,7 +110,7 @@ void sptrsv_solve_cusparse(ExecutionSpace& space,
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
-    } else if (std::is_same<scalar_type, float>::value) {
+    } else if constexpr (std::is_same<scalar_type, float>::value) {
       if (h->pBuffer == nullptr) {
         std::cout << "  pBuffer invalid" << std::endl;
       }
@@ -121,7 +123,7 @@ void sptrsv_solve_cusparse(ExecutionSpace& space,
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
-    } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
+    } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<double> >) {
       cuDoubleComplex cualpha;
       cualpha.x = 1.0;
       cualpha.y = 0.0;
@@ -132,7 +134,7 @@ void sptrsv_solve_cusparse(ExecutionSpace& space,
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
-    } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
+    } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<float> >) {
       cuComplex cualpha;
       cualpha.x = 1.0;
       cualpha.y = 0.0;

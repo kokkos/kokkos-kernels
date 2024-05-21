@@ -233,9 +233,9 @@ struct SptrsvTest {
       }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      if (std::is_same<size_type, int>::value &&
-          std::is_same<lno_t, int>::value &&
-          std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+      if (std::is_same_v<size_type, int> &&
+          std::is_same_v<lno_t, int> &&
+          std::is_same_v<typename device::execution_space, Kokkos::Cuda>) {
 	{
 	  Kokkos::deep_copy(lhs, ZERO);
 	  KernelHandle kh;
@@ -480,9 +480,9 @@ struct SptrsvTest {
       }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      if (std::is_same<size_type, int>::value &&
-          std::is_same<lno_t, int>::value &&
-          std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+      if (std::is_same_v<size_type, int> &&
+          std::is_same_v<lno_t, int> &&
+          std::is_same_v<typename device::execution_space, Kokkos::Cuda>) {
         Kokkos::deep_copy(lhs, ZERO);
         KernelHandle kh;
         bool is_lower_tri = true;
@@ -657,7 +657,7 @@ struct SptrsvTest {
     // not enough resource to partition
     bool run_streams_test = true;
 #ifdef KOKKOS_ENABLE_OPENMP
-    if (std::is_same<typename device::execution_space, Kokkos::OpenMP>::value) {
+    if (std::is_same_v<typename device::execution_space, Kokkos::OpenMP>) {
       int exec_concurrency = execution_space().concurrency();
       if (exec_concurrency < nstreams) {
         run_streams_test = false;
@@ -840,7 +840,6 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_sptrsv() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
   TestStruct::run_test_sptrsv();
-  std::cout << "Done with test_sptrsv" << std::endl;
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
@@ -858,15 +857,15 @@ void test_sptrsv_streams() {
   TestStruct::run_test_sptrsv_streams(1, 4);
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-  if (std::is_same<lno_t, int>::value &&
-      std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+  if (std::is_same_v<size_type, int> &&
+      std::is_same_v<lno_t, int> &&
+      std::is_same_v<typename device::execution_space, Kokkos::Cuda>) {
     TestStruct::run_test_sptrsv_streams(2, 1);
     TestStruct::run_test_sptrsv_streams(2, 2);
     TestStruct::run_test_sptrsv_streams(2, 3);
     TestStruct::run_test_sptrsv_streams(2, 4);
   }
 #endif
-  std::cout << "Done with test_sptrsv_streams" << std::endl;
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \

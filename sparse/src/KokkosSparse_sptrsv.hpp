@@ -239,8 +239,8 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
       Entries_Internal entries_i = entries;
       Values_Internal values_i   = values;
 
-      typedef typename KernelHandle::SPTRSVHandleType sptrsvHandleType;
-      sptrsvHandleType *sh = handle->get_sptrsv_handle();
+      // typedef typename KernelHandle::SPTRSVHandleType sptrsvHandleType;
+      // sptrsvHandleType *sh = handle->get_sptrsv_handle();
       // auto nrows           = sh->get_nrows();
 
       std::string label = "KokkosSparse::sptrsv[TPL_CUSPARSE,"
