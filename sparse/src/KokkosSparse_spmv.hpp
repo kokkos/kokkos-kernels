@@ -62,6 +62,7 @@ inline constexpr bool spmv_general_tpl_avail() {
       return spmv_mv_bsrmatrix_tpl_spec_avail<ExecutionSpace, Handle, AMatrix,
                                               XVector, YVector>::value;
   }
+  return false;
 }
 }  // namespace Impl
 

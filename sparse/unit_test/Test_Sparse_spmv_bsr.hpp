@@ -41,6 +41,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
 #include "KokkosKernels_default_types.hpp"
+#include <KokkosKernels_NaN.hpp>
 
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
@@ -327,10 +328,15 @@ spmv_random(const char *mode, const int blockSize, const int blockRows,
 /*! \brief create random x and y multivectors for a given matrix and spmv mode
  */
 template <typename Bsr>
-auto random_vecs_for_spmv(const char *mode, const Bsr &a) {
+auto random_vecs_for_spmv(const char *mode, const Bsr &a,
+                          const bool nans = false)
+    -> std::tuple<typename VectorTypeFor<Bsr>::type,
+                  typename VectorTypeFor<Bsr>::type> {
   using scalar_type     = typename Bsr::non_const_value_type;
   using vector_type     = typename VectorTypeFor<Bsr>::type;
   using execution_space = typename Bsr::execution_space;
+  using policy_type =
+      Kokkos::RangePolicy<typename vector_type::execution_space>;
 
   size_t nx = a.numCols() * a.blockDim();
   size_t ny = a.numRows() * a.blockDim();
@@ -344,6 +350,21 @@ auto random_vecs_for_spmv(const char *mode, const Bsr &a) {
   Kokkos::fill_random(x, random, max_x<scalar_type>());
   Kokkos::fill_random(y, random, max_y<scalar_type>());
 
+  if (nans) {
+    Kokkos::parallel_for(
+        policy_type(0, x.extent(0)), KOKKOS_LAMBDA(size_t i) {
+          if (0 == (i % 17)) {
+            x(i) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
+          }
+        });
+    Kokkos::parallel_for(
+        policy_type(0, y.extent(0)), KOKKOS_LAMBDA(size_t i) {
+          if (0 == (i % 17)) {
+            y(i) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
+          }
+        });
+  }
+
   return std::make_tuple(x, y);
 }
 
@@ -356,7 +377,8 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
   using scalar_type     = typename Bsr::non_const_value_type;
   using execution_space = typename Bsr::execution_space;
 
-  auto [x, y] = random_vecs_for_spmv(mode, a);
+  auto [x, y]                     = random_vecs_for_spmv(mode, a);
+  auto [x_with_nans, y_with_nans] = random_vecs_for_spmv(mode, a, true);
 
   using handle_t = SPMVHandle<execution_space, Bsr, decltype(x), decltype(y)>;
 
@@ -389,6 +411,10 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
       for (scalar_type beta : {scalar_type(0), scalar_type(1), scalar_type(-1),
                                scalar_type(-1.5)}) {
         test_spmv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow, x, y);
+        if (beta == scalar_type(0)) {
+          test_spmv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow,
+                    x_with_nans, y_with_nans);
+        }
       }
     }
   }
@@ -563,10 +589,14 @@ struct MultiVectorTypeFor {
  */
 template <typename Layout, typename Bsr>
 auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
-                                 const size_t numVecs) {
+                                 const size_t numVecs, const bool nans = false)
+    -> std::tuple<typename MultiVectorTypeFor<Layout, Bsr>::type,
+                  typename MultiVectorTypeFor<Layout, Bsr>::type> {
   using scalar_type     = typename Bsr::non_const_value_type;
   using vector_type     = typename MultiVectorTypeFor<Layout, Bsr>::type;
   using execution_space = typename Bsr::execution_space;
+  using policy_type =
+      Kokkos::RangePolicy<typename vector_type::execution_space>;
 
   size_t nx = a.numCols() * a.blockDim();
   size_t ny = a.numRows() * a.blockDim();
@@ -579,6 +609,26 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
   Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
   Kokkos::fill_random(x, random, max_x<scalar_type>());
   Kokkos::fill_random(y, random, max_y<scalar_type>());
+
+  // sprinkle some "random" NaNs in
+  if (nans) {
+    Kokkos::parallel_for(
+        policy_type(0, x.extent(0)), KOKKOS_LAMBDA(size_t i) {
+          for (size_t j = 0; j < x.extent(1); ++j) {
+            if (0 == ((i * x.extent(1) + j) % 13)) {
+              x(i, j) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
+            }
+          }
+        });
+    Kokkos::parallel_for(
+        policy_type(0, y.extent(0)), KOKKOS_LAMBDA(size_t i) {
+          for (size_t j = 0; j < y.extent(1); ++j) {
+            if (0 == ((i * y.extent(1) + j) % 17)) {
+              y(i, j) = KokkosKernels::Impl::quiet_NaN<scalar_type>();
+            }
+          }
+        });
+  }
 
   return std::make_tuple(x, y);
 }
@@ -618,12 +668,18 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
 
   for (size_t numVecs : {1, 7}) {  // num multivecs
     auto [x, y] = random_multivecs_for_spm_mv<Layout>(mode, a, numVecs);
+    auto [x_with_nans, y_with_nans] =
+        random_multivecs_for_spm_mv<Layout>(mode, a, numVecs, true);
     for (handle_t *handle : handles) {
       for (scalar_type alpha : {scalar_type(0), scalar_type(1), scalar_type(-1),
                                 scalar_type(3.7)}) {
         for (scalar_type beta : {scalar_type(0), scalar_type(1),
                                  scalar_type(-1), scalar_type(-1.5)}) {
           test_spm_mv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow, x, y);
+          if (beta == scalar_type(0)) {
+            test_spm_mv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow,
+                        x_with_nans, y_with_nans);
+          }
         }
       }
     }

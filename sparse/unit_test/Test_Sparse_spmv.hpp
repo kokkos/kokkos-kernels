@@ -23,6 +23,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_IOUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
+#include <KokkosKernels_NaN.hpp>
 
 #include "KokkosKernels_default_types.hpp"
 
@@ -86,7 +87,10 @@ struct fSPMV {
   void operator()(const int i, value_type &err) const {
     const mag_type error = AT::abs(expected_y(i) - y(i));
 
-    if (error > eps * max_val) {
+    // only one is NaN or error is too large
+    if ((Kokkos::isnan(AT::abs(expected_y(i))) ^
+         Kokkos::isnan(AT::abs(y(i)))) ||
+        (error > eps * max_val)) {
       err++;
       Kokkos::printf("expected_y(%d)=%f, y(%d)=%f err=%e, max_error=%e\n", i,
                      AT::abs(expected_y(i)), i, AT::abs(y(i)), error,
@@ -116,6 +120,7 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   using size_type_view_t = typename graph_t::row_map_type;
   using lno_view_t       = typename graph_t::entries_type;
   using scalar_view_t    = typename crsMat_t::values_type::non_const_type;
+  using y_scalar_t       = typename y_vector_type::non_const_value_type;
 
   using size_type = typename size_type_view_t::non_const_value_type;
   using lno_t     = typename lno_view_t::non_const_value_type;
@@ -145,7 +150,13 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   lno_t nr = input_mat.numRows();
 
   // first, scale y by beta
-  for (size_t i = 0; i < h_y.extent(0); i++) h_y(i) *= beta;
+  for (size_t i = 0; i < h_y.extent(0); i++) {
+    if (beta == y_scalar_t(0)) {
+      h_y(i) = y_scalar_t(0);
+    } else {
+      h_y(i) *= beta;
+    }
+  }
 
   // then go through the matrix and accumulate the matrix-vector product
   for (lno_t row = 0; row < nr; ++row) {
@@ -184,17 +195,19 @@ void check_spmv(
 
   const y_value_mag_type eps =
       10 * Kokkos::ArithTraits<y_value_mag_type>::eps();
-  bool transposed = (mode == "T") || (mode == "H");
-  y_vector_type expected_y(
-      "expected", transposed ? input_mat.numCols() : input_mat.numRows());
+
+  y_vector_type actual_y("actual_y", y.extent(0));
+  y_vector_type expected_y("expected_y", y.extent(0));
   Kokkos::deep_copy(expected_y, y);
+  Kokkos::deep_copy(actual_y, y);
   Kokkos::fence();
 
   sequential_spmv(input_mat, x, expected_y, alpha, beta, mode);
   bool threw = false;
   std::string msg;
   try {
-    KokkosSparse::spmv(handle, mode.data(), alpha, input_mat, x, beta, y);
+    KokkosSparse::spmv(handle, mode.data(), alpha, input_mat, x, beta,
+                       actual_y);
     Kokkos::fence();
   } catch (std::exception &e) {
     threw = true;
@@ -203,11 +216,11 @@ void check_spmv(
   ASSERT_FALSE(threw) << "KokkosSparse::Test::spmv 1D, mode " << mode
                       << ": threw exception:\n"
                       << msg << '\n';
+
   int num_errors = 0;
   Kokkos::parallel_reduce(
-      "KokkosSparse::Test::spmv", my_exec_space(0, y.extent(0)),
-      fSPMV<y_vector_type, y_vector_type>(expected_y, y, eps, max_val),
-      num_errors);
+      "KokkosSparse::Test::spmv", my_exec_space(0, actual_y.extent(0)),
+      fSPMV(expected_y, actual_y, eps, max_val), num_errors);
   if (num_errors > 0)
     printf("KokkosSparse::Test::spmv: %i errors of %i with params: %lf %lf\n",
            num_errors, y.extent_int(0), y_value_trait::abs(alpha),
@@ -266,10 +279,9 @@ void check_spmv_mv(
 
     auto y_spmv    = Kokkos::subview(y, Kokkos::ALL(), i);
     int num_errors = 0;
-    Kokkos::parallel_reduce(
-        "KokkosSparse::Test::spmv_mv", my_exec_space(0, y_i.extent(0)),
-        fSPMV<decltype(y_i), decltype(y_spmv)>(y_i, y_spmv, eps, max_val),
-        num_errors);
+    Kokkos::parallel_reduce("KokkosSparse::Test::spmv_mv",
+                            my_exec_space(0, y_i.extent(0)),
+                            fSPMV(y_i, y_spmv, eps, max_val), num_errors);
     if (num_errors > 0)
       std::cout << "KokkosSparse::Test::spmv_mv: " << num_errors
                 << " errors of " << y_i.extent_int(0) << " for mv " << i
@@ -404,6 +416,7 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
   using mag_t         = typename Kokkos::ArithTraits<scalar_t>::mag_type;
   using handle_t =
       KokkosSparse::SPMVHandle<Device, crsMat_t, x_vector_type, y_vector_type>;
+  using y_policy = Kokkos::RangePolicy<typename y_vector_type::execution_space>;
 
   constexpr mag_t max_x   = static_cast<mag_t>(1);
   constexpr mag_t max_y   = static_cast<mag_t>(1);
@@ -419,18 +432,35 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
   const lno_t max_nnz_per_row =
       numRows ? (nnz / numRows + row_size_variance) : 0;
 
+  // Create vectors with and without nans
   x_vector_type input_x("x", nc);
-  y_vector_type output_y("y", nr);
   x_vector_type input_xt("x", nr);
-  y_vector_type output_yt("y", nc);
+  y_vector_type input_y("y", nr), input_y_nans("y_nans", nr);
+  y_vector_type input_yt("y", nc), input_yt_nans("y_nans", nc);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   Kokkos::fill_random(input_x, rand_pool, randomUpperBound<scalar_t>(max_x));
-  Kokkos::fill_random(output_y, rand_pool, randomUpperBound<scalar_t>(max_y));
+  Kokkos::fill_random(input_y, rand_pool, randomUpperBound<scalar_t>(max_y));
   Kokkos::fill_random(input_xt, rand_pool, randomUpperBound<scalar_t>(max_x));
-  Kokkos::fill_random(output_yt, rand_pool, randomUpperBound<scalar_t>(max_y));
+  Kokkos::fill_random(input_yt, rand_pool, randomUpperBound<scalar_t>(max_y));
+
+  // sprinkle in some nans
+  Kokkos::deep_copy(input_y_nans, input_y);
+  Kokkos::deep_copy(input_yt_nans, input_yt);
+  Kokkos::parallel_for(
+      y_policy(0, input_y_nans.extent(0)), KOKKOS_LAMBDA(const size_t i) {
+        if (0 == (i % 19)) {
+          input_y_nans(i) = KokkosKernels::Impl::quiet_NaN<scalar_t>();
+        }
+      });
+  Kokkos::parallel_for(
+      y_policy(0, input_yt_nans.extent(0)), KOKKOS_LAMBDA(const size_t i) {
+        if (0 == (i % 23)) {
+          input_yt_nans(i) = KokkosKernels::Impl::quiet_NaN<scalar_t>();
+        }
+      });
 
   // We also need to bound the values
   // in the matrix to bound the cancellations
@@ -457,8 +487,12 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
       for (double beta : testAlphaBeta) {
         mag_t max_error =
             beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
-        Test::check_spmv(&handle, input_mat, input_x, output_y, alpha, beta,
+        Test::check_spmv(&handle, input_mat, input_x, input_y, alpha, beta,
                          mode, max_error);
+        if (0 == beta) {
+          Test::check_spmv(&handle, input_mat, input_x, input_y_nans, alpha,
+                           beta, mode, max_error);
+        }
       }
     }
   }
@@ -468,8 +502,12 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz,
         // hoping the transpose won't have a long column...
         mag_t max_error =
             beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
-        Test::check_spmv(&handle, input_mat, input_xt, output_yt, alpha, beta,
+        Test::check_spmv(&handle, input_mat, input_xt, input_yt, alpha, beta,
                          mode, max_error);
+        if (0 == beta) {
+          Test::check_spmv(&handle, input_mat, input_x, input_yt_nans, alpha,
+                           beta, mode, max_error);
+        }
       }
     }
   }

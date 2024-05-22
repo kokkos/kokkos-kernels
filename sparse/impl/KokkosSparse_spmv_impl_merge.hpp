@@ -309,7 +309,11 @@ struct SpmvMergeHierarchical {
     static_assert(XVector::rank == 1, "");
     static_assert(YVector::rank == 1, "");
 
-    KokkosBlas::scal(y, beta, y);
+    if (y_value_type(0) == beta) {
+      Kokkos::deep_copy(space, y, y_value_type(0));
+    } else {
+      KokkosBlas::scal(space, y, beta, y);
+    }
 
     /* determine launch parameters for different architectures
        On architectures where there is a natural execution hierarchy with true
