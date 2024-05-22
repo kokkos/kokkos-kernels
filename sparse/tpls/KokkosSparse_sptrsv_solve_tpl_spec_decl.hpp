@@ -17,7 +17,6 @@
 #ifndef KOKKOSPARSE_SPTRSV_SOLVE_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPTRSV_SOLVE_TPL_SPEC_DECL_HPP_
 
-
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
@@ -27,18 +26,15 @@
 namespace KokkosSparse {
 namespace Impl {
 
-template<class ExecutionSpace, class KernelHandle, class RowMapType,
-         class EntriesType, class ValuesType, class BType, class XType>
-void sptrsv_solve_cusparse(ExecutionSpace& space,
-			   KernelHandle *sptrsv_handle,
-			   RowMapType row_map,
-			   EntriesType entries,
-			   ValuesType values,
-			   BType rhs, XType lhs,
-			   const bool /*trans*/) {
-  using idx_type     = typename KernelHandle::nnz_lno_t;
-  using size_type    = typename KernelHandle::size_type;
-  using scalar_type  = typename KernelHandle::scalar_t;
+template <class ExecutionSpace, class KernelHandle, class RowMapType,
+          class EntriesType, class ValuesType, class BType, class XType>
+void sptrsv_solve_cusparse(ExecutionSpace &space, KernelHandle *sptrsv_handle,
+                           RowMapType row_map, EntriesType entries,
+                           ValuesType values, BType rhs, XType lhs,
+                           const bool /*trans*/) {
+  using idx_type    = typename KernelHandle::nnz_lno_t;
+  using size_type   = typename KernelHandle::size_type;
+  using scalar_type = typename KernelHandle::scalar_t;
 
   const idx_type nrows = sptrsv_handle->get_nrows();
 
@@ -53,26 +49,28 @@ void sptrsv_solve_cusparse(ExecutionSpace& space,
 
   // const idx_type nrows = sptrsv_handle->get_nrows();
   typename KernelHandle::SPTRSVcuSparseHandleType *h =
-    sptrsv_handle->get_cuSparseHandle();
+      sptrsv_handle->get_cuSparseHandle();
 
-  KOKKOS_CUSPARSE_SAFE_CALL(
-  			    cusparseSetStream(h->handle, space.cuda_stream()));
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
 
   const scalar_type alpha = scalar_type(1.0);
 
   const cudaDataType cudaValueType = cuda_data_type_from<scalar_type>();
 
   // Create dense vector B (RHS)
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&(h->vecBDescr), static_cast<int64_t>(nrows),
-						(void *)rhs.data(), cudaValueType));
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseCreateDnVec(&(h->vecBDescr), static_cast<int64_t>(nrows),
+                          (void *)rhs.data(), cudaValueType));
 
   // Create dense vector X (LHS)
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&(h->vecXDescr), static_cast<int64_t>(nrows),
-						(void *)lhs.data(), cudaValueType));
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseCreateDnVec(&(h->vecXDescr), static_cast<int64_t>(nrows),
+                          (void *)lhs.data(), cudaValueType));
 
   // Solve
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_solve(h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr,
-					       h->vecXDescr, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr));
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_solve(
+      h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr, h->vecXDescr,
+      cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr));
 
   // Destroy dense vector descriptors
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecBDescr));
@@ -80,74 +78,74 @@ void sptrsv_solve_cusparse(ExecutionSpace& space,
 
 #else  // CUDA_VERSION < 11030
 
-    cusparseStatus_t status;
+  cusparseStatus_t status;
 
-    // const idx_type nrows = sptrsv_handle->get_nrows();
-    typename KernelHandle::SPTRSVcuSparseHandleType *h =
-        sptrsv_handle->get_cuSparseHandle();
+  // const idx_type nrows = sptrsv_handle->get_nrows();
+  typename KernelHandle::SPTRSVcuSparseHandleType *h =
+      sptrsv_handle->get_cuSparseHandle();
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
 
-    int nnz = entries.extent_int(0);
-    const int *rm = !std::is_same<size_type, int>::value
-                        ? sptrsv_handle->get_int_rowmap_ptr()
-                        : (const int *)row_map.data();
-    const int *ent          = (const int *)entries.data();
-    const scalar_type *vals = values.data();
-    const scalar_type *bv   = rhs.data();
-    scalar_type *xv         = lhs.data();
+  int nnz       = entries.extent_int(0);
+  const int *rm = !std::is_same<size_type, int>::value
+                      ? sptrsv_handle->get_int_rowmap_ptr()
+                      : (const int *)row_map.data();
+  const int *ent          = (const int *)entries.data();
+  const scalar_type *vals = values.data();
+  const scalar_type *bv   = rhs.data();
+  scalar_type *xv         = lhs.data();
 
-    if constexpr (std::is_same_v<scalar_type, double>) {
-      if (h->pBuffer == nullptr) {
-        std::cout << "  pBuffer invalid" << std::endl;
-      }
-
-      const scalar_type alpha = Kokkos::ArithTraits<scalar_type>::one();
-      status = cusparseDcsrsv2_solve(
-          h->handle, h->transpose, nrows, nnz, &alpha, h->descr, (double *)vals,
-          (int *)rm, (int *)ent, h->info, (double *)bv, (double *)xv, h->policy,
-          h->pBuffer);
-
-      if (CUSPARSE_STATUS_SUCCESS != status)
-        std::cout << "solve status error name " << (status) << std::endl;
-    } else if constexpr (std::is_same<scalar_type, float>::value) {
-      if (h->pBuffer == nullptr) {
-        std::cout << "  pBuffer invalid" << std::endl;
-      }
-
-      const scalar_type alpha = Kokkos::ArithTraits<scalar_type>::one();
-      status = cusparseScsrsv2_solve(h->handle, h->transpose, nrows, nnz,
-                                     &alpha, h->descr, (float *)vals, (int *)rm,
-                                     (int *)ent, h->info, (float *)bv,
-                                     (float *)xv, h->policy, h->pBuffer);
-
-      if (CUSPARSE_STATUS_SUCCESS != status)
-        std::cout << "solve status error name " << (status) << std::endl;
-    } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<double> >) {
-      cuDoubleComplex cualpha;
-      cualpha.x = 1.0;
-      cualpha.y = 0.0;
-      status    = cusparseZcsrsv2_solve(
-          h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
-          (cuDoubleComplex *)vals, (int *)rm, (int *)ent, h->info,
-          (cuDoubleComplex *)bv, (cuDoubleComplex *)xv, h->policy, h->pBuffer);
-
-      if (CUSPARSE_STATUS_SUCCESS != status)
-        std::cout << "solve status error name " << (status) << std::endl;
-    } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<float> >) {
-      cuComplex cualpha;
-      cualpha.x = 1.0;
-      cualpha.y = 0.0;
-      status    = cusparseCcsrsv2_solve(
-          h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
-          (cuComplex *)vals, (int *)rm, (int *)ent, h->info, (cuComplex *)bv,
-          (cuComplex *)xv, h->policy, h->pBuffer);
-
-      if (CUSPARSE_STATUS_SUCCESS != status)
-        std::cout << "solve status error name " << (status) << std::endl;
-    } else {
-      throw std::runtime_error("CUSPARSE wrapper error: unsupported type.\n");
+  if constexpr (std::is_same_v<scalar_type, double>) {
+    if (h->pBuffer == nullptr) {
+      std::cout << "  pBuffer invalid" << std::endl;
     }
+
+    const scalar_type alpha = Kokkos::ArithTraits<scalar_type>::one();
+    status = cusparseDcsrsv2_solve(h->handle, h->transpose, nrows, nnz, &alpha,
+                                   h->descr, (double *)vals, (int *)rm,
+                                   (int *)ent, h->info, (double *)bv,
+                                   (double *)xv, h->policy, h->pBuffer);
+
+    if (CUSPARSE_STATUS_SUCCESS != status)
+      std::cout << "solve status error name " << (status) << std::endl;
+  } else if constexpr (std::is_same<scalar_type, float>::value) {
+    if (h->pBuffer == nullptr) {
+      std::cout << "  pBuffer invalid" << std::endl;
+    }
+
+    const scalar_type alpha = Kokkos::ArithTraits<scalar_type>::one();
+    status = cusparseScsrsv2_solve(h->handle, h->transpose, nrows, nnz, &alpha,
+                                   h->descr, (float *)vals, (int *)rm,
+                                   (int *)ent, h->info, (float *)bv,
+                                   (float *)xv, h->policy, h->pBuffer);
+
+    if (CUSPARSE_STATUS_SUCCESS != status)
+      std::cout << "solve status error name " << (status) << std::endl;
+  } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<double> >) {
+    cuDoubleComplex cualpha;
+    cualpha.x = 1.0;
+    cualpha.y = 0.0;
+    status    = cusparseZcsrsv2_solve(
+        h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
+        (cuDoubleComplex *)vals, (int *)rm, (int *)ent, h->info,
+        (cuDoubleComplex *)bv, (cuDoubleComplex *)xv, h->policy, h->pBuffer);
+
+    if (CUSPARSE_STATUS_SUCCESS != status)
+      std::cout << "solve status error name " << (status) << std::endl;
+  } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<float> >) {
+    cuComplex cualpha;
+    cualpha.x = 1.0;
+    cualpha.y = 0.0;
+    status    = cusparseCcsrsv2_solve(
+        h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
+        (cuComplex *)vals, (int *)rm, (int *)ent, h->info, (cuComplex *)bv,
+        (cuComplex *)xv, h->policy, h->pBuffer);
+
+    if (CUSPARSE_STATUS_SUCCESS != status)
+      std::cout << "solve status error name " << (status) << std::endl;
+  } else {
+    throw std::runtime_error("CUSPARSE wrapper error: unsupported type.\n");
+  }
 #endif
 }
 
@@ -328,60 +326,94 @@ void sptrsv_solve_streams_cusparse(
 #endif
 }
 
-#define KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(SCALAR, LAYOUT, MEMSPACE)	\
-  template<>								\
-  struct SPTRSV_SOLVE<Kokkos::Cuda,					\
-      KokkosKernels::Experimental::KokkosKernelsHandle<const int, const int, const SCALAR, Kokkos::Cuda, MEMSPACE, MEMSPACE>, \
-      Kokkos::View<const int *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<const int *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
-      Kokkos::View<const SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<const SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true> { \
-									\
-    using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<const int,  const int, const SCALAR, Kokkos::Cuda, MEMSPACE, MEMSPACE>; \
-    using RowMapType  = Kokkos::View<const int *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >; \
-    using EntriesType = Kokkos::View<const int *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >; \
-    using ValuesType  = Kokkos::View<const SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >; \
-    using BType = Kokkos::View<const SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >; \
-    using XType = Kokkos::View<SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >; \
-									\
-    static void sptrsv_solve(const Kokkos::Cuda& space,   		\
-			     KernelHandle *handle,   			\
-			     const RowMapType row_map,  		\
-			     const EntriesType entries,                 \
-			     const ValuesType values,                   \
-			     const BType b, XType x) {	        	\
-      bool trans = false;						\
-      typename KernelHandle::SPTRSVHandleType *sptrsv_handle = handle->get_sptrsv_handle(); \
-      std::string label = "KokkosSparse::sptrsv_solve[TPL_CUSPARSE,"    \
-	+ Kokkos::ArithTraits<SCALAR>::name() + "]";                    \
-      Kokkos::Profiling::pushRegion(label);                             \
-      sptrsv_solve_cusparse(space, sptrsv_handle, row_map, entries,     \
-		            values, b, x, trans);			\
-      Kokkos::Profiling::popRegion();                                   \
-    }									\
-									\
-    static void sptrsv_solve_streams(const std::vector<Kokkos::Cuda>& space_v, std::vector<KernelHandle> &handle_v, const std::vector<RowMapType> &row_map_v, const std::vector<EntriesType> &entries_v, const std::vector<ValuesType> &values_v, const std::vector<BType> &b_v, std::vector<XType> &x_v) { \
-									\
-      std::string label = "KokkosSparse::sptrsv_solve_streams[TPL_CUSPARSE," \
-	+ Kokkos::ArithTraits<SCALAR>::name() + "]";                    \
-      Kokkos::Profiling::pushRegion(label);                             \
-      sptrsv_solve_streams_cusparse(space_v, handle_v, row_map_v,	\
-			            entries_v, values_v, b_v, x_v,      \
-			            false);				\
-      Kokkos::Profiling::popRegion();                                   \
-    }									\
+#define KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(SCALAR, LAYOUT, MEMSPACE)           \
+  template <>                                                                  \
+  struct SPTRSV_SOLVE<                                                         \
+      Kokkos::Cuda,                                                            \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                        \
+          const int, const int, const SCALAR, Kokkos::Cuda, MEMSPACE,          \
+          MEMSPACE>,                                                           \
+      Kokkos::View<                                                            \
+          const int *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,         \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+      Kokkos::View<                                                            \
+          const int *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,         \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+      Kokkos::View<                                                            \
+          const SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,      \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+      Kokkos::View<                                                            \
+          const SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,      \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+      Kokkos::View<SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      true> {                                                                  \
+    using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<     \
+        const int, const int, const SCALAR, Kokkos::Cuda, MEMSPACE, MEMSPACE>; \
+    using RowMapType = Kokkos::View<                                           \
+        const int *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,           \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;      \
+    using EntriesType = Kokkos::View<                                          \
+        const int *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,           \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;      \
+    using ValuesType = Kokkos::View<                                           \
+        const SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,        \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;      \
+    using BType = Kokkos::View<                                                \
+        const SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,        \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;      \
+    using XType =                                                              \
+        Kokkos::View<SCALAR *, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;                \
+                                                                               \
+    static void sptrsv_solve(const Kokkos::Cuda &space, KernelHandle *handle,  \
+                             const RowMapType row_map,                         \
+                             const EntriesType entries,                        \
+                             const ValuesType values, const BType b,           \
+                             XType x) {                                        \
+      bool trans = false;                                                      \
+      typename KernelHandle::SPTRSVHandleType *sptrsv_handle =                 \
+          handle->get_sptrsv_handle();                                         \
+      std::string label = "KokkosSparse::sptrsv_solve[TPL_CUSPARSE," +         \
+                          Kokkos::ArithTraits<SCALAR>::name() + "]";           \
+      Kokkos::Profiling::pushRegion(label);                                    \
+      sptrsv_solve_cusparse(space, sptrsv_handle, row_map, entries, values, b, \
+                            x, trans);                                         \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
+                                                                               \
+    static void sptrsv_solve_streams(                                          \
+        const std::vector<Kokkos::Cuda> &space_v,                              \
+        std::vector<KernelHandle> &handle_v,                                   \
+        const std::vector<RowMapType> &row_map_v,                              \
+        const std::vector<EntriesType> &entries_v,                             \
+        const std::vector<ValuesType> &values_v,                               \
+        const std::vector<BType> &b_v, std::vector<XType> &x_v) {              \
+      std::string label = "KokkosSparse::sptrsv_solve_streams[TPL_CUSPARSE," + \
+                          Kokkos::ArithTraits<SCALAR>::name() + "]";           \
+      Kokkos::Profiling::pushRegion(label);                                    \
+      sptrsv_solve_streams_cusparse(space_v, handle_v, row_map_v, entries_v,   \
+                                    values_v, b_v, x_v, false);                \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
 KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(double, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(double, Kokkos::LayoutLeft,
+                                   Kokkos::CudaSpace)
+KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(Kokkos::complex<float>, Kokkos::LayoutLeft,
+                                   Kokkos::CudaSpace)
+KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                                   Kokkos::CudaSpace)
 
-KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(float, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(double, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(float, Kokkos::LayoutLeft,
+                                   Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(double, Kokkos::LayoutLeft,
+                                   Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(Kokkos::complex<float>, Kokkos::LayoutLeft,
+                                   Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPTRSV_SOLVE_CUSPARSE(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                                   Kokkos::CudaUVMSpace)
 
 }  // namespace Impl
 }  // namespace KokkosSparse

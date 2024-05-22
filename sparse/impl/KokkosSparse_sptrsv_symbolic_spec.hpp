@@ -70,14 +70,14 @@ namespace Impl {
 template <class ExecutionSpace, class KernelHandle, class RowMapType,
           class EntriesType, class ValuesType,
           bool tpl_spec_avail = sptrsv_symbolic_tpl_spec_avail<
-			       KernelHandle, RowMapType, EntriesType, ValuesType>::value,
+              KernelHandle, RowMapType, EntriesType, ValuesType>::value,
           bool eti_spec_avail = sptrsv_symbolic_eti_spec_avail<
               KernelHandle, RowMapType, EntriesType>::value>
 struct SPTRSV_SYMBOLIC {
   static void sptrsv_symbolic(const ExecutionSpace &space, KernelHandle *handle,
                               const RowMapType row_map,
                               const EntriesType entries,
-			      const ValuesType values);
+                              const ValuesType values);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -85,12 +85,12 @@ struct SPTRSV_SYMBOLIC {
 // Unification layer
 template <class ExecutionSpace, class KernelHandle, class RowMapType,
           class EntriesType, class ValuesType>
-struct SPTRSV_SYMBOLIC<ExecutionSpace, KernelHandle, RowMapType, EntriesType, ValuesType,
-                       false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct SPTRSV_SYMBOLIC<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
+                       ValuesType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void sptrsv_symbolic(const ExecutionSpace &space, KernelHandle *handle,
                               const RowMapType row_map,
                               const EntriesType entries,
-			      const ValuesType /*values*/) {
+                              const ValuesType /*values*/) {
     auto sptrsv_handle = handle->get_sptrsv_handle();
     auto nrows         = row_map.extent(0) - 1;
     sptrsv_handle->new_init_handle(nrows);
@@ -132,7 +132,7 @@ struct SPTRSV_SYMBOLIC<ExecutionSpace, KernelHandle, RowMapType, EntriesType, Va
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
-          const SCALAR_TYPE *, LAYOUT_TYPE,                                \
+          const SCALAR_TYPE *, LAYOUT_TYPE,                                 \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       false, true>;
@@ -154,7 +154,7 @@ struct SPTRSV_SYMBOLIC<ExecutionSpace, KernelHandle, RowMapType, EntriesType, Va
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
-          const SCALAR_TYPE *, LAYOUT_TYPE,                                \
+          const SCALAR_TYPE *, LAYOUT_TYPE,                                 \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       false, true>;

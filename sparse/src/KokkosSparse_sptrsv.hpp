@@ -79,14 +79,16 @@ void sptrsv_symbolic(const ExecutionSpace &space, KernelHandle *handle,
   using c_temp_t    = typename KernelHandle::HandleTempMemorySpace;
   using c_persist_t = typename KernelHandle::HandlePersistentMemorySpace;
 
-  using const_handle_type = typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
+  using const_handle_type =
+      typename KokkosKernels::Experimental::KokkosKernelsHandle<
+          c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
   const_handle_type tmp_handle(*handle);
 
-  using scalar_nnz_view_t_ = Kokkos::View<c_scalar_t,
-					  typename KokkosKernels::Impl::GetUnifiedLayout<
-					    lno_row_view_t_>::array_layout,
-					  typename lno_row_view_t_::device_type>;
+  using scalar_nnz_view_t_ =
+      Kokkos::View<c_scalar_t,
+                   typename KokkosKernels::Impl::GetUnifiedLayout<
+                       lno_row_view_t_>::array_layout,
+                   typename lno_row_view_t_::device_type>;
 
   using RowMap_Internal = Kokkos::View<
       typename lno_row_view_t_::const_value_type *,
@@ -103,26 +105,26 @@ void sptrsv_symbolic(const ExecutionSpace &space, KernelHandle *handle,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
   using Values_Internal = Kokkos::View<
-    typename scalar_nnz_view_t_::const_value_type *,
-    typename KokkosKernels::Impl::GetUnifiedLayout<
-      scalar_nnz_view_t_>::array_layout,
-    typename scalar_nnz_view_t_::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+      typename scalar_nnz_view_t_::const_value_type *,
+      typename KokkosKernels::Impl::GetUnifiedLayout<
+          scalar_nnz_view_t_>::array_layout,
+      typename scalar_nnz_view_t_::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
 #ifdef KK_TRISOLVE_TIMERS
   Kokkos::Timer timer_sptrsv;
 #endif
-  RowMap_Internal  rowmap_i  = rowmap;
+  RowMap_Internal rowmap_i   = rowmap;
   Entries_Internal entries_i = entries;
-  Values_Internal  values_i;
+  Values_Internal values_i;
 
   // Since the values were not provided
   // the TPLs are not going to be used
   // hard coding false for tpl_spec_avail
   KokkosSparse::Impl::SPTRSV_SYMBOLIC<
-      ExecutionSpace, const_handle_type, RowMap_Internal,
-    Entries_Internal, Values_Internal, false>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
-							       entries_i, values_i);
+      ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
+      Values_Internal, false>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
+                                               entries_i, values_i);
 
 #ifdef KK_TRISOLVE_TIMERS
   std::cout << "     > sptrsv_symbolic time = " << timer_sptrsv.seconds()
@@ -202,30 +204,31 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
   using c_temp_t    = typename KernelHandle::HandleTempMemorySpace;
   using c_persist_t = typename KernelHandle::HandlePersistentMemorySpace;
 
-  using const_handle_type = typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
+  using const_handle_type =
+      typename KokkosKernels::Experimental::KokkosKernelsHandle<
+          c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
   const_handle_type tmp_handle(*handle);
 
   using RowMap_Internal = Kokkos::View<
-    typename lno_row_view_t_::const_value_type *,
-    typename KokkosKernels::Impl::GetUnifiedLayout<
-      lno_row_view_t_>::array_layout,
-    typename lno_row_view_t_::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+      typename lno_row_view_t_::const_value_type *,
+      typename KokkosKernels::Impl::GetUnifiedLayout<
+          lno_row_view_t_>::array_layout,
+      typename lno_row_view_t_::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
   using Entries_Internal = Kokkos::View<
-    typename lno_nnz_view_t_::const_value_type *,
-    typename KokkosKernels::Impl::GetUnifiedLayout<
-      lno_nnz_view_t_>::array_layout,
-    typename lno_nnz_view_t_::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+      typename lno_nnz_view_t_::const_value_type *,
+      typename KokkosKernels::Impl::GetUnifiedLayout<
+          lno_nnz_view_t_>::array_layout,
+      typename lno_nnz_view_t_::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
   using Values_Internal = Kokkos::View<
-    typename scalar_nnz_view_t_::const_value_type *,
-    typename KokkosKernels::Impl::GetUnifiedLayout<
-      scalar_nnz_view_t_>::array_layout,
-    typename scalar_nnz_view_t_::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+      typename scalar_nnz_view_t_::const_value_type *,
+      typename KokkosKernels::Impl::GetUnifiedLayout<
+          scalar_nnz_view_t_>::array_layout,
+      typename scalar_nnz_view_t_::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
 #ifdef KK_TRISOLVE_TIMERS
   Kokkos::Timer timer_sptrsv;
@@ -243,17 +246,21 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
       // sptrsvHandleType *sh = handle->get_sptrsv_handle();
       // auto nrows           = sh->get_nrows();
 
-      std::string label = "KokkosSparse::sptrsv[TPL_CUSPARSE,"
-	+ Kokkos::ArithTraits<typename scalar_nnz_view_t_::non_const_value_type>::name() + "]";
+      std::string label =
+          "KokkosSparse::sptrsv[TPL_CUSPARSE," +
+          Kokkos::ArithTraits<
+              typename scalar_nnz_view_t_::non_const_value_type>::name() +
+          "]";
       Kokkos::Profiling::pushRegion(label);
       // KokkosSparse::Impl::sptrsvcuSPARSE_symbolic<
-      //     ExecutionSpace, sptrsvHandleType, RowMap_Internal, Entries_Internal,
-      //     Values_Internal>(space, sh, nrows, rowmap_i, entries_i, values_i,
+      //     ExecutionSpace, sptrsvHandleType, RowMap_Internal,
+      //     Entries_Internal, Values_Internal>(space, sh, nrows, rowmap_i,
+      //     entries_i, values_i,
       //                      false);
       KokkosSparse::Impl::SPTRSV_SYMBOLIC<
-	ExecutionSpace, const_handle_type, RowMap_Internal,
-	Entries_Internal, Values_Internal>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
-							    entries_i, values_i);
+          ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
+          Values_Internal>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
+                                            entries_i, values_i);
       Kokkos::Profiling::popRegion();
     } else {
       RowMap_Internal rowmap_i   = rowmap;
@@ -261,20 +268,20 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
       Values_Internal values_i   = values;
 
       KokkosSparse::Impl::SPTRSV_SYMBOLIC<
-	ExecutionSpace, const_handle_type, RowMap_Internal,
-	Entries_Internal, Values_Internal,false>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
-							    entries_i, values_i);
+          ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
+          Values_Internal, false>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
+                                                   entries_i, values_i);
     }
 
 #else  // We better go to the native implementation
-      RowMap_Internal rowmap_i   = rowmap;
-      Entries_Internal entries_i = entries;
-      Values_Internal values_i   = values;
+    RowMap_Internal rowmap_i   = rowmap;
+    Entries_Internal entries_i = entries;
+    Values_Internal values_i   = values;
 
-      KokkosSparse::Impl::SPTRSV_SYMBOLIC<
-	ExecutionSpace, const_handle_type, RowMap_Internal,
-	Entries_Internal, Values_Internal,false>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
-							    entries_i, values_i);
+    KokkosSparse::Impl::SPTRSV_SYMBOLIC<
+        ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
+        Values_Internal, false>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
+                                                 entries_i, values_i);
 #endif
   } else {
     RowMap_Internal rowmap_i   = rowmap;
@@ -282,9 +289,9 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
     Values_Internal values_i   = values;
 
     KokkosSparse::Impl::SPTRSV_SYMBOLIC<
-      ExecutionSpace, const_handle_type, RowMap_Internal,
-      Entries_Internal, Values_Internal,false>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
-							  entries_i, values_i);
+        ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
+        Values_Internal, false>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
+                                                 entries_i, values_i);
   }
 #ifdef KK_TRISOLVE_TIMERS
   std::cout << "     + sptrsv_symbolic time = " << timer_sptrsv.seconds()
@@ -395,8 +402,9 @@ void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle,
   using c_temp_t    = typename KernelHandle::HandleTempMemorySpace;
   using c_persist_t = typename KernelHandle::HandlePersistentMemorySpace;
 
-  using const_handle_type = typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
+  using const_handle_type =
+      typename KokkosKernels::Experimental::KokkosKernelsHandle<
+          c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
   const_handle_type tmp_handle(*handle);
 
   using RowMap_Internal = Kokkos::View<
@@ -448,34 +456,34 @@ void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle,
       // auto nrows           = sh->get_nrows();
 
       // KokkosSparse::Impl::sptrsvcuSPARSE_solve<
-      //     ExecutionSpace, sptrsvHandleType, RowMap_Internal, Entries_Internal,
-      //     Values_Internal, BType_Internal, XType_Internal>(
+      //     ExecutionSpace, sptrsvHandleType, RowMap_Internal,
+      //     Entries_Internal, Values_Internal, BType_Internal, XType_Internal>(
       //     space, sh, nrows, rowmap_i, entries_i, values_i, b_i, x_i, false);
       KokkosSparse::Impl::SPTRSV_SOLVE<
           ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
           Values_Internal, BType_Internal,
-	XType_Internal>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i,
+          XType_Internal>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i,
                                         values_i, b_i, x_i);
     } else {
       KokkosSparse::Impl::SPTRSV_SOLVE<
           ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
-          Values_Internal, BType_Internal,
-	XType_Internal,false>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i,
-                                        values_i, b_i, x_i);
+          Values_Internal, BType_Internal, XType_Internal,
+          false>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i,
+                               values_i, b_i, x_i);
     }
 #else
     KokkosSparse::Impl::SPTRSV_SOLVE<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
-        Values_Internal, BType_Internal,
-        XType_Internal,false>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i,
-                                      values_i, b_i, x_i);
+        Values_Internal, BType_Internal, XType_Internal,
+        false>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i, values_i,
+                             b_i, x_i);
 #endif
   } else {
     KokkosSparse::Impl::SPTRSV_SOLVE<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
-        Values_Internal, BType_Internal,
-      XType_Internal, false>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i,
-                                      values_i, b_i, x_i);
+        Values_Internal, BType_Internal, XType_Internal,
+        false>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i, values_i,
+                             b_i, x_i);
   }
 
 }  // sptrsv_solve
@@ -827,24 +835,22 @@ void sptrsv_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
     KokkosSparse::Impl::SPTRSV_SOLVE<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
         Values_Internal, BType_Internal,
-      XType_Internal>::sptrsv_solve_streams(execspace_v, handle_i_v,
+        XType_Internal>::sptrsv_solve_streams(execspace_v, handle_i_v,
                                               rowmap_i_v, entries_i_v,
                                               values_i_v, b_i_v, x_i_v);
 #else
     KokkosSparse::Impl::SPTRSV_SOLVE<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
-        Values_Internal, BType_Internal,
-      XType_Internal, false>::sptrsv_solve_streams(execspace_v, handle_i_v,
-                                              rowmap_i_v, entries_i_v,
-                                              values_i_v, b_i_v, x_i_v);
+        Values_Internal, BType_Internal, XType_Internal,
+        false>::sptrsv_solve_streams(execspace_v, handle_i_v, rowmap_i_v,
+                                     entries_i_v, values_i_v, b_i_v, x_i_v);
 #endif
   } else {
     KokkosSparse::Impl::SPTRSV_SOLVE<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
-        Values_Internal, BType_Internal,
-        XType_Internal, false>::sptrsv_solve_streams(execspace_v, handle_i_v,
-                                              rowmap_i_v, entries_i_v,
-                                              values_i_v, b_i_v, x_i_v);
+        Values_Internal, BType_Internal, XType_Internal,
+        false>::sptrsv_solve_streams(execspace_v, handle_i_v, rowmap_i_v,
+                                     entries_i_v, values_i_v, b_i_v, x_i_v);
   }
 
 }  // sptrsv_solve_streams
