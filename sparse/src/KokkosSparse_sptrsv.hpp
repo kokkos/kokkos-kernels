@@ -31,8 +31,6 @@
 #include "KokkosSparse_sptrsv_symbolic_spec.hpp"
 #include "KokkosSparse_sptrsv_solve_spec.hpp"
 
-//#include "KokkosSparse_sptrsv_cuSPARSE_impl.hpp"
-
 namespace KokkosSparse {
 namespace Experimental {
 
@@ -242,21 +240,12 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
       Entries_Internal entries_i = entries;
       Values_Internal values_i   = values;
 
-      // typedef typename KernelHandle::SPTRSVHandleType sptrsvHandleType;
-      // sptrsvHandleType *sh = handle->get_sptrsv_handle();
-      // auto nrows           = sh->get_nrows();
-
       std::string label =
           "KokkosSparse::sptrsv[TPL_CUSPARSE," +
           Kokkos::ArithTraits<
               typename scalar_nnz_view_t_::non_const_value_type>::name() +
           "]";
       Kokkos::Profiling::pushRegion(label);
-      // KokkosSparse::Impl::sptrsvcuSPARSE_symbolic<
-      //     ExecutionSpace, sptrsvHandleType, RowMap_Internal,
-      //     Entries_Internal, Values_Internal>(space, sh, nrows, rowmap_i,
-      //     entries_i, values_i,
-      //                      false);
       KokkosSparse::Impl::SPTRSV_SYMBOLIC<
           ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
           Values_Internal>::sptrsv_symbolic(space, &tmp_handle, rowmap_i,
@@ -451,14 +440,6 @@ void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle,
       KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
-      // typedef typename KernelHandle::SPTRSVHandleType sptrsvHandleType;
-      // sptrsvHandleType *sh = handle->get_sptrsv_handle();
-      // auto nrows           = sh->get_nrows();
-
-      // KokkosSparse::Impl::sptrsvcuSPARSE_solve<
-      //     ExecutionSpace, sptrsvHandleType, RowMap_Internal,
-      //     Entries_Internal, Values_Internal, BType_Internal, XType_Internal>(
-      //     space, sh, nrows, rowmap_i, entries_i, values_i, b_i, x_i, false);
       KokkosSparse::Impl::SPTRSV_SOLVE<
           ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
           Values_Internal, BType_Internal,
