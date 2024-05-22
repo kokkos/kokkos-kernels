@@ -1,15 +1,14 @@
 name: github-MI210
 
-# Only allow manual runs until at2 runners are available.
-on: workflow_dispatch
-  #pull_request:
-  #  paths-ignore:
-  #  - '**/*.rst'
-  #  - '**/*.md'
-  #  - '**/requirements.txt'
-  #  - '**/*.py'
-  #  - 'docs/**'
-  #  types: [ opened, reopened, synchronize ]
+on: 
+  pull_request:
+    paths-ignore:
+    - '**/*.rst'
+    - '**/*.md'
+    - '**/requirements.txt'
+    - '**/*.py'
+    - 'docs/**'
+    types: [ opened, reopened, synchronize ]
 
 permissions:
   contents: none
