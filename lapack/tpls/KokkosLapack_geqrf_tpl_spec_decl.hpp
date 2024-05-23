@@ -257,8 +257,8 @@ namespace Impl {
 
 template <class ExecutionSpace, class AViewType, class TWViewType, class RType>
 void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
-			  const TWViewType& /* Work */, const TWViewType& Tau,
-                          class RType& R) {
+			  const TWViewType& Tau, const TWViewType& /* Work */,
+                          const RType& R) {
 
   using memory_space = typename AViewType::memory_space;
   using Scalar = typename AViewType::non_const_value_type;
@@ -271,7 +271,7 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
   const int lda = A.stride(1);
   int lwork = 0;
 
-  //Kokkos::View<int, memory_space> info("cusolver geqrf info");
+  //Kokkos::View<int, memory_space> info("cusolver geqrf info"); // AquiEEP
 
   CudaLapackSingleton& s = CudaLapackSingleton::singleton();
   KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
@@ -283,7 +283,7 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
 
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSgeqrf(s.handle, m, n, A.data(),
                                                     lda, Tau.data(),
-                                                    Workspace.data(), lwork, /*info*/R.data()));
+                                                    Workspace.data(), lwork, R.data()));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
@@ -292,7 +292,7 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
 
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnDgeqrf(s.handle, m, n, A.data(),
                                                     lda, Tau.data(),
-                                                    Workspace.data(), lwork, /*info*/R.data()));
+                                                    Workspace.data(), lwork, R.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnCgeqrf_bufferSize(
@@ -303,7 +303,7 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
                          cusolverDnCgeqrf(s.handle, m, n, reinterpret_cast<cuComplex*>(A.data()), lda,
                          reinterpret_cast<cuComplex*>(Tau.data()),
                          reinterpret_cast<cuComplex*>(Workspace.data()),
-                         lwork, /*info*/R.data()));
+                         lwork, R.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZgeqrf_bufferSize(
@@ -316,9 +316,11 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
         s.handle, m, n, reinterpret_cast<cuDoubleComplex*>(A.data()), lda,
         reinterpret_cast<cuDoubleComplex*>(Tau.data()),
         reinterpret_cast<cuDoubleComplex*>(Workspace.data()),
-        lwork, /*info*/R.data()));
+        lwork, R.data()));
   }
   KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSetStream(s.handle, NULL));
+
+  //Kokkos::deep_copy(R, info); // AquiEEP
 }
 
 #define KOKKOSLAPACK_GEQRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                 \
