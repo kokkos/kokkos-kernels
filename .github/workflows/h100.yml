@@ -1,15 +1,15 @@
 name: github-H100
 
 # Only allow manual runs until at2 runners are available.
-on: workflow_dispatch
-  #pull_request:
-  #  paths-ignore:
-  #  - '**/*.rst'
-  #  - '**/*.md'
-  #  - '**/requirements.txt'
-  #  - '**/*.py'
-  #  - 'docs/**'
-  #  types: [ opened, reopened, synchronize ]
+on:
+  pull_request:
+    paths-ignore:
+    - '**/*.rst'
+    - '**/*.md'
+    - '**/requirements.txt'
+    - '**/*.py'
+    - 'docs/**'
+    types: [ opened, reopened, synchronize ]
 
 permissions:
   contents: none
@@ -20,8 +20,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL_2:
-    name: PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL_2
+  PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL:
+    name: PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL
     runs-on: [kk-env-cuda-11.8.0-gcc-11.3.0-latest]
     
     steps:
