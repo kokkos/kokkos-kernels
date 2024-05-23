@@ -94,6 +94,8 @@ namespace Impl {
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,              \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {               \
     enum : bool { value = true };                                            \
   };
@@ -139,6 +141,8 @@ namespace Impl {
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,               \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                \
     enum : bool { value = true };                                             \
   };
