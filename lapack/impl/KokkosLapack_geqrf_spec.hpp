@@ -53,7 +53,8 @@ struct geqrf_eti_spec_avail {
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                             \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,            \
+      Kokkos::View<int*, LAYOUT_TYPE,                                      \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {             \
     enum : bool { value = true };                                          \
   };
@@ -78,7 +79,6 @@ struct GEQRF {
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//! Full specialization of geqrf for multi vectors.
 // Unification layer
 template <class ExecutionSpace, class AMatrix, class TWArray, class RType>
 struct GEQRF<ExecutionSpace, AMatrix, TWArray, RType, false,
@@ -114,7 +114,8 @@ struct GEQRF<ExecutionSpace, AMatrix, TWArray, RType, false,
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,           \
+      Kokkos::View<int*, LAYOUT_TYPE,                                     \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
       false, true>;
 
@@ -128,7 +129,8 @@ struct GEQRF<ExecutionSpace, AMatrix, TWArray, RType, false,
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,           \
+      Kokkos::View<int*, LAYOUT_TYPE,                                     \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
       false, true>;
 

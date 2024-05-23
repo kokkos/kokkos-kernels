@@ -15,7 +15,7 @@
 //@HEADER
 
 /// \file KokkosLapack_geqrf.hpp
-/// \brief Local dense linear solve
+/// \brief QR factorization
 ///
 /// This file provides KokkosLapack::geqrf. This function performs a
 /// local (no MPI) QR factorization of a M-by-N matrix A.
@@ -118,31 +118,33 @@ int geqrf(const ExecutionSpace& space, const AMatrix& A, const TWArray& Tau,
     }
   }
 
-  typedef Kokkos::View<
+  using RetArray = Kokkos::View<int*, typename TWArray::array_layout, typename TWArray::device_type>;
+  RetArray rc("rc", 1);
+
+  using AMatrix_Internal = Kokkos::View<
       typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
-      typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      AMatrix_Internal;
-  typedef Kokkos::View<
+      typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using TWArray_Internal = Kokkos::View<
       typename TWArray::non_const_value_type*, typename TWArray::array_layout,
-      typename TWArray::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      TWArray_Internal;
-  AMatrix_Internal A_i    = A;
-  TWArray_Internal Tau_i  = Tau;
-  TWArray_Internal Work_i = Work;
+      typename TWArray::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using RetArray_Internal = Kokkos::View<
+      int*, typename TWArray::array_layout,
+      typename TWArray::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  // This is the return value type and should always reside on host
-  using RViewInternalType =
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-
-  int result;
-  RViewInternalType R = RViewInternalType(&result);
+  AMatrix_Internal  A_i    = A;
+  TWArray_Internal  Tau_i  = Tau;
+  TWArray_Internal  Work_i = Work;
+  RetArray_Internal rc_i   = rc;
 
   KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, TWArray_Internal,
-                            RViewInternalType>::geqrf(space, A_i, Tau_i, Work_i,
-                                                      R);
+                            RetArray_Internal>::geqrf(space, A_i, Tau_i, Work_i,
+                                                      rc_i);
 
-  return result;
+  typename RetArray_Internal::HostMirror h_rc = Kokkos::create_mirror_view(rc_i);
+
+  Kokkos::deep_copy(h_rc, rc_i);
+
+  return h_rc[0];
 }
 
 /// \brief Computes a QR factorization of a matrix A

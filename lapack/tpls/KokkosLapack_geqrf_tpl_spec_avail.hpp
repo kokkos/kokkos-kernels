@@ -36,7 +36,7 @@ struct geqrf_tpl_spec_avail {
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,            \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {             \
     enum : bool { value = true };                                          \
   };
@@ -95,7 +95,7 @@ namespace Impl {
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,              \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {               \
     enum : bool { value = true };                                            \
   };
@@ -142,7 +142,7 @@ namespace Impl {
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,               \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                \
     enum : bool { value = true };                                             \
   };
