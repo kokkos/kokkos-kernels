@@ -17,8 +17,6 @@
 #ifndef KOKKOSLAPACK_GEQRF_TPL_SPEC_DECL_HPP_
 #define KOKKOSLAPACK_GEQRF_TPL_SPEC_DECL_HPP_
 
-// AquiEEP
-
 namespace KokkosLapack {
 namespace Impl {
 template <class AViewType, class TWViewType, class RType>
@@ -248,6 +246,8 @@ KOKKOSLAPACK_GEQRF_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft,
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
+#endif // AquiEEP
+
 // CUSOLVER
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
 #include "KokkosLapack_cusolver.hpp"
@@ -394,6 +394,8 @@ KOKKOSLAPACK_GEQRF_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
 }  // namespace Impl
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
+
+#if 0  // AquiEEP
 
 // ROCSOLVER
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
