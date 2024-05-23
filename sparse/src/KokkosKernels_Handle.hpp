@@ -28,9 +28,9 @@
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
 
-namespace KokkosKernels {
+namespace KokkosKernels
 
-namespace Experimental {
+    namespace Experimental {
 
 template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
@@ -1004,7 +1004,7 @@ class KokkosKernelsHandle {
 
 };  // end class KokkosKernelsHandle
 
-}  // namespace Experimental
+}  // namespace KokkosKernelsnamespaceExperimental
 }  // namespace KokkosKernels
 
 #endif  //_KOKKOSKERNELHANDLE_HPP
