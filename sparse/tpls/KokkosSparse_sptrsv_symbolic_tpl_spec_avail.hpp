@@ -59,6 +59,17 @@ KOKKOSSPARSE_SPTRSV_SYMBOLIC_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
                                                      Kokkos::LayoutLeft,
                                                      Kokkos::CudaSpace)
 
+KOKKOSSPARSE_SPTRSV_SYMBOLIC_TPL_SPEC_AVAIL_CUSPARSE(float, Kokkos::LayoutLeft,
+                                                     Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPTRSV_SYMBOLIC_TPL_SPEC_AVAIL_CUSPARSE(double, Kokkos::LayoutLeft,
+                                                     Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPTRSV_SYMBOLIC_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPTRSV_SYMBOLIC_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::CudaUVMSpace)
+
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
 }  // namespace Impl
