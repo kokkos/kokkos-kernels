@@ -702,7 +702,7 @@ elif [ "$MACHINE" = "blake" ]; then
   ONEAPI_FLAGS_EXTRA="-fp-model=precise"
   LLVM_EXTRA_FLAGS="-fPIC ${CLANG_WARNING_FLAGS}"
   # Remove -Wuninitialized: compiler issues show up with Threads backend
-  GCC11_WARNING_FLAGS="-Wall,-Wunused-parameter,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wignored-qualifiers,-Wempty-body,-Wclobbered"
+  GCC11_WARNING_FLAGS="-Wall,-Wunused-parameter,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wignored-qualifiers,-Wempty-body,-Wclobbered,-Wimplicit-fallthrough"
   # update KOKKOS_PASSTHRU_CMAKE_FLAGS to disable onedpl on Blake
   KOKKOS_PASSTHRU_CMAKE_FLAGS="${KOKKOS_PASSTHRU_CMAKE_FLAGS} -DKokkos_ENABLE_ONEDPL=OFF"
 
