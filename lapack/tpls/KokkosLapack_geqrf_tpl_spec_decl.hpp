@@ -64,10 +64,11 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau,
   if constexpr (Kokkos::ArithTraits<Scalar>::is_complex) {
     using MagType = typename Kokkos::ArithTraits<Scalar>::mag_type;
 
-    Info[0] = HostLapack<std::complex<MagType>>::geqrf(
+    HostLapack<std::complex<MagType>>::geqrf(
         m, n, reinterpret_cast<std::complex<MagType>*>(A.data()), lda,
         reinterpret_cast<std::complex<MagType>*>(Tau.data()),
-        reinterpret_cast<std::complex<MagType>*>(work.data()), lwork);
+        reinterpret_cast<std::complex<MagType>*>(work.data()), lwork,
+	Info.data());
 
     if (Info[0] < 0) return;
     
@@ -75,13 +76,14 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau,
 
     work = Kokkos::View<Scalar*, memory_space>("geqrf work buffer", lwork);
 
-    Info[0] = HostLapack<std::complex<MagType>>::geqrf(
+    HostLapack<std::complex<MagType>>::geqrf(
         m, n, reinterpret_cast<std::complex<MagType>*>(A.data()), lda,
         reinterpret_cast<std::complex<MagType>*>(Tau.data()),
-        reinterpret_cast<std::complex<MagType>*>(work.data()), lwork);
+        reinterpret_cast<std::complex<MagType>*>(work.data()), lwork,
+	Info.data());
   } else {
-    Info[0] = HostLapack<Scalar>::geqrf(m, n, A.data(), lda, Tau.data(),
-                                    work.data(), lwork);
+    HostLapack<Scalar>::geqrf(m, n, A.data(), lda, Tau.data(),
+                                    work.data(), lwork,	Info.data());
 
     if (Info[0] < 0) return;
 
@@ -89,8 +91,8 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau,
 
     work = Kokkos::View<Scalar*, memory_space>("geqrf work buffer", lwork);
 
-    Info[0] = HostLapack<Scalar>::geqrf(m, n, A.data(), lda, Tau.data(),
-                                    work.data(), lwork);
+    HostLapack<Scalar>::geqrf(m, n, A.data(), lda, Tau.data(), work.data(),
+			      lwork, Info.data());
   }
 }
 

@@ -148,11 +148,9 @@ int HostLapack<float>::trtri(const char uplo, const char diag, int n,
   return info;
 }
 template <>
-int HostLapack<float>::geqrf(int m, int n, float* a, int lda, float* tau,
-                             float* work, int lwork) {
-  int info = 0;
-  F77_FUNC_SGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
-  return info;
+void HostLapack<float>::geqrf(int m, int n, float* a, int lda, float* tau,
+			      float* work, int lwork, int *info) {
+  F77_FUNC_SGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 }
 
 ///
@@ -181,11 +179,9 @@ int HostLapack<double>::trtri(const char uplo, const char diag, int n,
   return info;
 }
 template <>
-int HostLapack<double>::geqrf(int m, int n, double* a, int lda, double* tau,
-                              double* work, int lwork) {
-  int info = 0;
-  F77_FUNC_DGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
-  return info;
+void HostLapack<double>::geqrf(int m, int n, double* a, int lda, double* tau,
+                              double* work, int lwork, int *info) {
+  F77_FUNC_DGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 }
 
 ///
@@ -217,13 +213,11 @@ int HostLapack<std::complex<float>>::trtri(const char uplo, const char diag,
   return info;
 }
 template <>
-int HostLapack<std::complex<float>>::geqrf(int m, int n, std::complex<float>* a,
+void HostLapack<std::complex<float>>::geqrf(int m, int n, std::complex<float>* a,
                                            int lda, std::complex<float>* tau,
                                            std::complex<float>* work,
-                                           int lwork) {
-  int info = 0;
-  F77_FUNC_CGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
-  return info;
+                                           int lwork, int *info) {
+  F77_FUNC_CGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 }
 
 ///
@@ -256,14 +250,12 @@ int HostLapack<std::complex<double>>::trtri(const char uplo, const char diag,
   return info;
 }
 template <>
-int HostLapack<std::complex<double>>::geqrf(int m, int n,
+void HostLapack<std::complex<double>>::geqrf(int m, int n,
                                             std::complex<double>* a, int lda,
                                             std::complex<double>* tau,
                                             std::complex<double>* work,
-                                            int lwork) {
-  int info = 0;
-  F77_FUNC_ZGEQRF(&m, &n, a, &lda, tau, work, &lwork, &info);
-  return info;
+                                            int lwork, int *info) {
+  F77_FUNC_ZGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 }
 
 }  // namespace Impl
