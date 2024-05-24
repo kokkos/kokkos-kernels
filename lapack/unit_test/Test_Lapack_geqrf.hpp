@@ -37,13 +37,11 @@
 
 namespace Test {
 
-template <class ViewTypeA, class ViewTypeTW>
+template <class ViewTypeA, class ViewTypeTau>
 void getQR(int const m, int const n,
            typename ViewTypeA::HostMirror const&  // h_A
            ,
-           typename ViewTypeTW::HostMirror const&  // h_tau
-           ,
-           typename ViewTypeTW::HostMirror const&  // h_work
+           typename ViewTypeTau::HostMirror const&  // h_tau
            ,
            typename ViewTypeA::HostMirror&  // h_Q
            ,
@@ -85,8 +83,9 @@ void getQR(int const m, int const n,
   }
 }
 
-template <class ViewTypeA, class ViewTypeTW, class Device>
+template <class ViewTypeA, class ViewTypeTau, class Device>
 void impl_test_geqrf(int m, int n) {
+  using ViewTypeInfo = Kokkos::View<int*, Kokkos::LayoutLeft, Device>;
   using execution_space = typename Device::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
   // using ats             = Kokkos::ArithTraits<ScalarA>;
@@ -96,21 +95,17 @@ void impl_test_geqrf(int m, int n) {
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
   int minMN(std::min(m, n));
-  int lwork(1);
-  if (minMN != 0) {
-    lwork = n;
-  }
 
   // Create device views
-  ViewTypeA A("A", m, n);
-  ViewTypeTW Tau("Tau", minMN);
-  ViewTypeTW Work("Work", lwork);
+  ViewTypeA    A   ("A", m, n);
+  ViewTypeTau  Tau ("Tau", minMN);
+  ViewTypeInfo Info("Info", 1);
 
   // Create host mirrors of device views.
-  typename ViewTypeA::HostMirror h_A     = Kokkos::create_mirror_view(A);
-  typename ViewTypeA::HostMirror h_Aorig = Kokkos::create_mirror_view(A);
-  typename ViewTypeTW::HostMirror h_tau  = Kokkos::create_mirror_view(Tau);
-  typename ViewTypeTW::HostMirror h_work = Kokkos::create_mirror_view(Work);
+  typename ViewTypeA::HostMirror    h_A     = Kokkos::create_mirror_view(A);
+  typename ViewTypeA::HostMirror    h_Aorig = Kokkos::create_mirror_view(A);
+  typename ViewTypeTau::HostMirror  h_tau   = Kokkos::create_mirror_view(Tau);
+  typename ViewTypeInfo::HostMirror h_info  = Kokkos::create_mirror_view(Info);
 
   // Initialize data.
   if ((m == 3) && (n == 3)) {
@@ -167,9 +162,8 @@ void impl_test_geqrf(int m, int n) {
   Kokkos::fence();
 
   // Perform the QR factorization
-  int rc(0);
   try {
-    rc = KokkosLapack::geqrf(space, A, Tau, Work);
+    KokkosLapack::geqrf(space, A, Tau, Info);
   } catch (const std::runtime_error& e) {
     std::cout << "KokkosLapack::geqrf(): caught exception '" << e.what() << "'"
               << std::endl;
@@ -179,15 +173,15 @@ void impl_test_geqrf(int m, int n) {
 
   Kokkos::fence();
 
-  EXPECT_EQ(rc, 0) << "Failed geqrf() test: rc = " << rc;
+  Kokkos::deep_copy(h_info, Info);
+  EXPECT_EQ(h_info[0], 0) << "Failed geqrf() test: Info[0] = " << h_info[0];
 
   // Get the results
   Kokkos::deep_copy(h_A, A);
   Kokkos::deep_copy(h_tau, Tau);
-  Kokkos::deep_copy(h_work, Work);
 
 #if 1  // def HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "rc = " << rc << std::endl;
+  std::cout << "info[0] = " << h_info[0] << std::endl;
   for (int i(0); i < minMN; ++i) {
     for (int j(0); j < n; ++j) {
       std::cout << "R(" << i << "," << j << ") = " << h_A(i, j) << std::endl;
@@ -195,9 +189,6 @@ void impl_test_geqrf(int m, int n) {
   }
   for (int i(0); i < minMN; ++i) {
     std::cout << "tau(" << i << ") = " << h_tau[i] << std::endl;
-  }
-  for (int i(0); i < lwork; ++i) {
-    std::cout << "work(" << i << ") = " << h_work[i] << std::endl;
   }
 #endif
 
@@ -209,7 +200,7 @@ void impl_test_geqrf(int m, int n) {
   typename ViewTypeA::HostMirror h_R  = Kokkos::create_mirror_view(R);
   typename ViewTypeA::HostMirror h_QR = Kokkos::create_mirror_view(QR);
 
-  getQR<ViewTypeA, ViewTypeTW>(m, n, h_A, h_tau, h_work, h_Q, h_R, h_QR);
+  getQR<ViewTypeA, ViewTypeTau>(m, n, h_A, h_tau, h_Q, h_R, h_QR);
 
 #if 1  // def HAVE_KOKKOSKERNELS_DEBUG
   for (int i(0); i < m; ++i) {
@@ -279,10 +270,10 @@ void test_geqrf() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a_ll  = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
-  using view_type_tw_ll = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;
+  using view_type_a_ll   = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
+  using view_type_tau_ll = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;
 
-  Test::impl_test_geqrf<view_type_a_ll, view_type_tw_ll, Device>(3, 3);
+  Test::impl_test_geqrf<view_type_a_ll, view_type_tau_ll, Device>(3, 3);
 #endif
 }
 
