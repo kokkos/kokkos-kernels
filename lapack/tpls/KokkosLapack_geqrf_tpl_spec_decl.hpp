@@ -68,10 +68,10 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau,
         m, n, reinterpret_cast<std::complex<MagType>*>(A.data()), lda,
         reinterpret_cast<std::complex<MagType>*>(Tau.data()),
         reinterpret_cast<std::complex<MagType>*>(work.data()), lwork,
-	Info.data());
+        Info.data());
 
     if (Info[0] < 0) return;
-    
+
     lwork = static_cast<int>(work(0).real());
 
     work = Kokkos::View<Scalar*, memory_space>("geqrf work buffer", lwork);
@@ -80,10 +80,10 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau,
         m, n, reinterpret_cast<std::complex<MagType>*>(A.data()), lda,
         reinterpret_cast<std::complex<MagType>*>(Tau.data()),
         reinterpret_cast<std::complex<MagType>*>(work.data()), lwork,
-	Info.data());
+        Info.data());
   } else {
-    HostLapack<Scalar>::geqrf(m, n, A.data(), lda, Tau.data(),
-                                    work.data(), lwork,	Info.data());
+    HostLapack<Scalar>::geqrf(m, n, A.data(), lda, Tau.data(), work.data(),
+                              lwork, Info.data());
 
     if (Info[0] < 0) return;
 
@@ -92,7 +92,7 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau,
     work = Kokkos::View<Scalar*, memory_space>("geqrf work buffer", lwork);
 
     HostLapack<Scalar>::geqrf(m, n, A.data(), lda, Tau.data(), work.data(),
-			      lwork, Info.data());
+                              lwork, Info.data());
   }
 }
 
@@ -121,8 +121,9 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau,
     using TauViewType =                                                        \
         Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,    \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
-    using InfoViewType = Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
+    using InfoViewType =                                                       \
+        Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
                                                                                \
     static void geqrf(const EXECSPACE& /* space */, const AViewType& A,        \
                       const TauViewType& Tau, const InfoViewType& Info) {      \
@@ -269,7 +270,7 @@ KOKKOSLAPACK_GEQRF_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft,
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
-#endif // AquiEEP
+#endif  // AquiEEP
 
 // CUSOLVER
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
@@ -278,19 +279,21 @@ KOKKOSLAPACK_GEQRF_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft,
 namespace KokkosLapack {
 namespace Impl {
 
-template <class ExecutionSpace, class AViewType, class TauViewType, class InfoViewType>
+template <class ExecutionSpace, class AViewType, class TauViewType,
+          class InfoViewType>
 void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
-			  const TauViewType& Tau, const InfoViewType& Info) {
+                          const TauViewType& Tau, const InfoViewType& Info) {
   using memory_space = typename AViewType::memory_space;
-  using Scalar = typename AViewType::non_const_value_type;
+  using Scalar       = typename AViewType::non_const_value_type;
 
   using ALayout_t = typename AViewType::array_layout;
-  static_assert(std::is_same_v<ALayout_t, Kokkos::LayoutLeft>,
-                "KokkosLapack - cusolver geqrf: A needs to have a Kokkos::LayoutLeft");
+  static_assert(
+      std::is_same_v<ALayout_t, Kokkos::LayoutLeft>,
+      "KokkosLapack - cusolver geqrf: A needs to have a Kokkos::LayoutLeft");
   const int m   = A.extent_int(0);
   const int n   = A.extent_int(1);
   const int lda = A.stride(1);
-  int lwork = 0;
+  int lwork     = 0;
 
   CudaLapackSingleton& s = CudaLapackSingleton::singleton();
   KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
@@ -298,44 +301,46 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
   if constexpr (std::is_same_v<Scalar, float>) {
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
         cusolverDnSgeqrf_bufferSize(s.handle, m, n, A.data(), lda, &lwork));
-    Kokkos::View<float*, memory_space> Workspace("cusolver sgeqrf workspace", lwork);
+    Kokkos::View<float*, memory_space> Workspace("cusolver sgeqrf workspace",
+                                                 lwork);
 
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSgeqrf(s.handle, m, n, A.data(),
-                                                    lda, Tau.data(),
-                                                    Workspace.data(), lwork, Info.data()));
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
+        cusolverDnSgeqrf(s.handle, m, n, A.data(), lda, Tau.data(),
+                         Workspace.data(), lwork, Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
         cusolverDnDgeqrf_bufferSize(s.handle, m, n, A.data(), lda, &lwork));
-    Kokkos::View<double*, memory_space> Workspace("cusolver dgeqrf workspace", lwork);
+    Kokkos::View<double*, memory_space> Workspace("cusolver dgeqrf workspace",
+                                                  lwork);
 
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnDgeqrf(s.handle, m, n, A.data(),
-                                                    lda, Tau.data(),
-                                                    Workspace.data(), lwork, Info.data()));
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
+        cusolverDnDgeqrf(s.handle, m, n, A.data(), lda, Tau.data(),
+                         Workspace.data(), lwork, Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnCgeqrf_bufferSize(
         s.handle, m, n, reinterpret_cast<cuComplex*>(A.data()), lda, &lwork));
-    Kokkos::View<cuComplex*, memory_space> Workspace("cusolver cgeqrf workspace", lwork);
+    Kokkos::View<cuComplex*, memory_space> Workspace(
+        "cusolver cgeqrf workspace", lwork);
 
-    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
-                         cusolverDnCgeqrf(s.handle, m, n, reinterpret_cast<cuComplex*>(A.data()), lda,
-                         reinterpret_cast<cuComplex*>(Tau.data()),
-                         reinterpret_cast<cuComplex*>(Workspace.data()),
-                         lwork, Info.data()));
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnCgeqrf(
+        s.handle, m, n, reinterpret_cast<cuComplex*>(A.data()), lda,
+        reinterpret_cast<cuComplex*>(Tau.data()),
+        reinterpret_cast<cuComplex*>(Workspace.data()), lwork, Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZgeqrf_bufferSize(
         s.handle, m, n, reinterpret_cast<cuDoubleComplex*>(A.data()), lda,
         &lwork));
-    Kokkos::View<cuDoubleComplex*, memory_space> Workspace("cusolver zgeqrf workspace",
-                                                           lwork);
+    Kokkos::View<cuDoubleComplex*, memory_space> Workspace(
+        "cusolver zgeqrf workspace", lwork);
 
     KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZgeqrf(
         s.handle, m, n, reinterpret_cast<cuDoubleComplex*>(A.data()), lda,
         reinterpret_cast<cuDoubleComplex*>(Tau.data()),
-        reinterpret_cast<cuDoubleComplex*>(Workspace.data()),
-        lwork, Info.data()));
+        reinterpret_cast<cuDoubleComplex*>(Workspace.data()), lwork,
+        Info.data()));
   }
   KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSetStream(s.handle, NULL));
 }
@@ -359,8 +364,7 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
           Kokkos::View<SCALAR*, LAYOUT,                                        \
                        Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
-          Kokkos::View<int*, LAYOUT,                                           \
-                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                \
+          Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
     using AViewType = Kokkos::View<SCALAR**, LAYOUT,                           \
                                    Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,    \
@@ -386,17 +390,17 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
 KOKKOSLAPACK_GEQRF_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSLAPACK_GEQRF_CUSOLVER(double, Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSLAPACK_GEQRF_CUSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                           Kokkos::CudaSpace)
+                            Kokkos::CudaSpace)
 KOKKOSLAPACK_GEQRF_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                           Kokkos::CudaSpace)
+                            Kokkos::CudaSpace)
 
 #if defined(KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
 KOKKOSLAPACK_GEQRF_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_GEQRF_CUSOLVER(double, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_GEQRF_CUSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                           Kokkos::CudaUVMSpace)
+                            Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_GEQRF_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                           Kokkos::CudaUVMSpace)
+                            Kokkos::CudaUVMSpace)
 #endif
 
 }  // namespace Impl
@@ -412,34 +416,35 @@ namespace KokkosLapack {
 namespace Impl {
 
 template <class ExecutionSpace, class AViewType, class TauViewType>
-void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A, const TauViewType& Tau,
-                        const InfoViewType& Info) {
+void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
+                           const TauViewType& Tau, const InfoViewType& Info) {
   using Scalar = typename AViewType::non_const_value_type;
 
   using ALayout_t = typename AViewType::array_layout;
-  static_assert(std::is_same_v<ALayout_t, Kokkos::LayoutLeft>,
-                "KokkosLapack - rocsolver geqrf: A needs to have a Kokkos::LayoutLeft");
+  static_assert(
+      std::is_same_v<ALayout_t, Kokkos::LayoutLeft>,
+      "KokkosLapack - rocsolver geqrf: A needs to have a Kokkos::LayoutLeft");
   const rocblas_int m   = static_cast<rocblas_int>(A.extent(0));
   const rocblas_int n   = static_cast<rocblas_int>(A.extent(1));
   const rocblas_int lda = static_cast<rocblas_int>(A.stride(1));
-  rocblas_status rc = rocblas_status_success;
+  rocblas_status rc     = rocblas_status_success;
 
   KokkosBlas::Impl::RocBlasSingleton& s =
       KokkosBlas::Impl::RocBlasSingleton::singleton();
   KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
       rocblas_set_stream(s.handle, space.hip_stream()));
   if constexpr (std::is_same_v<Scalar, float>) {
-    rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_sgeqrf(s.handle, m, n, A.data(),
-                                                  lda, Tau.data()));
+    rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
+        rocsolver_sgeqrf(s.handle, m, n, A.data(), lda, Tau.data()));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
-    rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_dgeqrf(s.handle, m, n, A.data(),
-                                                  lda, Tau.data()));
+    rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
+        rocsolver_dgeqrf(s.handle, m, n, A.data(), lda, Tau.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
     rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_cgeqrf(
-        s.handle, m, n, reinterpret_cast<rocblas_float_complex*>(A.data()),
-        lda, reinterpret_cast<rocblas_float_complex*>(Tau.data())));
+        s.handle, m, n, reinterpret_cast<rocblas_float_complex*>(A.data()), lda,
+        reinterpret_cast<rocblas_float_complex*>(Tau.data())));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
     rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_zgeqrf(
@@ -469,8 +474,7 @@ void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
           Kokkos::View<SCALAR*, LAYOUT,                                        \
                        Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                 \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
-          Kokkos::View<int*, LAYOUT,                                           \
-                       Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                 \
+          Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,   \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
     using AViewType =                                                          \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
@@ -488,7 +492,7 @@ void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
           "KokkosLapack::geqrf[TPL_ROCSOLVER," #SCALAR "]");                   \
       geqrf_print_specialization<AViewType, TauViewType, InfoViewType>();      \
                                                                                \
-      rocsolverGeqrfWrapper(space, A, Tau, Info);		               \
+      rocsolverGeqrfWrapper(space, A, Tau, Info);                              \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -496,9 +500,9 @@ void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
 KOKKOSLAPACK_GEQRF_ROCSOLVER(float, Kokkos::LayoutLeft, Kokkos::HIPSpace)
 KOKKOSLAPACK_GEQRF_ROCSOLVER(double, Kokkos::LayoutLeft, Kokkos::HIPSpace)
 KOKKOSLAPACK_GEQRF_ROCSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                            Kokkos::HIPSpace)
+                             Kokkos::HIPSpace)
 KOKKOSLAPACK_GEQRF_ROCSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                            Kokkos::HIPSpace)
+                             Kokkos::HIPSpace)
 
 }  // namespace Impl
 }  // namespace KokkosLapack

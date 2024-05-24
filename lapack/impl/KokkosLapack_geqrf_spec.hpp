@@ -53,7 +53,7 @@ struct geqrf_eti_spec_avail {
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                             \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
-      Kokkos::View<int*, LAYOUT_TYPE,                                      \
+      Kokkos::View<int *, LAYOUT_TYPE,                                     \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {             \
     enum : bool { value = true };                                          \
@@ -114,7 +114,7 @@ struct GEQRF<ExecutionSpace, AMatrix, TWArray, RType, false,
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
-      Kokkos::View<int*, LAYOUT_TYPE,                                     \
+      Kokkos::View<int *, LAYOUT_TYPE,                                    \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
       false, true>;
@@ -129,7 +129,7 @@ struct GEQRF<ExecutionSpace, AMatrix, TWArray, RType, false,
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
-      Kokkos::View<int*, LAYOUT_TYPE,                                     \
+      Kokkos::View<int *, LAYOUT_TYPE,                                    \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
       false, true>;

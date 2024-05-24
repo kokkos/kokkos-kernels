@@ -60,7 +60,8 @@ namespace KokkosLapack {
 ///                                illegal value
 ///
 template <class ExecutionSpace, class AMatrix, class TArray, class InfoArray>
-void geqrf(const ExecutionSpace& space, const AMatrix& A, const TArray& Tau, const InfoArray& Info) {
+void geqrf(const ExecutionSpace& space, const AMatrix& A, const TArray& Tau,
+           const InfoArray& Info) {
   // NOTE: Currently, KokkosLapack::geqrf only supports LAPACK, MAGMA and
   // rocSOLVER TPLs.
   //       MAGMA/rocSOLVER TPL should be enabled to call the MAGMA/rocSOLVER GPU
@@ -117,19 +118,23 @@ void geqrf(const ExecutionSpace& space, const AMatrix& A, const TArray& Tau, con
   using AMatrix_Internal = Kokkos::View<
       typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using TArray_Internal = Kokkos::View<
-      typename TArray::non_const_value_type*, typename TArray::array_layout,
-      typename TArray::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using InfoArray_Internal = Kokkos::View<
-      typename InfoArray::non_const_value_type*, typename InfoArray::array_layout,
-      typename InfoArray::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using TArray_Internal =
+      Kokkos::View<typename TArray::non_const_value_type*,
+                   typename TArray::array_layout, typename TArray::device_type,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using InfoArray_Internal =
+      Kokkos::View<typename InfoArray::non_const_value_type*,
+                   typename InfoArray::array_layout,
+                   typename InfoArray::device_type,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  AMatrix_Internal   A_i    = A;
-  TArray_Internal    Tau_i  = Tau;
+  AMatrix_Internal A_i      = A;
+  TArray_Internal Tau_i     = Tau;
   InfoArray_Internal Info_i = Info;
 
   KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, TArray_Internal,
-                            InfoArray_Internal>::geqrf(space, A_i, Tau_i, Info_i);
+                            InfoArray_Internal>::geqrf(space, A_i, Tau_i,
+                                                       Info_i);
 }
 
 /// \brief Computes a QR factorization of a matrix A

@@ -85,7 +85,7 @@ void getQR(int const m, int const n,
 
 template <class ViewTypeA, class ViewTypeTau, class Device>
 void impl_test_geqrf(int m, int n) {
-  using ViewTypeInfo = Kokkos::View<int*, Kokkos::LayoutLeft, Device>;
+  using ViewTypeInfo    = Kokkos::View<int*, Kokkos::LayoutLeft, Device>;
   using execution_space = typename Device::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
   // using ats             = Kokkos::ArithTraits<ScalarA>;
@@ -97,15 +97,15 @@ void impl_test_geqrf(int m, int n) {
   int minMN(std::min(m, n));
 
   // Create device views
-  ViewTypeA    A   ("A", m, n);
-  ViewTypeTau  Tau ("Tau", minMN);
+  ViewTypeA A("A", m, n);
+  ViewTypeTau Tau("Tau", minMN);
   ViewTypeInfo Info("Info", 1);
 
   // Create host mirrors of device views.
-  typename ViewTypeA::HostMirror    h_A     = Kokkos::create_mirror_view(A);
-  typename ViewTypeA::HostMirror    h_Aorig = Kokkos::create_mirror_view(A);
-  typename ViewTypeTau::HostMirror  h_tau   = Kokkos::create_mirror_view(Tau);
-  typename ViewTypeInfo::HostMirror h_info  = Kokkos::create_mirror_view(Info);
+  typename ViewTypeA::HostMirror h_A       = Kokkos::create_mirror_view(A);
+  typename ViewTypeA::HostMirror h_Aorig   = Kokkos::create_mirror_view(A);
+  typename ViewTypeTau::HostMirror h_tau   = Kokkos::create_mirror_view(Tau);
+  typename ViewTypeInfo::HostMirror h_info = Kokkos::create_mirror_view(Info);
 
   // Initialize data.
   if ((m == 3) && (n == 3)) {
