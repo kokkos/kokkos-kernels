@@ -415,7 +415,8 @@ KOKKOSLAPACK_GEQRF_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
 namespace KokkosLapack {
 namespace Impl {
 
-  template <class ExecutionSpace, class AViewType, class TauViewType, class InfoViewType>
+template <class ExecutionSpace, class AViewType, class TauViewType,
+          class InfoViewType>
 void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
                            const TauViewType& Tau, const InfoViewType& Info) {
   using Scalar = typename AViewType::non_const_value_type;
@@ -450,7 +451,7 @@ void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
         s.handle, m, n, reinterpret_cast<rocblas_double_complex*>(A.data()),
         lda, reinterpret_cast<rocblas_double_complex*>(Tau.data())));
   }
-  Info[0] = 0; // success
+  Info[0] = 0;  // success
   KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));
 }
 
