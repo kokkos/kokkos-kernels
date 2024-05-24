@@ -451,7 +451,7 @@ void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
         s.handle, m, n, reinterpret_cast<rocblas_double_complex*>(A.data()),
         lda, reinterpret_cast<rocblas_double_complex*>(Tau.data())));
   }
-  Info[0] = 0;  // success
+  Kokkos::deep_copy(Info, 0);  // Success
   KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));
 }
 
