@@ -415,7 +415,7 @@ KOKKOSLAPACK_GEQRF_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
 namespace KokkosLapack {
 namespace Impl {
 
-template <class ExecutionSpace, class AViewType, class TauViewType>
+  template <class ExecutionSpace, class AViewType, class TauViewType, class InfoViewType>
 void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
                            const TauViewType& Tau, const InfoViewType& Info) {
   using Scalar = typename AViewType::non_const_value_type;
@@ -427,31 +427,30 @@ void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A,
   const rocblas_int m   = static_cast<rocblas_int>(A.extent(0));
   const rocblas_int n   = static_cast<rocblas_int>(A.extent(1));
   const rocblas_int lda = static_cast<rocblas_int>(A.stride(1));
-  rocblas_status rc     = rocblas_status_success;
 
   KokkosBlas::Impl::RocBlasSingleton& s =
       KokkosBlas::Impl::RocBlasSingleton::singleton();
   KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
       rocblas_set_stream(s.handle, space.hip_stream()));
   if constexpr (std::is_same_v<Scalar, float>) {
-    rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
+    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
         rocsolver_sgeqrf(s.handle, m, n, A.data(), lda, Tau.data()));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
-    rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
+    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(
         rocsolver_dgeqrf(s.handle, m, n, A.data(), lda, Tau.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
-    rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_cgeqrf(
+    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_cgeqrf(
         s.handle, m, n, reinterpret_cast<rocblas_float_complex*>(A.data()), lda,
         reinterpret_cast<rocblas_float_complex*>(Tau.data())));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
-    rc = KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_zgeqrf(
+    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocsolver_zgeqrf(
         s.handle, m, n, reinterpret_cast<rocblas_double_complex*>(A.data()),
         lda, reinterpret_cast<rocblas_double_complex*>(Tau.data())));
   }
-  Info[0] = static_cast<int>(rc);
+  Info[0] = 0; // success
   KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));
 }
 
