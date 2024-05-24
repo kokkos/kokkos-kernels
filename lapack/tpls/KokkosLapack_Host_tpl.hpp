@@ -43,7 +43,7 @@ struct HostLapack {
                    int lda);
 
   static void geqrf(int m, int n, T *a, int lda, T *tau, T *work, int lwork,
-		    int *info);
+                    int *info);
 };
 }  // namespace Impl
 }  // namespace KokkosLapack
