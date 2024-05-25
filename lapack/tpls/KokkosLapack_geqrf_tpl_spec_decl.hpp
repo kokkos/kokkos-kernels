@@ -172,7 +172,7 @@ KOKKOSLAPACK_GEQRF_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
-#if 0  // AquiEEP
+#if 0  // TO DO
 
 // MAGMA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
@@ -270,7 +270,7 @@ KOKKOSLAPACK_GEQRF_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft,
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
-#endif  // AquiEEP
+#endif  // TO DO
 
 // CUSOLVER
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
