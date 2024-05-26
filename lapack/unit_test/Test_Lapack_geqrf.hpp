@@ -191,7 +191,8 @@ void getQR(int const m, int const n, typename ViewTypeA::HostMirror const& h_A,
 
 template <class ViewTypeA, class ViewTypeTau, class Device>
 void impl_test_geqrf(int m, int n) {
-  using ViewTypeInfo    = Kokkos::View<int*, Kokkos::LayoutLeft, Device>;
+  using ALayout_t       = typename ViewTypeA::array_layout;
+  using ViewTypeInfo    = Kokkos::View<int*, ALayout_t, Device>;
   using execution_space = typename Device::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
   using ats             = Kokkos::ArithTraits<ScalarA>;
