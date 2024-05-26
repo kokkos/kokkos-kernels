@@ -36,13 +36,11 @@
 namespace Test {
 
 template <class ViewTypeA, class ViewTypeTau>
-void getQR(int const m, int const n,
-           typename ViewTypeA::HostMirror const& h_A,
+void getQR(int const m, int const n, typename ViewTypeA::HostMirror const& h_A,
            typename ViewTypeTau::HostMirror const& h_tau,
            typename ViewTypeA::HostMirror& h_Q,
            typename ViewTypeA::HostMirror& h_R,
-           typename ViewTypeA::HostMirror& h_QR
-) {
+           typename ViewTypeA::HostMirror& h_QR) {
   using ScalarA = typename ViewTypeA::value_type;
 
   // ********************************************************************
@@ -51,10 +49,9 @@ void getQR(int const m, int const n,
   for (int i(0); i < m; ++i) {
     for (int j(0); j < n; ++j) {
       if (i <= j) {
-        h_R(i,j) = h_A(i,j);
-      }
-      else {
-        h_R(i,j) = Kokkos::ArithTraits<ScalarA>::zero();
+        h_R(i, j) = h_A(i, j);
+      } else {
+        h_R(i, j) = Kokkos::ArithTraits<ScalarA>::zero();
       }
     }
   }
@@ -64,12 +61,12 @@ void getQR(int const m, int const n,
   // ********************************************************************
   ViewTypeA I("I", m, m);
   typename ViewTypeA::HostMirror h_I = Kokkos::create_mirror_view(I);
-  Kokkos::deep_copy(h_I,Kokkos::ArithTraits<ScalarA>::zero());
+  Kokkos::deep_copy(h_I, Kokkos::ArithTraits<ScalarA>::zero());
   for (int i(0); i < m; ++i) {
     if constexpr (Kokkos::ArithTraits<ScalarA>::is_complex) {
-      h_I(i,i).real() = 1.;
+      h_I(i, i).real() = 1.;
     } else {
-      h_I(i,i) = 1.;
+      h_I(i, i) = 1.;
     }
   }
 
@@ -93,12 +90,12 @@ void getQR(int const m, int const n,
   //     v(k)     = 1,
   //     v(k+1:m-1) = A(k+1:m-1,k).
   for (int k(0); k < minMN; ++k) {
-    Kokkos::deep_copy(h_v,Kokkos::ArithTraits<ScalarA>::zero());
+    Kokkos::deep_copy(h_v, Kokkos::ArithTraits<ScalarA>::zero());
     h_v[k] = 1.;
-    for (int index(k+1); index < m; ++index) {
-      h_v[index] = h_A(index,k);
+    for (int index(k + 1); index < m; ++index) {
+      h_v[index] = h_A(index, k);
     }
-#if 0 // def HAVE_KOKKOSKERNELS_DEBUG
+#if 0  // def HAVE_KOKKOSKERNELS_DEBUG
     for (int i(0); i < m; ++i) {
       std::cout << "k = " << k << ", h_v[" << i << "] = " << std::setprecision(16) << h_v[i] << std::endl;
     }
@@ -112,14 +109,9 @@ void getQR(int const m, int const n,
     //         , const AViewType                            & A
     //         );
     Kokkos::deep_copy(h_Qk, h_I);
-    KokkosBlas::ger( "H"
-                   , -h_tau[k]
-                   , h_v
-                   , h_v
-                   , h_Qk
-                   );
+    KokkosBlas::ger("H", -h_tau[k], h_v, h_v, h_Qk);
 
-#if 0 // def HAVE_KOKKOSKERNELS_DEBUG
+#if 0  // def HAVE_KOKKOSKERNELS_DEBUG
     for (int i(0); i < m; ++i) {
       for (int j(0); j < m; ++j) {
         std::cout << "k = " << k << ", hQk(" << i << "," << j << ") = " << h_Qk(i,j) << std::endl;
@@ -138,62 +130,50 @@ void getQR(int const m, int const n,
     //          );
     if (k == 0) {
       Kokkos::deep_copy(h_Q, h_Qk);
-    }
-    else {
+    } else {
       Kokkos::deep_copy(h_auxM, Kokkos::ArithTraits<ScalarA>::zero());
-      KokkosBlas::gemm( "N"
-                      , "N"
-                      , 1.
-                      , h_Q
-                      , h_Qk
-                      , 0.
-                      , h_auxM
-                      );
+      KokkosBlas::gemm("N", "N", 1., h_Q, h_Qk, 0., h_auxM);
       Kokkos::deep_copy(h_Q, h_auxM);
     }
 
-#if 0 // def HAVE_KOKKOSKERNELS_DEBUG
+#if 0  // def HAVE_KOKKOSKERNELS_DEBUG
     for (int i(0); i < m; ++i) {
       for (int j(0); j < m; ++j) {
         std::cout << "k = " << k << ", hQ(" << i << "," << j << ") = " << h_Q(i,j) << std::endl;
       }
     }
 #endif
-  } // for k
+  }  // for k
 
   // ********************************************************************
   // Check that Q^H Q = I
   // ********************************************************************
   {
     Kokkos::deep_copy(h_auxM, Kokkos::ArithTraits<ScalarA>::zero());
-    KokkosBlas::gemm( "C"
-                    , "N"
-                    , 1.
-                    , h_Q
-                    , h_Q
-                    , 0.
-                    , h_auxM
-                    );
+    KokkosBlas::gemm("C", "N", 1., h_Q, h_Q, 0., h_auxM);
 
-    typename Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type absTol(1.e-8);
-    if constexpr (std::is_same_v<typename Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type,float>) {
+    typename Kokkos::ArithTraits<
+        typename ViewTypeA::non_const_value_type>::mag_type absTol(1.e-8);
+    if constexpr (std::is_same_v<
+                      typename Kokkos::ArithTraits<
+                          typename ViewTypeA::non_const_value_type>::mag_type,
+                      float>) {
       absTol = 5.e-5;
     }
 
-    using ats = Kokkos::ArithTraits<ScalarA>;
+    using ats          = Kokkos::ArithTraits<ScalarA>;
     bool test_flag_QHQ = true;
     for (int i(0); (i < m) && test_flag_QHQ; ++i) {
       for (int j(0); (j < m) && test_flag_QHQ; ++j) {
-        if (ats::abs(h_auxM(i,j) - h_I(i,j)) > absTol) {
+        if (ats::abs(h_auxM(i, j) - h_I(i, j)) > absTol) {
           std::cout << "QHQ checking"
-                    << ", m = " << m
-                    << ", n = " << n
-                    << ", i = " << i
+                    << ", m = " << m << ", n = " << n << ", i = " << i
                     << ", j = " << j
-                    << ", h_auxM(i,j) = " << std::setprecision(16) << h_auxM(i,j)
-                    << ", h_I(i,j) = "    << std::setprecision(16) << h_I(i,j)
-                    << ", |diff| = "      << std::setprecision(16) << ats::abs(h_auxM(i,j) - h_I(i,j))
-                    << ", absTol = "      << std::setprecision(16) << absTol
+                    << ", h_auxM(i,j) = " << std::setprecision(16)
+                    << h_auxM(i, j) << ", h_I(i,j) = " << std::setprecision(16)
+                    << h_I(i, j) << ", |diff| = " << std::setprecision(16)
+                    << ats::abs(h_auxM(i, j) - h_I(i, j))
+                    << ", absTol = " << std::setprecision(16) << absTol
                     << std::endl;
           test_flag_QHQ = false;
         }
@@ -206,14 +186,7 @@ void getQR(int const m, int const n,
   // Compute h_QR
   // ********************************************************************
   Kokkos::deep_copy(h_QR, Kokkos::ArithTraits<ScalarA>::zero());
-  KokkosBlas::gemm( "N"
-                  , "N"
-                  , 1.
-                  , h_Q
-                  , h_R
-                  , 0.
-                  , h_QR
-                  );
+  KokkosBlas::gemm("N", "N", 1., h_Q, h_R, 0., h_QR);
 }
 
 template <class ViewTypeA, class ViewTypeTau, class Device>
@@ -230,10 +203,10 @@ void impl_test_geqrf(int m, int n) {
   // ********************************************************************
   // Create device views
   // ********************************************************************
-  ViewTypeA    A    ("A", m, n);
-  ViewTypeA    Aorig("Aorig", m, n);
-  ViewTypeTau  Tau  ("Tau", minMN);
-  ViewTypeInfo Info ("Info", 1);
+  ViewTypeA A("A", m, n);
+  ViewTypeA Aorig("Aorig", m, n);
+  ViewTypeTau Tau("Tau", minMN);
+  ViewTypeInfo Info("Info", 1);
 
   // ********************************************************************
   // Create host mirrors of device views
@@ -262,7 +235,7 @@ void impl_test_geqrf(int m, int n) {
 
       for (int i(0); i < m; ++i) {
         for (int j(0); j < n; ++j) {
-          h_A(i,j).imag() = 0.;
+          h_A(i, j).imag() = 0.;
         }
       }
     } else {
@@ -289,7 +262,7 @@ void impl_test_geqrf(int m, int n) {
 
   Kokkos::deep_copy(h_Aorig, h_A);
 
-#if 0 // def HAVE_KOKKOSKERNELS_DEBUG
+#if 0  // def HAVE_KOKKOSKERNELS_DEBUG
   for (int i(0); i < m; ++i) {
     for (int j(0); j < n; ++j) {
       std::cout << "Aorig(" << i << "," << j << ") = " << h_A(i,j) << std::endl;
@@ -323,12 +296,16 @@ void impl_test_geqrf(int m, int n) {
   Kokkos::deep_copy(h_A, A);
   Kokkos::deep_copy(h_tau, Tau);
 
-  typename Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type absTol(1.e-8);
-  if constexpr (std::is_same_v<typename Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type,float>) {
+  typename Kokkos::ArithTraits<
+      typename ViewTypeA::non_const_value_type>::mag_type absTol(1.e-8);
+  if constexpr (std::is_same_v<
+                    typename Kokkos::ArithTraits<
+                        typename ViewTypeA::non_const_value_type>::mag_type,
+                    float>) {
     absTol = 5.e-5;
   }
 
-#if 0 // def HAVE_KOKKOSKERNELS_DEBUG
+#if 0  // def HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "info[0] = " << h_info[0] << std::endl;
   for (int i(0); i < minMN; ++i) {
     for (int j(0); j < n; ++j) {
@@ -347,10 +324,10 @@ void impl_test_geqrf(int m, int n) {
   if ((m == 3) && (n == 3)) {
     std::vector<std::vector<ScalarA>> refMatrix(m);
     for (int i(0); i < m; ++i) {
-      refMatrix[i].resize(n,Kokkos::ArithTraits<ScalarA>::zero());
+      refMatrix[i].resize(n, Kokkos::ArithTraits<ScalarA>::zero());
     }
 
-    std::vector<ScalarA> refTau(m,Kokkos::ArithTraits<ScalarA>::zero());
+    std::vector<ScalarA> refTau(m, Kokkos::ArithTraits<ScalarA>::zero());
 
     if constexpr (Kokkos::ArithTraits<ScalarA>::is_complex) {
       refMatrix[0][0].real() = -14.;
@@ -362,14 +339,13 @@ void impl_test_geqrf(int m, int n) {
       refMatrix[1][2].real() = 70.;
 
       refMatrix[2][0].real() = -0.1538461538461539;
-      refMatrix[2][1].real() = 1./18.;
+      refMatrix[2][1].real() = 1. / 18.;
       refMatrix[2][2].real() = -35.;
 
       refTau[0].real() = 1.857142857142857;
       refTau[1].real() = 1.993846153846154;
       refTau[2].real() = 0.;
-    }
-    else {
+    } else {
       refMatrix[0][0] = -14.;
       refMatrix[0][1] = -21.;
       refMatrix[0][2] = 14.;
@@ -379,7 +355,7 @@ void impl_test_geqrf(int m, int n) {
       refMatrix[1][2] = 70.;
 
       refMatrix[2][0] = -0.1538461538461539;
-      refMatrix[2][1] = 1./18.;
+      refMatrix[2][1] = 1. / 18.;
       refMatrix[2][2] = -35.;
 
       refTau[0] = 1.857142857142857;
@@ -391,16 +367,17 @@ void impl_test_geqrf(int m, int n) {
       bool test_flag_A = true;
       for (int i(0); (i < m) && test_flag_A; ++i) {
         for (int j(0); (j < n) && test_flag_A; ++j) {
-          if (ats::abs(h_A(i,j) - refMatrix[i][j]) > absTol) {
+          if (ats::abs(h_A(i, j) - refMatrix[i][j]) > absTol) {
             std::cout << "h_Aoutput checking"
-                      << ", m = " << m
-                      << ", n = " << n
-                      << ", i = " << i
+                      << ", m = " << m << ", n = " << n << ", i = " << i
                       << ", j = " << j
-                      << ", h_Aoutput(i,j) = " << std::setprecision(16) << h_A(i,j)
-                      << ", refMatrix(i,j) = " << std::setprecision(16) << refMatrix[i][j]
-                      << ", |diff| = "         << std::setprecision(16) << ats::abs(h_A(i,j) - refMatrix[i][j])
-                      << ", absTol = "         << std::setprecision(16) << absTol
+                      << ", h_Aoutput(i,j) = " << std::setprecision(16)
+                      << h_A(i, j)
+                      << ", refMatrix(i,j) = " << std::setprecision(16)
+                      << refMatrix[i][j]
+                      << ", |diff| = " << std::setprecision(16)
+                      << ats::abs(h_A(i, j) - refMatrix[i][j])
+                      << ", absTol = " << std::setprecision(16) << absTol
                       << std::endl;
             test_flag_A = false;
           }
@@ -414,13 +391,12 @@ void impl_test_geqrf(int m, int n) {
       for (int i(0); (i < m) && test_flag_tau; ++i) {
         if (ats::abs(h_tau[i] - refTau[i]) > absTol) {
           std::cout << "tau checking"
-                    << ", m = " << m
-                    << ", n = " << n
-                    << ", i = " << i
-                    << ", h_tau(i,j) = "  << std::setprecision(16) << h_tau[i]
+                    << ", m = " << m << ", n = " << n << ", i = " << i
+                    << ", h_tau(i,j) = " << std::setprecision(16) << h_tau[i]
                     << ", refTau(i,j) = " << std::setprecision(16) << refTau[i]
-                    << ", |diff| = "      << std::setprecision(16) << ats::abs(h_tau[i] - refTau[i])
-                    << ", absTol = "      << std::setprecision(16) << absTol
+                    << ", |diff| = " << std::setprecision(16)
+                    << ats::abs(h_tau[i] - refTau[i])
+                    << ", absTol = " << std::setprecision(16) << absTol
                     << std::endl;
           test_flag_tau = false;
         }
@@ -442,7 +418,7 @@ void impl_test_geqrf(int m, int n) {
 
   getQR<ViewTypeA, ViewTypeTau>(m, n, h_A, h_tau, h_Q, h_R, h_QR);
 
-#if 0 // def HAVE_KOKKOSKERNELS_DEBUG
+#if 0  // def HAVE_KOKKOSKERNELS_DEBUG
   for (int i(0); i < m; ++i) {
     for (int j(0); j < m; ++j) {
       std::cout << "Q(" << i << "," << j << ") = " << h_Q(i,j) << std::endl;
@@ -466,12 +442,12 @@ void impl_test_geqrf(int m, int n) {
   if ((m == 3) && (n == 3)) {
     std::vector<std::vector<ScalarA>> refQ(m);
     for (int i(0); i < m; ++i) {
-      refQ[i].resize(n,Kokkos::ArithTraits<ScalarA>::zero());
+      refQ[i].resize(n, Kokkos::ArithTraits<ScalarA>::zero());
     }
 
     std::vector<std::vector<ScalarA>> refR(m);
     for (int i(0); i < m; ++i) {
-      refR[i].resize(n,Kokkos::ArithTraits<ScalarA>::zero());
+      refR[i].resize(n, Kokkos::ArithTraits<ScalarA>::zero());
     }
 
 #if 0
@@ -485,17 +461,17 @@ void impl_test_geqrf(int m, int n) {
 #endif
 
     if constexpr (Kokkos::ArithTraits<ScalarA>::is_complex) {
-      refQ[0][0].real() = -6./7.;
-      refQ[0][1].real() = 69./175.;
-      refQ[0][2].real() = 58./175.;
+      refQ[0][0].real() = -6. / 7.;
+      refQ[0][1].real() = 69. / 175.;
+      refQ[0][2].real() = 58. / 175.;
 
-      refQ[1][0].real() = -3./7.;
-      refQ[1][1].real() = -158./175.;
-      refQ[1][2].real() = -6./175.;
+      refQ[1][0].real() = -3. / 7.;
+      refQ[1][1].real() = -158. / 175.;
+      refQ[1][2].real() = -6. / 175.;
 
-      refQ[2][0].real() = 2./7.;
-      refQ[2][1].real() = -6./35.;
-      refQ[2][2].real() = 33./35.;
+      refQ[2][0].real() = 2. / 7.;
+      refQ[2][1].real() = -6. / 35.;
+      refQ[2][2].real() = 33. / 35.;
 
       refR[0][0].real() = -14.;
       refR[0][1].real() = -21.;
@@ -505,19 +481,18 @@ void impl_test_geqrf(int m, int n) {
       refR[1][2].real() = 70.;
 
       refR[2][2].real() = -35.;
-    }
-    else {
-      refQ[0][0] = -6./7.;
-      refQ[0][1] = 69./175.;
-      refQ[0][2] = 58./175.;
+    } else {
+      refQ[0][0] = -6. / 7.;
+      refQ[0][1] = 69. / 175.;
+      refQ[0][2] = 58. / 175.;
 
-      refQ[1][0] = -3./7.;
-      refQ[1][1] = -158./175.;
-      refQ[1][2] = -6./175.;
+      refQ[1][0] = -3. / 7.;
+      refQ[1][1] = -158. / 175.;
+      refQ[1][2] = -6. / 175.;
 
-      refQ[2][0] = 2./7.;
-      refQ[2][1] = -6./35.;
-      refQ[2][2] = 33./35.;
+      refQ[2][0] = 2. / 7.;
+      refQ[2][1] = -6. / 35.;
+      refQ[2][2] = 33. / 35.;
 
       refR[0][0] = -14.;
       refR[0][1] = -21.;
@@ -533,16 +508,15 @@ void impl_test_geqrf(int m, int n) {
       bool test_flag_Q = true;
       for (int i(0); (i < m) && test_flag_Q; ++i) {
         for (int j(0); (j < n) && test_flag_Q; ++j) {
-          if (ats::abs(h_Q(i,j) - refQ[i][j]) > absTol) {
+          if (ats::abs(h_Q(i, j) - refQ[i][j]) > absTol) {
             std::cout << "Q checking"
-                      << ", m = " << m
-                      << ", n = " << n
-                      << ", i = " << i
+                      << ", m = " << m << ", n = " << n << ", i = " << i
                       << ", j = " << j
-                      << ", h_Q(i,j) = "  << std::setprecision(16) << h_Q(i,j)
+                      << ", h_Q(i,j) = " << std::setprecision(16) << h_Q(i, j)
                       << ", refQ(i,j) = " << std::setprecision(16) << refQ[i][j]
-                      << ", |diff| = "    << std::setprecision(16) << ats::abs(h_Q(i,j) - refQ[i][j])
-                      << ", absTol = "    << std::setprecision(16) << absTol
+                      << ", |diff| = " << std::setprecision(16)
+                      << ats::abs(h_Q(i, j) - refQ[i][j])
+                      << ", absTol = " << std::setprecision(16) << absTol
                       << std::endl;
             test_flag_Q = false;
           }
@@ -555,16 +529,15 @@ void impl_test_geqrf(int m, int n) {
       bool test_flag_R = true;
       for (int i(0); (i < m) && test_flag_R; ++i) {
         for (int j(0); (j < n) && test_flag_R; ++j) {
-          if (ats::abs(h_R(i,j) - refR[i][j]) > absTol) {
+          if (ats::abs(h_R(i, j) - refR[i][j]) > absTol) {
             std::cout << "R checking"
-                      << ", m = " << m
-                      << ", n = " << n
-                      << ", i = " << i
+                      << ", m = " << m << ", n = " << n << ", i = " << i
                       << ", j = " << j
-                      << ", h_R(i,j) = "  << std::setprecision(16) << h_R(i,j)
+                      << ", h_R(i,j) = " << std::setprecision(16) << h_R(i, j)
                       << ", refR(i,j) = " << std::setprecision(16) << refR[i][j]
-                      << ", |diff| = "    << std::setprecision(16) << ats::abs(h_R(i,j) - refR[i][j])
-                      << ", absTol = "    << std::setprecision(16) << absTol
+                      << ", |diff| = " << std::setprecision(16)
+                      << ats::abs(h_R(i, j) - refR[i][j])
+                      << ", absTol = " << std::setprecision(16) << absTol
                       << std::endl;
             test_flag_R = false;
           }
@@ -581,16 +554,16 @@ void impl_test_geqrf(int m, int n) {
     bool test_flag_QR = true;
     for (int i(0); (i < m) && test_flag_QR; ++i) {
       for (int j(0); (j < n) && test_flag_QR; ++j) {
-        if (ats::abs(h_QR(i,j) - h_Aorig(i,j)) > absTol) {
+        if (ats::abs(h_QR(i, j) - h_Aorig(i, j)) > absTol) {
           std::cout << "QR checking"
-                    << ", m = " << m
-                    << ", n = " << n
-                    << ", i = " << i
+                    << ", m = " << m << ", n = " << n << ", i = " << i
                     << ", j = " << j
-                    << ", h_Aorig(i,j) = " << std::setprecision(16) << h_Aorig(i,j)
-                    << ", h_QR(i,j) = "    << std::setprecision(16) << h_QR(i,j)
-                    << ", |diff| = "       << std::setprecision(16) << ats::abs(h_QR(i,j) - h_Aorig(i,j))
-                    << ", absTol = "       << std::setprecision(16) << absTol
+                    << ", h_Aorig(i,j) = " << std::setprecision(16)
+                    << h_Aorig(i, j)
+                    << ", h_QR(i,j) = " << std::setprecision(16) << h_QR(i, j)
+                    << ", |diff| = " << std::setprecision(16)
+                    << ats::abs(h_QR(i, j) - h_Aorig(i, j))
+                    << ", absTol = " << std::setprecision(16) << absTol
                     << std::endl;
           test_flag_QR = false;
         }

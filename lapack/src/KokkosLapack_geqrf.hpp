@@ -117,18 +117,17 @@ void geqrf(const ExecutionSpace& space, const AMatrix& A, const TauArray& Tau,
   using AMatrix_Internal = Kokkos::View<
       typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using TauArray_Internal =
-      Kokkos::View<typename TauArray::non_const_value_type*,
-                   typename TauArray::array_layout, typename TauArray::device_type,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using TauArray_Internal = Kokkos::View<
+      typename TauArray::non_const_value_type*, typename TauArray::array_layout,
+      typename TauArray::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using InfoArray_Internal =
       Kokkos::View<typename InfoArray::non_const_value_type*,
                    typename InfoArray::array_layout,
                    typename InfoArray::device_type,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  AMatrix_Internal   A_i    = A;
-  TauArray_Internal  Tau_i  = Tau;
+  AMatrix_Internal A_i      = A;
+  TauArray_Internal Tau_i   = Tau;
   InfoArray_Internal Info_i = Info;
 
   KokkosLapack::Impl::GEQRF<ExecutionSpace, AMatrix_Internal, TauArray_Internal,
