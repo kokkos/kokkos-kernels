@@ -76,12 +76,11 @@ struct Functor_BatchedSerialTbsv {
   using execution_space = typename DeviceType::execution_space;
   AViewType _a;
   BViewType _b;
-  int _k, _incx;
+  int _k;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialTbsv(const AViewType &a, const BViewType &b, const int k,
-                            const int incx)
-      : _a(a), _b(b), _k(k), _incx(incx) {}
+  Functor_BatchedSerialTbsv(const AViewType &a, const BViewType &b, const int k)
+      : _a(a), _b(b), _k(k) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ParamTagType &, const int k) const {
@@ -90,7 +89,7 @@ struct Functor_BatchedSerialTbsv {
 
     KokkosBatched::SerialTbsv<
         typename ParamTagType::uplo, typename ParamTagType::trans,
-        typename ParamTagType::diag, AlgoTagType>::invoke(aa, bb, _k, _incx);
+        typename ParamTagType::diag, AlgoTagType>::invoke(aa, bb, _k);
   }
 
   inline void run() {
@@ -143,9 +142,9 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
                             ParamTagType, Algo::Trsv::Unblocked>(1.0, A, x0)
       .run();
 
-  // tvsv
+  // tbsv
   Functor_BatchedSerialTbsv<DeviceType, View3DType, View2DType, ParamTagType,
-                            AlgoTagType>(Ab, x1, k, 1)
+                            AlgoTagType>(Ab, x1, k)
       .run();
 
   // this eps is about 10^-14
@@ -162,121 +161,113 @@ template <typename DeviceType, typename ScalarType, typename LayoutType,
 /// \brief Implementation details of batched tbsv test
 ///
 /// \param N [in] Batch size of RHS (banded matrix can also be batched matrix)
-void impl_test_batched_tbsv_analytical(const int N) {
+void impl_test_batched_tbsv_analytical(const std::size_t N) {
   using execution_space = typename DeviceType::execution_space;
   using View2DType = Kokkos::View<ScalarType **, LayoutType, execution_space>;
+  using StridedView2DType =
+      Kokkos::View<ScalarType **, Kokkos::LayoutStride, execution_space>;
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, execution_space>;
 
   // Reference is created by trsv from triangular matrix
-  constexpr int BlkSize = 3, k = 2, incx = 2;
-  const int BlkSize2 = 1 + (BlkSize - 1) * incx;
+  constexpr std::size_t BlkSize = 3, k = 2, incx = 2;
+
   View3DType A("A", N, BlkSize, BlkSize), ref("Ref", N, BlkSize, BlkSize);
   View3DType Ab("Ab", N, k + 1, BlkSize);                       // Banded matrix
   View2DType x0("x0", N, BlkSize), x_ref("x_ref", N, BlkSize);  // Solutions
-  View2DType x1("x1", N, BlkSize2), x1_ref("x1_ref", N, BlkSize2);  // Solutions
 
-  auto h_ref    = Kokkos::create_mirror_view(ref);
-  auto h_x0     = Kokkos::create_mirror_view(x0);
-  auto h_x1     = Kokkos::create_mirror_view(x1);
-  auto h_x_ref  = Kokkos::create_mirror_view(x_ref);
-  auto h_x1_ref = Kokkos::create_mirror_view(x1_ref);
+  // Testing incx argument with strided Views
+  Kokkos::LayoutStride layout{N, incx, BlkSize, N * incx};
+  StridedView2DType x1("x1", layout), x1_ref("x1_ref", layout);  // Solutions
 
-  for (int ib = 0; ib < N; ib++) {
-    for (int i = 0; i < BlkSize; i++) {
-      for (int j = 0; j < BlkSize; j++) {
-        h_ref(ib, i, j) = i + 1;
-      }
-    }
-    for (int n = 0; n < BlkSize; n++) {
-      h_x0(ib, n)        = 1;
-      h_x1(ib, n * incx) = 1;
-    }
+  Kokkos::RangePolicy<execution_space> policy(0, N);
+  Kokkos::parallel_for(
+      "KokkosBatched::Test::SerialTbsv::Initialize", policy,
+      KOKKOS_LAMBDA(const std::size_t ib) {
+        for (std::size_t i = 0; i < BlkSize; i++) {
+          for (std::size_t j = 0; j < BlkSize; j++) {
+            ref(ib, i, j) = i + 1;
+          }
+        }
+        for (std::size_t n = 0; n < BlkSize; n++) {
+          x0(ib, n) = 1;
+          x1(ib, n) = 1;
+        }
 
-    if constexpr (std::is_same_v<typename ParamTagType::uplo,
-                                 KokkosBatched::Uplo::Upper>) {
-      if constexpr (std::is_same_v<typename ParamTagType::trans,
-                                   Trans::NoTranspose>) {
-        if constexpr (std::is_same_v<typename ParamTagType::diag,
-                                     Diag::NonUnit>) {
-          h_x_ref(ib, 0)         = 1.0 / 2.0;
-          h_x_ref(ib, 1)         = 1.0 / 6.0;
-          h_x_ref(ib, 2)         = 1.0 / 3.0;
-          h_x1_ref(ib, 0)        = 1.0 / 2.0;
-          h_x1_ref(ib, incx)     = 1.0 / 6.0;
-          h_x1_ref(ib, 2 * incx) = 1.0 / 3.0;
+        if (std::is_same_v<typename ParamTagType::uplo,
+                           KokkosBatched::Uplo::Upper>) {
+          if (std::is_same_v<typename ParamTagType::trans,
+                             Trans::NoTranspose>) {
+            if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
+              x_ref(ib, 0)  = 1.0 / 2.0;
+              x_ref(ib, 1)  = 1.0 / 6.0;
+              x_ref(ib, 2)  = 1.0 / 3.0;
+              x1_ref(ib, 0) = 1.0 / 2.0;
+              x1_ref(ib, 1) = 1.0 / 6.0;
+              x1_ref(ib, 2) = 1.0 / 3.0;
+            } else {
+              x_ref(ib, 0)  = 1.0;
+              x_ref(ib, 1)  = -1.0;
+              x_ref(ib, 2)  = 1.0;
+              x1_ref(ib, 0) = 1.0;
+              x1_ref(ib, 1) = -1.0;
+              x1_ref(ib, 2) = 1.0;
+            }
+          } else {
+            if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
+              x_ref(ib, 0)  = 1.0;
+              x_ref(ib, 1)  = 0.0;
+              x_ref(ib, 2)  = 0.0;
+              x1_ref(ib, 0) = 1.0;
+              x1_ref(ib, 1) = 0.0;
+              x1_ref(ib, 2) = 0.0;
+            } else {
+              x_ref(ib, 0)  = 1.0;
+              x_ref(ib, 1)  = 0.0;
+              x_ref(ib, 2)  = 0.0;
+              x1_ref(ib, 0) = 1.0;
+              x1_ref(ib, 1) = 0.0;
+              x1_ref(ib, 2) = 0.0;
+            }
+          }
         } else {
-          h_x_ref(ib, 0)         = 1.0;
-          h_x_ref(ib, 1)         = -1.0;
-          h_x_ref(ib, 2)         = 1.0;
-          h_x1_ref(ib, 0)        = 1.0;
-          h_x1_ref(ib, incx)     = -1.0;
-          h_x1_ref(ib, 2 * incx) = 1.0;
+          if (std::is_same_v<typename ParamTagType::trans,
+                             Trans::NoTranspose>) {
+            if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
+              x_ref(ib, 0)  = 1.0;
+              x_ref(ib, 1)  = -1.0 / 2.0;
+              x_ref(ib, 2)  = -1.0 / 6.0;
+              x1_ref(ib, 0) = 1.0;
+              x1_ref(ib, 1) = -1.0 / 2.0;
+              x1_ref(ib, 2) = -1.0 / 6.0;
+            } else {
+              x_ref(ib, 0)  = 1.0;
+              x_ref(ib, 1)  = -1.0;
+              x_ref(ib, 2)  = 1.0;
+              x1_ref(ib, 0) = 1.0;
+              x1_ref(ib, 1) = -1.0;
+              x1_ref(ib, 2) = 1.0;
+            }
+          } else {
+            if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
+              x_ref(ib, 0)  = 0.0;
+              x_ref(ib, 1)  = 0.0;
+              x_ref(ib, 2)  = 1.0 / 3.0;
+              x1_ref(ib, 0) = 0.0;
+              x1_ref(ib, 1) = 0.0;
+              x1_ref(ib, 2) = 1.0 / 3.0;
+            } else {
+              x_ref(ib, 0)  = 2.0;
+              x_ref(ib, 1)  = -2.0;
+              x_ref(ib, 2)  = 1.0;
+              x1_ref(ib, 0) = 2.0;
+              x1_ref(ib, 1) = -2.0;
+              x1_ref(ib, 2) = 1.0;
+            }
+          }
         }
-      } else {
-        if constexpr (std::is_same_v<typename ParamTagType::diag,
-                                     Diag::NonUnit>) {
-          h_x_ref(ib, 0)         = 1.0;
-          h_x_ref(ib, 1)         = 0.0;
-          h_x_ref(ib, 2)         = 0.0;
-          h_x1_ref(ib, 0)        = 1.0;
-          h_x1_ref(ib, incx)     = 0.0;
-          h_x1_ref(ib, 2 * incx) = 0.0;
-        } else {
-          h_x_ref(ib, 0)         = 1.0;
-          h_x_ref(ib, 1)         = 0.0;
-          h_x_ref(ib, 2)         = 0.0;
-          h_x1_ref(ib, 0)        = 1.0;
-          h_x1_ref(ib, incx)     = 0.0;
-          h_x1_ref(ib, 2 * incx) = 0.0;
-        }
-      }
-    } else {
-      if constexpr (std::is_same_v<typename ParamTagType::trans,
-                                   Trans::NoTranspose>) {
-        if constexpr (std::is_same_v<typename ParamTagType::diag,
-                                     Diag::NonUnit>) {
-          h_x_ref(ib, 0)         = 1.0;
-          h_x_ref(ib, 1)         = -1.0 / 2.0;
-          h_x_ref(ib, 2)         = -1.0 / 6.0;
-          h_x1_ref(ib, 0)        = 1.0;
-          h_x1_ref(ib, incx)     = -1.0 / 2.0;
-          h_x1_ref(ib, 2 * incx) = -1.0 / 6.0;
-        } else {
-          h_x_ref(ib, 0)         = 1.0;
-          h_x_ref(ib, 1)         = -1.0;
-          h_x_ref(ib, 2)         = 1.0;
-          h_x1_ref(ib, 0)        = 1.0;
-          h_x1_ref(ib, incx)     = -1.0;
-          h_x1_ref(ib, 2 * incx) = 1.0;
-        }
-      } else {
-        if constexpr (std::is_same_v<typename ParamTagType::diag,
-                                     Diag::NonUnit>) {
-          h_x_ref(ib, 0)         = 0.0;
-          h_x_ref(ib, 1)         = 0.0;
-          h_x_ref(ib, 2)         = 1.0 / 3.0;
-          h_x1_ref(ib, 0)        = 0.0;
-          h_x1_ref(ib, incx)     = 0.0;
-          h_x1_ref(ib, 2 * incx) = 1.0 / 3.0;
-        } else {
-          h_x_ref(ib, 0)         = 2.0;
-          h_x_ref(ib, 1)         = -2.0;
-          h_x_ref(ib, 2)         = 1.0;
-          h_x1_ref(ib, 0)        = 2.0;
-          h_x1_ref(ib, incx)     = -2.0;
-          h_x1_ref(ib, 2 * incx) = 1.0;
-        }
-      }
-    }
-  }
+      });
 
   Kokkos::fence();
-
-  Kokkos::deep_copy(ref, h_ref);
-  Kokkos::deep_copy(x0, h_x0);
-  Kokkos::deep_copy(x1, h_x1);
-  Kokkos::deep_copy(x_ref, h_x_ref);
-  Kokkos::deep_copy(x1_ref, h_x1_ref);
 
   // Create triangluar or banded matrix
   create_banded_triangular_matrix<View3DType, View3DType,
@@ -288,12 +279,12 @@ void impl_test_batched_tbsv_analytical(const int N) {
 
   // tbsv
   Functor_BatchedSerialTbsv<DeviceType, View3DType, View2DType, ParamTagType,
-                            AlgoTagType>(Ab, x0, k, 1)
+                            AlgoTagType>(Ab, x0, k)
       .run();
 
   // tbsv with incx == 2
-  Functor_BatchedSerialTbsv<DeviceType, View3DType, View2DType, ParamTagType,
-                            AlgoTagType>(Ab, x1, k, incx)
+  Functor_BatchedSerialTbsv<DeviceType, View3DType, StridedView2DType,
+                            ParamTagType, AlgoTagType>(Ab, x1, k)
       .run();
 
   // this eps is about 10^-14

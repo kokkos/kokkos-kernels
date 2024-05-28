@@ -37,8 +37,6 @@ namespace KokkosBatched {
 /// \param X [inout]: right-hand side and the solution, a rank 1 view
 /// \param k [in]: k specifies the number of superdiagonals or subdiagonals of
 /// matrix A. k >= 0
-/// \param incx [in]: incx specifies the increment for the elements of x.
-/// incx != 0
 ///
 /// No nested parallel_for is used inside of the function.
 ///
@@ -48,8 +46,7 @@ template <typename ArgUplo, typename ArgTrans, typename ArgDiag,
 struct SerialTbsv {
   template <typename AViewType, typename XViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const XViewType &X, const int k,
-                                           const int incx);
+                                           const XViewType &X, const int k);
 };
 
 }  // namespace KokkosBatched
