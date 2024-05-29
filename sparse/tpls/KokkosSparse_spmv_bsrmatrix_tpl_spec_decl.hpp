@@ -227,7 +227,7 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
                                const AMatrix& A, const XVector& X,             \
                                const coefficient_type& beta,                   \
                                const YVector& Y) {                             \
-      std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX" +             \
+      std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX," +            \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
       spmv_bsr_mkl(handle, mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(),  \
@@ -292,7 +292,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
                                   const AMatrix& A, const XVector& X,          \
                                   const coefficient_type& beta,                \
                                   const YVector& Y) {                          \
-      std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX" +             \
+      std::string label = "KokkosSparse::spmv_mv[TPL_MKL,BSRMATRIX," +         \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
       MKL_INT colx = static_cast<MKL_INT>(X.extent(1));                        \
@@ -610,7 +610,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
                                const AMatrix& A, const XVector& x,            \
                                const coefficient_type& beta,                  \
                                const YVector& y) {                            \
-      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE,BSRMATRIX" +       \
+      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE,BSRMATRIX," +      \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";          \
       Kokkos::Profiling::pushRegion(label);                                   \
       spmv_bsr_cusparse(exec, handle, mode, alpha, A, x, beta, y);            \
@@ -695,7 +695,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
                                   const AMatrix& A, const XVector& x,         \
                                   const coefficient_type& beta,               \
                                   const YVector& y) {                         \
-      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE,BSRMATRIX" +       \
+      std::string label = "KokkosSparse::spmv_mv[TPL_CUSPARSE,BSRMATRIX," +   \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";          \
       Kokkos::Profiling::pushRegion(label);                                   \
       spmv_mv_bsr_cusparse(exec, handle, mode, alpha, A, x, beta, y);         \
@@ -1029,7 +1029,7 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle,
                                const AMatrix& A, const XVector& x,             \
                                const coefficient_type& beta,                   \
                                const YVector& y) {                             \
-      std::string label = "KokkosSparse::spmv[TPL_ROCSPARSE,BSRMATRIX" +       \
+      std::string label = "KokkosSparse::spmv[TPL_ROCSPARSE,BSRMATRIX," +      \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
       spmv_bsr_rocsparse(exec, handle, mode, alpha, A, x, beta, y);            \

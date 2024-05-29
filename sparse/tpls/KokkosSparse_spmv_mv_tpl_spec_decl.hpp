@@ -253,7 +253,7 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
                         const char mode[], const coefficient_type &alpha,     \
                         const AMatrix &A, const XVector &x,                   \
                         const coefficient_type &beta, const YVector &y) {     \
-      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," +                \
+      std::string label = "KokkosSparse::spmv_mv[TPL_CUSPARSE," +             \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";          \
       Kokkos::Profiling::pushRegion(label);                                   \
       spmv_mv_cusparse(exec, handle, mode, alpha, A, x, beta, y);             \
