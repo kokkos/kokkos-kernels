@@ -25,12 +25,12 @@ jobs:
           doxygen --version
 
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@v4
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v4.1.6
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@v4
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v4.1.6
         with:
           repository: kokkos/kokkos
           ref: 4.3.00
