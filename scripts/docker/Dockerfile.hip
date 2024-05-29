@@ -1,4 +1,4 @@
-ARG BASE=rocm/dev-ubuntu-20.04:5.2
+ARG BASE=rocm/dev-ubuntu-20.04@sha256:f345894ae2d64c0d4676070301b0368599c504462bcb5934aa40f65357078c85 # 5.2
 FROM $BASE
 
 RUN apt-get update && apt-get install -y \
