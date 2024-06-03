@@ -107,12 +107,12 @@ jobs:
     
     steps:
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v4.1.6
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v4.1.6
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
           repository: kokkos/kokkos
           ref: ${{ github.base_ref }}
