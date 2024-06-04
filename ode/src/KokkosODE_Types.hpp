@@ -32,7 +32,12 @@ struct ODE_params {
   // be constant such that dt = (tend - tstart) / num_steps;
   KOKKOS_FUNCTION
   ODE_params(const int num_steps_)
-      : adaptivity(false), num_steps(num_steps_), max_steps(num_steps_), abs_tol(0), rel_tol(0), min_step_size(0) {}
+      : adaptivity(false),
+        num_steps(num_steps_),
+        max_steps(num_steps_ + 1),
+        abs_tol(1e-12),
+        rel_tol(1e-6),
+        min_step_size(0) {}
 
   /// ODE_parms construtor for adaptive time stepping.
   KOKKOS_FUNCTION
