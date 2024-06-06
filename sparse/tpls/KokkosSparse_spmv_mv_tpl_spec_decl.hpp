@@ -331,6 +331,7 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::Experimental::half_t, int, int,
 #endif
 
 #undef KOKKOSSPARSE_SPMV_MV_CUSPARSE
+
 }  // namespace Impl
 }  // namespace KokkosSparse
 #endif  // defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION)
