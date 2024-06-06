@@ -102,9 +102,9 @@ cusparseDnMatDescr_t make_cusparse_dn_mat_descr_t(ViewType &view) {
 template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
                       const char mode[],
-                      typename YVector::non_const_value_type const &alpha,
+                      typename YVector::const_value_type &alpha,
                       const AMatrix &A, const XVector &x,
-                      typename YVector::non_const_value_type const &beta,
+                      typename YVector::const_value_type &beta,
                       const YVector &y) {
   static_assert(XVector::rank == 2,
                 "should only be instantiated for multivector");
@@ -347,9 +347,9 @@ namespace Impl {
 template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_mv_rocsparse(const Kokkos::HIP &exec, Handle *handle,
                        const char mode[],
-                       typename YVector::non_const_value_type const &alpha,
+                       typename YVector::const_value_type &alpha,
                        const AMatrix &A, const XVector &x,
-                       typename YVector::non_const_value_type const &beta,
+                       typename YVector::const_value_type &beta,
                        const YVector &y) {
   using offset_type = typename AMatrix::non_const_size_type;
   using entry_type  = typename AMatrix::non_const_ordinal_type;

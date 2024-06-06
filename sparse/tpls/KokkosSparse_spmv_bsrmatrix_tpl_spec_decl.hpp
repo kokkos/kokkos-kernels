@@ -348,9 +348,9 @@ namespace Impl {
 template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
                        const char mode[],
-                       typename YVector::non_const_value_type const& alpha,
+                       typename YVector::const_value_type& alpha,
                        const AMatrix& A, const XVector& x,
-                       typename YVector::non_const_value_type const& beta,
+                       typename YVector::const_value_type& beta,
                        const YVector& y) {
   using offset_type = typename AMatrix::non_const_size_type;
   using entry_type  = typename AMatrix::non_const_ordinal_type;
@@ -463,9 +463,9 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
 template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
                           const char mode[],
-                          typename YVector::non_const_value_type const& alpha,
+                          typename YVector::const_value_type& alpha,
                           const AMatrix& A, const XVector& x,
-                          typename YVector::non_const_value_type const& beta,
+                          typename YVector::const_value_type& beta,
                           const YVector& y) {
   using offset_type = typename AMatrix::non_const_size_type;
   using entry_type  = typename AMatrix::non_const_ordinal_type;
@@ -751,9 +751,9 @@ namespace Impl {
 template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle,
                         const char mode[],
-                        typename YVector::non_const_value_type const& alpha,
+                        typename YVector::const_value_type& alpha,
                         const AMatrix& A, const XVector& x,
-                        typename YVector::non_const_value_type const& beta,
+                        typename YVector::const_value_type& beta,
                         const YVector& y) {
   /*
      rocm 5.4.0 rocsparse_*bsrmv reference:

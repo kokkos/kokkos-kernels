@@ -30,9 +30,8 @@ namespace Impl {
 
 template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
-                   typename YVector::non_const_value_type const& alpha,
-                   const AMatrix& A, const XVector& x,
-                   typename YVector::non_const_value_type const& beta,
+                   typename YVector::const_value_type& alpha, const AMatrix& A,
+                   const XVector& x, typename YVector::const_value_type& beta,
                    const YVector& y) {
   using offset_type = typename AMatrix::non_const_size_type;
   using value_type  = typename AMatrix::non_const_value_type;
@@ -357,9 +356,8 @@ namespace Impl {
 
 template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
-                    typename YVector::non_const_value_type const& alpha,
-                    const AMatrix& A, const XVector& x,
-                    typename YVector::non_const_value_type const& beta,
+                    typename YVector::const_value_type& alpha, const AMatrix& A,
+                    const XVector& x, typename YVector::const_value_type& beta,
                     const YVector& y) {
   using offset_type = typename AMatrix::non_const_size_type;
   using entry_type  = typename AMatrix::non_const_ordinal_type;
@@ -703,9 +701,9 @@ template <class execution_space, class Handle, class matrix_type,
           class xview_type, class yview_type>
 inline void spmv_onemkl(const execution_space& exec, Handle* handle,
                         oneapi::mkl::transpose mkl_mode,
-                        typename matrix_type::non_const_value_type const alpha,
+                        typename yview_type::const_value_type& alpha,
                         const matrix_type& A, const xview_type& x,
-                        typename matrix_type::non_const_value_type const beta,
+                        typename yview_type::const_value_type& beta,
                         const yview_type& y) {
   using scalar_type        = typename matrix_type::non_const_value_type;
   using onemkl_scalar_type = typename KokkosToOneMKLScalar<scalar_type>::type;
