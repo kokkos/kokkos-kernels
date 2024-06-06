@@ -263,10 +263,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
 /////////////////
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       // cuSPARSE does not support the conjugate mode (C)
-      if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
-                                   Kokkos::CudaSpace> ||
-                    std::is_same_v<typename AMatrix_Internal::memory_space,
-                                   Kokkos::CudaUVMSpace>) {
+      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
         useNative = useNative || (mode[0] == Conjugate[0]);
       }
       // cuSPARSE 12 requires that the output (y) vector is 16-byte aligned for
@@ -278,20 +275,19 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-      if (std::is_same<typename AMatrix_Internal::memory_space,
-                       Kokkos::HIPSpace>::value) {
+      if (std::is_same_v<ExecutionSpace, Kokkos::HIP>) {
         useNative = useNative || (mode[0] != NoTranspose[0]);
       }
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-      if (std::is_same_v<typename AMatrix_Internal::memory_space,
-                         Kokkos::HostSpace>) {
+      if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
+                                   Kokkos::HostSpace>) {
         useNative = useNative || (mode[0] == Conjugate[0]);
       }
 #ifdef KOKKOS_ENABLE_SYCL
-      if (std::is_same_v<typename AMatrix_Internal::memory_space,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace>) {
+      if constexpr (std::is_same_v<ExecutionSpace,
+                                   Kokkos::Experimental::SYCL>) {
         useNative = useNative || (mode[0] == Conjugate[0]);
       }
 #endif
@@ -324,7 +320,14 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
 // CRS, rank 2 //
 /////////////////
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      useNative = useNative || (Conjugate[0] == mode[0]);
+      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
+        useNative = useNative || (Conjugate[0] == mode[0]);
+      }
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::HIP>) {
+        useNative = useNative || (Conjugate[0] == mode[0]);
+      }
 #endif
 
       if (useNative) {
@@ -355,25 +358,21 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
 /////////////////
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       // cuSPARSE does not support the modes (C), (T), (H)
-      if (std::is_same<typename AMatrix_Internal::memory_space,
-                       Kokkos::CudaSpace>::value ||
-          std::is_same<typename AMatrix_Internal::memory_space,
-                       Kokkos::CudaUVMSpace>::value) {
+      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
         useNative = useNative || (mode[0] != NoTranspose[0]);
       }
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-      if (std::is_same<typename AMatrix_Internal::memory_space,
-                       Kokkos::HostSpace>::value) {
+      if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
+                                   Kokkos::HostSpace>) {
         useNative = useNative || (mode[0] == Conjugate[0]);
       }
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
       // rocSparse does not support the modes (C), (T), (H)
-      if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
-                                   Kokkos::HIPSpace>) {
+      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::HIP>) {
         useNative = useNative || (mode[0] != NoTranspose[0]);
       }
 #endif
@@ -403,17 +402,14 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
       /////////////////
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       // cuSPARSE does not support the modes (C), (T), (H)
-      if (std::is_same<typename AMatrix_Internal::memory_space,
-                       Kokkos::CudaSpace>::value ||
-          std::is_same<typename AMatrix_Internal::memory_space,
-                       Kokkos::CudaUVMSpace>::value) {
+      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
         useNative = useNative || (mode[0] != NoTranspose[0]);
       }
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-      if (std::is_same<typename AMatrix_Internal::memory_space,
-                       Kokkos::HostSpace>::value) {
+      if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
+                                   Kokkos::HostSpace>) {
         useNative = useNative || (mode[0] == Conjugate[0]);
       }
 #endif
@@ -593,8 +589,8 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
       "KokkosSparse::spmv_struct: Both Vector inputs must have rank 1 in "
       "order to call this specialization of spmv.");
   // Make sure that y is non-const.
-  static_assert(std::is_same<typename YVector::value_type,
-                             typename YVector::non_const_value_type>::value,
+  static_assert(std::is_same_v<typename YVector::value_type,
+                               typename YVector::non_const_value_type>,
                 "KokkosSparse::spmv_struct: Output Vector must be non-const.");
 
   // Check compatibility of dimensions at run time.
@@ -886,8 +882,8 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
   static_assert(XVector::rank == YVector::rank,
                 "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that y is non-const.
-  static_assert(std::is_same<typename YVector::value_type,
-                             typename YVector::non_const_value_type>::value,
+  static_assert(std::is_same_v<typename YVector::value_type,
+                               typename YVector::non_const_value_type>,
                 "KokkosSparse::spmv: Output Vector must be non-const.");
 
   // Check compatibility of dimensions at run time.
