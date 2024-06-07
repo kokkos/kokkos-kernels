@@ -102,9 +102,9 @@ cusparseDnMatDescr_t make_cusparse_dn_mat_descr_t(ViewType &view) {
 template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
                       const char mode[],
-                      typename YVector::non_const_value_type const &alpha,
+                      typename YVector::const_value_type &alpha,
                       const AMatrix &A, const XVector &x,
-                      typename YVector::non_const_value_type const &beta,
+                      typename YVector::const_value_type &beta,
                       const YVector &y) {
   static_assert(XVector::rank == 2,
                 "should only be instantiated for multivector");
@@ -336,5 +336,204 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::Experimental::half_t, int, int,
 }  // namespace KokkosSparse
 #endif  // defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION)
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+
+// rocSPARSE
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+#include "KokkosSparse_Utils_rocsparse.hpp"
+
+namespace KokkosSparse {
+namespace Impl {
+
+template <class Handle, class AMatrix, class XVector, class YVector>
+void spmv_mv_rocsparse(const Kokkos::HIP &exec, Handle *handle,
+                       const char mode[],
+                       typename YVector::const_value_type &alpha,
+                       const AMatrix &A, const XVector &x,
+                       typename YVector::const_value_type &beta,
+                       const YVector &y) {
+  using offset_type = typename AMatrix::non_const_size_type;
+  using entry_type  = typename AMatrix::non_const_ordinal_type;
+  using value_type  = typename AMatrix::non_const_value_type;
+
+  // initialize rocsparse library
+  rocsparse_handle rocsparseHandle =
+      KokkosKernels::Impl::RocsparseSingleton::singleton().rocsparseHandle;
+  // Set rocsparse to use the given stream until this function exits
+  TemporarySetRocsparseStream tsrs(rocsparseHandle, exec);
+
+  rocsparse_operation rocsparseOperation = mode_kk_to_rocsparse(mode);
+  rocsparse_indextype offset_index_type  = rocsparse_index_type<offset_type>();
+  rocsparse_indextype entry_index_type   = rocsparse_index_type<entry_type>();
+  rocsparse_datatype compute_type        = rocsparse_compute_type<value_type>();
+
+  // Create rocsparse dense multivectors for X and Y
+  void *x_data = static_cast<void *>(
+      const_cast<typename XVector::non_const_value_type *>(x.data()));
+  void *y_data = static_cast<void *>(
+      const_cast<typename YVector::non_const_value_type *>(y.data()));
+
+  size_t x_ld, y_ld;
+  rocsparse_order x_order, y_order;
+  if constexpr (std::is_same_v<typename XVector::array_layout,
+                               Kokkos::LayoutLeft>) {
+    x_ld    = x.stride(1);
+    x_order = rocsparse_order_column;
+  } else {
+    static_assert(
+        std::is_same_v<typename XVector::array_layout, Kokkos::LayoutRight>,
+        "rocsparse_spmm internal logic error: x is neither LayoutLeft nor "
+        "LayoutRight");
+    x_ld    = x.stride(0);
+    x_order = rocsparse_order_row;
+  }
+  if constexpr (std::is_same_v<typename YVector::array_layout,
+                               Kokkos::LayoutLeft>) {
+    y_ld    = y.stride(1);
+    y_order = rocsparse_order_column;
+  } else {
+    static_assert(
+        std::is_same_v<typename YVector::array_layout, Kokkos::LayoutRight>,
+        "rocsparse_spmm internal logic error: y is neither LayoutLeft nor "
+        "LayoutRight");
+    y_ld    = y.stride(0);
+    y_order = rocsparse_order_row;
+  }
+
+  rocsparse_dnmat_descr vecX, vecY;
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_dnmat_descr(
+      &vecX, x.extent(0), x.extent(1), x_ld, x_data,
+      rocsparse_compute_type<typename XVector::non_const_value_type>(),
+      x_order));
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_dnmat_descr(
+      &vecY, y.extent(0), y.extent(1), y_ld, y_data,
+      rocsparse_compute_type<typename YVector::non_const_value_type>(),
+      y_order));
+
+  rocsparse_spmm_alg alg = rocsparse_spmm_alg_default;
+
+  KokkosSparse::Impl::RocSparse_CRS_SpMV_Data *subhandle;
+  if (handle->tpl_rank2) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::RocSparse_CRS_SpMV_Data *>(
+        handle->tpl_rank2);
+    if (!subhandle)
+      throw std::runtime_error(
+          "KokkosSparse::spmv: rank-2 subhandle is not set up for rocsparse "
+          "CRS");
+    subhandle->set_exec_space(exec);
+  } else {
+    subhandle         = new KokkosSparse::Impl::RocSparse_CRS_SpMV_Data(exec);
+    handle->tpl_rank2 = subhandle;
+    // Create the rocsparse csr descr
+    // We need to do some casting to void*
+    // Note that row_map is always a const view so const_cast is necessary,
+    // however entries and values may not be const so we need to check first.
+    void *csr_row_ptr =
+        static_cast<void *>(const_cast<offset_type *>(A.graph.row_map.data()));
+    void *csr_col_ind =
+        static_cast<void *>(const_cast<entry_type *>(A.graph.entries.data()));
+    void *csr_val =
+        static_cast<void *>(const_cast<value_type *>(A.values.data()));
+
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_csr_descr(
+        &subhandle->mat, A.numRows(), A.numCols(), A.nnz(), csr_row_ptr,
+        csr_col_ind, csr_val, offset_index_type, entry_index_type,
+        rocsparse_index_base_zero, compute_type));
+
+    // Size and allocate buffer, and analyze the matrix
+
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmm(
+        rocsparseHandle, rocsparseOperation, rocsparse_operation_none, &alpha,
+        subhandle->mat, vecX, &beta, vecY, compute_type, alg,
+        rocsparse_spmm_stage_buffer_size, &subhandle->bufferSize, nullptr));
+
+    KOKKOS_IMPL_HIP_SAFE_CALL(
+        hipMalloc(&subhandle->buffer, subhandle->bufferSize));
+
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmm(
+        rocsparseHandle, rocsparseOperation, rocsparse_operation_none, &alpha,
+        subhandle->mat, vecX, &beta, vecY, compute_type, alg,
+        rocsparse_spmm_stage_preprocess, &subhandle->bufferSize,
+        subhandle->buffer));
+  }
+
+  // Perform the actual computation
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmm(
+      rocsparseHandle, rocsparseOperation, rocsparse_operation_none, &alpha,
+      subhandle->mat, vecX, &beta, vecY, compute_type, alg,
+      rocsparse_spmm_stage_compute, &subhandle->bufferSize, subhandle->buffer));
+
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnmat_descr(vecY));
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnmat_descr(vecX));
+}
+
+#define KOKKOSSPARSE_SPMV_MV_ROCSPARSE(SCALAR, XL, YL, MEMSPACE)              \
+  template <>                                                                 \
+  struct SPMV_MV<                                                             \
+      Kokkos::HIP,                                                            \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::HIP, MEMSPACE, SCALAR,       \
+                                         rocsparse_int, rocsparse_int>,       \
+      KokkosSparse::CrsMatrix<SCALAR const, rocsparse_int const,              \
+                              Kokkos::Device<Kokkos::HIP, MEMSPACE>,          \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,        \
+                              rocsparse_int const>,                           \
+      Kokkos::View<                                                           \
+          SCALAR const **, XL, Kokkos::Device<Kokkos::HIP, MEMSPACE>,         \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,    \
+      Kokkos::View<SCALAR **, YL, Kokkos::Device<Kokkos::HIP, MEMSPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      false, true> {                                                          \
+    using device_type       = Kokkos::Device<Kokkos::HIP, MEMSPACE>;          \
+    using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;        \
+    using Handle =                                                            \
+        KokkosSparse::Impl::SPMVHandleImpl<Kokkos::HIP, MEMSPACE, SCALAR,     \
+                                           rocsparse_int, rocsparse_int>;     \
+    using AMatrix = CrsMatrix<SCALAR const, rocsparse_int const, device_type, \
+                              memory_trait_type, rocsparse_int const>;        \
+    using XVector = Kokkos::View<                                             \
+        SCALAR const **, XL, device_type,                                     \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;      \
+    using YVector =                                                           \
+        Kokkos::View<SCALAR **, YL, device_type, memory_trait_type>;          \
+                                                                              \
+    using coefficient_type = typename YVector::non_const_value_type;          \
+                                                                              \
+    static void spmv_mv(const Kokkos::HIP &exec, Handle *handle,              \
+                        const char mode[], const coefficient_type &alpha,     \
+                        const AMatrix &A, const XVector &x,                   \
+                        const coefficient_type &beta, const YVector &y) {     \
+      std::string label = "KokkosSparse::spmv_mv[TPL_ROCSPARSE," +            \
+                          Kokkos::ArithTraits<SCALAR>::name() + "]";          \
+      Kokkos::Profiling::pushRegion(label);                                   \
+      spmv_mv_rocsparse(exec, handle, mode, alpha, A, x, beta, y);            \
+      Kokkos::Profiling::popRegion();                                         \
+    }                                                                         \
+  };
+
+#define INST_ROCSPARSE_SCALAR_MEMSPACE(SCALAR, MEMSPACE)        \
+  KOKKOSSPARSE_SPMV_MV_ROCSPARSE(SCALAR, Kokkos::LayoutLeft,    \
+                                 Kokkos::LayoutLeft, MEMSPACE)  \
+  KOKKOSSPARSE_SPMV_MV_ROCSPARSE(SCALAR, Kokkos::LayoutLeft,    \
+                                 Kokkos::LayoutRight, MEMSPACE) \
+  KOKKOSSPARSE_SPMV_MV_ROCSPARSE(SCALAR, Kokkos::LayoutRight,   \
+                                 Kokkos::LayoutLeft, MEMSPACE)  \
+  KOKKOSSPARSE_SPMV_MV_ROCSPARSE(SCALAR, Kokkos::LayoutRight,   \
+                                 Kokkos::LayoutRight, MEMSPACE)
+
+#define INST_ROCSPARSE_SCALAR(SCALAR)                      \
+  INST_ROCSPARSE_SCALAR_MEMSPACE(SCALAR, Kokkos::HIPSpace) \
+  INST_ROCSPARSE_SCALAR_MEMSPACE(SCALAR, Kokkos::HIPManagedSpace)
+
+INST_ROCSPARSE_SCALAR(float)
+INST_ROCSPARSE_SCALAR(double)
+INST_ROCSPARSE_SCALAR(Kokkos::complex<float>)
+INST_ROCSPARSE_SCALAR(Kokkos::complex<double>)
+
+#undef INST_ROCSPARSE_SCALAR_MEMSPACE
+#undef INST_ROCSPARSE_SCALAR
+#undef KOKKOSSPARSE_SPMV_MV_ROCSPARSE
+
+}  // namespace Impl
+}  // namespace KokkosSparse
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 
 #endif  // KOKKOSPARSE_SPMV_MV_TPL_SPEC_DECL_HPP_

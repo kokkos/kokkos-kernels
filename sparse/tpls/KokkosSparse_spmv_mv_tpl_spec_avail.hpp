@@ -155,6 +155,51 @@ KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::Experimental::half_t, int,
 #endif  // defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#define KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, XL, YL,      \
+                                                      MEMSPACE)            \
+  template <>                                                              \
+  struct spmv_mv_tpl_spec_avail<                                           \
+      Kokkos::HIP,                                                         \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::HIP, MEMSPACE, SCALAR,    \
+                                         rocsparse_int, rocsparse_int>,    \
+      KokkosSparse::CrsMatrix<const SCALAR, const rocsparse_int,           \
+                              Kokkos::Device<Kokkos::HIP, MEMSPACE>,       \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,     \
+                              const rocsparse_int>,                        \
+      Kokkos::View<                                                        \
+          const SCALAR**, XL, Kokkos::Device<Kokkos::HIP, MEMSPACE>,       \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>, \
+      Kokkos::View<SCALAR**, YL, Kokkos::Device<Kokkos::HIP, MEMSPACE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {             \
+    enum : bool { value = true };                                          \
+  };
+
+#define AVAIL_ROCSPARSE_SCALAR_MEMSPACE(SCALAR, MEMSPACE)                      \
+  KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, Kokkos::LayoutLeft,    \
+                                                Kokkos::LayoutLeft, MEMSPACE)  \
+  KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, Kokkos::LayoutLeft,    \
+                                                Kokkos::LayoutRight, MEMSPACE) \
+  KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, Kokkos::LayoutRight,   \
+                                                Kokkos::LayoutLeft, MEMSPACE)  \
+  KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, Kokkos::LayoutRight,   \
+                                                Kokkos::LayoutRight, MEMSPACE)
+
+#define AVAIL_ROCSPARSE_SCALAR(SCALAR)                      \
+  AVAIL_ROCSPARSE_SCALAR_MEMSPACE(SCALAR, Kokkos::HIPSpace) \
+  AVAIL_ROCSPARSE_SCALAR_MEMSPACE(SCALAR, Kokkos::HIPManagedSpace)
+
+AVAIL_ROCSPARSE_SCALAR(float)
+AVAIL_ROCSPARSE_SCALAR(double)
+AVAIL_ROCSPARSE_SCALAR(Kokkos::complex<float>)
+AVAIL_ROCSPARSE_SCALAR(Kokkos::complex<double>)
+
+#undef AVAIL_ROCSPARSE_SCALAR_MEMSPACE
+#undef AVAIL_ROCSPARSE_SCALAR
+#undef KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_ROCSPARSE
+
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+
 }  // namespace Impl
 }  // namespace KokkosSparse
 
