@@ -55,7 +55,7 @@ void testTranspose(int numRows, int numCols, bool doValues) {
   using rowmap_t    = typename crsMat_t::row_map_type::non_const_type;
   using entries_t   = typename crsMat_t::index_type::non_const_type;
   using values_t    = typename crsMat_t::values_type::non_const_type;
-  size_type nnz     = (numRows * numCols) ? 0 : 10 * numRows;
+  size_type nnz     = (numRows * numCols > 0) ? 10 * numRows : 0;
   // Generate a matrix that has 0 entries in some rows
   crsMat_t input_mat = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, 3 * 10, numRows / 2);
