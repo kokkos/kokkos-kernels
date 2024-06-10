@@ -250,7 +250,7 @@ void testTransposeBsr(int numRows, int numCols, int blockSize) {
   using values_t    = typename bsrMat_t::values_type::non_const_type;
 
   // Generate a matrix that has 0 entries in some rows
-  size_type nnz = (numRows * numCols) ? 0 : 10 * numRows;
+  size_type nnz = (numRows * numCols > 0) ? 10 * numRows : 0;
   bsrMat_t A    = KokkosSparse::Impl::kk_generate_sparse_matrix<bsrMat_t>(
       blockSize, numRows, numCols, nnz, 3, numRows / 4);
 
