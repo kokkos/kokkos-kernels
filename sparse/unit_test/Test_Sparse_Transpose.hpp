@@ -55,7 +55,7 @@ void testTranspose(int numRows, int numCols, bool doValues) {
   using rowmap_t    = typename crsMat_t::row_map_type::non_const_type;
   using entries_t   = typename crsMat_t::index_type::non_const_type;
   using values_t    = typename crsMat_t::values_type::non_const_type;
-  size_type nnz     = 10 * numRows;
+  size_type nnz     = (numRows * numCols > 0) ? 10 * numRows : 0;
   // Generate a matrix that has 0 entries in some rows
   crsMat_t input_mat = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, 3 * 10, numRows / 2);
@@ -250,7 +250,7 @@ void testTransposeBsr(int numRows, int numCols, int blockSize) {
   using values_t    = typename bsrMat_t::values_type::non_const_type;
 
   // Generate a matrix that has 0 entries in some rows
-  size_type nnz = 10 * numRows;
+  size_type nnz = (numRows * numCols > 0) ? 10 * numRows : 0;
   bsrMat_t A    = KokkosSparse::Impl::kk_generate_sparse_matrix<bsrMat_t>(
       blockSize, numRows, numCols, nnz, 3, numRows / 4);
 
@@ -294,6 +294,9 @@ void testTransposeBsr(int numRows, int numCols, int blockSize) {
 
 TEST_F(TestCategory, sparse_transpose_matrix) {
   // Test both matrix and graph transpose with various sizes
+  testTranspose<TestDevice>(0, 0, true);
+  testTranspose<TestDevice>(100, 0, true);
+  testTranspose<TestDevice>(0, 100, true);
   testTranspose<TestDevice>(100, 100, true);
   testTranspose<TestDevice>(500, 50, true);
   testTranspose<TestDevice>(50, 500, true);
@@ -303,6 +306,9 @@ TEST_F(TestCategory, sparse_transpose_matrix) {
 }
 
 TEST_F(TestCategory, sparse_transpose_graph) {
+  testTranspose<TestDevice>(0, 0, false);
+  testTranspose<TestDevice>(100, 0, false);
+  testTranspose<TestDevice>(0, 100, false);
   testTranspose<TestDevice>(100, 100, false);
   testTranspose<TestDevice>(500, 50, false);
   testTranspose<TestDevice>(50, 500, false);
@@ -314,6 +320,9 @@ TEST_F(TestCategory, sparse_transpose_graph) {
 TEST_F(TestCategory, sparse_transpose_bsr_matrix) {
   testTransposeBsrRef<TestDevice>();
   // Test bsrMatrix transpose with various sizes
+  testTransposeBsr<TestDevice>(0, 0, 5);
+  testTransposeBsr<TestDevice>(100, 0, 5);
+  testTransposeBsr<TestDevice>(0, 100, 5);
   testTransposeBsr<TestDevice>(100, 100, 3);
   testTransposeBsr<TestDevice>(500, 50, 5);
   testTransposeBsr<TestDevice>(50, 500, 16);
