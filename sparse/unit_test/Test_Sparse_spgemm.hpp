@@ -69,7 +69,10 @@ void randomize_matrix_values(const Values &v) {
   ScalarType randStart, randEnd;
   KokkosKernels::Impl::getRandomBounds(50.0, randStart, randEnd);
   Kokkos::Random_XorShift64_Pool<typename Values::execution_space> pool(13718);
-  Kokkos::fill_random(v, pool, randStart, randEnd);
+  // Instead of sampling from [-50, 50] or [-50-50i, 50+50i],
+  // sample from [1, 50] or [1+i, 50+50i]. That way relative
+  // error between values can't become large if values happen to sum close to 0.
+  Kokkos::fill_random(v, pool, randEnd / 50.0, randEnd);
 }
 
 template <typename crsMat_t>
@@ -254,6 +257,8 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
       m, k, nnz, row_size_variance, bandwidth);
   crsMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       k, n, nnz, row_size_variance, bandwidth);
+  randomize_matrix_values(A.values);
+  randomize_matrix_values(B.values);
 
   KokkosSparse::sort_crs_matrix(A);
   KokkosSparse::sort_crs_matrix(B);
