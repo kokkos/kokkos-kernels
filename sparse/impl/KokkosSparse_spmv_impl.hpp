@@ -32,8 +32,6 @@
 namespace KokkosSparse {
 namespace Impl {
 
-constexpr const char* KOKKOSSPARSE_ALG_NATIVE_MERGE = "native-merge";
-
 // This TransposeFunctor is functional, but not necessarily performant.
 template <class execution_space, class AMatrix, class XVector, class YVector,
           bool conjugate>
@@ -609,7 +607,8 @@ static void spmv_beta(const execution_space& exec, Handle* handle,
                       typename YVector::const_value_type& beta,
                       const YVector& y) {
   if (mode[0] == NoTranspose[0]) {
-    if (handle->algo == SPMV_MERGE_PATH) {
+    if (handle->algo == SPMV_MERGE_PATH ||
+        handle->algo == SPMV_NATIVE_MERGE_PATH) {
       SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
           exec, mode, alpha, A, x, beta, y);
     } else {
@@ -617,7 +616,8 @@ static void spmv_beta(const execution_space& exec, Handle* handle,
                              dobeta, false>(exec, handle, alpha, A, x, beta, y);
     }
   } else if (mode[0] == Conjugate[0]) {
-    if (handle->algo == SPMV_MERGE_PATH) {
+    if (handle->algo == SPMV_MERGE_PATH ||
+        handle->algo == SPMV_NATIVE_MERGE_PATH) {
       SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
           exec, mode, alpha, A, x, beta, y);
     } else {
