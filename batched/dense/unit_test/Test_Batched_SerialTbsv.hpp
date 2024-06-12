@@ -63,10 +63,8 @@ struct Functor_BatchedSerialTrsv {
     std::string name_region("KokkosBatched::Test::SerialTrsv");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
-    Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _b.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
-    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -121,11 +119,11 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   View3DType Ab("Ab", N, k + 1, BlkSize);                 // Banded matrix
   View2DType x0("x0", N, BlkSize), x1("x1", N, BlkSize);  // Solutions
 
-  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
-  Kokkos::fill_random(Ref, random, ScalarType(1.0));
-  Kokkos::fill_random(x0, random, ScalarType(1.0));
-
-  Kokkos::fence();
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
+  ScalarType randStart, randEnd;
+  Test::getRandomBounds(1.0, randStart, randEnd);
+  Kokkos::fill_random(Ref, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(x0, rand_pool, randStart, randEnd);
 
   Kokkos::deep_copy(x1, x0);
 
@@ -146,6 +144,8 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   Functor_BatchedSerialTbsv<DeviceType, View3DType, View2DType, ParamTagType,
                             AlgoTagType>(Ab, x1, k)
       .run();
+
+  Kokkos::fence();
 
   // this eps is about 10^-14
   using ats      = typename Kokkos::ArithTraits<ScalarType>;
@@ -286,6 +286,8 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
   Functor_BatchedSerialTbsv<DeviceType, View3DType, StridedView2DType,
                             ParamTagType, AlgoTagType>(Ab, x1, k)
       .run();
+
+  Kokkos::fence();
 
   // this eps is about 10^-14
   using ats      = typename Kokkos::ArithTraits<ScalarType>;
