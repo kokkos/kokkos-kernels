@@ -191,20 +191,18 @@ spmv(const ExecutionSpace& space,
   // Default to fast setup, since this handle can't be reused
   SPMVAlgorithm algo = SPMV_FAST_SETUP;
   // Translate the Controls algorithm selection to the SPMVHandle algorithm.
-  // This maintains the old behavior, where any manually set name that isn't
-  // "tpl" gives native.
-  //
-  // This also uses the behavior set by #2021: "merge" was a hint to use
-  // cuSPARSE merge path, but that path is gone so just use the normal TPL.
-  // "merge-path" means to use the KK merge-path implementation.
   //
   // And also support the 3 different BSR algorithms by their old names.
   if (controls.isParameter("algorithm")) {
     std::string algoName = controls.getParameter("algorithm");
-    if (algoName == "merge" || algoName == "tpl")
+    if (algoName == "tpl")
       algo = SPMV_FAST_SETUP;
-    else if (algoName == "native-merge")
+    else if (algoName == "native")
+      algo = SPMV_NATIVE;
+    else if (algoName == "merge")
       algo = SPMV_MERGE_PATH;
+    else if (algoName == "native-merge")
+      algo = SPMV_NATIVE_MERGE_PATH;
     else if (algoName == "v4.1")
       algo = SPMV_BSR_V41;
     else if (algoName == "v4.2")
