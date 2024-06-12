@@ -35,7 +35,7 @@ template <typename AlgoType>
 struct SerialTbsvInternalLower {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
-                                           const int an, const int xm,
+                                           const int an,
                                            const ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT x,
@@ -46,8 +46,8 @@ template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTbsvInternalLower<Algo::Tbsv::Unblocked>::invoke(
-    const bool use_unit_diag, const int an, const int xn,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const bool use_unit_diag, const int an, const ValueType *KOKKOS_RESTRICT A,
+    const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -76,17 +76,19 @@ SerialTbsvInternalLower<Algo::Tbsv::Unblocked>::invoke(
 template <typename AlgoType>
 struct SerialTbsvInternalLowerTranspose {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const bool use_unit_diag, const bool do_conj, const int an, const int xm,
-      const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-      /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k);
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
+                                           const bool do_conj, const int an,
+                                           const ValueType *KOKKOS_RESTRICT A,
+                                           const int as0, const int as1,
+                                           /**/ ValueType *KOKKOS_RESTRICT x,
+                                           const int xs0, const int k);
 };
 
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTbsvInternalLowerTranspose<Algo::Tbsv::Unblocked>::invoke(
-    const bool use_unit_diag, const bool do_conj, const int an, const int xn,
+    const bool use_unit_diag, const bool do_conj, const int an,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -129,7 +131,7 @@ template <typename AlgoType>
 struct SerialTbsvInternalUpper {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
-                                           const int an, const int xm,
+                                           const int an,
                                            const ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT x,
@@ -140,8 +142,8 @@ template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTbsvInternalUpper<Algo::Tbsv::Unblocked>::invoke(
-    const bool use_unit_diag, const int an, const int xn,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const bool use_unit_diag, const int an, const ValueType *KOKKOS_RESTRICT A,
+    const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -170,17 +172,19 @@ SerialTbsvInternalUpper<Algo::Tbsv::Unblocked>::invoke(
 template <typename AlgoType>
 struct SerialTbsvInternalUpperTranspose {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const bool use_unit_diag, const bool do_conj, const int an, const int xm,
-      const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-      /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k);
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
+                                           const bool do_conj, const int an,
+                                           const ValueType *KOKKOS_RESTRICT A,
+                                           const int as0, const int as1,
+                                           /**/ ValueType *KOKKOS_RESTRICT x,
+                                           const int xs0, const int k);
 };
 
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTbsvInternalUpperTranspose<Algo::Tbsv::Unblocked>::invoke(
-    const bool use_unit_diag, const bool do_conj, const int an, const int xn,
+    const bool use_unit_diag, const bool do_conj, const int an,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
