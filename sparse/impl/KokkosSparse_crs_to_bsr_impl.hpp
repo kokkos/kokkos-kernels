@@ -99,6 +99,7 @@ template <typename Bsr, typename Crs>
 Bsr blocked_crs_to_bsr(const Crs &crs, size_t blockSize) {
   using bsr_value_type   = typename Bsr::value_type;
   using bsr_ordinal_type = typename Bsr::ordinal_type;
+  using crs_size_type    = typename Crs::non_const_size_type;
 
   // copy matrix data to host
   auto hRowMap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
@@ -119,7 +120,7 @@ Bsr blocked_crs_to_bsr(const Crs &crs, size_t blockSize) {
 
   for (bsr_ordinal_type row = 0; row < bsr_ordinal_type(hRowMap.size()) - 1;
        ++row) {
-    for (size_t ci = hRowMap(row); ci < hRowMap(row + 1); ++ci) {
+    for (crs_size_type ci = hRowMap(row); ci < hRowMap(row + 1); ++ci) {
       bsr_ordinal_type col = hColInds(ci);
       bsr_value_type val   = hVals(ci);
 
