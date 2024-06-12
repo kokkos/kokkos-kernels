@@ -395,7 +395,7 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
   // Default to using the "stream" algorithm which has almost no setup cost,
   // and performs well for reasonably balanced matrices
   rocsparse_spmv_alg alg = rocsparse_spmv_alg_csr_stream;
-  if(handle->get_algorithm() == SPMV_MERGE_PATH) {
+  if (handle->get_algorithm() == SPMV_MERGE_PATH) {
     // Only use the "adaptive" algorithm if the user has indicated that the
     // matrix is very imbalanced, by asking for merge path. This algorithm
     // has fairly expensive setup
