@@ -113,8 +113,8 @@ struct SptrsvTest {
   };
 
   static void run_test_sptrsv() {
-    scalar_t ZERO = scalar_t(0);
-    scalar_t ONE  = scalar_t(1);
+    const scalar_t ZERO = Kokkos::ArithTraits<scalar_t>::zero();
+    const scalar_t ONE  = Kokkos::ArithTraits<scalar_t>::one();
 
     const size_type nrows = 5;
     const size_type nnz   = 10;
@@ -233,27 +233,48 @@ struct SptrsvTest {
       }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      if (std::is_same<size_type, int>::value &&
-          std::is_same<lno_t, int>::value &&
-          std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
-        Kokkos::deep_copy(lhs, ZERO);
-        KernelHandle kh;
-        bool is_lower_tri = false;
-        kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
-                                is_lower_tri);
+      if (std::is_same_v<size_type, int> && std::is_same_v<lno_t, int> &&
+          std::is_same_v<typename device::execution_space, Kokkos::Cuda>) {
+        {
+          Kokkos::deep_copy(lhs, ZERO);
+          KernelHandle kh;
+          bool is_lower_tri = false;
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
+                                  is_lower_tri);
 
-        sptrsv_symbolic(&kh, row_map, entries, values);
-        Kokkos::fence();
+          sptrsv_symbolic(&kh, row_map, entries, values);
+          Kokkos::fence();
 
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
+          sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+          Kokkos::fence();
 
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
+          scalar_t sum = 0.0;
+          Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
+                                  ReductionCheck(lhs), sum);
+          EXPECT_EQ(sum, lhs.extent(0));
 
-        kh.destroy_sptrsv_handle();
+          kh.destroy_sptrsv_handle();
+        }
+        {
+          Kokkos::deep_copy(lhs, ZERO);
+          KernelHandle kh;
+          bool is_lower_tri = false;
+          kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows,
+                                  is_lower_tri);
+
+          sptrsv_symbolic(&kh, row_map, entries, values);
+          Kokkos::fence();
+
+          sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+          Kokkos::fence();
+
+          scalar_t sum = 0.0;
+          Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
+                                  ReductionCheck(lhs), sum);
+          EXPECT_EQ(sum, lhs.extent(0));
+
+          kh.destroy_sptrsv_handle();
+        }
       }
 #endif
 
@@ -457,9 +478,8 @@ struct SptrsvTest {
       }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      if (std::is_same<size_type, int>::value &&
-          std::is_same<lno_t, int>::value &&
-          std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+      if (std::is_same_v<size_type, int> && std::is_same_v<lno_t, int> &&
+          std::is_same_v<typename device::execution_space, Kokkos::Cuda>) {
         Kokkos::deep_copy(lhs, ZERO);
         KernelHandle kh;
         bool is_lower_tri = true;
@@ -634,7 +654,7 @@ struct SptrsvTest {
     // not enough resource to partition
     bool run_streams_test = true;
 #ifdef KOKKOS_ENABLE_OPENMP
-    if (std::is_same<typename device::execution_space, Kokkos::OpenMP>::value) {
+    if (std::is_same_v<typename device::execution_space, Kokkos::OpenMP>) {
       int exec_concurrency = execution_space().concurrency();
       if (exec_concurrency < nstreams) {
         run_streams_test = false;
@@ -834,8 +854,8 @@ void test_sptrsv_streams() {
   TestStruct::run_test_sptrsv_streams(1, 4);
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-  if (std::is_same<lno_t, int>::value &&
-      std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+  if (std::is_same_v<size_type, int> && std::is_same_v<lno_t, int> &&
+      std::is_same_v<typename device::execution_space, Kokkos::Cuda>) {
     TestStruct::run_test_sptrsv_streams(2, 1);
     TestStruct::run_test_sptrsv_streams(2, 2);
     TestStruct::run_test_sptrsv_streams(2, 3);
@@ -844,11 +864,15 @@ void test_sptrsv_streams() {
 #endif
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \
-  TEST_F(TestCategory,                                                     \
-         sparse##_##sptrsv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_sptrsv<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
-    test_sptrsv_streams<SCALAR, ORDINAL, OFFSET, DEVICE>();                \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)             \
+  TEST_F(TestCategory,                                                          \
+         sparse##_##sptrsv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {      \
+    test_sptrsv<SCALAR, ORDINAL, OFFSET, DEVICE>();                             \
+  }                                                                             \
+  TEST_F(                                                                       \
+      TestCategory,                                                             \
+      sparse##_##sptrsv_streams##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_sptrsv_streams<SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
