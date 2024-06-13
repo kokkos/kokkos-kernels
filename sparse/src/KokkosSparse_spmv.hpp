@@ -247,13 +247,6 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
   YVector_Internal y_i(y);
 
   bool useNative = is_spmv_algorithm_native(handle->get_algorithm());
-  // Also use the native algorithm if SPMV_FAST_SETUP was selected and
-  // rocSPARSE is the possible TPL to use. Native is faster in this case.
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-  if (handle->get_algorithm() == SPMV_FAST_SETUP &&
-      std::is_same_v<ExecutionSpace, Kokkos::HIP>)
-    useNative = true;
-#endif
 
   // Now call the proper implementation depending on isBSR and the rank of X/Y
   if constexpr (!isBSR) {
