@@ -837,10 +837,11 @@ class KokkosKernelsHandle {
   SPTRSVHandleType *get_sptrsv_handle() { return this->sptrsvHandle; }
 
   void create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm,
-                            size_type nrows, bool lower_tri) {
+                            size_type nrows, bool lower_tri,
+                            size_type block_size = 0) {
     this->destroy_sptrsv_handle();
     this->is_owner_of_the_sptrsv_handle = true;
-    this->sptrsvHandle = new SPTRSVHandleType(algm, nrows, lower_tri);
+    this->sptrsvHandle = new SPTRSVHandleType(algm, nrows, lower_tri, block_size);
     //    this->sptrsvHandle->init_handle(nrows);
     this->sptrsvHandle->set_team_size(this->team_work_size);
     this->sptrsvHandle->set_vector_size(this->vector_size);

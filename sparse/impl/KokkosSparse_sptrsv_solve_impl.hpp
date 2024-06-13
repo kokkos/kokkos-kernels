@@ -52,6 +52,25 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
+template <class TriSolveHandle>
+struct SptrsvWrap {
+
+  //
+  // Useful types
+  //
+  using execution_space        = typename TriSolveHandle::execution_space;
+  using memory_space           = typename TriSolveHandle::memory_space;
+  using lno_t                  = typename TriSolveHandle::nnz_lno_t;
+  using size_type              = typename TriSolveHandle::size_type;
+  using scalar_t               = typename TriSolveHandle::scalar_t;
+  using row_map_t              = typename TriSolveHandle::nnz_row_view_t;
+  using entries_t              = typename TriSolveHandle::nnz_lno_view_t;
+  using values_t               = typename TriSolveHandle::nnz_scalar_view_t;
+  using karith                 = typename Kokkos::ArithTraits<scalar_t>;
+  using team_policy            = typename TriSolveHandle::TeamPolicy;
+  using member_type            = typename team_policy::member_type;
+  using range_policy           = typename TriSolveHandle::RangePolicy;
+
 #if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION && \
     defined(KOKKOSKERNELS_ENABLE_EXP_CUDAGRAPH)
 #define KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
@@ -64,7 +83,7 @@ struct LargerCutoffTag {};
 struct UnsortedLargerCutoffTag {};
 
 template <class ViewType>
-void print_view1d_solve(const ViewType dv, size_t range = 0) {
+static void print_view1d_solve(const ViewType dv, size_t range = 0) {
   auto v = Kokkos::create_mirror_view(dv);
   Kokkos::deep_copy(v, dv);
   std::cout << "Output for view " << v.label() << std::endl;
@@ -662,7 +681,7 @@ struct LowerTriLvlSchedTP2SolverFunctor {
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 // -----------------------------------------------------------
 // Helper functors for Lower-triangular solve with SpMV
-template <class TriSolveHandle, class LHSType, class NGBLType>
+template <class LHSType, class NGBLType>
 struct SparseTriSupernodalSpMVFunctor {
   using execution_space = typename TriSolveHandle::HandleExecSpace;
   using memory_space    = typename TriSolveHandle::HandleTempMemorySpace;
@@ -743,7 +762,7 @@ struct SparseTriSupernodalSpMVFunctor {
 
 // -----------------------------------------------------------
 // Functor for Lower-triangular solve
-template <class TriSolveHandle, class ColptrView, class RowindType,
+template <class ColptrView, class RowindType,
           class ValuesType, class LHSType, class NGBLType>
 struct LowerTriSupernodalFunctor {
   using execution_space = typename TriSolveHandle::HandleExecSpace;
@@ -950,7 +969,7 @@ struct LowerTriSupernodalFunctor {
 
 // -----------------------------------------------------------
 // Functor for Upper-triangular solve in CSR
-template <class TriSolveHandle, class ColptrType, class RowindType,
+template <class ColptrType, class RowindType,
           class ValuesType, class LHSType, class NGBLType>
 struct UpperTriSupernodalFunctor {
   using execution_space = typename TriSolveHandle::HandleExecSpace;
@@ -1120,7 +1139,7 @@ struct UpperTriSupernodalFunctor {
 
 // -----------------------------------------------------------
 // Functor for Upper-triangular solve in CSC
-template <class TriSolveHandle, class ColptrType, class RowindType,
+template <class ColptrType, class RowindType,
           class ValuesType, class LHSType, class NGBLType>
 struct UpperTriTranSupernodalFunctor {
   using execution_space = typename TriSolveHandle::HandleExecSpace;
@@ -2746,9 +2765,9 @@ struct ReturnRangePolicyType<Kokkos::HIP> {
 };
 #endif
 
-template <class TriSolveHandle, class RowMapType, class EntriesType,
+template <class RowMapType, class EntriesType,
           class ValuesType, class RHSType, class LHSType>
-void lower_tri_solve_cg(TriSolveHandle &thandle, const RowMapType row_map,
+static void lower_tri_solve_cg(TriSolveHandle &thandle, const RowMapType row_map,
                         const EntriesType entries, const ValuesType values,
                         const RHSType &rhs, LHSType &lhs) {
   typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
@@ -2817,9 +2836,9 @@ void lower_tri_solve_cg(TriSolveHandle &thandle, const RowMapType row_map,
   Kokkos::fence();
 }  // end lower_tri_solve_cg
 
-template <class TriSolveHandle, class RowMapType, class EntriesType,
+template <class RowMapType, class EntriesType,
           class ValuesType, class RHSType, class LHSType>
-void upper_tri_solve_cg(TriSolveHandle &thandle, const RowMapType row_map,
+static void upper_tri_solve_cg(TriSolveHandle &thandle, const RowMapType row_map,
                         const EntriesType entries, const ValuesType values,
                         const RHSType &rhs, LHSType &lhs) {
   typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
@@ -2889,9 +2908,9 @@ void upper_tri_solve_cg(TriSolveHandle &thandle, const RowMapType row_map,
 
 #endif
 
-template <class ExecutionSpace, class TriSolveHandle, class RowMapType,
+template <class ExecutionSpace, class RowMapType,
           class EntriesType, class ValuesType, class RHSType, class LHSType>
-void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
+static void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
                      const RowMapType row_map, const EntriesType entries,
                      const ValuesType values, const RHSType &rhs,
                      LHSType &lhs) {
@@ -3084,7 +3103,7 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
             if (invert_diagonal && !invert_offdiagonal) {
               // copy diagonals to workspaces
               const int *work_offset_data = work_offset.data();
-              SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+              SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                   sptrsv_init_functor(-2, node_count, nodes_grouped_by_level,
                                       supercols, work_offset_data, lhs, work);
               Kokkos::parallel_for(
@@ -3175,7 +3194,7 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
             if (invert_offdiagonal) {
               // copy diagonals from workspaces
               const int *work_offset_data = work_offset.data();
-              SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+              SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                   sptrsv_init_functor(-1, node_count, nodes_grouped_by_level,
                                       supercols, work_offset_data, lhs, work);
               Kokkos::parallel_for(
@@ -3188,7 +3207,7 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
           }
 
           // launching sparse-triangular solve functor
-          LowerTriSupernodalFunctor<TriSolveHandle, RowMapType, EntriesType,
+          LowerTriSupernodalFunctor<RowMapType, EntriesType,
                                     ValuesType, LHSType, NGBLType>
               sptrsv_functor(unit_diagonal, invert_diagonal, invert_offdiagonal,
                              supercols, row_map, entries, values, lvl,
@@ -3231,7 +3250,7 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
             auto digmat = thandle.get_diagblock(lvl);
             KokkosSparse::spmv(space, tran, one, digmat, lhs, one, work);
             // copy from work to lhs corresponding to diagonal blocks
-            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                 sptrsv_init_functor(-1, node_count, nodes_grouped_by_level,
                                     supercols, supercols, lhs, work);
             Kokkos::parallel_for(
@@ -3243,7 +3262,7 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
           } else {
             // copy lhs corresponding to diagonal blocks to work and zero out in
             // lhs
-            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                 sptrsv_init_functor(1, node_count, nodes_grouped_by_level,
                                     supercols, supercols, lhs, work);
             Kokkos::parallel_for(
@@ -3259,7 +3278,7 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
           KokkosSparse::spmv(space, tran, one, submat, work, one, lhs);
 
           // reinitialize workspace
-          SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+          SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
               sptrsv_finalize_functor(0, node_count, nodes_grouped_by_level,
                                       supercols, supercols, lhs, work);
           Kokkos::parallel_for(
@@ -3300,9 +3319,9 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
 
 }  // end lower_tri_solve
 
-template <class ExecutionSpace, class TriSolveHandle, class RowMapType,
+template <class ExecutionSpace, class RowMapType,
           class EntriesType, class ValuesType, class RHSType, class LHSType>
-void upper_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
+static void upper_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
                      const RowMapType row_map, const EntriesType entries,
                      const ValuesType values, const RHSType &rhs,
                      LHSType &lhs) {
@@ -3492,7 +3511,7 @@ tstf); } // end elseif
             if (invert_diagonal && !invert_offdiagonal) {
               // copy diagonals to workspaces
               const int *work_offset_data = work_offset.data();
-              SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+              SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                   sptrsv_init_functor(-2, node_count, nodes_grouped_by_level,
                                       supercols, work_offset_data, lhs, work);
               Kokkos::parallel_for(
@@ -3586,7 +3605,7 @@ tstf); } // end elseif
             if (invert_offdiagonal) {
               // copy diagonals from workspaces
               const int *work_offset_data = work_offset.data();
-              SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+              SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                   sptrsv_init_functor(-1, node_count, nodes_grouped_by_level,
                                       supercols, work_offset_data, lhs, work);
               Kokkos::parallel_for(
@@ -3599,7 +3618,7 @@ tstf); } // end elseif
           }
 
           // launching sparse-triangular solve functor
-          UpperTriTranSupernodalFunctor<TriSolveHandle, RowMapType, EntriesType,
+          UpperTriTranSupernodalFunctor<RowMapType, EntriesType,
                                         ValuesType, LHSType, NGBLType>
               sptrsv_functor(invert_diagonal, invert_offdiagonal, supercols,
                              row_map, entries, values, lvl, kernel_type,
@@ -3615,7 +3634,7 @@ tstf); } // end elseif
               sptrsv_functor);
         } else {  // U stored in CSR
           // launching sparse-triangular solve functor
-          UpperTriSupernodalFunctor<TriSolveHandle, RowMapType, EntriesType,
+          UpperTriSupernodalFunctor<RowMapType, EntriesType,
                                     ValuesType, LHSType, NGBLType>
               sptrsv_functor(invert_diagonal, supercols, row_map, entries,
                              values, lvl, kernel_type, diag_kernel_type, lhs,
@@ -3704,7 +3723,7 @@ tstf); } // end elseif
             if (invert_diagonal) {
               // copy diagonals from workspaces
               const int *work_offset_data = work_offset.data();
-              SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+              SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                   sptrsv_init_functor(-1, node_count, nodes_grouped_by_level,
                                       supercols, work_offset_data, lhs, work);
               Kokkos::parallel_for(
@@ -3746,7 +3765,7 @@ tstf); } // end elseif
             auto digmat = thandle.get_diagblock(lvl);
             KokkosSparse::spmv(space, tran, one, digmat, lhs, one, work);
             // copy from work to lhs corresponding to diagonal blocks
-            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                 sptrsv_init_functor(-1, node_count, nodes_grouped_by_level,
                                     supercols, supercols, lhs, work);
             Kokkos::parallel_for(
@@ -3758,7 +3777,7 @@ tstf); } // end elseif
           } else {
             // zero out lhs corresponding to diagonal blocks in lhs, and copy to
             // work
-            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                 sptrsv_init_functor(1, node_count, nodes_grouped_by_level,
                                     supercols, supercols, lhs, work);
             Kokkos::parallel_for(
@@ -3776,7 +3795,7 @@ tstf); } // end elseif
           if (!invert_offdiagonal) {
             // zero out lhs corresponding to diagonal blocks in lhs, and copy to
             // work
-            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
                 sptrsv_init_functor(1, node_count, nodes_grouped_by_level,
                                     supercols, supercols, lhs, work);
             Kokkos::parallel_for(
@@ -3799,7 +3818,7 @@ tstf); } // end elseif
           }
         }
         // reinitialize workspace
-        SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+        SparseTriSupernodalSpMVFunctor<LHSType, NGBLType>
             sptrsv_finalize_functor(0, node_count, nodes_grouped_by_level,
                                     supercols, supercols, lhs, work);
         Kokkos::parallel_for(
@@ -3837,9 +3856,9 @@ tstf); } // end elseif
 
 }  // end upper_tri_solve
 
-template <class ExecutionSpace, class TriSolveHandle, class RowMapType,
+template <class ExecutionSpace, class RowMapType,
           class EntriesType, class ValuesType, class RHSType, class LHSType>
-void tri_solve_chain(ExecutionSpace &space, TriSolveHandle &thandle,
+static void tri_solve_chain(ExecutionSpace &space, TriSolveHandle &thandle,
                      const RowMapType row_map, const EntriesType entries,
                      const ValuesType values, const RHSType &rhs, LHSType &lhs,
                      const bool /*is_lowertri_*/) {
@@ -4122,9 +4141,9 @@ void tri_solve_chain(ExecutionSpace &space, TriSolveHandle &thandle,
 // Stream interfaces
 // --------------------------------
 
-template <class ExecutionSpace, class TriSolveHandle, class RowMapType,
+template <class ExecutionSpace, class RowMapType,
           class EntriesType, class ValuesType, class RHSType, class LHSType>
-void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
+static void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
                              const std::vector<TriSolveHandle *> &thandle_v,
                              const std::vector<RowMapType> &row_map_v,
                              const std::vector<EntriesType> &entries_v,
@@ -4208,9 +4227,9 @@ void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
   }        // end for lvl
 }  // end lower_tri_solve_streams
 
-template <class ExecutionSpace, class TriSolveHandle, class RowMapType,
+template <class ExecutionSpace, class RowMapType,
           class EntriesType, class ValuesType, class RHSType, class LHSType>
-void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
+static void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
                              const std::vector<TriSolveHandle *> &thandle_v,
                              const std::vector<RowMapType> &row_map_v,
                              const std::vector<EntriesType> &entries_v,
@@ -4293,6 +4312,8 @@ void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
     }      // end for streams
   }        // end for lvl
 }  // end upper_tri_solve_streams
+
+}; // struct SptrsvWrap
 
 }  // namespace Experimental
 }  // namespace Impl
