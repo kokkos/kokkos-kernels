@@ -2679,7 +2679,6 @@ struct SptrsvWrap {
     using namespace KokkosSparse::Experimental;
     using device_t            = Kokkos::Device<execution_space, temp_mem_space>;
     using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
-    using scalar_t            = typename ValuesType::non_const_value_type;
     using row_map_host_view_t = Kokkos::View<size_type *, Kokkos::HostSpace>;
 
     row_map_host_view_t row_map_host;
@@ -3080,7 +3079,6 @@ struct SptrsvWrap {
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     using namespace KokkosSparse::Experimental;
     using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
-    using scalar_t            = typename ValuesType::non_const_value_type;
     using row_map_host_view_t = Kokkos::View<size_type *, Kokkos::HostSpace>;
 
     row_map_host_view_t row_map_host;
