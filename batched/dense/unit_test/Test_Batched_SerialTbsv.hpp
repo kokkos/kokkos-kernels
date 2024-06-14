@@ -20,7 +20,7 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Tbsv.hpp"
-#include "Test_Utils.hpp"
+#include "Test_Batched_DenseUtils.hpp"
 
 using namespace KokkosBatched;
 
@@ -60,7 +60,7 @@ struct Functor_BatchedSerialTrsv {
 
   inline void run() {
     using value_type = typename AViewType::non_const_value_type;
-    std::string name_region("KokkosBatched::Test::SerialTrsv");
+    std::string name_region("KokkosBatched::Test::SerialTbsv");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _b.extent(0));
@@ -153,7 +153,13 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   mag_type eps   = 1.0e3 * ats::epsilon();
 
   // Check x0 = x1
-  EXPECT_TRUE(allclose<execution_space>(x1, x0, 1.e-5, eps));
+  auto h_x0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x0);
+  auto h_x1 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x1);
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < BlkSize; j++) {
+      EXPECT_NEAR_KK(h_x0(i, j), h_x1(i, j), eps);
+    }
+  }
 }
 
 template <typename DeviceType, typename ScalarType, typename LayoutType,
@@ -177,7 +183,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
 
   // Testing incx argument with strided Views
   Kokkos::LayoutStride layout{N, incx, BlkSize, N * incx};
-  StridedView2DType x1("x1", layout), x1_ref("x1_ref", layout);  // Solutions
+  StridedView2DType x1("x1", layout);  // Solutions
 
   Kokkos::RangePolicy<execution_space> policy(0, N);
   Kokkos::parallel_for(
@@ -188,9 +194,9 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
             ref(ib, i, j) = i + 1;
           }
         }
-        for (std::size_t n = 0; n < BlkSize; n++) {
-          x0(ib, n) = 1;
-          x1(ib, n) = 1;
+        for (std::size_t j = 0; j < BlkSize; j++) {
+          x0(ib, j) = 1;
+          x1(ib, j) = 1;
         }
 
         if (std::is_same_v<typename ParamTagType::uplo,
@@ -198,70 +204,46 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
           if (std::is_same_v<typename ParamTagType::trans,
                              Trans::NoTranspose>) {
             if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
-              x_ref(ib, 0)  = 1.0 / 2.0;
-              x_ref(ib, 1)  = 1.0 / 6.0;
-              x_ref(ib, 2)  = 1.0 / 3.0;
-              x1_ref(ib, 0) = 1.0 / 2.0;
-              x1_ref(ib, 1) = 1.0 / 6.0;
-              x1_ref(ib, 2) = 1.0 / 3.0;
+              x_ref(ib, 0) = 1.0 / 2.0;
+              x_ref(ib, 1) = 1.0 / 6.0;
+              x_ref(ib, 2) = 1.0 / 3.0;
             } else {
-              x_ref(ib, 0)  = 1.0;
-              x_ref(ib, 1)  = -1.0;
-              x_ref(ib, 2)  = 1.0;
-              x1_ref(ib, 0) = 1.0;
-              x1_ref(ib, 1) = -1.0;
-              x1_ref(ib, 2) = 1.0;
+              x_ref(ib, 0) = 1.0;
+              x_ref(ib, 1) = -1.0;
+              x_ref(ib, 2) = 1.0;
             }
           } else {
             if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
-              x_ref(ib, 0)  = 1.0;
-              x_ref(ib, 1)  = 0.0;
-              x_ref(ib, 2)  = 0.0;
-              x1_ref(ib, 0) = 1.0;
-              x1_ref(ib, 1) = 0.0;
-              x1_ref(ib, 2) = 0.0;
+              x_ref(ib, 0) = 1.0;
+              x_ref(ib, 1) = 0.0;
+              x_ref(ib, 2) = 0.0;
             } else {
-              x_ref(ib, 0)  = 1.0;
-              x_ref(ib, 1)  = 0.0;
-              x_ref(ib, 2)  = 0.0;
-              x1_ref(ib, 0) = 1.0;
-              x1_ref(ib, 1) = 0.0;
-              x1_ref(ib, 2) = 0.0;
+              x_ref(ib, 0) = 1.0;
+              x_ref(ib, 1) = 0.0;
+              x_ref(ib, 2) = 0.0;
             }
           }
         } else {
           if (std::is_same_v<typename ParamTagType::trans,
                              Trans::NoTranspose>) {
             if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
-              x_ref(ib, 0)  = 1.0;
-              x_ref(ib, 1)  = -1.0 / 2.0;
-              x_ref(ib, 2)  = -1.0 / 6.0;
-              x1_ref(ib, 0) = 1.0;
-              x1_ref(ib, 1) = -1.0 / 2.0;
-              x1_ref(ib, 2) = -1.0 / 6.0;
+              x_ref(ib, 0) = 1.0;
+              x_ref(ib, 1) = -1.0 / 2.0;
+              x_ref(ib, 2) = -1.0 / 6.0;
             } else {
-              x_ref(ib, 0)  = 1.0;
-              x_ref(ib, 1)  = -1.0;
-              x_ref(ib, 2)  = 1.0;
-              x1_ref(ib, 0) = 1.0;
-              x1_ref(ib, 1) = -1.0;
-              x1_ref(ib, 2) = 1.0;
+              x_ref(ib, 0) = 1.0;
+              x_ref(ib, 1) = -1.0;
+              x_ref(ib, 2) = 1.0;
             }
           } else {
             if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
-              x_ref(ib, 0)  = 0.0;
-              x_ref(ib, 1)  = 0.0;
-              x_ref(ib, 2)  = 1.0 / 3.0;
-              x1_ref(ib, 0) = 0.0;
-              x1_ref(ib, 1) = 0.0;
-              x1_ref(ib, 2) = 1.0 / 3.0;
+              x_ref(ib, 0) = 0.0;
+              x_ref(ib, 1) = 0.0;
+              x_ref(ib, 2) = 1.0 / 3.0;
             } else {
-              x_ref(ib, 0)  = 2.0;
-              x_ref(ib, 1)  = -2.0;
-              x_ref(ib, 2)  = 1.0;
-              x1_ref(ib, 0) = 2.0;
-              x1_ref(ib, 1) = -2.0;
-              x1_ref(ib, 2) = 1.0;
+              x_ref(ib, 0) = 2.0;
+              x_ref(ib, 1) = -2.0;
+              x_ref(ib, 2) = 1.0;
             }
           }
         }
@@ -289,16 +271,41 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
 
   Kokkos::fence();
 
+  // Check x0 = x_ref and x1 = x_ref
+  // Firstly, prepare contiguous views on host
+  auto h_x0 = Kokkos::create_mirror_view(x0);
+  auto h_x1 = Kokkos::create_mirror_view(x0);
+
+  Kokkos::deep_copy(h_x0, x0);
+
+  // Pack x1 into x0 for contiguous storage
+  Kokkos::parallel_for(
+      "KokkosBatched::Test::SerialTbsv::Copy", policy,
+      KOKKOS_LAMBDA(const std::size_t ib) {
+        for (std::size_t j = 0; j < BlkSize; j++) {
+          x0(ib, j) = x1(ib, j);
+        }
+      });
+
+  Kokkos::fence();
+  Kokkos::deep_copy(h_x1, x0);
+
   // this eps is about 10^-14
   using ats      = typename Kokkos::ArithTraits<ScalarType>;
   using mag_type = typename ats::mag_type;
   mag_type eps   = 1.0e3 * ats::epsilon();
 
-  // Check x0 = x_ref
-  EXPECT_TRUE(allclose<execution_space>(x0, x_ref, 1.e-5, eps));
+  auto h_x_ref =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_ref);
+  for (std::size_t ib = 0; ib < N; ib++) {
+    for (std::size_t j = 0; j < BlkSize; j++) {
+      // Check x0 = x_ref
+      EXPECT_NEAR_KK(h_x0(ib, j), h_x_ref(ib, j), eps);
 
-  // Check x1 = x1_ref
-  EXPECT_TRUE(allclose<execution_space>(x1, x1_ref, 1.e-5, eps));
+      // Check x1 = x_ref
+      EXPECT_NEAR_KK(h_x1(ib, j), h_x_ref(ib, j), eps);
+    }
+  }
 }
 
 }  // namespace Tbsv

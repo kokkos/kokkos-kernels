@@ -16,10 +16,12 @@
 #ifndef TEST_BATCHED_DENSE_HELPER_HPP
 #define TEST_BATCHED_DENSE_HELPER_HPP
 
+#include "KokkosBatched_Util.hpp"
+
 namespace KokkosBatched {
 template <typename MatrixViewType, typename VectorViewType>
-void create_tridiagonal_batched_matrices(const MatrixViewType &A,
-                                         const VectorViewType &B) {
+void create_tridiagonal_batched_matrices(const MatrixViewType& A,
+                                         const VectorViewType& B) {
   Kokkos::Random_XorShift64_Pool<
       typename VectorViewType::device_type::execution_space>
       random(13718);
@@ -53,6 +55,61 @@ void create_tridiagonal_batched_matrices(const MatrixViewType &A,
   Kokkos::deep_copy(A, A_host);
 
   Kokkos::fence();
+}
+
+template <typename InViewType, typename OutViewType, typename UploType>
+void create_banded_triangular_matrix(InViewType& in, OutViewType& out,
+                                     int k = 1, bool band_storage = true) {
+  auto h_in   = Kokkos::create_mirror_view(in);
+  auto h_out  = Kokkos::create_mirror_view(out);
+  const int N = in.extent(0), BlkSize = in.extent(1);
+
+  Kokkos::deep_copy(h_in, in);
+  if (band_storage) {
+    assert(out.extent(0) == in.extent(0));
+    assert(out.extent(1) == static_cast<std::size_t>(k + 1));
+    assert(out.extent(2) == in.extent(2));
+    if constexpr (std::is_same_v<UploType, KokkosBatched::Uplo::Upper>) {
+      for (int i0 = 0; i0 < N; i0++) {
+        for (int i1 = 0; i1 < k + 1; i1++) {
+          for (int i2 = i1; i2 < BlkSize; i2++) {
+            h_out(i0, k - i1, i2) = h_in(i0, i2 - i1, i2);
+          }
+        }
+      }
+    } else {
+      for (int i0 = 0; i0 < N; i0++) {
+        for (int i1 = 0; i1 < k + 1; i1++) {
+          for (int i2 = 0; i2 < BlkSize - i1; i2++) {
+            h_out(i0, i1, i2) = h_in(i0, i2 + i1, i2);
+          }
+        }
+      }
+    }
+  } else {
+    for (std::size_t i = 0; i < InViewType::rank(); i++) {
+      assert(out.extent(i) == in.extent(i));
+    }
+
+    if constexpr (std::is_same_v<UploType, KokkosBatched::Uplo::Upper>) {
+      for (int i0 = 0; i0 < N; i0++) {
+        for (int i1 = 0; i1 < BlkSize; i1++) {
+          for (int i2 = i1; i2 < Kokkos::min(i1 + k + 1, BlkSize); i2++) {
+            h_out(i0, i1, i2) = h_in(i0, i1, i2);
+          }
+        }
+      }
+    } else {
+      for (int i0 = 0; i0 < N; i0++) {
+        for (int i1 = 0; i1 < BlkSize; i1++) {
+          for (int i2 = Kokkos::max(0, i1 - k); i2 <= i1; i2++) {
+            h_out(i0, i1, i2) = h_in(i0, i1, i2);
+          }
+        }
+      }
+    }
+  }
+  Kokkos::deep_copy(out, h_out);
 }
 }  // namespace KokkosBatched
 
