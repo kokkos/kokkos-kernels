@@ -52,8 +52,6 @@ struct IlukWrap {
   using lno_t                  = typename IlukHandle::nnz_lno_t;
   using size_type              = typename IlukHandle::size_type;
   using scalar_t               = typename IlukHandle::nnz_scalar_t;
-  using HandleDeviceRowMapType = typename IlukHandle::nnz_row_view_t;
-  using HandleDeviceValueType  = typename IlukHandle::nnz_value_view_t;
   using WorkViewType           = typename IlukHandle::work_view_t;
   using LevelHostViewType      = typename IlukHandle::nnz_lno_view_host_t;
   using LevelViewType          = typename IlukHandle::nnz_lno_view_t;
