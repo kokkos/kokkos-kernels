@@ -34,9 +34,9 @@ struct ODE_params {
   ODE_params(const int num_steps_)
       : adaptivity(false),
         num_steps(num_steps_),
-        max_steps(num_steps_),
-        abs_tol(0),
-        rel_tol(0),
+        max_steps(num_steps_ + 1),
+        abs_tol(1e-12),
+        rel_tol(1e-6),
         min_step_size(0) {}
 
   /// ODE_parms construtor for adaptive time stepping.
