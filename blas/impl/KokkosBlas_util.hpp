@@ -116,6 +116,7 @@ struct Algo {
   using Gemv   = Level2;
   using Trsv   = Level2;
   using ApplyQ = Level2;
+  using Tbsv   = Level2;
 };
 
 namespace Impl {
