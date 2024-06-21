@@ -32,6 +32,8 @@ void spgemm_debug_symbolic(KernelHandle *handle,
                            bool /* transposeA */, blno_row_view_t_ row_mapB,
                            blno_nnz_view_t_ entriesB, bool /* transposeB */,
                            clno_row_view_t_ row_mapC) {
+  Kokkos::Profiling::pushRegion("KokkosSparse::spgemm_symbolic[NATIVE/DEBUG]");
+
   typename alno_row_view_t_::HostMirror h_rma =
       Kokkos::create_mirror_view(row_mapA);
   Kokkos::deep_copy(h_rma, row_mapA);
@@ -100,6 +102,7 @@ void spgemm_debug_symbolic(KernelHandle *handle,
   handle->get_spgemm_handle()->set_c_nnz(result_index);
   Kokkos::deep_copy(row_mapC, h_rmc);
   Kokkos::fence();
+  Kokkos::Profiling::popRegion();
 }
 
 template <typename KernelHandle, typename alno_row_view_t_,
@@ -119,6 +122,7 @@ void spgemm_debug_numeric(KernelHandle * /* handle */,
                           bscalar_nnz_view_t_ valuesB, bool /* transposeB */,
                           clno_row_view_t_ row_mapC, clno_nnz_view_t_ entriesC,
                           cscalar_nnz_view_t_ valuesC) {
+  Kokkos::Profiling::pushRegion("KokkosSparse::spgemm_numeric[NATIVE/DEBUG]");
   typename alno_row_view_t_::HostMirror h_rma =
       Kokkos::create_mirror_view(row_mapA);
   Kokkos::deep_copy(h_rma, row_mapA);
@@ -199,6 +203,7 @@ void spgemm_debug_numeric(KernelHandle * /* handle */,
   Kokkos::deep_copy(entriesC, h_entc);
   Kokkos::deep_copy(valuesC, h_valc);
   Kokkos::fence();
+  Kokkos::Profiling::popRegion();
 }
 
 }  // namespace Impl
