@@ -39,7 +39,7 @@ template <typename size_type, typename value_type>
 KOKKOS_INLINE_FUNCTION void kk_block_set(const size_type block_dim,
                                          value_type *dst,
                                          const value_type *val) {
-  memcpy(dst, val, block_dim * block_dim * sizeof(value_type));
+  memcpy((void *)dst, val, block_dim * block_dim * sizeof(value_type));
 }
 
 // Performs A += B on blocks
