@@ -38,7 +38,7 @@ struct SerialRCM {
   host_lno_view_t entries;
 
   SerialRCM(const rowmap_t& rowmap_, const entries_t& entries_)
-      : numVerts(rowmap_.extent(0) - 1),
+      : numVerts(std::max(rowmap_.extent_int(0), 1) - 1),
         rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostRowmap"),
                rowmap_.extent(0)),
         entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostEntries"),
@@ -48,15 +48,17 @@ struct SerialRCM {
   }
 
   lno_t findPseudoPeripheral() {
-    // Choose vertex with smallest degree
-    lno_t periph    = -1;
-    lno_t periphDeg = numVerts;
+    // Among vertices with non-self-loop edges, choose the one with smallest
+    // degree. Isolated vertices will show up in an arbitrary order but this
+    // won't hurt the reordered bandwidth.
+    lno_t periph        = 0;
+    size_type periphDeg = entries.extent(0) + 1;
     for (lno_t i = 0; i < numVerts; i++) {
       lno_t deg = rowmap(i + 1) - rowmap(i);
+      if (deg == 0 || (deg == 1 && entries(rowmap(i)) == i)) continue;
       if (deg < periphDeg) {
         periph    = i;
         periphDeg = deg;
-        if (deg == 0) break;
       }
     }
     return periph;
@@ -64,6 +66,8 @@ struct SerialRCM {
 
   lno_view_t rcm() {
     lno_t start = findPseudoPeripheral();
+    if (start < lno_t(0) || start >= numVerts)
+      throw std::logic_error("RCM starting vertex is invalid");
     host_lno_view_t q(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Queue"),
                       numVerts);
     host_lno_view_t label(

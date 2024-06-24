@@ -19,7 +19,7 @@
 
 #include "KokkosGraph_RCM.hpp"
 #include "KokkosKernels_IOUtils.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
 
 #include <vector>
 
@@ -81,7 +81,7 @@ int maxBandwidth(const rowmap_t& rowmap, const entries_t& entries,
                  const labels_t& invPerm, const labels_t& perm) {
   using size_type = typename rowmap_t::non_const_value_type;
   using lno_t     = typename entries_t::non_const_value_type;
-  lno_t numVerts  = rowmap.extent(0) - 1;
+  lno_t numVerts  = std::max(1, rowmap.extent_int(0)) - 1;
   int bw          = 0;
   for (lno_t i = 0; i < numVerts; i++) {
     lno_t origRow = perm(i);
@@ -97,18 +97,10 @@ int maxBandwidth(const rowmap_t& rowmap, const entries_t& entries,
   return bw;
 }
 
-template <typename lno_t, typename size_type, typename device>
-void test_rcm(lno_t gridX, lno_t gridY, lno_t gridZ) {
-  typedef
-      typename KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>
-          crsMat_t;
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type rowmap_t;
-  typedef typename graph_t::entries_type entries_t;
-  lno_t numVerts = gridX * gridY * gridZ;
-  typename rowmap_t::non_const_type rowmap;
-  typename entries_t::non_const_type entries;
-  generate7pt(rowmap, entries, gridX, gridY, gridZ);
+template <typename device, typename rowmap_t, typename entries_t>
+void test_rcm(const rowmap_t& rowmap, const entries_t& entries,
+              bool expectBandwidthReduced) {
+  using lno_t = typename entries_t::non_const_value_type;
   auto rcm = KokkosGraph::Experimental::graph_rcm<device, rowmap_t, entries_t>(
       rowmap, entries);
   auto rowmapHost =
@@ -116,6 +108,7 @@ void test_rcm(lno_t gridX, lno_t gridY, lno_t gridZ) {
   auto entriesHost =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entries);
   auto rcmHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rcm);
+  lno_t numVerts = std::max(rowmap.extent_int(0), 1) - 1;
   decltype(rcmHost) rcmPermHost(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "RCMPerm"), numVerts);
   for (lno_t i = 0; i < numVerts; i++) rcmPermHost(rcmHost(i)) = i;
@@ -130,21 +123,71 @@ void test_rcm(lno_t gridX, lno_t gridY, lno_t gridZ) {
     }
     for (lno_t i = 0; i < numVerts; i++) ASSERT_EQ(counts[i], 1);
   }
-  Kokkos::View<lno_t*, Kokkos::HostSpace> identityOrder(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Identity"), numVerts);
-  for (lno_t i = 0; i < numVerts; i++) identityOrder(i) = i;
-  size_t origBW =
-      maxBandwidth(rowmapHost, entriesHost, identityOrder, identityOrder);
-  size_t rcmBW = maxBandwidth(rowmapHost, entriesHost, rcmHost, rcmPermHost);
-  EXPECT_LE(rcmBW, origBW);
+  if (expectBandwidthReduced) {
+    Kokkos::View<lno_t*, Kokkos::HostSpace> identityOrder(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "Identity"), numVerts);
+    for (lno_t i = 0; i < numVerts; i++) identityOrder(i) = i;
+    size_t origBW =
+        maxBandwidth(rowmapHost, entriesHost, identityOrder, identityOrder);
+    size_t rcmBW = maxBandwidth(rowmapHost, entriesHost, rcmHost, rcmPermHost);
+    EXPECT_LE(rcmBW, origBW);
+  }
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                  \
-  TEST_F(TestCategory,                                                 \
-         graph##_##rcm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_rcm<ORDINAL, OFFSET, DEVICE>(6, 3, 3);                        \
-    test_rcm<ORDINAL, OFFSET, DEVICE>(20, 20, 20);                     \
-    test_rcm<ORDINAL, OFFSET, DEVICE>(100, 100, 1);                    \
+template <typename lno_t, typename size_type, typename device>
+void test_rcm_zerorows() {
+  using graph_t =
+      Kokkos::StaticCrsGraph<lno_t, default_layout, device, void, size_type>;
+  using rowmap_t  = typename graph_t::row_map_type::non_const_type;
+  using entries_t = typename graph_t::entries_type::non_const_type;
+  rowmap_t rowmap;
+  entries_t entries;
+  test_rcm<device>(rowmap, entries, false);
+}
+
+template <typename lno_t, typename size_type, typename device>
+void test_rcm_7pt(lno_t gridX, lno_t gridY, lno_t gridZ,
+                  bool expectBandwidthReduced) {
+  using graph_t =
+      Kokkos::StaticCrsGraph<lno_t, default_layout, device, void, size_type>;
+  using rowmap_t  = typename graph_t::row_map_type::non_const_type;
+  using entries_t = typename graph_t::entries_type::non_const_type;
+  rowmap_t rowmap;
+  entries_t entries;
+  generate7pt(rowmap, entries, gridX, gridY, gridZ);
+  test_rcm<device>(rowmap, entries, expectBandwidthReduced);
+}
+
+template <typename lno_t, typename size_type, typename device>
+void test_rcm_4clique() {
+  using graph_t =
+      Kokkos::StaticCrsGraph<lno_t, default_layout, device, void, size_type>;
+  using rowmap_t  = typename graph_t::row_map_type::non_const_type;
+  using entries_t = typename graph_t::entries_type::non_const_type;
+  rowmap_t rowmap("rowmap", 5);
+  entries_t entries("entries", 16);
+  for (lno_t i = 0; i < 5; i++) rowmap(i) = i * 4;
+  for (lno_t i = 0; i < 16; i++) entries(i) = i % 4;
+  test_rcm<device>(rowmap, entries, false);
+}
+
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                          \
+  TEST_F(                                                                      \
+      TestCategory,                                                            \
+      graph##_##rcm_zerorows##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
+    test_rcm_zerorows<ORDINAL, OFFSET, DEVICE>();                              \
+  }                                                                            \
+  TEST_F(TestCategory,                                                         \
+         graph##_##rcm_7pt##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(1, 1, 1, false);                     \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(2, 1, 1, false);                     \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(6, 3, 3, true);                      \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(20, 20, 20, true);                   \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(100, 100, 1, true);                  \
+  }                                                                            \
+  TEST_F(TestCategory,                                                         \
+         graph##_##rcm_4clique##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_rcm_4clique<ORDINAL, OFFSET, DEVICE>();                               \
   }
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
