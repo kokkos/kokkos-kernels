@@ -166,8 +166,12 @@ void test_rcm_4clique() {
   using entries_t = typename graph_t::entries_type::non_const_type;
   rowmap_t rowmap("rowmap", 5);
   entries_t entries("entries", 16);
-  for (lno_t i = 0; i < 5; i++) rowmap(i) = i * 4;
-  for (lno_t i = 0; i < 16; i++) entries(i) = i % 4;
+  auto rowmap_host  = Kokkos::create_mirror_view(rowmap);
+  auto entries_host = Kokkos::create_mirror_view(entries);
+  for (lno_t i = 0; i < 5; i++) rowmap_host(i) = i * 4;
+  for (lno_t i = 0; i < 16; i++) entries_host(i) = i % 4;
+  Kokkos::deep_copy(rowmap, rowmap_host);
+  Kokkos::deep_copy(entries, entries_host);
   test_rcm<device>(rowmap, entries, false);
 }
 
@@ -181,24 +185,32 @@ void test_rcm_multiple_components() {
   rowmap_t rowmap_cube;
   entries_t entries_cube;
   generate7pt(rowmap_cube, entries_cube, 7, 7, 7);
+  auto rowmap_cube_host =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowmap_cube);
+  auto entries_cube_host =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entries_cube);
   lno_t nv_cube = 7 * 7 * 7;
   lno_t ne_cube = entries_cube.extent(0);
   // Now replicate the graph twice, so there are 2 disconnected copies of the
   // cube
   rowmap_t rowmap("rowmap", nv_cube * 2 + 1);
   entries_t entries("entries", ne_cube * 2);
+  auto rowmap_host  = Kokkos::create_mirror_view(rowmap);
+  auto entries_host = Kokkos::create_mirror_view(entries);
   for (lno_t i = 0; i <= nv_cube * 2; i++) {
     if (i < nv_cube)
-      rowmap(i) = rowmap_cube(i);
+      rowmap_host(i) = rowmap_cube_host(i);
     else
-      rowmap(i) = ne_cube + rowmap_cube(i - nv_cube);
+      rowmap_host(i) = ne_cube + rowmap_cube_host(i - nv_cube);
   }
   for (lno_t i = 0; i < ne_cube * 2; i++) {
     if (i < ne_cube)
-      entries(i) = entries_cube(i);
+      entries_host(i) = entries_cube_host(i);
     else
-      entries(i) = nv_cube + entries_cube(i - ne_cube);
+      entries_host(i) = nv_cube + entries_cube_host(i - ne_cube);
   }
+  Kokkos::deep_copy(rowmap, rowmap_host);
+  Kokkos::deep_copy(entries, entries_host);
   test_rcm<device>(rowmap, entries, true);
 }
 
