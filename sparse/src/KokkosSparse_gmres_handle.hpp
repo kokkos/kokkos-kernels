@@ -37,7 +37,8 @@ template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
 class GMRESHandle {
  public:
-  using HandleExecSpace             = ExecutionSpace;
+  using HandleExecSpace
+  = ExecutionSpace;
   using HandleTempMemorySpace       = TemporaryMemorySpace;
   using HandlePersistentMemorySpace = PersistentMemorySpace;
 
