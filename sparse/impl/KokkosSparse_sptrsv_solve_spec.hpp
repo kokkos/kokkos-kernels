@@ -120,7 +120,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
   static void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle,
                            const RowMapType row_map, const EntriesType entries,
                            const ValuesType values, BType b, XType x) {
-    using Sptrsv = Experimental::SptrsvWrap<typename KernelHandle::SPTRSVHandleType>;
+    using Sptrsv =
+        Experimental::SptrsvWrap<typename KernelHandle::SPTRSVHandleType>;
 
     // Call specific algorithm type
     auto sptrsv_handle = handle->get_sptrsv_handle();
@@ -129,19 +130,20 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
                                       : "KokkosSparse_sptrsv[upper]");
     if (sptrsv_handle->is_lower_tri()) {
       if (sptrsv_handle->is_symbolic_complete() == false) {
-        Experimental::lower_tri_symbolic(space, *sptrsv_handle, row_map, entries);
+        Experimental::lower_tri_symbolic(space, *sptrsv_handle, row_map,
+                                         entries);
       }
       if (sptrsv_handle->get_algorithm() ==
           KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
-        Sptrsv::tri_solve_chain(space, *sptrsv_handle, row_map, entries,
-                                values, b, x, true);
+        Sptrsv::tri_solve_chain(space, *sptrsv_handle, row_map, entries, values,
+                                b, x, true);
       } else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
         using ExecSpace = typename RowMapType::memory_space::execution_space;
         if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
           // TODO: set stream in thandle's sptrsvCudaGraph
-          Sptrsv::lower_tri_solve_cg(*sptrsv_handle, row_map, entries,
-                                     values, b, x);
+          Sptrsv::lower_tri_solve_cg(*sptrsv_handle, row_map, entries, values,
+                                     b, x);
         else
 #endif
           Sptrsv::lower_tri_solve(space, *sptrsv_handle, row_map, entries,
@@ -149,19 +151,20 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
       }
     } else {
       if (sptrsv_handle->is_symbolic_complete() == false) {
-        Experimental::upper_tri_symbolic(space, *sptrsv_handle, row_map, entries);
+        Experimental::upper_tri_symbolic(space, *sptrsv_handle, row_map,
+                                         entries);
       }
       if (sptrsv_handle->get_algorithm() ==
           KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
-        Sptrsv::tri_solve_chain(space, *sptrsv_handle, row_map, entries,
-                                values, b, x, false);
+        Sptrsv::tri_solve_chain(space, *sptrsv_handle, row_map, entries, values,
+                                b, x, false);
       } else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
         using ExecSpace = typename RowMapType::memory_space::execution_space;
         if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
           // TODO: set stream in thandle's sptrsvCudaGraph
-          Sptrsv::upper_tri_solve_cg(*sptrsv_handle, row_map, entries,
-                                     values, b, x);
+          Sptrsv::upper_tri_solve_cg(*sptrsv_handle, row_map, entries, values,
+                                     b, x);
         else
 #endif
           Sptrsv::upper_tri_solve(space, *sptrsv_handle, row_map, entries,
@@ -178,7 +181,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
       const std::vector<EntriesType> &entries_v,
       const std::vector<ValuesType> &values_v, const std::vector<BType> &b_v,
       std::vector<XType> &x_v) {
-    using Sptrsv = Experimental::SptrsvWrap<typename KernelHandle::SPTRSVHandleType>;
+    using Sptrsv =
+        Experimental::SptrsvWrap<typename KernelHandle::SPTRSVHandleType>;
     // Call specific algorithm type
     // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
     //       Assume streams have the same either lower or upper matrix type
@@ -198,9 +202,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
                                            entries_v[i]);
         }
       }
-      Sptrsv::lower_tri_solve_streams(execspace_v, sptrsv_handle_v,
-                                      row_map_v, entries_v, values_v, b_v,
-                                      x_v);
+      Sptrsv::lower_tri_solve_streams(execspace_v, sptrsv_handle_v, row_map_v,
+                                      entries_v, values_v, b_v, x_v);
     } else {
       for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
         if (sptrsv_handle_v[i]->is_symbolic_complete() == false) {
@@ -209,9 +212,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
                                            entries_v[i]);
         }
       }
-      Sptrsv::upper_tri_solve_streams(execspace_v, sptrsv_handle_v,
-                                      row_map_v, entries_v, values_v, b_v,
-                                      x_v);
+      Sptrsv::upper_tri_solve_streams(execspace_v, sptrsv_handle_v, row_map_v,
+                                      entries_v, values_v, b_v, x_v);
     }
     Kokkos::Profiling::popRegion();
   }

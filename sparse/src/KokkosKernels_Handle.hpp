@@ -841,7 +841,8 @@ class KokkosKernelsHandle {
                             size_type block_size = 0) {
     this->destroy_sptrsv_handle();
     this->is_owner_of_the_sptrsv_handle = true;
-    this->sptrsvHandle = new SPTRSVHandleType(algm, nrows, lower_tri, block_size);
+    this->sptrsvHandle =
+        new SPTRSVHandleType(algm, nrows, lower_tri, block_size);
     //    this->sptrsvHandle->init_handle(nrows);
     this->sptrsvHandle->set_team_size(this->team_work_size);
     this->sptrsvHandle->set_vector_size(this->vector_size);
