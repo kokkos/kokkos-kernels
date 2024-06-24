@@ -54,8 +54,10 @@ struct SerialRCM {
     lno_t periph        = 0;
     size_type periphDeg = entries.extent(0) + 1;
     for (lno_t i = 0; i < numVerts; i++) {
-      lno_t deg = rowmap(i + 1) - rowmap(i);
-      if (deg == 0 || (deg == 1 && entries(rowmap(i)) == i)) continue;
+      size_type deg = rowmap(i + 1) - rowmap(i);
+      if (deg == size_type(0) ||
+          (deg == size_type(1) && entries(rowmap(i)) == i))
+        continue;
       if (deg < periphDeg) {
         periph    = i;
         periphDeg = deg;
