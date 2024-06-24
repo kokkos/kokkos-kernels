@@ -68,6 +68,9 @@ struct SerialRCM {
     lno_t start = findPseudoPeripheral();
     if (start < lno_t(0) || start >= numVerts)
       throw std::logic_error("RCM starting vertex is invalid");
+    // Given a label L, labelReverse - L gives the reversed label (as in reverse
+    // Cuthill McKee)
+    lno_t labelReverse = numVerts - 1;
     host_lno_view_t q(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Queue"),
                       numVerts);
     host_lno_view_t label(
@@ -76,7 +79,7 @@ struct SerialRCM {
     for (lno_t i = 0; i < numVerts; i++) label(i) = -1;
     lno_t qhead  = 0;
     lno_t qtail  = 0;
-    label(start) = qtail;
+    label(start) = labelReverse - qtail;
     q(qtail++)   = start;
     std::vector<lno_t> neighbors;
     lno_t outerQueue = 0;
@@ -98,7 +101,7 @@ struct SerialRCM {
                 });
       // label and enqueue all unlabeled neighbors
       for (lno_t nei : neighbors) {
-        label(nei) = qtail;
+        label(nei) = labelReverse - qtail;
         q(qtail++) = nei;
       }
       if (qtail == numVerts) {
@@ -107,15 +110,13 @@ struct SerialRCM {
       } else if (qhead == qtail) {
         // have exhausted this connected component, but others remain unlabeled
         while (label(outerQueue) != -1) outerQueue++;
-        label(outerQueue) = qtail;
+        label(outerQueue) = labelReverse - qtail;
         q(qtail++)        = outerQueue;
       }
     }
     lno_view_t labelOut(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "RCM Permutation"),
         numVerts);
-    // reverse the labels
-    for (lno_t i = 0; i < numVerts; i++) label(i) = numVerts - label(i) - 1;
     Kokkos::deep_copy(labelOut, label);
     return labelOut;
   }
