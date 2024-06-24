@@ -47,29 +47,7 @@ struct SerialRCM {
     Kokkos::deep_copy(entries, entries_);
   }
 
-  lno_t findPseudoPeripheral() {
-    // Among vertices with non-self-loop edges, choose the one with smallest
-    // degree. Isolated vertices will show up in an arbitrary order but this
-    // won't hurt the reordered bandwidth.
-    lno_t periph        = 0;
-    size_type periphDeg = entries.extent(0) + 1;
-    for (lno_t i = 0; i < numVerts; i++) {
-      size_type deg = rowmap(i + 1) - rowmap(i);
-      if (deg == size_type(0) ||
-          (deg == size_type(1) && entries(rowmap(i)) == i))
-        continue;
-      if (deg < periphDeg) {
-        periph    = i;
-        periphDeg = deg;
-      }
-    }
-    return periph;
-  }
-
   lno_view_t rcm() {
-    lno_t start = findPseudoPeripheral();
-    if (start < lno_t(0) || start >= numVerts)
-      throw std::logic_error("RCM starting vertex is invalid");
     // Given a label L, labelReverse - L gives the reversed label (as in reverse
     // Cuthill McKee)
     lno_t labelReverse = numVerts - 1;
@@ -79,12 +57,29 @@ struct SerialRCM {
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "Permutation"),
         numVerts);
     for (lno_t i = 0; i < numVerts; i++) label(i) = -1;
-    lno_t qhead  = 0;
-    lno_t qtail  = 0;
+    lno_t qhead = 0;
+    lno_t qtail = 0;
+    // List of all vertices, in order from lowest to highest degree
+    // (heuristic for best to worst starting vertex for RCM).
+    // If the graph has multiple connected components, restart at the first
+    // unlabeled vertex in this list.
+    host_lno_view_t allVertices(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "allVertices"),
+        numVerts);
+    for (lno_t i = 0; i < numVerts; i++) allVertices(i) = i;
+    std::sort(allVertices.data(), allVertices.data() + numVerts,
+              [&](lno_t n1, lno_t n2) -> bool {
+                // return true if n1 has a lower degree than n2
+                return (rowmap(n1 + 1) - rowmap(n1)) <
+                       (rowmap(n2 + 1) - rowmap(n2));
+              });
+    lno_t allVerticesIter = 0;
+    // Start RCM with the first vertex in allVertices
+    lno_t start  = allVertices(allVerticesIter++);
     label(start) = labelReverse - qtail;
     q(qtail++)   = start;
+    // Reuse this neighbor list for all levels without deallocating
     std::vector<lno_t> neighbors;
-    lno_t outerQueue = 0;
     while (true) {
       lno_t v = q(qhead++);
       neighbors.clear();
@@ -111,9 +106,10 @@ struct SerialRCM {
         break;
       } else if (qhead == qtail) {
         // have exhausted this connected component, but others remain unlabeled
-        while (label(outerQueue) != -1) outerQueue++;
-        label(outerQueue) = labelReverse - qtail;
-        q(qtail++)        = outerQueue;
+        while (label(allVertices(allVerticesIter)) != -1) allVerticesIter++;
+        lno_t restart  = allVertices(allVerticesIter);
+        label(restart) = labelReverse - qtail;
+        q(qtail++)     = restart;
       }
     }
     lno_view_t labelOut(

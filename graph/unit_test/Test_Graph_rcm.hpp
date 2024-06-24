@@ -171,23 +171,59 @@ void test_rcm_4clique() {
   test_rcm<device>(rowmap, entries, false);
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                          \
-  TEST_F(                                                                      \
-      TestCategory,                                                            \
-      graph##_##rcm_zerorows##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
-    test_rcm_zerorows<ORDINAL, OFFSET, DEVICE>();                              \
-  }                                                                            \
-  TEST_F(TestCategory,                                                         \
-         graph##_##rcm_7pt##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
-    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(1, 1, 1, false);                     \
-    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(2, 1, 1, false);                     \
-    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(6, 3, 3, true);                      \
-    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(20, 20, 20, true);                   \
-    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(100, 100, 1, true);                  \
-  }                                                                            \
-  TEST_F(TestCategory,                                                         \
-         graph##_##rcm_4clique##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_rcm_4clique<ORDINAL, OFFSET, DEVICE>();                               \
+template <typename lno_t, typename size_type, typename device>
+void test_rcm_multiple_components() {
+  using graph_t =
+      Kokkos::StaticCrsGraph<lno_t, default_layout, device, void, size_type>;
+  using rowmap_t  = typename graph_t::row_map_type::non_const_type;
+  using entries_t = typename graph_t::entries_type::non_const_type;
+  // Generate a single 3D grid first
+  rowmap_t rowmap_cube;
+  entries_t entries_cube;
+  generate7pt(rowmap_cube, entries_cube, 7, 7, 7);
+  lno_t nv_cube = 7 * 7 * 7;
+  lno_t ne_cube = entries_cube.extent(0);
+  // Now replicate the graph twice, so there are 2 disconnected copies of the
+  // cube
+  rowmap_t rowmap("rowmap", nv_cube * 2 + 1);
+  entries_t entries("entries", ne_cube * 2);
+  for (lno_t i = 0; i <= nv_cube * 2; i++) {
+    if (i < nv_cube)
+      rowmap(i) = rowmap_cube(i);
+    else
+      rowmap(i) = ne_cube + rowmap_cube(i - nv_cube);
+  }
+  for (lno_t i = 0; i < ne_cube * 2; i++) {
+    if (i < ne_cube)
+      entries(i) = entries_cube(i);
+    else
+      entries(i) = nv_cube + entries_cube(i - ne_cube);
+  }
+  test_rcm<device>(rowmap, entries, true);
+}
+
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                   \
+  TEST_F(                                                                               \
+      TestCategory,                                                                     \
+      graph##_##rcm_zerorows##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {            \
+    test_rcm_zerorows<ORDINAL, OFFSET, DEVICE>();                                       \
+  }                                                                                     \
+  TEST_F(TestCategory,                                                                  \
+         graph##_##rcm_7pt##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {              \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(1, 1, 1, false);                              \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(2, 1, 1, false);                              \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(6, 3, 3, true);                               \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(20, 20, 20, true);                            \
+    test_rcm_7pt<ORDINAL, OFFSET, DEVICE>(100, 100, 1, true);                           \
+  }                                                                                     \
+  TEST_F(TestCategory,                                                                  \
+         graph##_##rcm_4clique##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {          \
+    test_rcm_4clique<ORDINAL, OFFSET, DEVICE>();                                        \
+  }                                                                                     \
+  TEST_F(                                                                               \
+      TestCategory,                                                                     \
+      graph##_##rcm_multiple_components##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_rcm_multiple_components<ORDINAL, OFFSET, DEVICE>();                            \
   }
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
