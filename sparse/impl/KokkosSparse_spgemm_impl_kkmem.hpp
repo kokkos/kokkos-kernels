@@ -1241,6 +1241,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
         c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_,
         c_scalar_nnz_view_t valuesC_,
         KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space) {
+  Kokkos::Profiling::pushRegion("KokkosSparse::spgemm_numeric[NATIVE/HASH]");
   if (KOKKOSKERNELS_VERBOSE) {
     std::cout << "\tHASH MODE" << std::endl;
   }
@@ -1699,6 +1700,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   if (KOKKOSKERNELS_VERBOSE) {
     std::cout << "\t\tNumeric TIME:" << timer1.seconds() << std::endl;
   }
+  Kokkos::Profiling::popRegion();
 }
 
 // 01/30/2020: this code seems to be unused within any of the kokkos-kernels

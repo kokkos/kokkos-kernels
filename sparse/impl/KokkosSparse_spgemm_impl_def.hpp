@@ -59,6 +59,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
                   a_scalar_nnz_view_t_, b_lno_row_view_t_, b_lno_nnz_view_t_,
                   b_scalar_nnz_view_t_>::KokkosSPGEMM_symbolic(c_row_view_t
                                                                    rowmapC_) {
+  Kokkos::Profiling::pushRegion("KokkosSparse::spgemm_symbolic[NATIVE]");
   {
     if (KOKKOSKERNELS_VERBOSE) {
       std::cout << "SYMBOLIC PHASE" << std::endl;
@@ -162,6 +163,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     }
 #endif
   }
+  Kokkos::Profiling::popRegion();
 }
 
 template <typename HandleType, typename a_row_view_t_,
