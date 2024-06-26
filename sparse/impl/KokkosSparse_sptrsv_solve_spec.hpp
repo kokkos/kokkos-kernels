@@ -135,8 +135,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
       }
       if (sptrsv_handle->get_algorithm() ==
           KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
-        Sptrsv::tri_solve_chain(space, *sptrsv_handle, row_map, entries, values,
-                                b, x, true);
+        Sptrsv::template tri_solve_chain<true>(space, *sptrsv_handle, row_map, entries, values,
+                                               b, x);
       } else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
         using ExecSpace = typename RowMapType::memory_space::execution_space;
@@ -156,8 +156,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
       }
       if (sptrsv_handle->get_algorithm() ==
           KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
-        Sptrsv::tri_solve_chain(space, *sptrsv_handle, row_map, entries, values,
-                                b, x, false);
+        Sptrsv::template tri_solve_chain<false>(space, *sptrsv_handle, row_map, entries, values,
+                                                b, x);
       } else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
         using ExecSpace = typename RowMapType::memory_space::execution_space;

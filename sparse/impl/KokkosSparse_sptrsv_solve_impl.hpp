@@ -2331,13 +2331,13 @@ tstf); } // end elseif
 
   }  // end upper_tri_solve
 
-  template <class RowMapType, class EntriesType, class ValuesType,
+  template <bool IsLower, class RowMapType, class EntriesType, class ValuesType,
             class RHSType, class LHSType>
   static void tri_solve_chain(execution_space &space, TriSolveHandle &thandle,
                               const RowMapType row_map,
                               const EntriesType entries,
                               const ValuesType values, const RHSType &rhs,
-                              LHSType &lhs, const bool /*is_lowertri_*/) {
+                              LHSType &lhs) {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSPSTRSV_SOLVE_IMPL_PROFILE)
     cudaProfilerStop();
 #endif
@@ -2353,19 +2353,14 @@ tstf); } // end elseif
 
     auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
-    const bool is_lowertri = thandle.is_lower_tri();
-
     size_type node_count = 0;
 
     // REFACTORED to cleanup; next, need debug and timer routines
     using large_cutoff_policy_type =
         Kokkos::TeamPolicy<LargerCutoffTag, execution_space>;
-    using SingleBlockFunctorLower =
+    using SingleBlockFunctor =
         TriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType,
-                                         LHSType, RHSType, true>;
-    using SingleBlockFunctorUpper =
-        TriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType,
-                                         LHSType, RHSType, false>;
+                                         LHSType, RHSType, IsLower>;
 
     int team_size = thandle.get_team_size();
     int vector_size =
@@ -2389,168 +2384,81 @@ tstf); } // end elseif
       // team_size_singleblock is unimportant
     }
 
-    // This is only necessary for Lower,UpperTri functor versions; else,
-    // is_lowertri can be passed as arg to the generic Tri functor...
-    if (is_lowertri) {
-      for (size_type chainlink = 0; chainlink < num_chain_entries;
-           ++chainlink) {
-        size_type schain = h_chain_ptr(chainlink);
-        size_type echain = h_chain_ptr(chainlink + 1);
+    for (size_type chainlink = 0; chainlink < num_chain_entries;
+         ++chainlink) {
+      size_type schain = h_chain_ptr(chainlink);
+      size_type echain = h_chain_ptr(chainlink + 1);
 
-        if (echain - schain == 1) {
-          // if team_size is -1 (unset), get recommended size from Kokkos
-          TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType,
-                                      LHSType, RHSType, true>
-              tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-                   node_count);
-          if (team_size == -1) {
-            team_size =
-                team_policy(space, 1, 1, vector_size)
-                    .team_size_recommended(tstf, Kokkos::ParallelForTag());
-          }
-
-          size_type lvl_nodes = hnodes_per_level(schain);  // lvl == echain????
-          Kokkos::parallel_for(
-              "parfor_l_team_chain1",
-              Kokkos::Experimental::require(
-                  team_policy(space, lvl_nodes, team_size, vector_size),
-                  Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-              tstf);
-          node_count += lvl_nodes;
-
-        } else {
-          size_type lvl_nodes = 0;
-
-          for (size_type i = schain; i < echain; ++i) {
-            lvl_nodes += hnodes_per_level(i);
-          }
-
-          if (team_size_singleblock <= 0) {
-            team_size_singleblock =
-                team_policy(space, 1, 1, vector_size)
-                    .team_size_recommended(
-                        SingleBlockFunctorLower(row_map, entries, values, lhs, rhs,
-                                                nodes_grouped_by_level,
-                                                nodes_per_level, node_count, schain,
-                                                echain, is_lowertri),
-                        Kokkos::ParallelForTag());
-          }
-
-          if (cutoff <= team_size_singleblock) {
-            SingleBlockFunctorLower
-                tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-                     nodes_per_level, node_count, schain, echain);
-            Kokkos::parallel_for(
-                "parfor_l_team_chainmulti",
-                Kokkos::Experimental::require(
-                    team_policy(space, 1, team_size_singleblock, vector_size),
-                    Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-                tstf);
-          } else {
-            // team_size_singleblock < cutoff => kernel must allow for a
-            // block-stride internally
-            SingleBlockFunctorLower
-                tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-                     nodes_per_level, node_count, schain, echain, 0,
-                     cutoff);
-            Kokkos::parallel_for(
-                "parfor_l_team_chainmulti_cutoff",
-                Kokkos::Experimental::require(
-                    large_cutoff_policy_type(1, team_size_singleblock,
-                                             vector_size),
-                    Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-                tstf);
-          }
-          node_count += lvl_nodes;
+      if (echain - schain == 1) {
+        // if team_size is -1 (unset), get recommended size from Kokkos
+        TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType,
+                                    LHSType, RHSType, IsLower>
+          tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
+               node_count);
+        if (team_size == -1) {
+          team_size =
+            team_policy(space, 1, 1, vector_size)
+            .team_size_recommended(tstf, Kokkos::ParallelForTag());
         }
-        // TODO: space.fence()
-        Kokkos::fence();  // TODO - is this necessary? that is, can the
-                          // parallel_for launch before the s/echain values have
-                          // been updated?
-      }
 
-    } else {
-      for (size_type chainlink = 0; chainlink < num_chain_entries;
-           ++chainlink) {
-        size_type schain = h_chain_ptr(chainlink);
-        size_type echain = h_chain_ptr(chainlink + 1);
+        size_type lvl_nodes = hnodes_per_level(schain);  // lvl == echain????
+        Kokkos::parallel_for(
+          "parfor_l_team_chain1",
+          Kokkos::Experimental::require(
+            team_policy(space, lvl_nodes, team_size, vector_size),
+            Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+          tstf);
+        node_count += lvl_nodes;
 
-        if (echain - schain == 1) {
-          // if team_size is -1 (unset), get recommended size from Kokkos
-          TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType,
-                                      LHSType, RHSType, false>
-              tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-                   node_count);
-          if (team_size == -1) {
-            team_size =
-                team_policy(space, 1, 1, vector_size)
-                    .team_size_recommended(tstf, Kokkos::ParallelForTag());
-          }
+      } else {
+        size_type lvl_nodes = 0;
 
-          // TODO To use cudagraph here, need to know how many non-unit chains
-          // there are, create a graph for each and launch accordingly
-          size_type lvl_nodes = hnodes_per_level(schain);  // lvl == echain????
-          Kokkos::parallel_for(
-              "parfor_u_team_chain1",
-              Kokkos::Experimental::require(
-                  team_policy(space, lvl_nodes, team_size, vector_size),
-                  Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-              tstf);
-          node_count += lvl_nodes;
-
-        } else {
-          size_type lvl_nodes = 0;
-
-          for (size_type i = schain; i < echain; ++i) {
-            lvl_nodes += hnodes_per_level(i);
-          }
-
-          if (team_size_singleblock <= 0) {
-            // team_size_singleblock = team_policy(1, 1,
-            // 1).team_size_recommended(SingleBlockFunctor(row_map, entries,
-            // values, lhs, rhs, nodes_grouped_by_level, is_lowertri,
-            // node_count), Kokkos::ParallelForTag());
-            team_size_singleblock =
-                team_policy(space, 1, 1, vector_size)
-                    .team_size_recommended(
-                        SingleBlockFunctorUpper(row_map, entries, values, lhs, rhs,
-                                                nodes_grouped_by_level,
-                                                nodes_per_level, node_count, schain,
-                                                echain),
-                        Kokkos::ParallelForTag());
-          }
-
-          if (cutoff <= team_size_singleblock) {
-            SingleBlockFunctorUpper
-                tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-                     nodes_per_level, node_count, schain, echain);
-            Kokkos::parallel_for(
-                "parfor_u_team_chainmulti",
-                Kokkos::Experimental::require(
-                    team_policy(space, 1, team_size_singleblock, vector_size),
-                    Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-                tstf);
-          } else {
-            // team_size_singleblock < cutoff => kernel must allow for a
-            // block-stride internally
-            SingleBlockFunctorUpper
-                tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-                     nodes_per_level, node_count, schain, echain, 0, cutoff);
-            Kokkos::parallel_for(
-                "parfor_u_team_chainmulti_cutoff",
-                Kokkos::Experimental::require(
-                    large_cutoff_policy_type(1, team_size_singleblock,
-                                             vector_size),
-                    Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-                tstf);
-          }
-          node_count += lvl_nodes;
+        for (size_type i = schain; i < echain; ++i) {
+          lvl_nodes += hnodes_per_level(i);
         }
-        // TODO: space.fence()
-        Kokkos::fence();  // TODO - is this necessary? that is, can the
-                          // parallel_for launch before the s/echain values have
-                          // been updated?
+
+        if (team_size_singleblock <= 0) {
+          team_size_singleblock =
+            team_policy(space, 1, 1, vector_size)
+            .team_size_recommended(
+              SingleBlockFunctor(row_map, entries, values, lhs, rhs,
+                                 nodes_grouped_by_level,
+                                 nodes_per_level, node_count, schain,
+                                 echain),
+              Kokkos::ParallelForTag());
+        }
+
+        if (cutoff <= team_size_singleblock) {
+          SingleBlockFunctor
+            tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
+                 nodes_per_level, node_count, schain, echain);
+          Kokkos::parallel_for(
+            "parfor_l_team_chainmulti",
+            Kokkos::Experimental::require(
+              team_policy(space, 1, team_size_singleblock, vector_size),
+              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+            tstf);
+        } else {
+          // team_size_singleblock < cutoff => kernel must allow for a
+          // block-stride internally
+          SingleBlockFunctor
+            tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
+                 nodes_per_level, node_count, schain, echain, 0,
+                 cutoff);
+          Kokkos::parallel_for(
+            "parfor_l_team_chainmulti_cutoff",
+            Kokkos::Experimental::require(
+              large_cutoff_policy_type(1, team_size_singleblock,
+                                       vector_size),
+              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+            tstf);
+        }
+        node_count += lvl_nodes;
       }
+      // TODO: space.fence()
+      Kokkos::fence();  // TODO - is this necessary? that is, can the
+      // parallel_for launch before the s/echain values have
+      // been updated?
     }
   }  // end tri_solve_chain
 
