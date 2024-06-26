@@ -202,8 +202,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
                                            entries_v[i]);
         }
       }
-      Sptrsv::lower_tri_solve_streams(execspace_v, sptrsv_handle_v, row_map_v,
-                                      entries_v, values_v, b_v, x_v);
+      Sptrsv::template tri_solve_streams<true>(execspace_v, sptrsv_handle_v, row_map_v,
+                                               entries_v, values_v, b_v, x_v);
     } else {
       for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
         if (sptrsv_handle_v[i]->is_symbolic_complete() == false) {
@@ -212,8 +212,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
                                            entries_v[i]);
         }
       }
-      Sptrsv::upper_tri_solve_streams(execspace_v, sptrsv_handle_v, row_map_v,
-                                      entries_v, values_v, b_v, x_v);
+      Sptrsv::template tri_solve_streams<false>(execspace_v, sptrsv_handle_v, row_map_v,
+                                                entries_v, values_v, b_v, x_v);
     }
     Kokkos::Profiling::popRegion();
   }
