@@ -266,7 +266,7 @@ struct SptrsvWrap {
   };
 
   template <class RowMapType, class EntriesType, class ValuesType,
-            class LHSType, class RHSType>
+            class LHSType, class RHSType, bool IsLower>
   struct TriLvlSchedTP2SolverFunctor {
     RowMapType row_map;
     EntriesType entries;
@@ -275,7 +275,6 @@ struct SptrsvWrap {
     RHSType rhs;
     entries_t nodes_grouped_by_level;
 
-    const bool is_lowertri;
     long node_count;  // like "block" offset into ngbl, my_league is the "local"
                       // offset
     long node_groups;
@@ -286,7 +285,7 @@ struct SptrsvWrap {
                                 const ValuesType &values_, LHSType &lhs_,
                                 const RHSType &rhs_,
                                 const entries_t &nodes_grouped_by_level_,
-                                const bool is_lowertri_, long node_count_,
+                                long node_count_,
                                 long node_groups_ = 0, long dense_nrows_ = 0)
         : row_map(row_map_),
           entries(entries_),
@@ -294,7 +293,6 @@ struct SptrsvWrap {
           lhs(lhs_),
           rhs(rhs_),
           nodes_grouped_by_level(nodes_grouped_by_level_),
-          is_lowertri(is_lowertri_),
           node_count(node_count_),
           node_groups(node_groups_),
           dense_nrows(dense_nrows_) {}
@@ -327,7 +325,7 @@ struct SptrsvWrap {
                   diff);
 
               // ASSUMPTION: sorted diagonal value located at eoffset - 1
-              lhs(rowid) = is_lowertri
+              lhs(rowid) = IsLower
                                ? (rhs_rowid + diff) / values(eoffset - 1)
                                : (rhs_rowid + diff) / values(soffset);
             }  // end if
@@ -436,112 +434,6 @@ struct SptrsvWrap {
         }
       }  // end for ptr
       lhs(rowid) = rhs_rowid / values(diag);
-    }
-  };
-
-  // FIXME CUDA: This algorithm not working with all integral type combos
-  // In any case, this serves as a skeleton for 3-level hierarchical parallelism
-  // for alg dev
-  template <class RowMapType, class EntriesType, class ValuesType,
-            class LHSType, class RHSType>
-  struct LowerTriLvlSchedTP2SolverFunctor {
-    RowMapType row_map;
-    EntriesType entries;
-    ValuesType values;
-    LHSType lhs;
-    RHSType rhs;
-    entries_t nodes_grouped_by_level;
-
-    long node_count;  // like "block" offset into ngbl, my_league is the "local"
-                      // offset
-    long node_groups;
-
-    LowerTriLvlSchedTP2SolverFunctor(const RowMapType &row_map_,
-                                     const EntriesType &entries_,
-                                     const ValuesType &values_, LHSType &lhs_,
-                                     const RHSType &rhs_,
-                                     const entries_t &nodes_grouped_by_level_,
-                                     long node_count_, long node_groups_ = 0)
-        : row_map(row_map_),
-          entries(entries_),
-          values(values_),
-          lhs(lhs_),
-          rhs(rhs_),
-          nodes_grouped_by_level(nodes_grouped_by_level_),
-          node_count(node_count_),
-          node_groups(node_groups_) {}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const member_type &team) const {
-      auto my_league = team.league_rank();  // map to rowid
-
-      size_t nrows = row_map.extent(0) - 1;
-
-      Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, 0, node_groups), [&](const long ng) {
-            auto rowid = nodes_grouped_by_level(node_count +
-                                                my_league * node_groups + ng);
-            if (size_t(rowid) < nrows) {
-              auto soffset   = row_map(rowid);
-              auto eoffset   = row_map(rowid + 1);
-              auto rhs_rowid = rhs(rowid);
-              scalar_t diff  = scalar_t(0.0);
-
-              Kokkos::parallel_reduce(
-                  Kokkos::ThreadVectorRange(team, soffset, eoffset),
-                  [&](const long ptr, scalar_t &tdiff) {
-                    auto colid = entries(ptr);
-                    auto val   = values(ptr);
-                    if (colid != rowid) {
-                      tdiff = tdiff - val * lhs(colid);
-                    }
-                  },
-                  diff);
-
-              // ASSUMPTION: sorted diagonal value located at eoffset - 1
-              lhs(rowid) = (rhs_rowid + diff) / values(eoffset - 1);
-            }  // end if
-          });  // end TeamThreadRange
-
-      team.team_barrier();
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const UnsortedTag &, const member_type &team) const {
-      auto my_league = team.league_rank();  // map to rowid
-
-      size_t nrows = row_map.extent(0) - 1;
-
-      Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, 0, node_groups), [&](const long ng) {
-            auto rowid = nodes_grouped_by_level(node_count +
-                                                my_league * node_groups + ng);
-            if (size_t(rowid) < nrows) {
-              auto soffset   = row_map(rowid);
-              auto eoffset   = row_map(rowid + 1);
-              auto rhs_rowid = rhs(rowid);
-              scalar_t diff  = scalar_t(0.0);
-
-              auto diag = -1;
-              Kokkos::parallel_reduce(
-                  Kokkos::ThreadVectorRange(team, soffset, eoffset),
-                  [&](const long ptr, scalar_t &tdiff) {
-                    auto colid = entries(ptr);
-                    auto val   = values(ptr);
-                    if (colid != rowid) {
-                      tdiff = tdiff - val * lhs(colid);
-                    } else {
-                      diag = ptr;
-                    }
-                  },
-                  diff);
-
-              // ASSUMPTION: sorted diagonal value located at eoffset - 1
-              lhs(rowid) = (rhs_rowid + diff) / values(diag);
-            }  // end if
-          });  // end TeamThreadRange
-
-      team.team_barrier();
     }
   };
 
@@ -1211,111 +1103,6 @@ struct SptrsvWrap {
         }
       }  // end for ptr
       lhs(rowid) = rhs_rowid / values(diag);
-    }
-  };
-
-  // FIXME CUDA: This algorithm not working with all integral type combos
-  // In any case, this serves as a skeleton for 3-level hierarchical parallelism
-  // for alg dev
-  template <class RowMapType, class EntriesType, class ValuesType,
-            class LHSType, class RHSType>
-  struct UpperTriLvlSchedTP2SolverFunctor {
-    RowMapType row_map;
-    EntriesType entries;
-    ValuesType values;
-    LHSType lhs;
-    RHSType rhs;
-    entries_t nodes_grouped_by_level;
-
-    long node_count;  // like "block" offset into ngbl, my_league is the "local"
-                      // offset
-    long node_groups;
-
-    UpperTriLvlSchedTP2SolverFunctor(const RowMapType &row_map_,
-                                     const EntriesType &entries_,
-                                     const ValuesType &values_, LHSType &lhs_,
-                                     const RHSType &rhs_,
-                                     const entries_t &nodes_grouped_by_level_,
-                                     long node_count_, long node_groups_ = 0)
-        : row_map(row_map_),
-          entries(entries_),
-          values(values_),
-          lhs(lhs_),
-          rhs(rhs_),
-          nodes_grouped_by_level(nodes_grouped_by_level_),
-          node_count(node_count_),
-          node_groups(node_groups_) {}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const member_type &team) const {
-      auto my_league = team.league_rank();  // map to rowid
-
-      size_t nrows = row_map.extent(0) - 1;
-
-      Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, 0, node_groups), [&](const long ng) {
-            auto rowid = nodes_grouped_by_level(node_count +
-                                                my_league * node_groups + ng);
-            if (size_t(rowid) < nrows) {
-              auto soffset   = row_map(rowid);
-              auto eoffset   = row_map(rowid + 1);
-              auto rhs_rowid = rhs(rowid);
-              scalar_t diff  = scalar_t(0.0);
-
-              Kokkos::parallel_reduce(
-                  Kokkos::ThreadVectorRange(team, soffset, eoffset),
-                  [&](const long ptr, scalar_t &tdiff) {
-                    auto colid = entries(ptr);
-                    auto val   = values(ptr);
-                    if (colid != rowid) {
-                      tdiff = tdiff - val * lhs(colid);
-                    }
-                  },
-                  diff);
-
-              // ASSUMPTION: sorted diagonal value located at start offset
-              lhs(rowid) = (rhs_rowid + diff) / values(soffset);
-            }  // end if
-          });  // end TeamThreadRange
-
-      team.team_barrier();
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const UnsortedTag &, const member_type &team) const {
-      auto my_league = team.league_rank();  // map to rowid
-
-      size_t nrows = row_map.extent(0) - 1;
-
-      Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, 0, node_groups), [&](const long ng) {
-            auto rowid = nodes_grouped_by_level(node_count +
-                                                my_league * node_groups + ng);
-            if (size_t(rowid) < nrows) {
-              auto soffset   = row_map(rowid);
-              auto eoffset   = row_map(rowid + 1);
-              auto rhs_rowid = rhs(rowid);
-              scalar_t diff  = scalar_t(0.0);
-
-              auto diag = -1;
-              Kokkos::parallel_reduce(
-                  Kokkos::ThreadVectorRange(team, soffset, eoffset),
-                  [&](const long ptr, scalar_t &tdiff) {
-                    auto colid = entries(ptr);
-                    auto val   = values(ptr);
-                    if (colid != rowid) {
-                      tdiff = tdiff - val * lhs(colid);
-                    } else {
-                      diag = ptr;
-                    }
-                  },
-                  diff);
-
-              lhs(rowid) = (rhs_rowid + diff) / values(diag);
-            }  // end if
-          });  // end TeamThreadRange
-
-      team.team_barrier();
     }
   };
 
