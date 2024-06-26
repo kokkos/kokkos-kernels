@@ -111,6 +111,51 @@ void create_banded_triangular_matrix(InViewType& in, OutViewType& out,
   }
   Kokkos::deep_copy(out, h_out);
 }
+
+template <typename InViewType, typename OutViewType>
+void create_diagonal_matrix(InViewType& in, OutViewType& out, int k = 0) {
+  auto h_in        = Kokkos::create_mirror_view(in);
+  auto h_out       = Kokkos::create_mirror_view(out);
+  using value_type = typename InViewType::non_const_value_type;
+  const int N = in.extent(0), BlkSize = in.extent(1);
+
+  assert(out.extent(0) == in.extent(0));
+  assert(out.extent(1) == in.extent(1) + abs(k));
+
+  int i1_start = k >= 0 ? 0 : -k;
+  int i2_start = k >= 0 ? k : 0;
+
+  Kokkos::deep_copy(h_in, in);
+  for (int i0 = 0; i0 < N; i0++) {
+    for (int i1 = 0; i1 < BlkSize; i1++) {
+      h_out(i0, i1 + i1_start, i1 + i2_start) = h_in(i0, i1);
+    }
+  }
+
+  Kokkos::deep_copy(out, h_out);
+}
+
+template <typename AViewType, typename BViewType, typename CViewType>
+void add_matrices(AViewType& a, BViewType& b, CViewType& c) {
+  auto h_a = Kokkos::create_mirror_view(a);
+  auto h_b = Kokkos::create_mirror_view(b);
+  auto h_c = Kokkos::create_mirror_view(c);
+
+  Kokkos::deep_copy(h_a, a);
+  Kokkos::deep_copy(h_b, b);
+
+  const int N = a.extent(0), BlkSize = a.extent(1);
+  for (int i0 = 0; i0 < N; i0++) {
+    for (int i1 = 0; i1 < BlkSize; i1++) {
+      for (int i2 = 0; i2 < BlkSize; i2++) {
+        h_c(i0, i1, i2) = h_a(i0, i1, i2) + h_b(i0, i1, i2);
+      }
+    }
+  }
+
+  Kokkos::deep_copy(c, h_c);
+}
+
 }  // namespace KokkosBatched
 
 #endif  // TEST_BATCHED_DENSE_HELPER_HPP
