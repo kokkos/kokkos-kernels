@@ -1340,180 +1340,18 @@ struct SptrsvWrap {
     }    // end tagged operator
   };
 
-  template <class RowMapType, class EntriesType, class ValuesType,
-            class LHSType, class RHSType>
-  struct TriLvlSchedTP1SingleBlockFunctorDiagValues {
-    RowMapType row_map;
-    EntriesType entries;
-    ValuesType values;
-    LHSType lhs;
-    RHSType rhs;
-    entries_t nodes_grouped_by_level;
-    entries_t nodes_per_level;
-    ValuesType diagonal_values;
-
-    long node_count;  // like "block" offset into ngbl, my_league is the "local"
-                      // offset
-    long lvl_start;
-    long lvl_end;
-    const bool is_lowertri;
-    const int dense_nrows;
-    const int cutoff;
-    // team_size: each team can be assigned a row, if there are enough rows...
-
-    TriLvlSchedTP1SingleBlockFunctorDiagValues(
-        const RowMapType &row_map_, const EntriesType &entries_,
-        const ValuesType &values_, LHSType &lhs_, const RHSType &rhs_,
-        const entries_t &nodes_grouped_by_level_,
-        const entries_t &nodes_per_level_, const ValuesType &diagonal_values_,
-        long node_count_, const long lvl_start_, const long lvl_end_,
-        const bool is_lower_, const int dense_nrows_ = 0, const int cutoff_ = 0)
-        : row_map(row_map_),
-          entries(entries_),
-          values(values_),
-          lhs(lhs_),
-          rhs(rhs_),
-          nodes_grouped_by_level(nodes_grouped_by_level_),
-          nodes_per_level(nodes_per_level_),
-          diagonal_values(diagonal_values_),
-          node_count(node_count_),
-          lvl_start(lvl_start_),
-          lvl_end(lvl_end_),
-          is_lowertri(is_lower_),
-          dense_nrows(dense_nrows_),
-          cutoff(cutoff_) {}
-
-    // SingleBlock: Only one block (or league) executing; team_rank used to map
-    // thread to row
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const member_type &team) const {
-      long mut_node_count = node_count;
-      typename entries_t::non_const_value_type rowid{0};
-      typename RowMapType::non_const_value_type soffset{0};
-      typename RowMapType::non_const_value_type eoffset{0};
-      typename RHSType::non_const_value_type rhs_val{0};
-      scalar_t diff = scalar_t(0.0);
-
-      for (auto lvl = lvl_start; lvl < lvl_end; ++lvl) {
-        auto nodes_this_lvl = nodes_per_level(lvl);
-        int my_rank         = team.team_rank();
-        diff                = scalar_t(0.0);
-
-        if (my_rank < nodes_this_lvl) {
-          // THIS is where the mapping of threadid to rowid happens
-          rowid   = nodes_grouped_by_level(my_rank + mut_node_count);
-          soffset = row_map(rowid);
-          eoffset = row_map(rowid + 1);
-          rhs_val = rhs(rowid);
-
-#ifdef SERIAL_FOR_LOOP
-          for (auto ptr = soffset; ptr < eoffset; ++ptr) {
-            auto colid = entries(ptr);
-            auto val   = values(ptr);
-            if (colid != rowid) {
-              diff -= val * lhs(colid);
-            }
-          }
-#else
-          auto trange = eoffset - soffset;
-          Kokkos::parallel_reduce(
-              Kokkos::ThreadVectorRange(team, trange),
-              [&](const int loffset, scalar_t &tdiff) {
-                auto ptr   = soffset + loffset;
-                auto colid = entries(ptr);
-                auto val   = values(ptr);
-
-                if (colid != rowid) {
-                  tdiff -= val * lhs(colid);
-                }
-              },
-              diff);
-#endif
-          // ASSUMPTION: sorted diagonal value located at eoffset - 1 for lower
-          // tri, soffset for upper tri
-          lhs(rowid) = (rhs_val + diff) / diagonal_values(rowid);
-        }  // end if team.team_rank() < nodes_this_lvl
-        {
-          // Update mut_node_count from nodes_per_level(lvl) each iteration of
-          // lvl per thread
-          mut_node_count += nodes_this_lvl;
-        }
-        team.team_barrier();
-      }  // end for lvl
-    }    // end operator
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const LargerCutoffTag &, const member_type &team) const {
-      long mut_node_count = node_count;
-      typename entries_t::non_const_value_type rowid{0};
-      typename RowMapType::non_const_value_type soffset{0};
-      typename RowMapType::non_const_value_type eoffset{0};
-      typename RHSType::non_const_value_type rhs_val{0};
-      scalar_t diff = scalar_t(0.0);
-
-      for (auto lvl = lvl_start; lvl < lvl_end; ++lvl) {
-        auto nodes_this_lvl = nodes_per_level(lvl);
-        int my_team_rank    = team.team_rank();
-        // If cutoff > team_size, then a thread will be responsible for multiple
-        // rows - this may be a helpful scenario depending on occupancy etc.
-        for (int my_rank = my_team_rank; my_rank < cutoff;
-             my_rank += team.team_size()) {
-          diff = scalar_t(0.0);
-          if (my_rank < nodes_this_lvl) {
-            // THIS is where the mapping of threadid to rowid happens
-            rowid   = nodes_grouped_by_level(my_rank + mut_node_count);
-            soffset = row_map(rowid);
-            eoffset = row_map(rowid + 1);
-            rhs_val = rhs(rowid);
-
-#ifdef SERIAL_FOR_LOOP
-            for (auto ptr = soffset; ptr < eoffset; ++ptr) {
-              auto colid = entries(ptr);
-              auto val   = values(ptr);
-              if (colid != rowid) {
-                diff -= val * lhs(colid);
-              }
-            }
-#else
-            auto trange = eoffset - soffset;
-            Kokkos::parallel_reduce(
-                Kokkos::ThreadVectorRange(team, trange),
-                [&](const int loffset, scalar_t &tdiff) {
-                  auto ptr   = soffset + loffset;
-                  auto colid = entries(ptr);
-                  auto val   = values(ptr);
-                  if (colid != rowid) {
-                    tdiff -= val * lhs(colid);
-                  }
-                },
-                diff);
-#endif
-            lhs(rowid) = (rhs_val + diff) / diagonal_values(rowid);
-          }  // end if team.team_rank() < nodes_this_lvl
-        }    // end for my_rank loop
-        {
-          // Update mut_node_count from nodes_per_level(lvl) each iteration of
-          // lvl per thread
-          mut_node_count += nodes_this_lvl;
-        }
-        team.team_barrier();
-      }  // end for lvl
-    }    // end tagged operator
-  };
-
   //
   // End of functors, begin external API
   //
 
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
-  template <class RowMapType, class EntriesType, class ValuesType,
+  template <bool IsLower, class RowMapType, class EntriesType, class ValuesType,
             class RHSType, class LHSType>
-  static void lower_tri_solve_cg(TriSolveHandle &thandle,
-                                 const RowMapType row_map,
-                                 const EntriesType entries,
-                                 const ValuesType values, const RHSType &rhs,
-                                 LHSType &lhs) {
+  static void tri_solve_cg(TriSolveHandle &thandle,
+                           const RowMapType row_map,
+                           const EntriesType entries,
+                           const ValuesType values, const RHSType &rhs,
+                           LHSType &lhs) {
     typename TriSolveHandle::SPTRSVcudaGraphWrapperType *lcl_cudagraph =
         thandle.get_sptrsvCudaGraph();
 
@@ -1527,7 +1365,6 @@ struct SptrsvWrap {
                          EmptyFunctor());
     Kokkos::Cuda().fence();
     cudaStreamSynchronize(stream1);
-    // Kokkos::fence();
 
     auto hnodes_per_level       = thandle.get_host_nodes_per_level();
     auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
@@ -1555,7 +1392,7 @@ struct SptrsvWrap {
                   policy,
                   Kokkos::Experimental::WorkItemProperty::HintLightWeight),
               TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType,
-                                          ValuesType, LHSType, RHSType, true>(
+                                          ValuesType, LHSType, RHSType, IsLower>(
                   row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
                   node_count));
 
@@ -1575,76 +1412,7 @@ struct SptrsvWrap {
 
     cudaStreamSynchronize(stream1);
     Kokkos::fence();
-  }  // end lower_tri_solve_cg
-
-  template <class RowMapType, class EntriesType, class ValuesType,
-            class RHSType, class LHSType>
-  static void upper_tri_solve_cg(TriSolveHandle &thandle,
-                                 const RowMapType row_map,
-                                 const EntriesType entries,
-                                 const ValuesType values, const RHSType &rhs,
-                                 LHSType &lhs) {
-    typename TriSolveHandle::SPTRSVcudaGraphWrapperType *lcl_cudagraph =
-        thandle.get_sptrsvCudaGraph();
-
-    auto nlevels = thandle.get_num_levels();
-
-    auto stream1 = lcl_cudagraph->stream;
-    Kokkos::Cuda cuda1(stream1);
-    auto graph = lcl_cudagraph->cudagraph;
-
-    Kokkos::parallel_for("Init", Kokkos::RangePolicy<execution_space>(0, 1),
-                         EmptyFunctor());
-    Kokkos::Cuda().fence();
-    cudaStreamSynchronize(stream1);
-
-    auto hnodes_per_level       = thandle.get_host_nodes_per_level();
-    auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
-
-    size_type node_count = 0;
-
-    int team_size = thandle.get_team_size();
-    team_size     = team_size == -1 ? 64 : team_size;
-
-    // Start capturing stream
-    if (thandle.cudagraphCreated == false) {
-      Kokkos::fence();
-      cudaStreamBeginCapture(stream1, cudaStreamCaptureModeGlobal);
-      {
-        for (int iter = 0; iter < nlevels; ++iter) {
-          size_type lvl_nodes = hnodes_per_level(iter);
-
-          auto policy = std::is_same<execution_space, Kokkos::Cuda>::value
-                            ? team_policy(lvl_nodes, team_size, cuda1)
-                            : team_policy(lvl_nodes, team_size);
-
-          Kokkos::parallel_for(
-              "parfor_u_team_cudagraph",
-              Kokkos::Experimental::require(
-                  policy,
-                  Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-              TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType,
-                                          ValuesType, LHSType, RHSType, false>(
-                  row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-                  node_count));
-
-          node_count += hnodes_per_level(iter);
-        }
-      }
-      cudaStreamEndCapture(stream1, &graph);
-
-      // Create graphExec
-      cudaGraphInstantiate(&(lcl_cudagraph->cudagraphinstance), graph, NULL,
-                           NULL, 0);
-      thandle.cudagraphCreated = true;
-    }
-    // Run graph
-    Kokkos::fence();
-    cudaGraphLaunch(lcl_cudagraph->cudagraphinstance, stream1);
-
-    cudaStreamSynchronize(stream1);
-    Kokkos::fence();
-  }  // end upper_tri_solve_cg
+  }  // end tri_solve_cg
 
 #endif
 

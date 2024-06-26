@@ -142,7 +142,7 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
         using ExecSpace = typename RowMapType::memory_space::execution_space;
         if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
           // TODO: set stream in thandle's sptrsvCudaGraph
-          Sptrsv::lower_tri_solve_cg(*sptrsv_handle, row_map, entries, values,
+          Sptrsv::tri_solve_cg<true>(*sptrsv_handle, row_map, entries, values,
                                      b, x);
         else
 #endif
@@ -163,8 +163,8 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
         using ExecSpace = typename RowMapType::memory_space::execution_space;
         if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
           // TODO: set stream in thandle's sptrsvCudaGraph
-          Sptrsv::upper_tri_solve_cg(*sptrsv_handle, row_map, entries, values,
-                                     b, x);
+          Sptrsv::tri_solve_cg<false>(*sptrsv_handle, row_map, entries, values,
+                                      b, x);
         else
 #endif
           Sptrsv::upper_tri_solve(space, *sptrsv_handle, row_map, entries,
