@@ -2563,12 +2563,6 @@ struct SptrsvWrap {
     sptrsv_timer.reset();
 #endif
 
-    // Create basic functors
-    LowerRPPoint lrpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level);
-    //LowerRPBlock lrpb(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, block_size);
-    LowerTPPoint ltpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
-    //LowerTPBlock ltpb(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
-
     for (size_type lvl = 0; lvl < nlevels; ++lvl) {
       size_type lvl_nodes = hnodes_per_level(lvl);
 
@@ -2578,6 +2572,8 @@ struct SptrsvWrap {
 #endif
         if (thandle.get_algorithm() ==
             KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
+          LowerRPPoint lrpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level);
+
           Kokkos::parallel_for(
               "parfor_fixed_lvl",
               Kokkos::Experimental::require(
@@ -2587,6 +2583,7 @@ struct SptrsvWrap {
         } else if (thandle.get_algorithm() ==
                    KokkosSparse::Experimental::SPTRSVAlgorithm::
                        SEQLVLSCHD_TP1) {
+          LowerTPPoint ltpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
           int team_size = thandle.get_team_size();
           auto tp = team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
           Kokkos::parallel_for(
@@ -2952,12 +2949,6 @@ struct SptrsvWrap {
 
     size_type node_count = 0;
 
-    // Create basic functors
-    UpperRPPoint urpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level);
-    //UpperRPBlock urpb(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, block_size);
-    UpperTPPoint utpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
-    //UpperTPBlock utpb(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
-
     // This must stay serial; would be nice to try out Cuda's graph stuff to
     // reduce kernel launch overhead
 #ifdef profile_supernodal_etree
@@ -2974,6 +2965,7 @@ struct SptrsvWrap {
 
         if (thandle.get_algorithm() ==
             KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
+          UpperRPPoint urpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level);
           Kokkos::parallel_for(
               "parfor_fixed_lvl",
               Kokkos::Experimental::require(
@@ -2983,6 +2975,7 @@ struct SptrsvWrap {
         } else if (thandle.get_algorithm() ==
                    KokkosSparse::Experimental::SPTRSVAlgorithm::
                        SEQLVLSCHD_TP1) {
+          UpperTPPoint utpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
           int team_size = thandle.get_team_size();
           auto tp = team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
           Kokkos::parallel_for(
@@ -3735,8 +3728,8 @@ tstf); } // end elseif
     using nodes_per_level_type =
         typename TriSolveHandle::hostspace_nnz_lno_view_t;
     using nodes_grouped_by_level_type = typename TriSolveHandle::nnz_lno_view_t;
-    using UpperRPPoint = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, true);
-    using UpperTPPoint = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true);
+    using UpperRPPoint = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, false);
+    using UpperTPPoint = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, false);
 
     // Create vectors for handles' data in streams
     int nstreams = execspace_v.size();
