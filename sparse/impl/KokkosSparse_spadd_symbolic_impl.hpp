@@ -540,10 +540,7 @@ void spadd_symbolic_impl(
           "KokkosSparse::SpAdd:Symbolic::InputNotSorted::CountEntries",
           range_type(exec, 0, nrows), countEntries);
       KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(
-          exec, nrows + 1, c_rowmap_upperbound);
-      Kokkos::deep_copy(exec, c_nnz_upperbound,
-                        Kokkos::subview(c_rowmap_upperbound, nrows));
-      exec.fence("fence before c_nnz_upperbound used on host");
+          exec, nrows + 1, c_rowmap_upperbound, c_nnz_upperbound);
     }
     ordinal_view_t c_entries_uncompressed(
         Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
