@@ -81,7 +81,7 @@ struct Functor_BatchedSerialGemm {
   Functor_BatchedSerialGemm(const ScalarType alpha, const AViewType &a,
                             const BViewType &b, const ScalarType beta,
                             const CViewType &c)
-      : _alpha(alpha), _a(a), _b(b), _beta(beta), _c(c) {}
+      : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int k) const {
