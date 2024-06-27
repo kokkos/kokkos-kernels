@@ -118,9 +118,8 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
   View3DType A("A", N, BlkSize, BlkSize),
       A_reconst("A_reconst", N, BlkSize, BlkSize);
   View3DType EL("EL", N, BlkSize, BlkSize), EU("EU", N, BlkSize, BlkSize),
-      DEU("DEU", N, BlkSize, BlkSize), D("D", N, BlkSize, BlkSize),
-      LD("LD", N, BlkSize, BlkSize), L("L", N, BlkSize, BlkSize),
-      I("I", N, BlkSize, BlkSize);
+      D("D", N, BlkSize, BlkSize), LD("LD", N, BlkSize, BlkSize),
+      L("L", N, BlkSize, BlkSize), I("I", N, BlkSize, BlkSize);
   RealView2DType d("d", N, BlkSize),
       ones("ones", N, BlkSize);       // Diagonal components
   View2DType e("e", N, BlkSize - 1);  // Sub diagnoal components
@@ -151,9 +150,18 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
   create_diagonal_matrix(e, EL, -1);
   create_diagonal_matrix(e, EU, 1);
   create_diagonal_matrix(d, D);
+  create_diagonal_matrix(ones, I);
 
-  add_matrices(D, EU, DEU);
-  add_matrices(DEU, EL, A);
+  // Matrix matrix addition by Gemm
+  // D + EU by D * I + EU (result stored in EU)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
+                            View3DType, Trans::NoTranspose>(1.0, D, I, 1.0, EU)
+      .run();
+
+  // EU + EL by EU * I + EL (result stored in A)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
+                            View3DType, Trans::NoTranspose>(1.0, EU, I, 1.0, A)
+      .run();
 
   // Factorize matrix A -> L * D * L.T
   // d and e are updated by pttrf
@@ -161,12 +169,19 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
                              AlgoTagType>(d, e)
       .run();
 
+  Kokkos::fence();
+
   // Reconstruct L and D from factorized matrix
   create_diagonal_matrix(e, EL, -1);
   create_diagonal_matrix(d, D);
-  create_diagonal_matrix(ones, I);
 
-  add_matrices(EL, I, L);
+  // Copy I to L
+  Kokkos::deep_copy(L, I);
+
+  // EL + I by EL * I + L (result stored in L)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
+                            View3DType, Trans::NoTranspose>(1.0, EL, I, 1.0, L)
+      .run();
 
   // Reconstruct A by L*D*LT
   // Gemm to compute L*D -> LD

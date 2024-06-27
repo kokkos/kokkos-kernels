@@ -135,27 +135,6 @@ void create_diagonal_matrix(InViewType& in, OutViewType& out, int k = 0) {
   Kokkos::deep_copy(out, h_out);
 }
 
-template <typename AViewType, typename BViewType, typename CViewType>
-void add_matrices(AViewType& a, BViewType& b, CViewType& c) {
-  auto h_a = Kokkos::create_mirror_view(a);
-  auto h_b = Kokkos::create_mirror_view(b);
-  auto h_c = Kokkos::create_mirror_view(c);
-
-  Kokkos::deep_copy(h_a, a);
-  Kokkos::deep_copy(h_b, b);
-
-  const int N = a.extent(0), BlkSize = a.extent(1);
-  for (int i0 = 0; i0 < N; i0++) {
-    for (int i1 = 0; i1 < BlkSize; i1++) {
-      for (int i2 = 0; i2 < BlkSize; i2++) {
-        h_c(i0, i1, i2) = h_a(i0, i1, i2) + h_b(i0, i1, i2);
-      }
-    }
-  }
-
-  Kokkos::deep_copy(c, h_c);
-}
-
 }  // namespace KokkosBatched
 
 #endif  // TEST_BATCHED_DENSE_HELPER_HPP
