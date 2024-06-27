@@ -147,7 +147,7 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
 
   // Reconstruct Tridiaonal matrix A
   // A = D + EL + EU
-  create_diagonal_matrix(e, EL, -1);
+  create_diagonal_matrix(e, A, -1);  // This is EL, but finally stores A
   create_diagonal_matrix(e, EU, 1);
   create_diagonal_matrix(d, D);
   create_diagonal_matrix(ones, I);
