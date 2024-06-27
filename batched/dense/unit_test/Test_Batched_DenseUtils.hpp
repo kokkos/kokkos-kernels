@@ -114,8 +114,8 @@ void create_banded_triangular_matrix(InViewType& in, OutViewType& out,
 
 template <typename InViewType, typename OutViewType>
 void create_diagonal_matrix(InViewType& in, OutViewType& out, int k = 0) {
-  auto h_in        = Kokkos::create_mirror_view(in);
-  auto h_out       = Kokkos::create_mirror_view(out);
+  auto h_in   = Kokkos::create_mirror_view(in);
+  auto h_out  = Kokkos::create_mirror_view(out);
   const int N = in.extent(0), BlkSize = in.extent(1);
 
   assert(out.extent(0) == in.extent(0));
