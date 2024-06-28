@@ -303,8 +303,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     // holds the keys
     nnz_lno_t *keys = (nnz_lno_t *)(all_shared_memory);
     all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
-    scalar_t *vals =
-        KokkosKernels::Impl::alignPtr<char *, scalar_t>(all_shared_memory);
+    scalar_t *vals = KokkosKernels::Impl::alignPtr<scalar_t>(all_shared_memory);
 
     KokkosKernels::Experimental::HashmapAccumulator<
         nnz_lno_t, nnz_lno_t, scalar_t,
