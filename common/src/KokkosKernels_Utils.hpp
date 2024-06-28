@@ -1528,7 +1528,7 @@ struct array_sum_reduce {
 };
 
 template <typename T, typename InPtr>
-KOKKOS_INLINE_FUNCTION T *alignPtr(InPtr p) {
+KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr p) {
   // ugly but computationally free and the "right" way to do this in C++
   std::uintptr_t ptrVal = reinterpret_cast<std::uintptr_t>(p);
   // ptrVal + (align - 1) lands inside the next valid aligned scalar_t,
