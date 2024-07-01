@@ -47,20 +47,18 @@ struct IlukWrap {
   //
   // Useful types
   //
-  using execution_space        = typename IlukHandle::execution_space;
-  using memory_space           = typename IlukHandle::memory_space;
-  using lno_t                  = typename IlukHandle::nnz_lno_t;
-  using size_type              = typename IlukHandle::size_type;
-  using scalar_t               = typename IlukHandle::nnz_scalar_t;
-  using HandleDeviceRowMapType = typename IlukHandle::nnz_row_view_t;
-  using HandleDeviceValueType  = typename IlukHandle::nnz_value_view_t;
-  using WorkViewType           = typename IlukHandle::work_view_t;
-  using LevelHostViewType      = typename IlukHandle::nnz_lno_view_host_t;
-  using LevelViewType          = typename IlukHandle::nnz_lno_view_t;
-  using karith                 = typename Kokkos::ArithTraits<scalar_t>;
-  using team_policy            = typename IlukHandle::TeamPolicy;
-  using member_type            = typename team_policy::member_type;
-  using range_policy           = typename IlukHandle::RangePolicy;
+  using execution_space   = typename IlukHandle::execution_space;
+  using memory_space      = typename IlukHandle::memory_space;
+  using lno_t             = typename IlukHandle::nnz_lno_t;
+  using size_type         = typename IlukHandle::size_type;
+  using scalar_t          = typename IlukHandle::nnz_scalar_t;
+  using WorkViewType      = typename IlukHandle::work_view_t;
+  using LevelHostViewType = typename IlukHandle::nnz_lno_view_host_t;
+  using LevelViewType     = typename IlukHandle::nnz_lno_view_t;
+  using karith            = typename Kokkos::ArithTraits<scalar_t>;
+  using team_policy       = typename IlukHandle::TeamPolicy;
+  using member_type       = typename team_policy::member_type;
+  using range_policy      = typename IlukHandle::RangePolicy;
 
   static team_policy get_team_policy(const size_type nrows,
                                      const int team_size) {
