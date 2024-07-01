@@ -546,9 +546,7 @@ void spadd_symbolic_impl(
           "KokkosSparse::SpAdd:Symbolic::InputNotSorted::CountEntries",
           range_type(exec, 0, nrows), countEntries);
       KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(
-          exec, nrows + 1, c_rowmap_upperbound);
-      Kokkos::deep_copy(exec, c_nnz_upperbound,
-                        Kokkos::subview(c_rowmap_upperbound, nrows));
+          exec, nrows + 1, c_rowmap_upperbound, c_nnz_upperbound);
     }
     ordinal_view_t c_entries_uncompressed(
         Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
@@ -595,6 +593,7 @@ void spadd_symbolic_impl(
   // provide the number of NNZ in C to user through handle
   size_type cmax;
   Kokkos::deep_copy(exec, cmax, Kokkos::subview(c_rowmap, nrows));
+  exec.fence("fence before cmax used on host");
   addHandle->set_c_nnz(cmax);
   addHandle->set_call_symbolic();
   addHandle->set_call_numeric(false);
