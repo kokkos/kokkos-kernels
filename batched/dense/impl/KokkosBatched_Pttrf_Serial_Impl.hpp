@@ -55,16 +55,13 @@ KOKKOS_INLINE_FUNCTION static int checkPttrfInput(
 /// \brief Serial Batched Pttrf:
 /// Compute the Cholesky factorization of a real symmetric positive definite
 /// tridiagonal matrix A_l for all l = 0, ..., N
-///   using the triangular solve algorithm Tbsv. Ab is an n by n unit, or
-///   non-unit, upper or lower triangular band matrix, with ( k + 1 )
-///   diagonals.
 ///
 /// \tparam Input type for the a diagonal matrix, needs to be a 1D view
-/// \tparam EViewType: Input type for the a sub/super diagonal matrix, needs to
-/// be a 1D view
+/// \tparam EViewType: Input type for the a upper/lower diagonal matrix, needs
+/// to be a 1D view
 ///
 /// \param d [in]: n diagonal elements of the diagonal matrix D
-/// \param e [in]: n-1 sub/super diagonal elements of the diagonal matrix E
+/// \param e [in]: n-1 upper/lower diagonal elements of the diagonal matrix E
 ///
 /// No nested parallel_for is used inside of the function.
 ///
