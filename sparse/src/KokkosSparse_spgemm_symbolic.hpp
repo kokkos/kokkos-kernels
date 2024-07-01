@@ -85,6 +85,8 @@ void spgemm_symbolic(KernelHandle *handle,
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
   typedef typename Kokkos::Device<c_exec_t, c_temp_t> UniformDevice_t;
 
+  std::cout << "Create const handle" << std::endl;
+
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
       c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>
       const_handle_type;
@@ -131,6 +133,8 @@ void spgemm_symbolic(KernelHandle *handle,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_clno_row_view_t_;
 
+  std::cout << "Wrap views with Internal types" << std::endl;
+
   Internal_alno_row_view_t_ const_a_r(row_mapA.data(), row_mapA.extent(0));
   Internal_alno_nnz_view_t_ const_a_l(entriesA.data(), entriesA.extent(0));
   Internal_blno_row_view_t_ const_b_r(row_mapB.data(), row_mapB.extent(0));
@@ -162,6 +166,8 @@ void spgemm_symbolic(KernelHandle *handle,
   }
 #endif
 
+  std::cout << "Extract and validate spgemm handle" << std::endl;
+
   auto spgemmHandle = tmp_handle.get_spgemm_handle();
 
   if (!spgemmHandle) {
@@ -184,6 +190,8 @@ void spgemm_symbolic(KernelHandle *handle,
   if (algo == SPGEMM_DEBUG || algo == SPGEMM_SERIAL) {
     // Never call a TPL if serial/debug is requested (this is needed for
     // testing)
+    Kokkos::Profiling::pushRegion("KokkosSparse: spgemm_symbolic [serial/debug]");
+    std::cout << "KokkosSparse: spgemm_symbolic [serial/debug]" << std::endl;
     KokkosSparse::Impl::SPGEMM_SYMBOLIC<
         const_handle_type,  // KernelHandle,
         Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
@@ -193,7 +201,10 @@ void spgemm_symbolic(KernelHandle *handle,
                                 m, n, k, const_a_r, const_a_l, transposeA,
                                 const_b_r, const_b_l, transposeB, c_r,
                                 computeRowptrs);
+    Kokkos::Profiling::popRegion();
   } else {
+    Kokkos::Profiling::pushRegion("KokkosSparse: spgemm_symbolic []");
+    std::cout << "KokkosSparse: spgemm_symbolic []" << std::endl;
     KokkosSparse::Impl::SPGEMM_SYMBOLIC<
         const_handle_type,  // KernelHandle,
         Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
@@ -204,6 +215,7 @@ void spgemm_symbolic(KernelHandle *handle,
                                                     const_b_r, const_b_l,
                                                     transposeB, c_r,
                                                     computeRowptrs);
+    Kokkos::Profiling::popRegion();
   }
 }
 
