@@ -756,6 +756,9 @@ void test_gauss_seidel_streams_rank1(
       execution_space(), std::vector<int>(nstreams, 1));
 
   std::vector<KernelHandle> kh_v(nstreams);
+  std::vector<KernelHandle> kh_psgs_v(nstreams);
+  std::vector<KernelHandle> kh_tsgs_v(nstreams);
+  std::vector<KernelHandle> kh_tsgs_classic_v(nstreams);
   std::vector<crsMat_t> input_mat_v(nstreams);
   std::vector<scalar_view_t> solution_x_v(nstreams);
   std::vector<scalar_view_t> x_vector_v(nstreams);
@@ -764,6 +767,8 @@ void test_gauss_seidel_streams_rank1(
 
   const scalar_t one  = Kokkos::ArithTraits<scalar_t>::one();
   const scalar_t zero = Kokkos::ArithTraits<scalar_t>::zero();
+  // two-stage with SpTRSV supports only omega = one
+  auto omega_tsgs_classic = one;
 
   for (int i = 0; i < nstreams; i++) {
     input_mat_v[i] =
@@ -792,8 +797,18 @@ void test_gauss_seidel_streams_rank1(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "x vector"), nv);
     x_vector_v[i] = x_vector_tmp;
 
-    kh_v[i] = KernelHandle();  // Initialize KokkosKernelsHandle defaults.
-    kh_v[i].create_gs_handle(instances[i], nstreams, GS_DEFAULT, coloringAlgo);
+    kh_psgs_v[i] = KernelHandle();  // Initialize KokkosKernelsHandle defaults.
+    kh_tsgs_v[i] = KernelHandle();  // Initialize KokkosKernelsHandle defaults.
+    kh_tsgs_classic_v[i] =
+        KernelHandle();  // Initialize KokkosKernelsHandle defaults.
+    kh_psgs_v[i].create_gs_handle(instances[i], nstreams, GS_DEFAULT,
+                                  coloringAlgo);
+    kh_tsgs_v[i].create_gs_handle(instances[i], nstreams, GS_TWOSTAGE,
+                                  coloringAlgo);
+    kh_tsgs_v[i].set_gs_twostage(true, input_mat_v[i].numRows());
+    kh_tsgs_classic_v[i].create_gs_handle(instances[i], nstreams, GS_TWOSTAGE,
+                                          coloringAlgo);
+    kh_tsgs_classic_v[i].set_gs_twostage(false, input_mat_v[i].numRows());
   }
 
   int apply_count = 3;  // test symmetric, forward, backward
@@ -802,7 +817,7 @@ void test_gauss_seidel_streams_rank1(
     for (int i = 0; i < nstreams; i++)
       Kokkos::deep_copy(instances[i], x_vector_v[i], zero);
 
-    run_gauss_seidel_streams(instances, kh_v, input_mat_v, x_vector_v,
+    run_gauss_seidel_streams(instances, kh_psgs_v, input_mat_v, x_vector_v,
                              y_vector_v, symmetric, m_omega, apply_type,
                              nstreams);
     for (int i = 0; i < nstreams; i++) {
@@ -814,7 +829,36 @@ void test_gauss_seidel_streams_rank1(
     }
   }
 
-  for (int i = 0; i < nstreams; i++) kh_v[i].destroy_gs_handle();
+  //*** Two-stage version ****
+  for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
+    for (int i = 0; i < nstreams; i++)
+      Kokkos::deep_copy(instances[i], x_vector_v[i], zero);
+    run_gauss_seidel_streams(instances, kh_tsgs_v, input_mat_v, x_vector_v,
+                             y_vector_v, symmetric, m_omega, apply_type,
+                             nstreams);
+    for (int i = 0; i < nstreams; i++) {
+      KokkosBlas::axpby(instances[i], one, solution_x_v[i], -one,
+                        x_vector_v[i]);
+      mag_t result_norm_res = KokkosBlas::nrm2(instances[i], x_vector_v[i]);
+      EXPECT_LT(result_norm_res, initial_norm_res_v[i])
+          << "on stream_idx: " << i;
+    }
+  }
+  //*** Two-stage version (classic) ****
+  for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
+    for (int i = 0; i < nstreams; i++)
+      Kokkos::deep_copy(instances[i], x_vector_v[i], zero);
+    run_gauss_seidel_streams(instances, kh_tsgs_classic_v, input_mat_v,
+                             x_vector_v, y_vector_v, symmetric,
+                             omega_tsgs_classic, apply_type, nstreams);
+    for (int i = 0; i < nstreams; i++) {
+      KokkosBlas::axpby(instances[i], one, solution_x_v[i], -one,
+                        x_vector_v[i]);
+      mag_t result_norm_res = KokkosBlas::nrm2(instances[i], x_vector_v[i]);
+      EXPECT_LT(result_norm_res, initial_norm_res_v[i])
+          << "on stream_idx: " << i;
+    }
+  }
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                    \
