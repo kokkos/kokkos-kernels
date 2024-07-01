@@ -274,7 +274,7 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
       Kokkos::parallel_reduce(
           "check_count host",
           Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(
-              0, nodes_per_level.extent(0)),
+              space, 0, nodes_per_level.extent(0)),
           KOKKOS_LAMBDA(const long i, long& update) {
             update += nodes_per_level(i);
           },
@@ -285,8 +285,7 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
       check_count = 0;  // reset
       Kokkos::parallel_reduce(
           "check_count device",
-          Kokkos::RangePolicy<Kokkos::DefaultExecutionSpace>(
-              0, dnodes_per_level.extent(0)),
+          Kokkos::RangePolicy<ExecutionSpace>(0, dnodes_per_level.extent(0)),
           KOKKOS_LAMBDA(const long i, long& update) {
             update += dnodes_per_level(i);
           },
@@ -740,8 +739,8 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
       check_count = 0;  // reset
       Kokkos::parallel_reduce(
           "check_count device",
-          Kokkos::RangePolicy<Kokkos::DefaultExecutionSpace>(
-              0, dnodes_per_level.extent(0)),
+          Kokkos::RangePolicy<ExecutionSpace>(space, 0,
+                                              dnodes_per_level.extent(0)),
           KOKKOS_LAMBDA(const long i, long& update) {
             update += dnodes_per_level(i);
           },
