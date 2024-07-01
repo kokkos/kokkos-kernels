@@ -1527,6 +1527,32 @@ struct array_sum_reduce {
   }
 };
 
+/* Several alternatives were considered for SYCL, including
+
+unsigned int f1(unsigned int i, unsigned int align)
+{
+    return ((i + align - 1) / align * align);
+}
+
+unsigned int f2(unsigned int i, unsigned int align)
+{
+    return (i + align - 1) & (-align);
+}
+
+f1 should be equivalent to the below, but it produces incorrect results on SYCL
+f2 is how GCC does std::align, but it also produces incorrect results on SYCL
+possibly alignof(T) is not a power-of-2 on SYCL? Or a compiler error.
+*/
+#if defined(KOKKOS_ENABLE_SYCL)
+template <typename T, typename InPtr>
+KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr p) {
+  std::uintptr_t ptrVal = reinterpret_cast<std::uintptr_t>(p);
+  while (ptrVal % alignof(T)) {
+    ++ptrVal;
+  }
+  return reinterpret_cast<T *>(ptrVal);
+}
+#else
 template <typename T, typename InPtr>
 KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr p) {
   // ugly but computationally free and the "right" way to do this in C++
@@ -1535,6 +1561,7 @@ KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr p) {
   // and the mask produces the start of that scalar_t.
   return reinterpret_cast<T *>((ptrVal + alignof(T) - 1) & (~(alignof(T) - 1)));
 }
+#endif
 
 }  // namespace Impl
 }  // namespace KokkosKernels
