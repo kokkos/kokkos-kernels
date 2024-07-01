@@ -142,14 +142,14 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   auto h_e_lower = Kokkos::create_mirror_view(e_lower);
   auto h_ones    = Kokkos::create_mirror_view(ones);
 
-  for (std::size_t ib = 0; ib < N; ib++) {
-    for (std::size_t i = 0; i < BlkSize; i++) {
+  for (int ib = 0; ib < N; ib++) {
+    for (int i = 0; i < BlkSize; i++) {
       h_d(ib, i) += static_cast<real_type>(
           BlkSize);  // Add BlkSize to ensure positive definiteness
       h_ones(ib, i) = 1;
     }
 
-    for (std::size_t i = 0; i < BlkSize - 1; i++) {
+    for (int i = 0; i < BlkSize - 1; i++) {
       // FIXME: We cannot use complex conjugate for real type
       h_e_upper(ib, i) =
           Kokkos::ArithTraits<ScalarType>::real(h_e_upper(ib, i));
