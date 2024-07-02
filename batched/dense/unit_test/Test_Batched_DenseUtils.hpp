@@ -121,7 +121,7 @@ void create_banded_triangular_matrix(InViewType& in, OutViewType& out,
 /// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
 ///
 /// \param in [in]: Input batched vector, a rank 2 view
-/// \param out [inout]: Output batched matrix, where the diagonal compnent
+/// \param out [out]: Output batched matrix, where the diagonal compnent
 /// specified by k is filled with the input vector, a rank 3 view
 /// \param k [in]: The diagonal offset to be filled (default is 0).
 ///
@@ -136,6 +136,10 @@ void create_diagonal_matrix(InViewType& in, OutViewType& out, int k = 0) {
 
   int i1_start = k >= 0 ? 0 : -k;
   int i2_start = k >= 0 ? k : 0;
+
+  // Zero clear the output matrix
+  using ScalarType = typename OutViewType::non_const_value_type;
+  Kokkos::deep_copy(h_out, ScalarType(0.0));
 
   Kokkos::deep_copy(h_in, in);
   for (int i0 = 0; i0 < N; i0++) {

@@ -131,26 +131,18 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
                       realRandEnd + BlkSize);
   Kokkos::fill_random(e_upper, rand_pool, randStart, randEnd);
 
-  auto h_e_upper = Kokkos::create_mirror_view(e_upper);
+  auto h_e_upper =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), e_upper);
   auto h_e_lower = Kokkos::create_mirror_view(e_lower);
 
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize - 1; i++) {
-      // FIXME: We cannot keep the complex part of the matrix,
-      // since we do not have SerialGemm Trans::ConjTranspose
-      // needed for the tests
-      h_e_upper(ib, i) =
-          Kokkos::ArithTraits<ScalarType>::real(h_e_upper(ib, i));
-
       // Fill the lower diagonal with conjugate of the upper diagonal
       h_e_lower(ib, i) =
           Kokkos::ArithTraits<ScalarType>::conj(h_e_upper(ib, i));
     }
   }
 
-  Kokkos::fence();
-
-  Kokkos::deep_copy(e_upper, h_e_upper);
   Kokkos::deep_copy(e_lower, h_e_lower);
   Kokkos::deep_copy(ones, RealType(1.0));
 
@@ -183,10 +175,6 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
 
   Kokkos::fence();
 
-  // Zero clear EL and D
-  Kokkos::deep_copy(EL, ScalarType(0.0));
-  Kokkos::deep_copy(D, RealType(0.0));
-
   // Reconstruct L and D from factorized matrix
   create_diagonal_matrix(e_lower, EL, -1);
   create_diagonal_matrix(d, D);
@@ -205,16 +193,33 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
                             View3DType, Trans::NoTranspose>(1.0, L, D, 0.0, LD)
       .run();
 
+  // FIXME: We should use SerialGemm Trans::ConjTranspose.
+  // For the moment, we compute the complex conjugate of L and
+  // then use Trans::Transpose.
   // Gemm to compute (L*D)*L**H -> A_reconst
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::Transpose>(1.0, LD, L, 0.0,
-                                                          A_reconst)
-      .run();
-  // FIXME: This test needs SerialGemm Trans::ConjTranspose.
   // Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
   //                          View3DType, Trans::ConjTranspose>(1.0, LD, L, 0.0,
   //                                                            A_reconst)
   //    .run();
+
+  // Compute the complex conjugate of L
+  // L -> conj(L)
+  auto h_L = Kokkos::create_mirror_view(L);
+  Kokkos::deep_copy(h_L, L);
+  for (int ib = 0; ib < N; ib++) {
+    for (int i = 0; i < BlkSize; i++) {
+      for (int j = 0; j < BlkSize; j++) {
+        h_L(ib, i, j) = Kokkos::ArithTraits<ScalarType>::conj(h_L(ib, i, j));
+      }
+    }
+  }
+  Kokkos::deep_copy(L, h_L);
+
+  // Gemm to compute (L*D)*(conj(L))**T -> A_reconst
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
+                            View3DType, Trans::Transpose>(1.0, LD, L, 0.0,
+                                                          A_reconst)
+      .run();
 
   Kokkos::fence();
 
@@ -291,10 +296,6 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
       .run();
 
   Kokkos::fence();
-
-  // Zero clear EL and D
-  Kokkos::deep_copy(EL, ScalarType(0.0));
-  Kokkos::deep_copy(D, RealType(0.0));
 
   // Reconstruct L and D from factorized matrix
   create_diagonal_matrix(e, EL, -1);
