@@ -112,6 +112,20 @@ void create_banded_triangular_matrix(InViewType& in, OutViewType& out,
   Kokkos::deep_copy(out, h_out);
 }
 
+/// \brief Create a diagonal matrix from an input vector:
+///
+/// Copies the input vector into the diagonal of the output matrix specified
+/// by the parameter k. k > 0 means that the matrix is upper-diagnoal and
+/// k < 0 means the lower-diagnoal. k = 0 means the diagonal.
+///
+/// \tparam InViewType: Input type for the vector, needs to be a 2D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
+///
+/// \param in [in]: Input batched vector, a rank 2 view
+/// \param out [out]: Output batched matrix, where the diagnoal compnent
+/// specified by k is filled with the input vector, a rank 3 view \param k [in]:
+/// The diagonal offset to be filled (default is 0).
+///
 template <typename InViewType, typename OutViewType>
 void create_diagonal_matrix(InViewType& in, OutViewType& out, int k = 0) {
   auto h_in   = Kokkos::create_mirror_view(in);

@@ -27,16 +27,6 @@ using namespace KokkosBatched;
 namespace Test {
 namespace Pttrf {
 
-template <typename T>
-struct real_type {
-  using type = T;
-};
-
-template <typename T>
-struct real_type<Kokkos::complex<T>> {
-  using type = T;
-};
-
 template <typename DeviceType, typename DViewType, typename EViewType,
           typename AlgoTagType>
 struct Functor_BatchedSerialPttrf {
@@ -111,8 +101,8 @@ template <typename DeviceType, typename ScalarType, typename LayoutType,
 /// \param N [in] Batch size of matrix A
 /// \param BlkSize [in] Block size of matrix A
 void impl_test_batched_pttrf(const int N, const int BlkSize) {
-  using real_type      = typename real_type<ScalarType>::type;
-  using RealView2DType = Kokkos::View<real_type **, LayoutType, DeviceType>;
+  using RealType       = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
 
@@ -121,40 +111,38 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   View3DType EL("EL", N, BlkSize, BlkSize), EU("EU", N, BlkSize, BlkSize),
       D("D", N, BlkSize, BlkSize), LD("LD", N, BlkSize, BlkSize),
       L("L", N, BlkSize, BlkSize), I("I", N, BlkSize, BlkSize);
-  RealView2DType d("d", N, BlkSize),
-      ones("ones", N, BlkSize);  // Diagonal and sub diagnoal components
+  RealView2DType d("d", N, BlkSize),  // Diagonal components
+      ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing), N, BlkSize);
   View2DType e_upper("e_upper", N, BlkSize - 1),
       e_lower("e_lower", N,
-              BlkSize - 1);  // upper and lower diagnoal components
+              BlkSize - 1);  // upper and lower diagonal components
 
   using execution_space = typename DeviceType::execution_space;
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
-  real_type realRandStart = 0.0, realRandEnd = 1.0;
-  ScalarType randStart = 0.0, randEnd = 1.0;
+  RealType realRandStart, realRandEnd;
+  ScalarType randStart, randEnd;
 
   KokkosKernels::Impl::getRandomBounds(1.0, realRandStart, realRandEnd);
   KokkosKernels::Impl::getRandomBounds(1.0, randStart, randEnd);
-  Kokkos::fill_random(d, rand_pool, realRandStart, realRandEnd);
+
+  // Add BlkSize to ensure positive definiteness
+  Kokkos::fill_random(d, rand_pool, realRandStart + BlkSize,
+                      realRandEnd + BlkSize);
   Kokkos::fill_random(e_upper, rand_pool, randStart, randEnd);
 
   auto h_d       = Kokkos::create_mirror_view(d);
   auto h_e_upper = Kokkos::create_mirror_view(e_upper);
   auto h_e_lower = Kokkos::create_mirror_view(e_lower);
-  auto h_ones    = Kokkos::create_mirror_view(ones);
 
   for (int ib = 0; ib < N; ib++) {
-    for (int i = 0; i < BlkSize; i++) {
-      h_d(ib, i) += static_cast<real_type>(
-          BlkSize);  // Add BlkSize to ensure positive definiteness
-      h_ones(ib, i) = 1;
-    }
-
     for (int i = 0; i < BlkSize - 1; i++) {
-      // FIXME: We cannot use complex conjugate for real type
+      // FIXME: We cannot keep the complex part of the matrix,
+      // since we do not have SerialGemm Trans::ConjTranspose
+      // needed for the tests
       h_e_upper(ib, i) =
           Kokkos::ArithTraits<ScalarType>::real(h_e_upper(ib, i));
 
-      // Fill the lower diagnocal with conjuate of the upper diagnoal
+      // Fill the lower diagonal with conjugate of the upper diagonal
       h_e_lower(ib, i) =
           Kokkos::ArithTraits<ScalarType>::conj(h_e_upper(ib, i));
     }
@@ -165,9 +153,9 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   Kokkos::deep_copy(d, h_d);
   Kokkos::deep_copy(e_upper, h_e_upper);
   Kokkos::deep_copy(e_lower, h_e_lower);
-  Kokkos::deep_copy(ones, h_ones);
+  Kokkos::deep_copy(ones, RealType(1.0));
 
-  // Reconstruct Tridiaonal matrix A
+  // Reconstruct Tridiagonal matrix A
   // A = D + EL + EU
   create_diagonal_matrix(e_lower, A, -1);  // This is EL, but finally stores A
   create_diagonal_matrix(e_upper, EU, 1);
@@ -250,8 +238,8 @@ template <typename DeviceType, typename ScalarType, typename LayoutType,
 /// \param N [in] Batch size of matrix A
 /// \param BlkSize [in] Block size of matrix A
 void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
-  using real_type      = typename real_type<ScalarType>::type;
-  using RealView2DType = Kokkos::View<real_type **, LayoutType, DeviceType>;
+  using RealType       = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
 
@@ -260,19 +248,17 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
   View3DType EL("EL", N, BlkSize, BlkSize), EU("EU", N, BlkSize, BlkSize),
       D("D", N, BlkSize, BlkSize), LD("LD", N, BlkSize, BlkSize),
       L("L", N, BlkSize, BlkSize), I("I", N, BlkSize, BlkSize);
-  RealView2DType d("d", N, BlkSize),  // Diagonal component
-      ones("ones", N, BlkSize);
+  RealView2DType d("d", N, BlkSize),  // Diagonal components
+      ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing), N, BlkSize);
   View2DType e("e", N,
-               BlkSize - 1);  // Upper and lower diagnoal components (identical)
+               BlkSize - 1);  // Upper and lower diagonal components (identical)
 
-  auto h_d    = Kokkos::create_mirror_view(d);
-  auto h_e    = Kokkos::create_mirror_view(e);
-  auto h_ones = Kokkos::create_mirror_view(ones);
+  auto h_d = Kokkos::create_mirror_view(d);
+  auto h_e = Kokkos::create_mirror_view(e);
 
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize; i++) {
-      h_d(ib, i)    = 4;
-      h_ones(ib, i) = 1;
+      h_d(ib, i) = 4;
     }
 
     for (int i = 0; i < BlkSize - 1; i++) {
@@ -284,7 +270,7 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
 
   Kokkos::deep_copy(d, h_d);
   Kokkos::deep_copy(e, h_e);
-  Kokkos::deep_copy(ones, h_ones);
+  Kokkos::deep_copy(ones, RealType(1.0));
 
   // Reconstruct Tridiaonal matrix A
   // A = D + EL + EU
