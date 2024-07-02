@@ -23,20 +23,17 @@
 namespace KokkosBatched {
 
 /// \brief Serial Batched Pttrf:
-///
-/// Solve a tridiagonal system of the form Ab_l x_l = b_l for all l = 0, ..., N
-///   using the factorization A = U**H *D*U or A = L*D*L**H computed by pttrf.
-///   D is a diagonal matrix specified in the vector D, U (or L) is a unit
-///   bidiagonal matrix whose superdiagonal (subdiagonal) is specified in the
-///   vector E, and X and B are stored in the vector B.
+/// Compute the Cholesky factorization L*D*L**T (or L*D*L**H) of a real
+/// symmetric (or complex Hermitian) positive definite tridiagonal matrix A_l
+/// for all l = 0, ..., N
 ///
 /// \tparam DViewType: Input type for the a diagonal matrix, needs to be a 1D
-/// view \tparam EViewType: Input type for the a superdiagonal matrix, needs to
-/// be a 1D view \tparam BViewType: Input type for the right-hand side and the
-/// solution, needs to be a 1D view
+/// view
+/// \tparam EViewType: Input type for the a upper/lower diagonal matrix,
+/// needs to be a 1D view
 ///
-/// \param d [in]: n diagonal elements of the diagonal matrix D
-/// \param e [in]: n diagonal elements of the diagonal matrix E
+/// \param d [inout]: n diagonal elements of the diagonal matrix D
+/// \param e [inout]: n-1 upper/lower diagonal elements of the diagonal matrix E
 ///
 /// No nested parallel_for is used inside of the function.
 ///
@@ -52,4 +49,4 @@ struct SerialPttrf {
 
 #include "KokkosBatched_Pttrf_Serial_Impl.hpp"
 
-#endif  // KOKKOSBATCHED_TBSV_HPP_
+#endif  // KOKKOSBATCHED_PTTRF_HPP_
