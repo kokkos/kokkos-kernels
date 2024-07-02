@@ -136,7 +136,7 @@ void test_alignPtrTo() {
 
   int errs;
   Kokkos::parallel_reduce(
-      Kokkos::RangePolicy(space, 0, teamSize),
+      Kokkos::RangePolicy<ExecSpace>(space, 0, teamSize),
       KOKKOS_LAMBDA(int i, int &lerr) { lerr += (results(i) != i); }, errs);
 
 // if SYCL is enabled, only TEST_FN 1 and 4 should work
