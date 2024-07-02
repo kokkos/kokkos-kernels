@@ -101,7 +101,8 @@ template <typename DeviceType, typename ScalarType, typename LayoutType,
 /// \param N [in] Batch size of matrix A
 /// \param BlkSize [in] Block size of matrix A
 void impl_test_batched_pttrf(const int N, const int BlkSize) {
-  using RealType       = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
@@ -130,7 +131,6 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
                       realRandEnd + BlkSize);
   Kokkos::fill_random(e_upper, rand_pool, randStart, randEnd);
 
-  auto h_d       = Kokkos::create_mirror_view(d);
   auto h_e_upper = Kokkos::create_mirror_view(e_upper);
   auto h_e_lower = Kokkos::create_mirror_view(e_lower);
 
@@ -150,14 +150,13 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
 
   Kokkos::fence();
 
-  Kokkos::deep_copy(d, h_d);
   Kokkos::deep_copy(e_upper, h_e_upper);
   Kokkos::deep_copy(e_lower, h_e_lower);
   Kokkos::deep_copy(ones, RealType(1.0));
 
   // Reconstruct Tridiagonal matrix A
   // A = D + EL + EU
-  create_diagonal_matrix(e_lower, A, -1);  // This is EL, but finally stores A
+  create_diagonal_matrix(e_lower, EL, -1);
   create_diagonal_matrix(e_upper, EU, 1);
   create_diagonal_matrix(d, D);
   create_diagonal_matrix(ones, I);
@@ -168,7 +167,10 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
                             View3DType, Trans::NoTranspose>(1.0, D, I, 1.0, EU)
       .run();
 
-  // EU + EL by EU * I + EL (result stored in A)
+  // Copy EL to A
+  Kokkos::deep_copy(A, EL);
+
+  // EU + EL by EU * I + A (result stored in A)
   Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
                             View3DType, Trans::NoTranspose>(1.0, EU, I, 1.0, A)
       .run();
@@ -180,6 +182,10 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
       .run();
 
   Kokkos::fence();
+
+  // Zero clear EL and D
+  Kokkos::deep_copy(EL, ScalarType(0.0));
+  Kokkos::deep_copy(D, RealType(0.0));
 
   // Reconstruct L and D from factorized matrix
   create_diagonal_matrix(e_lower, EL, -1);
@@ -213,9 +219,7 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   Kokkos::fence();
 
   // this eps is about 10^-14
-  using ats      = typename Kokkos::ArithTraits<ScalarType>;
-  using mag_type = typename ats::mag_type;
-  mag_type eps   = 1.0e3 * ats::epsilon();
+  RealType eps = 1.0e3 * ats::epsilon();
 
   auto h_A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
   auto h_A_reconst =
@@ -238,7 +242,8 @@ template <typename DeviceType, typename ScalarType, typename LayoutType,
 /// \param N [in] Batch size of matrix A
 /// \param BlkSize [in] Block size of matrix A
 void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
-  using RealType       = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
@@ -248,33 +253,19 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
   View3DType EL("EL", N, BlkSize, BlkSize), EU("EU", N, BlkSize, BlkSize),
       D("D", N, BlkSize, BlkSize), LD("LD", N, BlkSize, BlkSize),
       L("L", N, BlkSize, BlkSize), I("I", N, BlkSize, BlkSize);
-  RealView2DType d("d", N, BlkSize),  // Diagonal components
+  RealView2DType d(Kokkos::view_alloc("d", Kokkos::WithoutInitializing), N,
+                   BlkSize),  // Diagonal components
       ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing), N, BlkSize);
-  View2DType e("e", N,
+  View2DType e(Kokkos::view_alloc("e", Kokkos::WithoutInitializing), N,
                BlkSize - 1);  // Upper and lower diagonal components (identical)
 
-  auto h_d = Kokkos::create_mirror_view(d);
-  auto h_e = Kokkos::create_mirror_view(e);
-
-  for (int ib = 0; ib < N; ib++) {
-    for (int i = 0; i < BlkSize; i++) {
-      h_d(ib, i) = 4;
-    }
-
-    for (int i = 0; i < BlkSize - 1; i++) {
-      h_e(ib, i) = 1;
-    }
-  }
-
-  Kokkos::fence();
-
-  Kokkos::deep_copy(d, h_d);
-  Kokkos::deep_copy(e, h_e);
+  Kokkos::deep_copy(d, RealType(4.0));
+  Kokkos::deep_copy(e, ScalarType(1.0));
   Kokkos::deep_copy(ones, RealType(1.0));
 
   // Reconstruct Tridiaonal matrix A
   // A = D + EL + EU
-  create_diagonal_matrix(e, A, -1);  // This is EL, but finally stores A
+  create_diagonal_matrix(e, EL, -1);
   create_diagonal_matrix(e, EU, 1);
   create_diagonal_matrix(d, D);
   create_diagonal_matrix(ones, I);
@@ -285,7 +276,10 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
                             View3DType, Trans::NoTranspose>(1.0, D, I, 1.0, EU)
       .run();
 
-  // EU + EL by EU * I + EL (result stored in A)
+  // Copy EL to A
+  Kokkos::deep_copy(A, EL);
+
+  // EU + EL by EU * I + A (result stored in A)
   Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
                             View3DType, Trans::NoTranspose>(1.0, EU, I, 1.0, A)
       .run();
@@ -297,6 +291,10 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
       .run();
 
   Kokkos::fence();
+
+  // Zero clear EL and D
+  Kokkos::deep_copy(EL, ScalarType(0.0));
+  Kokkos::deep_copy(D, RealType(0.0));
 
   // Reconstruct L and D from factorized matrix
   create_diagonal_matrix(e, EL, -1);
@@ -325,9 +323,7 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
   Kokkos::fence();
 
   // this eps is about 10^-14
-  using ats      = typename Kokkos::ArithTraits<ScalarType>;
-  using mag_type = typename ats::mag_type;
-  mag_type eps   = 1.0e3 * ats::epsilon();
+  RealType eps = 1.0e3 * ats::epsilon();
 
   auto h_A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
   auto h_A_reconst =
