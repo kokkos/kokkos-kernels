@@ -1728,7 +1728,7 @@ struct SptrsvWrap {
 #define FunctorTypeMacro(Functor, IsLower, BlockEnabled)                \
   Functor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, IsLower, BlockEnabled>
 
-  template <class RowMapType, class EntriesType, class ValuesType,
+  template <bool BlockEnabled, class RowMapType, class EntriesType, class ValuesType,
             class RHSType, class LHSType>
   static void lower_tri_solve(execution_space &space, TriSolveHandle &thandle,
                               const RowMapType row_map,
@@ -1747,12 +1747,11 @@ struct SptrsvWrap {
     const auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
     const auto block_size             = thandle.get_block_size();
     const auto block_enabled          = thandle.is_block_enabled();
+    assert(block_enabled == BlockEnabled);
 
     // Set up functor types
-    using LowerRPPoint = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, true, false);
-    using LowerRPBlock = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, true, true);
-    using LowerTPPoint = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true, false);
-    using LowerTPBlock = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true, true);
+    using LowerRPFunc = FunctorTypeMacro(TriLvlSchedRPSolverFunctor,  true, BlockEnabled);
+    using LowerTPFunc = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true, BlockEnabled);
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     using namespace KokkosSparse::Experimental;
@@ -1818,7 +1817,7 @@ struct SptrsvWrap {
 #endif
         if (thandle.get_algorithm() ==
             KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
-          LowerRPPoint lrpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level);
+          LowerRPFunc lrpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, block_size);
 
           Kokkos::parallel_for(
               "parfor_fixed_lvl",
@@ -1829,7 +1828,7 @@ struct SptrsvWrap {
         } else if (thandle.get_algorithm() ==
                    KokkosSparse::Experimental::SPTRSVAlgorithm::
                        SEQLVLSCHD_TP1) {
-          LowerTPPoint ltpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
+          LowerTPFunc ltpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
           auto tp = team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
           Kokkos::parallel_for(
@@ -2116,10 +2115,9 @@ struct SptrsvWrap {
     std::cout << " + SpTrsv(lower) time: " << sptrsv_time_seconds << std::endl
               << std::endl;
 #endif
-
   }  // end lower_tri_solve
 
-  template <class RowMapType, class EntriesType, class ValuesType,
+  template <bool BlockEnabled, class RowMapType, class EntriesType, class ValuesType,
             class RHSType, class LHSType>
   static void upper_tri_solve(execution_space &space, TriSolveHandle &thandle,
                               const RowMapType row_map,
@@ -2138,14 +2136,13 @@ struct SptrsvWrap {
     auto nodes_per_level  = thandle.get_nodes_per_level();
     auto hnodes_per_level = thandle.get_host_nodes_per_level();
     auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
-    //const auto block_size             = thandle.get_block_size();
+    const auto block_size             = thandle.get_block_size();
     const auto block_enabled          = thandle.is_block_enabled();
+    assert(block_enabled == BlockEnabled);
 
     // Set up functor types
-    using UpperRPPoint = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, false, false);
-    using LowerRPBlock = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, false, true);
-    using UpperTPPoint = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, false, false);
-    using LowerTPBlock = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, false, true);
+    using UpperRPFunc = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, false, BlockEnabled);
+    using UpperTPFunc = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, false, BlockEnabled);
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     using namespace KokkosSparse::Experimental;
@@ -2211,7 +2208,7 @@ struct SptrsvWrap {
 
         if (thandle.get_algorithm() ==
             KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
-          UpperRPPoint urpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level);
+          UpperRPFunc urpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, block_size);
           Kokkos::parallel_for(
               "parfor_fixed_lvl",
               Kokkos::Experimental::require(
@@ -2221,7 +2218,7 @@ struct SptrsvWrap {
         } else if (thandle.get_algorithm() ==
                    KokkosSparse::Experimental::SPTRSVAlgorithm::
                        SEQLVLSCHD_TP1) {
-          UpperTPPoint utpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
+          UpperTPFunc utpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
           auto tp = team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
           Kokkos::parallel_for(
