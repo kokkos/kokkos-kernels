@@ -74,6 +74,16 @@ struct SptrsvTest {
     return A;
   }
 
+  static std::vector<std::vector<scalar_t>> get_6x6_ut_ones_fixture() {
+    std::vector<std::vector<scalar_t>> A = {{1.00, 1.00, 0.00, 0.00, 0.00, 0.00},
+                                            {0.00, 1.00, 0.00, 0.00, 0.00, 1.00},
+                                            {0.00, 0.00, 1.00, 1.00, 0.00, 1.00},
+                                            {0.00, 0.00, 0.00, 1.00, 0.00, 1.00},
+                                            {0.00, 0.00, 0.00, 0.00, 1.00, 1.00},
+                                            {0.00, 0.00, 0.00, 0.00, 0.00, 1.00}};
+    return A;
+  }
+
   static std::vector<std::vector<scalar_t>> get_5x5_ut_fixture() {
     const auto KZ                        = KEEP_ZERO<scalar_t>();
     std::vector<std::vector<scalar_t>> A = {{5.00, 1.00, 1.00, 0.00, KZ},
@@ -102,6 +112,17 @@ struct SptrsvTest {
                                             {0.00, 1.00, 1.00, 1.00, 1.00}};
     return A;
   }
+
+  static std::vector<std::vector<scalar_t>> get_6x6_lt_ones_fixture() {
+    std::vector<std::vector<scalar_t>> A = {{1.00, 0.00, 0.00, 0.00, 0.00, 0.00},
+                                            {1.00, 1.00, 0.00, 0.00, 0.00, 0.00},
+                                            {0.00, 0.00, 1.00, 0.00, 0.00, 0.00},
+                                            {0.00, 0.00, 0.00, 1.00, 0.00, 0.00},
+                                            {0.00, 0.00, 0.00, 1.00, 1.00, 0.00},
+                                            {0.00, 1.00, 1.00, 1.00, 1.00, 1.00}};
+    return A;
+  }
+
 
   struct ReductionCheck {
     ValuesType lhs;
@@ -629,6 +650,70 @@ struct SptrsvTest {
     }
   }
 
+  static void run_test_sptrsv_blocks_impl(const bool is_lower, const size_type block_size) {
+    constexpr scalar_t ZERO = scalar_t(0);
+    constexpr scalar_t ONE  = scalar_t(1);
+
+    RowMapType row_map;
+    EntriesType entries;
+    ValuesType values;
+
+    auto fixture = is_lower ? get_6x6_lt_ones_fixture() : get_6x6_ut_ones_fixture();
+
+    compress_matrix(row_map, entries, values, fixture);
+
+    const size_type nrows = row_map.size() - 1;
+    const size_type nnz   = values.size();
+
+    // Create known_lhs, generate rhs, then solve for lhs to compare to
+    // known_lhs
+    ValuesType known_lhs("known_lhs", nrows);
+    // Create known solution lhs set to all 1's
+    Kokkos::deep_copy(known_lhs, ONE);
+
+    // Solution to find
+    ValuesType lhs("lhs", nrows);
+
+    // A*known_lhs generates rhs: rhs is dense, use spmv
+    ValuesType rhs("rhs", nrows);
+
+    Crs triMtx("triMtx", nrows, nrows, nnz, values, row_map, entries);
+    KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs);
+
+    // FIXME Issues with some integral type combos for SEQLVLSCHED_TP2, currently unavailable
+    for (auto alg : {SPTRSVAlgorithm::SEQLVLSCHD_TP1, SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN}) {
+      KernelHandle kh;
+      kh.create_sptrsv_handle(alg, nrows, is_lower);
+
+      if (alg == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
+        auto chain_threshold = 1;
+        kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
+      }
+
+      sptrsv_symbolic(&kh, row_map, entries);
+      Kokkos::fence();
+
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+      Kokkos::fence();
+
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
+                              ReductionCheck(lhs), sum);
+      EXPECT_EQ(sum, lhs.extent(0));
+
+      Kokkos::deep_copy(lhs, ZERO);
+
+      kh.destroy_sptrsv_handle();
+    }
+  }
+
+  static void run_test_sptrsv_blocks() {
+    for (size_type block_size : {1}) {
+      run_test_sptrsv_blocks_impl(true, block_size);
+      run_test_sptrsv_blocks_impl(false, block_size);
+    }
+  }
+
   static void run_test_sptrsv_streams(int test_algo, int nstreams) {
     // Workaround for OpenMP: skip tests if concurrency < nstreams because of
     // not enough resource to partition
@@ -817,6 +902,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_sptrsv() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
   TestStruct::run_test_sptrsv();
+  TestStruct::run_test_sptrsv_blocks();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
