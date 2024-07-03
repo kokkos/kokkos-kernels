@@ -28,12 +28,12 @@
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 // Enable supernodal sptrsv
-#include "KokkosBlas3_trsm.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBlas2_team_gemv_spec.hpp"
-#include "KokkosBatched_Trsm_Team_Impl.hpp"
 #endif
+#include "KokkosBlas3_trsm.hpp"
+#include "KokkosBatched_Trsm_Team_Impl.hpp"
 #include "KokkosBlas1_team_axpby.hpp"
 #include "KokkosBlas1_axpby.hpp"
 #include "KokkosBlas1_set.hpp"
@@ -454,7 +454,7 @@ struct SptrsvWrap {
       team.team_barrier();
 
       // At end, finalize rowid == colid
-      Base::add(team, lhs_rowid, rhs_rowid); // lhs_rowid += rhs(rowid)
+      Base::add(team, rhs_rowid, lhs_rowid); // lhs_rowid += rhs(rowid)
       auto diag = IsLower ? Base::vget(eoffset - 1) : Base::vget(soffset);
       // lhs_rowid /= val
       Base::divide(team, lhs_rowid, diag, shared_buff.data());
@@ -494,7 +494,7 @@ struct SptrsvWrap {
       team.team_barrier();
 
       // At end, finalize rowid == colid
-      Base::add(team, lhs_rowid, rhs_rowid); // lhs_rowid += rhs(rowid)
+      Base::add(team, rhs_rowid, lhs_rowid); // lhs_rowid += rhs(rowid)
       Base::divide(team, lhs_rowid, Base::vget(diag), shared_buff.data());
     }
   };
@@ -713,7 +713,7 @@ struct SptrsvWrap {
         Base::multiply_subtract(val, lhs_colid, lhs_rowid);
       }  // end for ptr
 
-      Base::add(lhs_rowid, rhs_rowid);
+      Base::add(rhs_rowid, lhs_rowid);
       auto diag = IsLower ? Base::vget(eoffset - 1) : Base::vget(soffset);
       Base::divide(lhs_rowid, diag, &buff1[0]);
     }
@@ -741,7 +741,7 @@ struct SptrsvWrap {
           diag = ptr;
         }
       }  // end for ptr
-      Base::add(lhs_rowid, rhs_rowid); // lhs_rowid += rhs(rowid)
+      Base::add(rhs_rowid, lhs_rowid); // lhs_rowid += rhs(rowid)
       Base::divide(lhs_rowid, Base::vget(diag), &buff1[0]);
     }
   };
@@ -1755,7 +1755,6 @@ struct SptrsvWrap {
     using LowerTPBlock = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true, true);
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
-    KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported for supernodal");
     using namespace KokkosSparse::Experimental;
     using device_t            = Kokkos::Device<execution_space, temp_mem_space>;
     using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
@@ -1885,6 +1884,7 @@ struct SptrsvWrap {
         else if (thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
                  thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
                  thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_DAG) {
+          KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported for supernodal");
 
 #ifdef profile_supernodal_etree
           size_t flops = 0;
@@ -2033,6 +2033,7 @@ struct SptrsvWrap {
                        SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                    thandle.get_algorithm() ==
                        SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+          KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported for supernodal");
 #ifdef profile_supernodal_etree
           Kokkos::Timer timer;
           timer.reset();
@@ -2139,8 +2140,6 @@ struct SptrsvWrap {
     auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
     //const auto block_size             = thandle.get_block_size();
     const auto block_enabled          = thandle.is_block_enabled();
-
-    KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported");
 
     // Set up functor types
     using UpperRPPoint = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, false, false);
@@ -2276,6 +2275,7 @@ tstf); } // end elseif
         else if (thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
                  thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
                  thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_DAG) {
+          KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported for supernodal");
 
 #ifdef profile_supernodal_etree
           size_t flops = 0;
@@ -2529,6 +2529,8 @@ tstf); } // end elseif
                        SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                    thandle.get_algorithm() ==
                        SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+          KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported for supernodal");
+
 #ifdef profile_supernodal_etree
           Kokkos::Timer timer;
           timer.reset();
