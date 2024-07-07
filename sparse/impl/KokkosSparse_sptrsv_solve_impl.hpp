@@ -38,7 +38,7 @@
 #include "KokkosBlas1_axpby.hpp"
 #include "KokkosBlas1_set.hpp"
 #include "KokkosBatched_LU_Decl.hpp"
-#include "KokkosBatched_Gemv_Decl.hpp"
+#include "KokkosBlas2_serial_gemv_impl.hpp"
 
 //#define SERIAL_FOR_LOOP
 
@@ -130,6 +130,8 @@ struct SptrsvWrap {
 
       KOKKOS_INLINE_FUNCTION
       scalar_t *data() { return nullptr; }
+
+      static int shmem_size(size_type, size_type) { return 0; }
     };
 
     static constexpr size_type BUFF_SIZE = 1;
@@ -164,7 +166,9 @@ struct SptrsvWrap {
     // add. y += x
     KOKKOS_INLINE_FUNCTION
     static void add(const member_type &team, const scalar_t& x, scalar_t& y) {
+      scalar_t orig = y;
       Kokkos::single(Kokkos::PerTeam(team), [&]() { y += x; });
+      std::cout << "y(" << y << ") = y(" << orig << ") + x(" << x << ")" << std::endl;
       team.team_barrier();
     }
 
@@ -178,7 +182,9 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void divide(const member_type &team, scalar_t &b, const scalar_t &A,
                 scalar_t*) {
+      scalar_t orig = b;
       Kokkos::single(Kokkos::PerTeam(team), [&]() { b /= A; });
+      std::cout << "b(" << b << ") = b(" << orig << ") / A(" << A << ")" << std::endl;
       team.team_barrier();
     }
 
@@ -192,8 +198,13 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void multiply_subtract(const scalar_t &A, const scalar_t &B,
                            scalar_t &C) {
+      scalar_t orig = C;
       C -= A * B;
+      std::cout << "C(" << C << ") = C(" << orig << ") - A(" << A << ") * B(" << B << ")" << std::endl;
     }
+
+    KOKKOS_INLINE_FUNCTION
+    static void copy(const member_type&, scalar_t&, const scalar_t&) {}
 
     // lget
     KOKKOS_INLINE_FUNCTION
@@ -380,6 +391,13 @@ struct SptrsvWrap {
     // add. y += x
     KOKKOS_INLINE_FUNCTION
     static void add(const member_type &team, const CVector& x, const Vector& y) {
+      scalar_t orig = y(0);
+      Kokkos::single(Kokkos::PerTeam(team), [&]() { y(0) += x(0); });
+      team.team_barrier();
+      std::cout << "y(" << y(0) << ") = y(" << orig << ") + x(" << x(0) << ")" << std::endl;
+
+      return;
+
       KokkosBlas::Experimental::axpy(team, 1.0, x, y);
     }
 
@@ -393,6 +411,12 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void divide(const member_type &team, const Vector &b, const CBlock &A,
                 scalar_t* buff) {
+      scalar_t orig = b(0);
+      Kokkos::single(Kokkos::PerTeam(team), [&]() { b(0) /= A(0,0); });
+      team.team_barrier();
+      std::cout << "b(" << b(0) << ") = b(" << orig << ") / A(" << A(0,0) << ")" << std::endl;
+      return;
+
       // Need a temp block to do LU of A
       const auto block_size = b.size();
       Block LU(buff, block_size, block_size);
@@ -441,11 +465,22 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void multiply_subtract(const CBlock &A, const CVector &B,
                                   ArrayType &Ca) {
+      scalar_t orig = Ca.m_data[0];
+      Ca.m_data[0] -= A(0,0) * B(0);
+      std::cout << "C(" << Ca.m_data[0] << ") = C(" << orig << ") - A(" << A(0,0) << ") * B(" << B(0) << ")" << std::endl;
+      return;
+
       // Use gemm. alpha is hardcoded to -1, beta hardcoded to 1
       Vector C(&Ca.m_data[0], B.size());
-      KokkosBatched::SerialGemv<
-          KokkosBatched::Trans::NoTranspose, KokkosBatched::Algo::Gemm::Blocked>::
-        invoke<scalar_t, CBlock, CVector, Vector>(-1.0, A, B, 1.0, C);
+      KokkosBlas::SerialGemv<
+          KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Blocked>::
+        invoke(-1.0, A, B, 1.0, C);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    static void copy(const member_type &team, const Vector& lhs, ArrayType& rhsa) {
+      CVector rhs(&rhsa.m_data[0], lhs.size());
+      assign(team, lhs, rhs);
     }
 
     // lget
@@ -469,6 +504,7 @@ struct SptrsvWrap {
     // print
     KOKKOS_INLINE_FUNCTION
     static void print(const CBlock &item) {
+      std::cout << "Block: ";
       for (size_type i = 0; i < item.extent(0); ++i) {
         std::cout << "      ";
         for (size_type j = 0; j < item.extent(1); ++j) {
@@ -481,6 +517,7 @@ struct SptrsvWrap {
         // print
     KOKKOS_INLINE_FUNCTION
     static void print(const CVector &item) {
+      std::cout << "Vector: ";
       for (size_type i = 0; i < item.extent(0); ++i) {
         std::cout << item(i) << " ";
         }
@@ -496,6 +533,17 @@ struct SptrsvWrap {
       }
       std::cout << std::endl;
     }
+
+    KOKKOS_INLINE_FUNCTION
+    static void print(const SumArray& rhs, const int block_size)
+    {
+      std::cout << "SumArray: ";
+      for (int i = 0; i < block_size; ++i) {
+        std::cout << rhs.reference().m_data[i] << " ";
+      }
+      std::cout << std::endl;
+    }
+
   };
 
   template <class RowMapType, class EntriesType, class ValuesType,
@@ -532,6 +580,7 @@ struct SptrsvWrap {
         auto lhs_colid = m_obj->lget(colid);
         // accum -= val * lhs_colid;
         Base::multiply_subtract(val, lhs_colid, accum);
+        std::cout << "  For i=" << i << ", accum: "; Base::print(accum, 1);
       }
     };
 
@@ -546,25 +595,29 @@ struct SptrsvWrap {
       const auto eoffset   = Base::row_map(rowid + 1);
       const auto rhs_rowid = Base::rget(rowid);
 
-      reduce_item reduce = Base::lget(rowid);
+      std::cout << "operator() for rowid: " << rowid << std::endl;
+
+      typename Base::reftype lhs_rowid = Base::lget(rowid);
+      reduce_item reduce = lhs_rowid;
       ReduceFunctor rf {this};
 
       Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, soffset + (IsLower ? 0 : 1), eoffset - (IsLower ? 1 : 0)),
                               rf, reducer(reduce));
       team.team_barrier();
 
+      Base::copy(team, lhs_rowid, reduce);
+
       // Team-shared buffer. Use for team work.
-      typename Base::reftype lhs_rowid = Base::lget(rowid);
       const auto bs = Base::get_block_size();
-      Base::print(reduce, bs);
-      Base::print(lhs_rowid);
+      std::cout << "Reduction: "; Base::print(reduce, bs);
       typename Base::SBlock shared_buff(team.team_shmem(), bs, bs);
 
       // At end, finalize rowid == colid
       Base::add(team, rhs_rowid, lhs_rowid); // lhs_rowid += rhs(rowid)
       auto diag = IsLower ? Base::vget(eoffset - 1) : Base::vget(soffset);
-      // lhs_rowid /= val
+      // lhs_rowid /= diag
       Base::divide(team, lhs_rowid, diag, shared_buff.data());
+      std::cout << "lhs: "; Base::print(lhs_rowid);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -1946,6 +1999,8 @@ struct SptrsvWrap {
           LowerTPFunc ltpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
           auto tp = team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
+          const int scratch_size = LowerTPFunc::SBlock::shmem_size(block_size, block_size);
+          tp = tp.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
           Kokkos::parallel_for(
             "parfor_l_team",
             Kokkos::Experimental::require(
@@ -2336,6 +2391,8 @@ struct SptrsvWrap {
           UpperTPFunc utpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
           auto tp = team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
+          const int scratch_size = UpperTPFunc::SBlock::shmem_size(block_size, block_size);
+          tp = tp.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
           Kokkos::parallel_for(
             "parfor_u_team",
             Kokkos::Experimental::require(
