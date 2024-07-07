@@ -168,7 +168,6 @@ struct SptrsvWrap {
     static void add(const member_type &team, const scalar_t& x, scalar_t& y) {
       scalar_t orig = y;
       Kokkos::single(Kokkos::PerTeam(team), [&]() { y += x; });
-      std::cout << "y(" << y << ") = y(" << orig << ") + x(" << x << ")" << std::endl;
       team.team_barrier();
     }
 
@@ -184,7 +183,6 @@ struct SptrsvWrap {
                 scalar_t*) {
       scalar_t orig = b;
       Kokkos::single(Kokkos::PerTeam(team), [&]() { b /= A; });
-      std::cout << "b(" << b << ") = b(" << orig << ") / A(" << A << ")" << std::endl;
       team.team_barrier();
     }
 
@@ -200,7 +198,6 @@ struct SptrsvWrap {
                            scalar_t &C) {
       scalar_t orig = C;
       C -= A * B;
-      std::cout << "C(" << C << ") = C(" << orig << ") - A(" << A << ") * B(" << B << ")" << std::endl;
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -391,13 +388,6 @@ struct SptrsvWrap {
     // add. y += x
     KOKKOS_INLINE_FUNCTION
     static void add(const member_type &team, const CVector& x, const Vector& y) {
-      scalar_t orig = y(0);
-      Kokkos::single(Kokkos::PerTeam(team), [&]() { y(0) += x(0); });
-      team.team_barrier();
-      std::cout << "y(" << y(0) << ") = y(" << orig << ") + x(" << x(0) << ")" << std::endl;
-
-      return;
-
       KokkosBlas::Experimental::axpy(team, 1.0, x, y);
     }
 
@@ -411,12 +401,6 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void divide(const member_type &team, const Vector &b, const CBlock &A,
                 scalar_t* buff) {
-      scalar_t orig = b(0);
-      Kokkos::single(Kokkos::PerTeam(team), [&]() { b(0) /= A(0,0); });
-      team.team_barrier();
-      std::cout << "b(" << b(0) << ") = b(" << orig << ") / A(" << A(0,0) << ")" << std::endl;
-      return;
-
       // Need a temp block to do LU of A
       const auto block_size = b.size();
       Block LU(buff, block_size, block_size);
@@ -465,11 +449,6 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void multiply_subtract(const CBlock &A, const CVector &B,
                                   ArrayType &Ca) {
-      scalar_t orig = Ca.m_data[0];
-      Ca.m_data[0] -= A(0,0) * B(0);
-      std::cout << "C(" << Ca.m_data[0] << ") = C(" << orig << ") - A(" << A(0,0) << ") * B(" << B(0) << ")" << std::endl;
-      return;
-
       // Use gemm. alpha is hardcoded to -1, beta hardcoded to 1
       Vector C(&Ca.m_data[0], B.size());
       KokkosBlas::SerialGemv<
