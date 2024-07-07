@@ -33,6 +33,7 @@
 #include "KokkosBlas2_team_gemv_spec.hpp"
 #endif
 #include "KokkosBlas3_trsm.hpp"
+#include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_Trsm_Team_Impl.hpp"
 #include "KokkosBlas1_team_axpby.hpp"
 #include "KokkosBlas1_axpby.hpp"
@@ -410,16 +411,16 @@ struct SptrsvWrap {
 
       // A = LU
       // A^-1 = U^-1 * L^-1
-      // b = (b * U^-1) * L^-1, so do U trsm first
-      KokkosBatched::TeamTrsm<
-          member_type, KokkosBatched::Side::Right, KokkosBatched::Uplo::Upper,
+      // b = (b * U^-1) * L^-1, so do U trsv first
+      KokkosBatched::TeamTrsv<
+          member_type, KokkosBatched::Uplo::Upper,
           KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit,
-          KokkosBatched::Algo::Trsm::Blocked>::invoke(team, 1.0, LU, b);
+          KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU, b);
 
-      KokkosBatched::TeamTrsm<
-          member_type, KokkosBatched::Side::Right, KokkosBatched::Uplo::Lower,
+      KokkosBatched::TeamTrsv<
+          member_type, KokkosBatched::Uplo::Lower,
           KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::Unit,
-          KokkosBatched::Algo::Trsm::Blocked>::invoke(team, 1.0, LU, b);
+          KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU, b);
     }
 
     // serial divide. b /= A (b = b * rhs^-1)
@@ -433,16 +434,16 @@ struct SptrsvWrap {
 
       // A = LU
       // A^-1 = U^-1 * L^-1
-      // b = (b * U^-1) * L^-1, so do U trsm first
-      KokkosBatched::SerialTrsm<
-          KokkosBatched::Side::Right, KokkosBatched::Uplo::Upper,
+      // b = (b * U^-1) * L^-1, so do U trsv first
+      KokkosBatched::SerialTrsv<
+          KokkosBatched::Uplo::Upper,
           KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit,
-          KokkosBatched::Algo::Trsm::Blocked>::invoke(1.0, LU, b);
+          KokkosBatched::Algo::Trsv::Blocked>::invoke(1.0, LU, b);
 
-      KokkosBatched::SerialTrsm<
-          KokkosBatched::Side::Right, KokkosBatched::Uplo::Lower,
+      KokkosBatched::SerialTrsv<
+          KokkosBatched::Uplo::Lower,
           KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::Unit,
-          KokkosBatched::Algo::Trsm::Blocked>::invoke(1.0, LU, b);
+          KokkosBatched::Algo::Trsv::Blocked>::invoke(1.0, LU, b);
     }
 
     // multiply_subtract. C -= A * B
@@ -593,8 +594,10 @@ struct SptrsvWrap {
 
       // At end, finalize rowid == colid
       Base::add(team, rhs_rowid, lhs_rowid); // lhs_rowid += rhs(rowid)
+      std::cout << "lhs: "; Base::print(lhs_rowid);
       auto diag = IsLower ? Base::vget(eoffset - 1) : Base::vget(soffset);
       // lhs_rowid /= diag
+      std::cout << "diag: "; Base::print(diag);
       Base::divide(team, lhs_rowid, diag, shared_buff.data());
       std::cout << "lhs: "; Base::print(lhs_rowid);
     }
