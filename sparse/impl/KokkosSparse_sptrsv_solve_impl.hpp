@@ -450,8 +450,14 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void multiply_subtract(const CBlock &A, const CVector &B,
                                   ArrayType &Ca) {
-      // Use gemm. alpha is hardcoded to -1, beta hardcoded to 1
       Vector C(&Ca.m_data[0], B.size());
+      multiply_subtract(A, B, C);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    static void multiply_subtract(const CBlock &A, const CVector &B,
+                                  Vector &C) {
+      // Use gemv. alpha is hardcoded to -1, beta hardcoded to 1
       KokkosBlas::SerialGemv<
           KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Blocked>::
         invoke(-1.0, A, B, 1.0, C);
@@ -546,21 +552,24 @@ struct SptrsvWrap {
       : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_, block_size_),
         node_count(node_count_) {}
 
+    template <bool AvoidDiag>
     struct ReduceFunctor
     {
       const Base* m_obj;
+      size_type rowid;
 
       using accum_t = std::conditional_t<BlockEnabled, typename Base::ArrayType, scalar_t>;
 
       KOKKOS_INLINE_FUNCTION
       void operator()(size_type i, accum_t& accum) const
       {
-        auto colid = m_obj->entries(i);
-        auto val = m_obj->vget(i);
-        auto lhs_colid = m_obj->lget(colid);
-        // accum -= val * lhs_colid;
-        Base::multiply_subtract(val, lhs_colid, accum);
-        std::cout << "  For i=" << i << ", accum: "; Base::print(accum, 1);
+        const size_type colid = m_obj->entries(i);
+        if (!AvoidDiag || colid != rowid) {
+          auto val = m_obj->vget(i);
+          auto lhs_colid = m_obj->lget(colid);
+          // accum -= val * lhs_colid;
+          Base::multiply_subtract(val, lhs_colid, accum);
+        }
       }
     };
 
@@ -575,11 +584,9 @@ struct SptrsvWrap {
       const auto eoffset   = Base::row_map(rowid + 1);
       const auto rhs_rowid = Base::rget(rowid);
 
-      std::cout << "operator() for rowid: " << rowid << std::endl;
-
       typename Base::reftype lhs_rowid = Base::lget(rowid);
       reduce_item reduce = lhs_rowid;
-      ReduceFunctor rf {this};
+      ReduceFunctor<false> rf {this, rowid};
 
       Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, soffset + (IsLower ? 0 : 1), eoffset - (IsLower ? 1 : 0)),
                               rf, reducer(reduce));
@@ -589,57 +596,56 @@ struct SptrsvWrap {
 
       // Team-shared buffer. Use for team work.
       const auto bs = Base::get_block_size();
-      std::cout << "Reduction: "; Base::print(reduce, bs);
       typename Base::SBlock shared_buff(team.team_shmem(), bs, bs);
 
       // At end, finalize rowid == colid
       Base::add(team, rhs_rowid, lhs_rowid); // lhs_rowid += rhs(rowid)
-      std::cout << "lhs: "; Base::print(lhs_rowid);
       auto diag = IsLower ? Base::vget(eoffset - 1) : Base::vget(soffset);
       // lhs_rowid /= diag
-      std::cout << "diag: "; Base::print(diag);
       Base::divide(team, lhs_rowid, diag, shared_buff.data());
-      std::cout << "lhs: "; Base::print(lhs_rowid);
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const UnsortedTag &, const member_type &team) const {
-      /*
-      auto my_league = team.league_rank();  // map to rowid
-      auto rowid     = Base::nodes_grouped_by_level(my_league + node_count);
-      auto my_rank   = team.team_rank();
-      auto soffset   = Base::row_map(rowid);
-      auto eoffset   = Base::row_map(rowid + 1);
-      auto rhs_rowid = Base::rget(rowid);
+      using reduce_item = typename Base::ArrayType;
+      using reducer     = typename Base::SumArray;
+
+      const auto my_league = team.league_rank();  // map to rowid
+      const auto rowid     = Base::nodes_grouped_by_level(my_league + node_count);
+      const auto soffset   = Base::row_map(rowid);
+      const auto eoffset   = Base::row_map(rowid + 1);
+      const auto rhs_rowid = Base::rget(rowid);
 
       typename Base::reftype lhs_rowid = Base::lget(rowid);
+      reduce_item reduce = lhs_rowid;
+      ReduceFunctor<true> rf {this, rowid};
+
+      Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, soffset, eoffset),
+                              rf, reducer(reduce));
+      team.team_barrier();
+
+      Base::copy(team, lhs_rowid, reduce);
+
+      // Find diag ptr
+      size_type diag = 0;
+      Kokkos::parallel_reduce(
+          Kokkos::TeamThreadRange(team, soffset, eoffset),
+          [&](const size_type ptr, size_type& diag_inner) {
+            const size_type colid = Base::entries(ptr);
+            if (colid == rowid) {
+              diag_inner = ptr;
+            }
+          },
+          Kokkos::Max<size_type>(diag));
+      team.team_barrier();
 
       // Team-shared buffer. Use for team work.
       const auto bs = Base::get_block_size();
       typename Base::SBlock shared_buff(team.team_shmem(), bs, bs);
 
-      auto diag = -1;
-
-      Kokkos::parallel_reduce(
-          Kokkos::TeamThreadRange(team, soffset, eoffset),
-          [&](const long ptr, typename Base::reftype tdiff) {
-            auto colid = Base::entries(ptr);
-            if (colid != rowid) {
-              auto val   = Base::vget(ptr);
-              auto lhs_colid = Base::lget(colid);
-              // tdiff -= val * lhs_colid;
-              Base::multiply_subtract(val, lhs_colid, tdiff);
-            } else {
-              diag = ptr;
-            }
-          },
-          lhs_rowid);
-      team.team_barrier();
-
       // At end, finalize rowid == colid
       Base::add(team, rhs_rowid, lhs_rowid); // lhs_rowid += rhs(rowid)
       Base::divide(team, lhs_rowid, Base::vget(diag), shared_buff.data());
-      */
     }
   };
 
@@ -838,22 +844,18 @@ struct SptrsvWrap {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const lno_t i) const {
-    /*
       // Thread-local buffers. Use for Serial (non-team) work
       scalar_t buff1[Base::BUFF_SIZE];
 
-      std::cout << "JGF TriLvlSchedRPSolverFunctor i=" << i << ", block_size=" << Base::get_block_size() << " " << BlockEnabled << std::endl;
-
-      auto rowid = Base::nodes_grouped_by_level(i);
-      long soffset   = Base::row_map(rowid);
-      long eoffset   = Base::row_map(rowid + 1);
-      auto rhs_rowid = Base::rhs(rowid);
+      const auto rowid     = Base::nodes_grouped_by_level(i);
+      const auto soffset   = Base::row_map(rowid);
+      const auto eoffset   = Base::row_map(rowid + 1);
+      const auto rhs_rowid = Base::rget(rowid);
 
       typename Base::reftype lhs_rowid = Base::lget(rowid);
 
-      for (long ptr = soffset + (IsLower ? 0 : 1); ptr < eoffset - (IsLower ? 1 : 0); ++ptr) {
-        auto colid = Base::entries(ptr);
-        KK_KERNEL_ASSERT(colid != rowid);
+      for (auto ptr = soffset + (IsLower ? 0 : 1); ptr < eoffset - (IsLower ? 1 : 0); ++ptr) {
+        const auto colid = Base::entries(ptr);
         auto val = Base::vget(ptr);
         auto lhs_colid = Base::lget(colid);
         // lhs_rowid -= val * lhs_colid
@@ -863,12 +865,10 @@ struct SptrsvWrap {
       Base::add(rhs_rowid, lhs_rowid);
       auto diag = IsLower ? Base::vget(eoffset - 1) : Base::vget(soffset);
       Base::divide(lhs_rowid, diag, &buff1[0]);
-      */
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const UnsortedTag &, const lno_t i) const {
-      /*
       // Thread-local buffers. Use for Serial (non-team) work
       scalar_t buff1[Base::BUFF_SIZE];
 
@@ -879,9 +879,9 @@ struct SptrsvWrap {
 
       typename Base::reftype lhs_rowid = Base::lget(rowid);
 
-      auto diag      = -1;
-      for (long ptr = soffset; ptr < eoffset; ++ptr) {
-        auto colid = Base::entries(ptr);
+      size_type diag = 0;
+      for (auto ptr = soffset; ptr < eoffset; ++ptr) {
+        const size_type colid = Base::entries(ptr);
         if (colid != rowid) {
           auto val       = Base::values(ptr);
           auto lhs_colid = Base::lget(colid);
@@ -892,7 +892,6 @@ struct SptrsvWrap {
       }  // end for ptr
       Base::add(rhs_rowid, lhs_rowid); // lhs_rowid += rhs(rowid)
       Base::divide(lhs_rowid, Base::vget(diag), &buff1[0]);
-      */
     }
   };
 
