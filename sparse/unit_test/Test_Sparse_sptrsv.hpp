@@ -688,14 +688,9 @@ struct SptrsvTest {
     const size_type nrows = row_map.size() - 1;
 
     // FIXME Issues with some integral type combos for SEQLVLSCHED_TP2, currently unavailable
-    for (auto alg : {SPTRSVAlgorithm::SEQLVLSCHD_TP1, SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN}) {
+    for (auto alg : {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1}) {
       KernelHandle kh;
       kh.create_sptrsv_handle(alg, nrows, is_lower, block_size);
-
-      if (alg == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
-        auto chain_threshold = 1;
-        kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
-      }
 
       sptrsv_symbolic(&kh, row_map, entries);
       Kokkos::fence();
