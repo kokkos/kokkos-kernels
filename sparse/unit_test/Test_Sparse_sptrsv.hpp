@@ -50,9 +50,6 @@ struct SptrsvTest {
   using RowMapType             = Kokkos::View<size_type *, device>;
   using EntriesType            = Kokkos::View<lno_t *, device>;
   using ValuesType             = Kokkos::View<scalar_t *, device>;
-  using RowMapType_hostmirror  = typename RowMapType::HostMirror;
-  using EntriesType_hostmirror = typename EntriesType::HostMirror;
-  using ValuesType_hostmirror  = typename ValuesType::HostMirror;
   using execution_space        = typename device::execution_space;
   using memory_space           = typename device::memory_space;
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
@@ -64,6 +61,9 @@ struct SptrsvTest {
   using crs_graph_t = typename Crs::StaticCrsGraphType;
 
   using range_policy_t = Kokkos::RangePolicy<execution_space>;
+
+  static inline constexpr scalar_t ZERO = scalar_t(0);
+  static inline constexpr scalar_t ONE  = scalar_t(1);
 
   static std::vector<std::vector<scalar_t>> get_5x5_ut_ones_fixture() {
     std::vector<std::vector<scalar_t>> A = {{1.00, 0.00, 1.00, 0.00, 0.00},
@@ -123,6 +123,82 @@ struct SptrsvTest {
     return A;
   }
 
+  static std::tuple<Crs, ValuesType, ValuesType>
+  create_crs_lhs_rhs(const std::vector<std::vector<scalar_t>>& fixture)
+  {
+    RowMapType row_map;
+    EntriesType entries;
+    ValuesType values;
+
+    compress_matrix(row_map, entries, values, fixture);
+    const auto nrows = row_map.size() - 1;
+    const auto nnz   = values.size();
+
+    // Create known_lhs, generate rhs, then solve for lhs to compare to
+    // known_lhs
+    ValuesType known_lhs("known_lhs", nrows);
+    // Create known solution lhs set to all 1's
+    Kokkos::deep_copy(known_lhs, ONE);
+
+    // Solution to find
+    ValuesType lhs("lhs", nrows);
+
+    // A*known_lhs generates rhs: rhs is dense, use spmv
+    ValuesType rhs("rhs", nrows);
+
+    Crs triMtx("triMtx", nrows, nrows, nnz, values, row_map, entries);
+    KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs);
+
+    return std::make_tuple(triMtx, lhs, rhs);
+  }
+
+  template <typename SpMatrix>
+  static void basic_check(const SpMatrix& triMtx, const ValuesType& lhs, const ValuesType& rhs, const bool is_lower, const size_type block_size=0)
+  {
+    // FIXME Issues with some integral type combos for SEQLVLSCHED_TP2, currently unavailable
+    std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1};
+    if (block_size == 0) {
+      // SEQLVLSCHD_TP1CHAIN and SPTRSV_CUSPARSE are not supported for blocks
+      algs.push_back(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN);
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+      if (std::is_same<size_type, int>::value &&
+          std::is_same<lno_t, int>::value &&
+          std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+        algs.push_back(SPTRSVAlgorithm::SPTRSV_CUSPARSE);
+      }
+#endif
+    }
+
+    auto row_map  = triMtx.graph.row_map;
+    auto entries  = triMtx.graph.entries;
+    auto values   = triMtx.values;
+
+    const size_type nrows = row_map.size() - 1;
+
+    for (auto alg : algs) {
+      KernelHandle kh;
+      kh.create_sptrsv_handle(alg, nrows, is_lower, block_size);
+      if (alg == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
+        auto chain_threshold = 1;
+        kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
+      }
+
+      sptrsv_symbolic(&kh, row_map, entries);
+      Kokkos::fence();
+
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+      Kokkos::fence();
+
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
+                              ReductionCheck(lhs), sum);
+      EXPECT_EQ(sum, lhs.extent(0));
+
+      Kokkos::deep_copy(lhs, ZERO);
+
+      kh.destroy_sptrsv_handle();
+    }
+  }
 
   struct ReductionCheck {
     ValuesType lhs;
@@ -134,9 +210,6 @@ struct SptrsvTest {
   };
 
   static void run_test_sptrsv() {
-    scalar_t ZERO = scalar_t(0);
-    scalar_t ONE  = scalar_t(1);
-
     const size_type nrows = 5;
     const size_type nnz   = 10;
 
@@ -163,120 +236,11 @@ struct SptrsvTest {
 
     // Upper tri
     {
-      RowMapType row_map;
-      EntriesType entries;
-      ValuesType values;
-
-      auto fixture = get_5x5_ut_ones_fixture();
-
-      compress_matrix(row_map, entries, values, fixture);
-
-      // Create known_lhs, generate rhs, then solve for lhs to compare to
-      // known_lhs
-      ValuesType known_lhs("known_lhs", nrows);
-      // Create known solution lhs set to all 1's
-      Kokkos::deep_copy(known_lhs, ONE);
-
-      // Solution to find
-      ValuesType lhs("lhs", nrows);
-
-      // A*known_lhs generates rhs: rhs is dense, use spmv
-      ValuesType rhs("rhs", nrows);
-
-      Crs triMtx("triMtx", nrows, nrows, nnz, values, row_map, entries);
-      KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs);
-
       {
-        KernelHandle kh;
-        bool is_lower_tri = false;
-        kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
-                                is_lower_tri);
+        const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(get_5x5_ut_ones_fixture());
 
-        sptrsv_symbolic(&kh, row_map, entries);
-        Kokkos::fence();
-
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
-
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
-
-        Kokkos::deep_copy(lhs, ZERO);
-        kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
-
-        sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
-
-        // FIXME Issues with various integral type combos - algorithm currently
-        // unavailable and commented out until fixed
-        /*
-          Kokkos::deep_copy(lhs, ZERO);
-          kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
-          sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
-          Kokkos::fence();
-
-          sum = 0.0;
-          Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-          ReductionCheck(lhs), sum);
-          EXPECT_EQ(sum, lhs.extent(0) );
-        */
-
-        kh.destroy_sptrsv_handle();
+        basic_check(triMtx, lhs, rhs, false);
       }
-
-      {
-        Kokkos::deep_copy(lhs, ZERO);
-        KernelHandle kh;
-        bool is_lower_tri = false;
-        kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows,
-                                is_lower_tri);
-        auto chain_threshold = 1;
-        kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
-
-        sptrsv_symbolic(&kh, row_map, entries);
-        Kokkos::fence();
-
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
-
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
-
-        kh.destroy_sptrsv_handle();
-      }
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      if (std::is_same<size_type, int>::value &&
-          std::is_same<lno_t, int>::value &&
-          std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
-        Kokkos::deep_copy(lhs, ZERO);
-        KernelHandle kh;
-        bool is_lower_tri = false;
-        kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
-                                is_lower_tri);
-
-        sptrsv_symbolic(&kh, row_map, entries, values);
-        Kokkos::fence();
-
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
-
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
-
-        kh.destroy_sptrsv_handle();
-      }
-#endif
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
       const scalar_t FIVE    = scalar_t(5);
@@ -388,119 +352,11 @@ struct SptrsvTest {
 
     // Lower tri
     {
-      auto fixture = get_5x5_lt_ones_fixture();
-      RowMapType row_map;
-      EntriesType entries;
-      ValuesType values;
-
-      compress_matrix(row_map, entries, values, fixture);
-
-      // Create known_lhs, generate rhs, then solve for lhs to compare to
-      // known_lhs
-      ValuesType known_lhs("known_lhs", nrows);
-      // Create known solution lhs set to all 1's
-      Kokkos::deep_copy(known_lhs, ONE);
-
-      // Solution to find
-      ValuesType lhs("lhs", nrows);
-
-      // A*known_lhs generates rhs: rhs is dense, use spmv
-      ValuesType rhs("rhs", nrows);
-
-      Crs triMtx("triMtx", nrows, nrows, nnz, values, row_map, entries);
-      KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs);
-
       {
-        KernelHandle kh;
-        bool is_lower_tri = true;
-        kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
-                                is_lower_tri);
+        const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(get_5x5_lt_ones_fixture());
 
-        sptrsv_symbolic(&kh, row_map, entries);
-        Kokkos::fence();
-
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
-
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
-
-        Kokkos::deep_copy(lhs, ZERO);
-        kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
-
-        sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
-
-        // FIXME Issues with various integral type combos - algorithm currently
-        // unavailable and commented out until fixed
-        /*
-          Kokkos::deep_copy(lhs, ZERO);
-          kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
-          sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
-          Kokkos::fence();
-
-          sum = 0.0;
-          Kokkos::parallel_reduce( range_policy_t(0, lhs.extent(0)),
-          ReductionCheck(lhs), sum);
-          EXPECT_EQ( sum, lhs.extent(0) );
-        */
-
-        kh.destroy_sptrsv_handle();
+        basic_check(triMtx, lhs, rhs, true);
       }
-
-      {
-        Kokkos::deep_copy(lhs, ZERO);
-        KernelHandle kh;
-        bool is_lower_tri = true;
-        kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows,
-                                is_lower_tri);
-        auto chain_threshold = 1;
-        kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
-
-        sptrsv_symbolic(&kh, row_map, entries);
-        Kokkos::fence();
-
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
-
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
-
-        kh.destroy_sptrsv_handle();
-      }
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      if (std::is_same<size_type, int>::value &&
-          std::is_same<lno_t, int>::value &&
-          std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
-        Kokkos::deep_copy(lhs, ZERO);
-        KernelHandle kh;
-        bool is_lower_tri = true;
-        kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
-                                is_lower_tri);
-
-        sptrsv_symbolic(&kh, row_map, entries, values);
-        Kokkos::fence();
-
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-        Kokkos::fence();
-
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                                ReductionCheck(lhs), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
-
-        kh.destroy_sptrsv_handle();
-      }
-#endif
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
       {
@@ -579,7 +435,6 @@ struct SptrsvTest {
         scalar_t sum = 0.0;
         Kokkos::parallel_reduce(range_policy_t(0, X.extent(0)),
                                 ReductionCheck(X), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
         EXPECT_EQ(sum, X.extent(0));
 
         khL.destroy_sptrsv_handle();
@@ -640,7 +495,6 @@ struct SptrsvTest {
         scalar_t sum = 0.0;
         Kokkos::parallel_reduce(range_policy_t(0, X.extent(0)),
                                 ReductionCheck(X), sum);
-        EXPECT_EQ(sum, lhs.extent(0));
         EXPECT_EQ(sum, X.extent(0));
 
         khLd.destroy_sptrsv_handle();
@@ -651,62 +505,12 @@ struct SptrsvTest {
   }
 
   static void run_test_sptrsv_blocks_impl(const bool is_lower, const size_type block_size) {
-    constexpr scalar_t ZERO = scalar_t(0);
-    constexpr scalar_t ONE  = scalar_t(1);
-
-    RowMapType point_row_map;
-    EntriesType point_entries;
-    ValuesType point_values;
 
     auto fixture = is_lower ? get_6x6_lt_ones_fixture() : get_6x6_ut_ones_fixture();
+    const auto [triMtx_crs, lhs, rhs] = create_crs_lhs_rhs(fixture);
 
-    compress_matrix(point_row_map, point_entries, point_values, fixture);
-
-    const size_type point_nrows = point_row_map.size() - 1;
-    const size_type point_nnz   = point_values.size();
-
-    // Create known_lhs, generate rhs, then solve for lhs to compare to
-    // known_lhs
-    ValuesType known_lhs("known_lhs", point_nrows);
-    // Create known solution lhs set to all 1's
-    Kokkos::deep_copy(known_lhs, ONE);
-
-    // Solution to find
-    ValuesType lhs("lhs", point_nrows);
-
-    // A*known_lhs generates rhs: rhs is dense, use spmv
-    ValuesType rhs("rhs", point_nrows);
-
-    Crs triMtx_crs("triMtx", point_nrows, point_nrows, point_nnz, point_values, point_row_map, point_entries);
     Bsr triMtx(triMtx_crs, block_size);
-    KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs);
-
-    auto row_map  = triMtx.graph.row_map;
-    auto entries = triMtx.graph.entries;
-    auto values   = triMtx.values;
-
-    const size_type nrows = row_map.size() - 1;
-
-    // FIXME Issues with some integral type combos for SEQLVLSCHED_TP2, currently unavailable
-    for (auto alg : {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1}) {
-      KernelHandle kh;
-      kh.create_sptrsv_handle(alg, nrows, is_lower, block_size);
-
-      sptrsv_symbolic(&kh, row_map, entries);
-      Kokkos::fence();
-
-      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
-      Kokkos::fence();
-
-      scalar_t sum = 0.0;
-      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                              ReductionCheck(lhs), sum);
-      EXPECT_EQ(sum, lhs.extent(0));
-
-      Kokkos::deep_copy(lhs, ZERO);
-
-      kh.destroy_sptrsv_handle();
-    }
+    basic_check(triMtx, lhs, rhs, is_lower, block_size);
   }
 
   static void run_test_sptrsv_blocks() {
@@ -716,7 +520,7 @@ struct SptrsvTest {
     }
   }
 
-  static void run_test_sptrsv_streams(int test_algo, int nstreams) {
+  static void run_test_sptrsv_streams(SPTRSVAlgorithm test_algo, int nstreams, const bool is_lower) {
     // Workaround for OpenMP: skip tests if concurrency < nstreams because of
     // not enough resource to partition
     bool run_streams_test = true;
@@ -732,9 +536,6 @@ struct SptrsvTest {
 #endif
     if (!run_streams_test) return;
 
-    scalar_t ZERO = scalar_t(0);
-    scalar_t ONE  = scalar_t(1);
-
     const size_type nrows = 5;
     const size_type nnz   = 10;
 
@@ -749,150 +550,65 @@ struct SptrsvTest {
     std::vector<ValuesType> rhs_v(nstreams);
     std::vector<ValuesType> lhs_v(nstreams);
 
-    RowMapType_hostmirror hrow_map;
-    EntriesType_hostmirror hentries;
-    ValuesType_hostmirror hvalues;
+    auto fixture = is_lower ? get_5x5_lt_ones_fixture() : get_5x5_ut_ones_fixture();
+    const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(fixture);
 
-    // Upper tri
-    {
-      auto fixture = get_5x5_ut_ones_fixture();
-      compress_matrix(hrow_map, hentries, hvalues, fixture);
+    auto row_map  = triMtx.graph.row_map;
+    auto entries  = triMtx.graph.entries;
+    auto values   = triMtx.values;
 
-      for (int i = 0; i < nstreams; i++) {
-        // Allocate U
-        row_map_v[i] = RowMapType("row_map", nrows + 1);
-        entries_v[i] = EntriesType("entries", nnz);
-        values_v[i]  = ValuesType("values", nnz);
+    for (int i = 0; i < nstreams; i++) {
+      // Allocate
+      row_map_v[i] = RowMapType("row_map", nrows + 1);
+      entries_v[i] = EntriesType("entries", nnz);
+      values_v[i]  = ValuesType("values", nnz);
 
-        // Copy from host to device
-        Kokkos::deep_copy(row_map_v[i], hrow_map);
-        Kokkos::deep_copy(entries_v[i], hentries);
-        Kokkos::deep_copy(values_v[i], hvalues);
+      // Copy
+      Kokkos::deep_copy(row_map_v[i], row_map);
+      Kokkos::deep_copy(entries_v[i], entries);
+      Kokkos::deep_copy(values_v[i], values);
 
-        // Create known_lhs, generate rhs, then solve for lhs to compare to
-        // known_lhs
-        ValuesType known_lhs("known_lhs", nrows);
-        // Create known solution lhs set to all 1's
-        Kokkos::deep_copy(known_lhs, ONE);
+      // Create known_lhs, generate rhs, then solve for lhs to compare to
+      // known_lhs
+      ValuesType known_lhs("known_lhs", nrows);
+      // Create known solution lhs set to all 1's
+      Kokkos::deep_copy(known_lhs, ONE);
 
-        // Solution to find
-        lhs_v[i] = ValuesType("lhs", nrows);
+      // Solution to find
+      lhs_v[i] = ValuesType("lhs", nrows);
 
-        // A*known_lhs generates rhs: rhs is dense, use spmv
-        rhs_v[i] = ValuesType("rhs", nrows);
+      // A*known_lhs generates rhs: rhs is dense, use spmv
+      rhs_v[i] = ValuesType("rhs", nrows);
 
-        Crs triMtx("triMtx", nrows, nrows, nnz, values_v[i], row_map_v[i],
-                   entries_v[i]);
+      Crs triMtx("triMtx", nrows, nrows, nnz, values_v[i], row_map_v[i],
+                 entries_v[i]);
 
-        KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs_v[i]);
-        Kokkos::fence();
+      KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs_v[i]);
+      Kokkos::fence();
 
-        // Create handle
-        kh_v[i]           = KernelHandle();
-        bool is_lower_tri = false;
-        if (test_algo == 0)
-          kh_v[i].create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows,
-                                       is_lower_tri);
-        else if (test_algo == 1)
-          kh_v[i].create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
-                                       is_lower_tri);
-        else
-          kh_v[i].create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
-                                       is_lower_tri);
+      // Create handle
+      kh_v[i]           = KernelHandle();
+      kh_v[i].create_sptrsv_handle(test_algo, nrows, is_lower);
+      kh_ptr_v[i] = &kh_v[i];
 
-        kh_ptr_v[i] = &kh_v[i];
+      // Symbolic phase
+      sptrsv_symbolic(kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i]);
+      Kokkos::fence();
+    }  // Done handle creation and sptrsv_symbolic on all streams
 
-        // Symbolic phase
-        sptrsv_symbolic(kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i]);
-        Kokkos::fence();
-      }  // Done handle creation and sptrsv_symbolic on all streams
+    // Solve phase
+    sptrsv_solve_streams(instances, kh_ptr_v, row_map_v, entries_v, values_v,
+                         rhs_v, lhs_v);
 
-      // Solve phase
-      sptrsv_solve_streams(instances, kh_ptr_v, row_map_v, entries_v, values_v,
-                           rhs_v, lhs_v);
+    for (int i = 0; i < nstreams; i++) instances[i].fence();
 
-      for (int i = 0; i < nstreams; i++) instances[i].fence();
-
-      // Checking
-      for (int i = 0; i < nstreams; i++) {
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs_v[i].extent(0)),
-                                ReductionCheck(lhs_v[i]), sum);
-        EXPECT_EQ(sum, lhs_v[i].extent(0));
-
-        kh_v[i].destroy_sptrsv_handle();
-      }
-    }
-
-    // Lower tri
-    {
-      auto fixture = get_5x5_lt_ones_fixture();
-      compress_matrix(hrow_map, hentries, hvalues, fixture);
-
-      for (int i = 0; i < nstreams; i++) {
-        // Allocate L
-        row_map_v[i] = RowMapType("row_map", nrows + 1);
-        entries_v[i] = EntriesType("entries", nnz);
-        values_v[i]  = ValuesType("values", nnz);
-
-        // Copy from host to device
-        Kokkos::deep_copy(row_map_v[i], hrow_map);
-        Kokkos::deep_copy(entries_v[i], hentries);
-        Kokkos::deep_copy(values_v[i], hvalues);
-
-        // Create known_lhs, generate rhs, then solve for lhs to compare to
-        // known_lhs
-        ValuesType known_lhs("known_lhs", nrows);
-        // Create known solution lhs set to all 1's
-        Kokkos::deep_copy(known_lhs, ONE);
-
-        // Solution to find
-        lhs_v[i] = ValuesType("lhs", nrows);
-
-        // A*known_lhs generates rhs: rhs is dense, use spmv
-        rhs_v[i] = ValuesType("rhs", nrows);
-
-        Crs triMtx("triMtx", nrows, nrows, nnz, values_v[i], row_map_v[i],
-                   entries_v[i]);
-
-        KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs_v[i]);
-        Kokkos::fence();
-
-        // Create handle
-        kh_v[i]           = KernelHandle();
-        bool is_lower_tri = true;
-        if (test_algo == 0)
-          kh_v[i].create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows,
-                                       is_lower_tri);
-        else if (test_algo == 1)
-          kh_v[i].create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
-                                       is_lower_tri);
-        else
-          kh_v[i].create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
-                                       is_lower_tri);
-
-        kh_ptr_v[i] = &kh_v[i];
-
-        // Symbolic phase
-        sptrsv_symbolic(kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i]);
-        Kokkos::fence();
-      }  // Done handle creation and sptrsv_symbolic on all streams
-
-      // Solve phase
-      sptrsv_solve_streams(instances, kh_ptr_v, row_map_v, entries_v, values_v,
-                           rhs_v, lhs_v);
-
-      for (int i = 0; i < nstreams; i++) instances[i].fence();
-
-      // Checking
-      for (int i = 0; i < nstreams; i++) {
-        scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, lhs_v[i].extent(0)),
-                                ReductionCheck(lhs_v[i]), sum);
-        EXPECT_EQ(sum, lhs_v[i].extent(0));
-
-        kh_v[i].destroy_sptrsv_handle();
-      }
+    // Checking
+    for (int i = 0; i < nstreams; i++) {
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce(range_policy_t(0, lhs_v[i].extent(0)),
+                              ReductionCheck(lhs_v[i]), sum);
+      EXPECT_EQ(sum, lhs_v[i].extent(0));
+      kh_v[i].destroy_sptrsv_handle();
     }
   }
 };
@@ -911,25 +627,20 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_sptrsv_streams() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
-
-  TestStruct::run_test_sptrsv_streams(0, 1);
-  TestStruct::run_test_sptrsv_streams(0, 2);
-  TestStruct::run_test_sptrsv_streams(0, 3);
-  TestStruct::run_test_sptrsv_streams(0, 4);
-  TestStruct::run_test_sptrsv_streams(1, 1);
-  TestStruct::run_test_sptrsv_streams(1, 2);
-  TestStruct::run_test_sptrsv_streams(1, 3);
-  TestStruct::run_test_sptrsv_streams(1, 4);
-
+  std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1};
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
   if (std::is_same<lno_t, int>::value &&
       std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
-    TestStruct::run_test_sptrsv_streams(2, 1);
-    TestStruct::run_test_sptrsv_streams(2, 2);
-    TestStruct::run_test_sptrsv_streams(2, 3);
-    TestStruct::run_test_sptrsv_streams(2, 4);
+    algs.push_back(SPTRSVAlgorithm::SPTRSV_CUSPARSE);
   }
 #endif
+
+  for (auto alg : algs) {
+    for (int nstreams = 1; nstreams <= 4; ++nstreams) {
+      TestStruct::run_test_sptrsv_streams(alg, nstreams, true);
+      TestStruct::run_test_sptrsv_streams(alg, nstreams, false);
+    }
+  }
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \
