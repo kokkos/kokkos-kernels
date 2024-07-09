@@ -43,7 +43,7 @@ struct Functor_BatchedSerialPttrf {
     auto dd = Kokkos::subview(_d, k, Kokkos::ALL());
     auto ee = Kokkos::subview(_e, k, Kokkos::ALL());
 
-    info = KokkosBatched::SerialPttrf<AlgoTagType>::invoke(dd, ee);
+    info += KokkosBatched::SerialPttrf<AlgoTagType>::invoke(dd, ee);
   }
 
   inline int run() {
