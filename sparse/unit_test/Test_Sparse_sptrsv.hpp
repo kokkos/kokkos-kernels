@@ -62,8 +62,8 @@ struct SptrsvTest {
 
   using range_policy_t = Kokkos::RangePolicy<execution_space>;
 
-  static inline constexpr scalar_t ZERO = scalar_t(0);
-  static inline constexpr scalar_t ONE  = scalar_t(1);
+  static inline const scalar_t ZERO = scalar_t(0);
+  static inline const scalar_t ONE  = scalar_t(1);
 
   static std::vector<std::vector<scalar_t>> get_5x5_ut_ones_fixture() {
     std::vector<std::vector<scalar_t>> A = {{1.00, 0.00, 1.00, 0.00, 0.00},
@@ -211,7 +211,6 @@ struct SptrsvTest {
 
   static void run_test_sptrsv() {
     const size_type nrows = 5;
-    const size_type nnz   = 10;
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     using host_crsmat_t =
@@ -579,9 +578,6 @@ struct SptrsvTest {
 
       // A*known_lhs generates rhs: rhs is dense, use spmv
       rhs_v[i] = ValuesType("rhs", nrows);
-
-      Crs triMtx("triMtx", nrows, nrows, nnz, values_v[i], row_map_v[i],
-                 entries_v[i]);
 
       KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs_v[i]);
       Kokkos::fence();

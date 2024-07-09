@@ -167,7 +167,6 @@ struct SptrsvWrap {
     // add. y += x
     KOKKOS_INLINE_FUNCTION
     static void add(const member_type &team, const scalar_t& x, scalar_t& y) {
-      scalar_t orig = y;
       Kokkos::single(Kokkos::PerTeam(team), [&]() { y += x; });
       team.team_barrier();
     }
@@ -182,7 +181,6 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void divide(const member_type &team, scalar_t &b, const scalar_t &A,
                 scalar_t*) {
-      scalar_t orig = b;
       Kokkos::single(Kokkos::PerTeam(team), [&]() { b /= A; });
       team.team_barrier();
     }
@@ -197,7 +195,6 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void multiply_subtract(const scalar_t &A, const scalar_t &B,
                            scalar_t &C) {
-      scalar_t orig = C;
       C -= A * B;
     }
 
@@ -266,8 +263,8 @@ struct SptrsvWrap {
       ArrayType() { init(); }
 
       KOKKOS_INLINE_FUNCTION
-      ArrayType(const ArrayType& rhs) {
-        for (int i = 0; i < BUFF_SIZE; ++i) m_data[i] = rhs.m_data[i];
+      ArrayType(const ArrayType& rhs_) {
+        for (size_type i = 0; i < BUFF_SIZE; ++i) m_data[i] = rhs_.m_data[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -275,18 +272,18 @@ struct SptrsvWrap {
 
       KOKKOS_INLINE_FUNCTION
       void init() {
-        for (int i = 0; i < BUFF_SIZE; ++i) m_data[i] = 0;
+        for (size_type i = 0; i < BUFF_SIZE; ++i) m_data[i] = 0;
       }
 
       KOKKOS_INLINE_FUNCTION
-      ArrayType& operator +=(const ArrayType& rhs) {
-        for (int i = 0; i < BUFF_SIZE; ++i) m_data[i] += rhs.m_data[i];
+      ArrayType& operator +=(const ArrayType& rhs_) {
+        for (size_type i = 0; i < BUFF_SIZE; ++i) m_data[i] += rhs_.m_data[i];
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
-      ArrayType& operator +=(const values_t& rhs) {
-        for (int i = 0; i < rhs.size(); ++i) m_data[i] += rhs(i);
+      ArrayType& operator +=(const values_t& rhs_) {
+        for (int i = 0; i < rhs_.size(); ++i) m_data[i] += rhs_(i);
         return *this;
       }
     };
@@ -362,27 +359,27 @@ struct SptrsvWrap {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void lset(const size_type row, const CVector &rhs) const {
+    void lset(const size_type row, const CVector &rhs_) const {
       auto lvec = lget(row);
-      assign(lvec, rhs);
+      assign(lvec, rhs_);
     }
 
     // assign
     template <typename View1, typename View2>
-    KOKKOS_INLINE_FUNCTION static void assign(const View1 &lhs,
-                                              const View2 &rhs) {
-      for (size_type i = 0; i < lhs.size(); ++i) {
-        lhs.data()[i] = rhs.data()[i];
+    KOKKOS_INLINE_FUNCTION static void assign(const View1 &lhs_,
+                                              const View2 &rhs_) {
+      for (size_t i = 0; i < lhs_.size(); ++i) {
+        lhs_.data()[i] = rhs_.data()[i];
       }
     }
 
     template <typename View1, typename View2>
     KOKKOS_INLINE_FUNCTION static void assign(const member_type &team,
-                                       const View1 &lhs,
-                                       const View2 &rhs) {
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, lhs.size()),
+                                       const View1 &lhs_,
+                                       const View2 &rhs_) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, lhs_.size()),
                            [&](const size_type i) {
-                             lhs.data()[i] = rhs.data()[i];
+                             lhs_.data()[i] = rhs_.data()[i];
                            });
     }
 
@@ -398,7 +395,7 @@ struct SptrsvWrap {
       KokkosBlas::serial_axpy(1.0, x, y);
     }
 
-    // divide. b /= A (b = b * rhs^-1)
+    // divide. b /= A (b = b * A^-1)
     KOKKOS_INLINE_FUNCTION
     static void divide(const member_type &team, const Vector &b, const CBlock &A,
                 scalar_t* buff) {
@@ -423,7 +420,7 @@ struct SptrsvWrap {
           KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU, b);
     }
 
-    // serial divide. b /= A (b = b * rhs^-1)
+    // serial divide. b /= A (b = b * A^-1)
     KOKKOS_INLINE_FUNCTION
     static void divide(const Vector &b, const CBlock &A, scalar_t* buff) {
       // Need a temp block to do LU of A
@@ -464,9 +461,9 @@ struct SptrsvWrap {
     }
 
     KOKKOS_INLINE_FUNCTION
-    static void copy(const member_type &team, const Vector& lhs, ArrayType& rhsa) {
-      CVector rhs(&rhsa.m_data[0], lhs.size());
-      assign(team, lhs, rhs);
+    static void copy(const member_type &team, const Vector& lhs_, ArrayType& rhsa) {
+      CVector rhs_(&rhsa.m_data[0], lhs_.size());
+      assign(team, lhs_, rhs_);
     }
 
     // lget
@@ -511,21 +508,21 @@ struct SptrsvWrap {
     }
 
     KOKKOS_INLINE_FUNCTION
-    static void print(const ArrayType& rhs, const int block_size)
+    static void print(const ArrayType& rhs_, const int block_size)
     {
       std::cout << "Array: ";
       for (int i = 0; i < block_size; ++i) {
-        std::cout << rhs.m_data[i] << " ";
+        std::cout << rhs_.m_data[i] << " ";
       }
       std::cout << std::endl;
     }
 
     KOKKOS_INLINE_FUNCTION
-    static void print(const SumArray& rhs, const int block_size)
+    static void print(const SumArray& rhs_, const int block_size)
     {
       std::cout << "SumArray: ";
       for (int i = 0; i < block_size; ++i) {
-        std::cout << rhs.reference().m_data[i] << " ";
+        std::cout << rhs_.reference().m_data[i] << " ";
       }
       std::cout << std::endl;
     }
@@ -556,14 +553,14 @@ struct SptrsvWrap {
     struct ReduceFunctor
     {
       const Base* m_obj;
-      size_type rowid;
+      lno_t rowid;
 
       using accum_t = std::conditional_t<BlockEnabled, typename Base::ArrayType, scalar_t>;
 
       KOKKOS_INLINE_FUNCTION
       void operator()(size_type i, accum_t& accum) const
       {
-        const size_type colid = m_obj->entries(i);
+        const auto colid = m_obj->entries(i);
         if (!AvoidDiag || colid != rowid) {
           auto val = m_obj->vget(i);
           auto lhs_colid = m_obj->lget(colid);
@@ -631,7 +628,7 @@ struct SptrsvWrap {
       Kokkos::parallel_reduce(
           Kokkos::TeamThreadRange(team, soffset, eoffset),
           [&](const size_type ptr, size_type& diag_inner) {
-            const size_type colid = Base::entries(ptr);
+            const auto colid = Base::entries(ptr);
             if (colid == rowid) {
               diag_inner = ptr;
             }
@@ -881,7 +878,7 @@ struct SptrsvWrap {
 
       size_type diag = 0;
       for (auto ptr = soffset; ptr < eoffset; ++ptr) {
-        const size_type colid = Base::entries(ptr);
+        const auto colid = Base::entries(ptr);
         if (colid != rowid) {
           auto val       = Base::values(ptr);
           auto lhs_colid = Base::lget(colid);
