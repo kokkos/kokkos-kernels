@@ -39,22 +39,24 @@ struct Functor_BatchedSerialPttrf {
       : _d(d), _e(e) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const int k) const {
+  void operator()(const int k, int &info) const {
     auto dd = Kokkos::subview(_d, k, Kokkos::ALL());
     auto ee = Kokkos::subview(_e, k, Kokkos::ALL());
 
-    KokkosBatched::SerialPttrf<AlgoTagType>::invoke(dd, ee);
+    info = KokkosBatched::SerialPttrf<AlgoTagType>::invoke(dd, ee);
   }
 
-  inline void run() {
+  inline int run() {
     using value_type = typename DViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialPttrf");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
+    int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space> policy(0, _d.extent(0));
-    Kokkos::parallel_for(name.c_str(), policy, *this);
+    Kokkos::parallel_reduce(name.c_str(), policy, *this, info_sum);
     Kokkos::Profiling::popRegion();
+    return info_sum;
   }
 };
 
@@ -169,11 +171,15 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
 
   // Factorize matrix A -> L * D * L**H
   // d and e are updated by pttrf
-  Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
-                             AlgoTagType>(d, e_lower)
-      .run();
+  auto info = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
+                                         AlgoTagType>(d, e_lower)
+                  .run();
 
   Kokkos::fence();
+
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+  EXPECT_EQ(info, 0);
+#endif
 
   // Reconstruct L and D from factorized matrix
   create_diagonal_matrix(e_lower, EL, -1);
@@ -257,33 +263,46 @@ void impl_test_batched_pttrf_quick_return(const int N, const int BlkSize) {
 
   const int BlkSize_minus_1 = BlkSize > 0 ? BlkSize - 1 : 0;
 
-  RealView2DType d("d", N, BlkSize);  // Diagonal components
+  RealView2DType d("d", N, BlkSize),
+      d2("d2", N, BlkSize);  // Diagonal components
   View2DType e("e", N,
                BlkSize_minus_1);  // lower diagonal components
 
   const RealType reference_value = 4.0;
 
   Kokkos::deep_copy(d, reference_value);
+  Kokkos::deep_copy(d2, -reference_value);
   Kokkos::deep_copy(e, ScalarType(1.0));
 
   // Factorize matrix A -> L * D * L**H
   // d and e are updated by pttrf
   // Early return if BlkSize is 0 or 1
-  Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
-                             AlgoTagType>(d, e)
-      .run();
+  auto info = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
+                                         AlgoTagType>(d, e)
+                  .run();
+
+  // For negative values, info should be 1 for BlkSize = 1
+  auto info2 = Functor_BatchedSerialPttrf<DeviceType, RealView2DType,
+                                          View2DType, AlgoTagType>(d2, e)
+                   .run();
 
   Kokkos::fence();
+
+  int expected_info2 = BlkSize == 0 ? 0 : N;
+  EXPECT_EQ(info, 0);
+  EXPECT_EQ(info2, expected_info2);
 
   // this eps is about 10^-14
   RealType eps = 1.0e3 * ats::epsilon();
 
-  auto h_d = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d);
+  auto h_d  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d);
+  auto h_d2 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d2);
 
   // Check if d is unchanged
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize; i++) {
       EXPECT_NEAR_KK(h_d(ib, i), reference_value, eps);
+      EXPECT_NEAR_KK(h_d2(ib, i), -reference_value, eps);
     }
   }
 }
@@ -339,11 +358,15 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
 
   // Factorize matrix A -> L * D * L**T
   // d and e are updated by pttrf
-  Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
-                             AlgoTagType>(d, e)
-      .run();
+  auto info = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
+                                         AlgoTagType>(d, e)
+                  .run();
 
   Kokkos::fence();
+
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+  EXPECT_EQ(info, 0);
+#endif
 
   // Reconstruct L and D from factorized matrix
   create_diagonal_matrix(e, EL, -1);
