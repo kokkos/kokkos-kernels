@@ -57,6 +57,9 @@ struct SerialPttrf<Algo::Pttrf::Unblocked> {
   template <typename DViewType, typename EViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d,
                                            const EViewType &e) {
+    // Quick return if possible
+    if (d.extent(0) == 0 || e.extent(0) == 0) return 0;
+
     auto info = checkPttrfInput(d, e);
     if (info) return info;
 

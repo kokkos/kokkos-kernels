@@ -242,6 +242,54 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
 
 template <typename DeviceType, typename ScalarType, typename LayoutType,
           typename AlgoTagType>
+/// \brief Implementation details of batched pttrf test for early return
+///        BlkSize must be 0 or 1
+///
+/// \param N [in] Batch size of matrix A
+/// \param BlkSize [in] Block size of matrix A
+void impl_test_batched_pttrf_quick_return(const int N, const int BlkSize) {
+  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using RealType       = typename ats::mag_type;
+  using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
+  using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
+
+  if (BlkSize > 1) return;
+
+  const int BlkSize_minus_1 = BlkSize > 0 ? BlkSize - 1 : 0;
+
+  RealView2DType d("d", N, BlkSize);  // Diagonal components
+  View2DType e("e", N,
+               BlkSize_minus_1);  // lower diagonal components
+
+  const RealType reference_value = 4.0;
+
+  Kokkos::deep_copy(d, reference_value);
+  Kokkos::deep_copy(e, ScalarType(1.0));
+
+  // Factorize matrix A -> L * D * L**H
+  // d and e are updated by pttrf
+  // Early return if BlkSize is 0 or 1
+  Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
+                             AlgoTagType>(d, e)
+      .run();
+
+  Kokkos::fence();
+
+  // this eps is about 10^-14
+  RealType eps = 1.0e3 * ats::epsilon();
+
+  auto h_d = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d);
+
+  // Check if d is unchanged
+  for (int ib = 0; ib < N; ib++) {
+    for (int i = 0; i < BlkSize; i++) {
+      EXPECT_NEAR_KK(h_d(ib, i), reference_value, eps);
+    }
+  }
+}
+
+template <typename DeviceType, typename ScalarType, typename LayoutType,
+          typename AlgoTagType>
 /// \brief Implementation details of batched pttrf test
 ///
 /// \param N [in] Batch size of matrix A
@@ -348,6 +396,12 @@ int test_batched_pttrf() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     using LayoutType = Kokkos::LayoutLeft;
+    for (int i = 0; i < 2; i++) {
+      Test::Pttrf::impl_test_batched_pttrf_quick_return<
+          DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Pttrf::impl_test_batched_pttrf_quick_return<
+          DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
+    }
     for (int i = 2; i < 10; i++) {
       Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType,
                                            AlgoTagType>(1, i);
@@ -365,6 +419,12 @@ int test_batched_pttrf() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     using LayoutType = Kokkos::LayoutRight;
+    for (int i = 0; i < 2; i++) {
+      Test::Pttrf::impl_test_batched_pttrf_quick_return<
+          DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Pttrf::impl_test_batched_pttrf_quick_return<
+          DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
+    }
     for (int i = 2; i < 10; i++) {
       Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType,
                                            AlgoTagType>(1, i);
