@@ -24,7 +24,13 @@
 #include <unordered_map>
 #include <iomanip>  // std::setprecision
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+// cuSPARSE ILU and IC factorizations were removed
+// completely in cuSPARSE 12.5
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUSPARSE_VERSION < 12500)
+#define USE_CUSPARSE_ILU
+#endif
+
+#ifdef USE_CUSPARSE_ILU
 #include <cusparse.h>
 #endif
 
@@ -39,8 +45,6 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_IOUtils.hpp>
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA) && \
-    (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION))
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
@@ -52,8 +56,8 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
                      int team_size, int /*vector_length*/,
                      /*int idx_offset,*/ int loop) {
   typedef default_scalar scalar_t;
-  typedef default_lno_t lno_t;
-  typedef default_size_type size_type;
+  typedef int lno_t;
+  typedef int size_type;
   typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef typename execution_space::memory_space memory_space;
 
@@ -82,6 +86,11 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
 
   std::cout << "\n\n" << std::endl;
   if (!afilename.empty()) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && !defined(USE_CUSPARSE_ILU)
+    std::cout << "** Note: cuSPARSE is enabled, but the cusparseXcsrilu*\n";
+    std::cout << "   functions were removed in cuSPARSE 12.5.\n";
+    std::cout << "   Only KokkosKernels spiluk will be run.\n\n";
+#endif
     std::cout << "ILU(K) Begin: Read matrix filename " << afilename
               << std::endl;
     crsmat_t A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsmat_t>(
@@ -91,11 +100,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
     const int nnz         = A.nnz();
     const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(kin);
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    // cuSPARSE requires lno_t = size_type = int. For both, int is always used
-    // (if enabled)
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-    defined(KOKKOSKERNELS_INST_OFFSET_INT)
+#ifdef USE_CUSPARSE_ILU
     // std::cout << "  cusparse: create handle" << std::endl;
     cusparseStatus_t status;
     cusparseHandle_t handle = 0;
@@ -131,10 +136,6 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
                                  info, &pBufferSize);
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
     cudaMalloc((void **)&pBuffer, pBufferSize);
-#else
-    std::cout << "Note: the cuSPARSE TPL is enabled, but either offset=int or "
-                 "ordinal=int is disabled, so it can't be used.\n";
-#endif
 #endif
 
     for (auto test : tests) {
@@ -223,11 +224,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
       std::cout << "nrm2(A*e-L*U*e) = " << std::setprecision(15) << bb_nrm
                 << std::endl;
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      // cuSPARSE requires lno_t = size_type = int. For both, int is always used
-      // (if enabled)
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-    defined(KOKKOSKERNELS_INST_OFFSET_INT)
+#ifdef USE_CUSPARSE_ILU
       if (fill_lev == 0) {
         std::cout << "CUSPARSE: No KK interface added yet" << std::endl;
 
@@ -384,7 +381,6 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
         std::cout << "ILU(0) SUCCESS!" << std::endl;
       }  // fill_lev=0
 #endif
-#endif
 
       // Benchmark
       Kokkos::fence();
@@ -407,11 +403,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
       std::cout << "LOOP_MAX_TIME:  " << max_time << std::endl;
       std::cout << "LOOP_MIN_TIME:  " << min_time << std::endl;
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      // cuSPARSE requires lno_t = size_type = int. For both, int is always used
-      // (if enabled)
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-    defined(KOKKOSKERNELS_INST_OFFSET_INT)
+#ifdef USE_CUSPARSE_ILU
       if (fill_lev == 0) {
         lno_view_t A_row_map("A_row_map", nrows + 1);
         lno_nnz_view_t A_entries("A_entries", nnz);
@@ -442,20 +434,14 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
         std::cout << "LOOP_MIN_TIME (cuSPARSE):  " << min_time << std::endl;
       }  // fill_lev=0
 #endif
-#endif
     }  // end tests
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    // cuSPARSE requires lno_t = size_type = int. For both, int is always used
-    // (if enabled)
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-    defined(KOKKOSKERNELS_INST_OFFSET_INT)
+#ifdef USE_CUSPARSE_ILU
     // step 6: free resources
     cudaFree(pBuffer);
     cusparseDestroyCsrilu02Info(info);
     cusparseDestroyMatDescr(descr);
     cusparseDestroy(handle);
-#endif
 #endif
   }  // end if (!afilename.empty())
 
@@ -583,9 +569,3 @@ int main(int argc, char **argv) {
   Kokkos::finalize();
   return 0;
 }
-#else
-int main() {
-  std::cout << "The SPILUK perf_test requires CUDA >= 8.0\n";
-  return 0;
-}
-#endif

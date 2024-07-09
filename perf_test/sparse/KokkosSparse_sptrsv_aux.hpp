@@ -228,25 +228,37 @@ std::string getCuSparseErrorString(cusparseStatus_t status) {
 /* =========================================================================================
  */
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+#if CUSPARSE_VERSION >= 12500
+template <typename crsmat_t, typename host_crsmat_t>
+bool check_cusparse(host_crsmat_t &, bool, crsmat_t &, bool, crsmat_t &, int *,
+                    int *, double, int) {
+  // TODO: call KokkosSparse::sptrsv (if hardcoded problem settings below are
+  // compatible), or add wrappers for modern interface (cusparseSpSV*)
+  throw std::logic_error("Legacy cuSPARSE csrsv interface not available.");
+  return false;
+}
+
+#else
+
 template <typename crsmat_t, typename host_crsmat_t>
 bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
                     bool col_majorU, crsmat_t &U, int *perm_r, int *perm_c,
                     double tol, int loop) {
   using values_view_t = typename crsmat_t::values_type::non_const_type;
-  using scalar_t      = typename values_view_t::value_type;
-  using size_type     = typename crsmat_t::size_type;
+  using scalar_t = typename values_view_t::value_type;
+  using size_type = typename crsmat_t::size_type;
 
   using host_values_view_t =
       typename host_crsmat_t::values_type::non_const_type;
 
   using execution_space = typename values_view_t::execution_space;
-  using memory_space    = typename execution_space::memory_space;
+  using memory_space = typename execution_space::memory_space;
 
   using host_execution_space = typename host_values_view_t::execution_space;
-  using host_memory_space    = typename host_execution_space::memory_space;
+  using host_memory_space = typename host_execution_space::memory_space;
 
   using host_scalar_view_t = Kokkos::View<scalar_t *, host_memory_space>;
-  using scalar_view_t      = Kokkos::View<scalar_t *, memory_space>;
+  using scalar_view_t = Kokkos::View<scalar_t *, memory_space>;
 
   const scalar_t ZERO(0.0);
   const scalar_t ONE(1.0);
@@ -258,7 +270,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
   // > create a handle
   cusparseStatus_t status;
   cusparseHandle_t handle = 0;
-  status                  = cusparseCreate(&handle);
+  status = cusparseCreate(&handle);
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << " ** cusparseCreate failed with "
               << getCuSparseErrorString(status) << " ** " << std::endl;
@@ -269,7 +281,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
 
   // > create a empty info structure for L-solve (e.g., analysis results)
   csrsv2Info_t infoL = 0;
-  status             = cusparseCreateCsrsv2Info(&infoL);
+  status = cusparseCreateCsrsv2Info(&infoL);
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << " ** cusparseCreateCsrsv2Info failed with "
               << getCuSparseErrorString(status) << " ** " << std::endl;
@@ -279,14 +291,14 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
   // Preparing for L-solve
   // step 1: create a descriptor
   size_type nnzL = L.nnz();
-  auto graphL    = L.graph;  // in_graph
-  auto row_mapL  = graphL.row_map;
-  auto entriesL  = graphL.entries;
-  auto valuesL   = L.values;
+  auto graphL = L.graph;  // in_graph
+  auto row_mapL = graphL.row_map;
+  auto entriesL = graphL.entries;
+  auto valuesL = L.values;
 
   // NOTE: it is stored in CSC = UPPER + TRANSPOSE
   cusparseMatDescr_t descrL = 0;
-  status                    = cusparseCreateMatDescr(&descrL);
+  status = cusparseCreateMatDescr(&descrL);
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << " ** cusparseCreateMatDescr failed with "
               << getCuSparseErrorString(status) << " ** " << std::endl;
@@ -300,7 +312,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
   // step 2: query how much memory used in csrsv2, and allocate the buffer
   // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
   int pBufferSize;
-  void *pBufferL             = 0;
+  void *pBufferL = 0;
   cusparseOperation_t transL = (col_majorL ? CUSPARSE_OPERATION_TRANSPOSE
                                            : CUSPARSE_OPERATION_NON_TRANSPOSE);
   if (std::is_same<scalar_t, double>::value) {
@@ -374,14 +386,14 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
   timer.reset();
   if (std::is_same<scalar_t, double>::value) {
     const double alpha = 1.0;
-    status             = cusparseDcsrsv2_solve(
+    status = cusparseDcsrsv2_solve(
         handle, transL, nrows, nnzL, &alpha, descrL,
         reinterpret_cast<double *>(valuesL.data()), row_mapL.data(),
         entriesL.data(), infoL, reinterpret_cast<double *>(rhs.data()),
         reinterpret_cast<double *>(sol.data()), policy, pBufferL);
   } else {
     const cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
-    status                      = cusparseZcsrsv2_solve(
+    status = cusparseZcsrsv2_solve(
         handle, transL, nrows, nnzL, &alpha, descrL,
         reinterpret_cast<cuDoubleComplex *>(valuesL.data()), row_mapL.data(),
         entriesL.data(), infoL, reinterpret_cast<cuDoubleComplex *>(rhs.data()),
@@ -404,14 +416,14 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
   // ==============================================
   // Preparing for U-solve
   size_type nnzU = U.nnz();
-  auto graphU    = U.graph;  // in_graph
-  auto row_mapU  = graphU.row_map;
-  auto entriesU  = graphU.entries;
-  auto valuesU   = U.values;
+  auto graphU = U.graph;  // in_graph
+  auto row_mapU = graphU.row_map;
+  auto entriesU = graphU.entries;
+  auto valuesU = U.values;
 
   // > create a empty info structure for U-solve (e.g., analysis results)
   csrsv2Info_t infoU = 0;
-  status             = cusparseCreateCsrsv2Info(&infoU);
+  status = cusparseCreateCsrsv2Info(&infoU);
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << " ** cusparseCreateCsrsv2Info failed with "
               << getCuSparseErrorString(status) << " ** " << std::endl;
@@ -420,7 +432,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
   // ==============================================
   // step 1: create a descriptor
   cusparseMatDescr_t descrU = 0;
-  status                    = cusparseCreateMatDescr(&descrU);
+  status = cusparseCreateMatDescr(&descrU);
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << " ** cusparseCreateMatDescr create status error name "
               << getCuSparseErrorString(status) << " ** " << std::endl;
@@ -438,7 +450,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
   // ==============================================
   // step 2: query how much memory used in csrsv2, and allocate the buffer
   // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
-  void *pBufferU             = 0;
+  void *pBufferU = 0;
   cusparseOperation_t transU = (col_majorU ? CUSPARSE_OPERATION_TRANSPOSE
                                            : CUSPARSE_OPERATION_NON_TRANSPOSE);
   if (std::is_same<scalar_t, double>::value) {
@@ -485,14 +497,14 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
   timer.reset();
   if (std::is_same<scalar_t, double>::value) {
     const double alpha = 1.0;
-    status             = cusparseDcsrsv2_solve(
+    status = cusparseDcsrsv2_solve(
         handle, transU, nrows, nnzU, &alpha, descrU,
         reinterpret_cast<double *>(valuesU.data()), row_mapU.data(),
         entriesU.data(), infoU, reinterpret_cast<double *>(sol.data()),
         reinterpret_cast<double *>(rhs.data()), policy, pBufferU);
   } else {
     const cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
-    status                      = cusparseZcsrsv2_solve(
+    status = cusparseZcsrsv2_solve(
         handle, transU, nrows, nnzU, &alpha, descrU,
         reinterpret_cast<cuDoubleComplex *>(valuesU.data()), row_mapU.data(),
         entriesU.data(), infoU, reinterpret_cast<cuDoubleComplex *>(sol.data()),
@@ -652,6 +664,8 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
   }
   return success;
 }
+#endif
+
 #else
 template <typename crsmat_t, typename host_crsmat_t>
 bool check_cusparse(host_crsmat_t & /*Mtx*/, bool /*col_majorL*/,
