@@ -56,76 +56,79 @@ template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
 class SPTRSVHandle {
  public:
-  typedef ExecutionSpace HandleExecSpace;
-  typedef TemporaryMemorySpace HandleTempMemorySpace;
-  typedef PersistentMemorySpace HandlePersistentMemorySpace;
+  using HandleExecSpace             = ExecutionSpace;
+  using HandleTempMemorySpace       = TemporaryMemorySpace;
+  using HandlePersistentMemorySpace = PersistentMemorySpace;
 
-  typedef ExecutionSpace execution_space;
-  typedef HandlePersistentMemorySpace memory_space;
+  using execution_space = ExecutionSpace;
+  using memory_space    = HandlePersistentMemorySpace;
 
-  typedef typename std::remove_const<size_type_>::type size_type;
-  typedef const size_type const_size_type;
+  using TeamPolicy  = Kokkos::TeamPolicy<execution_space>;
+  using RangePolicy = Kokkos::RangePolicy<execution_space>;
 
-  typedef typename std::remove_const<lno_t_>::type nnz_lno_t;
-  typedef const nnz_lno_t const_nnz_lno_t;
+  using size_type       = typename std::remove_const<size_type_>::type;
+  using const_size_type = const size_type;
 
-  typedef typename std::remove_const<scalar_t_>::type scalar_t;
-  typedef const scalar_t const_nnz_scalar_t;
+  using nnz_lno_t       = typename std::remove_const<lno_t_>::type;
+  using const_nnz_lno_t = const nnz_lno_t;
 
-  // row_map type (managed memory)
-  typedef typename Kokkos::View<size_type *, HandleTempMemorySpace>
-      nnz_row_view_temp_t;
-  typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace>
-      nnz_row_view_t;
-  typedef typename nnz_row_view_t::HostMirror host_nnz_row_view_t;
-  typedef typename Kokkos::View<int *, HandlePersistentMemorySpace>
-      int_row_view_t;
-  typedef typename Kokkos::View<int64_t *, HandlePersistentMemorySpace>
-      int64_row_view_t;
+  using scalar_t           = typename std::remove_const<scalar_t_>::type;
+  using const_nnz_scalar_t = const scalar_t;
+
+  // Row_map type (managed memory)
+  using nnz_row_view_temp_t =
+      typename Kokkos::View<size_type *, HandleTempMemorySpace>;
+  using nnz_row_view_t =
+      typename Kokkos::View<size_type *, HandlePersistentMemorySpace>;
+  using host_nnz_row_view_t = typename nnz_row_view_t::HostMirror;
+  using int_row_view_t =
+      typename Kokkos::View<int *, HandlePersistentMemorySpace>;
+  using int64_row_view_t =
+      typename Kokkos::View<int64_t *, HandlePersistentMemorySpace>;
   // typedef typename row_lno_persistent_work_view_t::HostMirror
   // row_lno_persistent_work_host_view_t; //Host view type
-  typedef typename Kokkos::View<
+  using nnz_row_unmanaged_view_t = typename Kokkos::View<
       const size_type *, HandlePersistentMemorySpace,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
-      nnz_row_unmanaged_view_t;  // for rank1 subviews
+      Kokkos::MemoryTraits<Kokkos::Unmanaged |
+                           Kokkos::RandomAccess>>;  // for rank1 subviews
 
   // values type (managed memory)
-  typedef typename Kokkos::View<scalar_t *, HandleTempMemorySpace>
-      nnz_scalar_view_temp_t;
-  typedef typename Kokkos::View<scalar_t *, HandlePersistentMemorySpace>
-      nnz_scalar_view_t;
-  typedef typename nnz_scalar_view_t::HostMirror host_nnz_scalar_view_t;
-  typedef typename Kokkos::View<
+  using nnz_scalar_view_temp_t =
+      typename Kokkos::View<scalar_t *, HandleTempMemorySpace>;
+  using nnz_scalar_view_t =
+      typename Kokkos::View<scalar_t *, HandlePersistentMemorySpace>;
+  using host_nnz_scalar_view_t      = typename nnz_scalar_view_t::HostMirror;
+  using nnz_scalar_unmanaged_view_t = typename Kokkos::View<
       const scalar_t *, HandlePersistentMemorySpace,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
-      nnz_scalar_unmanaged_view_t;  // for rank1 subviews
+      Kokkos::MemoryTraits<Kokkos::Unmanaged |
+                           Kokkos::RandomAccess>>;  // for rank1 subviews
 
   // entries type (managed memory)
-  typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace>
-      nnz_lno_view_temp_t;
-  typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>
-      nnz_lno_view_t;
-  typedef typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>
-      hostspace_nnz_lno_view_t;
-  typedef typename nnz_lno_view_t::HostMirror host_nnz_lno_view_t;
-  typedef typename Kokkos::View<
+  using nnz_lno_view_temp_t =
+      typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace>;
+  using nnz_lno_view_t =
+      typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>;
+  using hostspace_nnz_lno_view_t =
+      typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>;
+  using host_nnz_lno_view_t      = typename nnz_lno_view_t::HostMirror;
+  using nnz_lno_unmanaged_view_t = typename Kokkos::View<
       const nnz_lno_t *, HandlePersistentMemorySpace,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
-      nnz_lno_unmanaged_view_t;  // for rank1 subviews
+      Kokkos::MemoryTraits<Kokkos::Unmanaged |
+                           Kokkos::RandomAccess>>;  // for rank1 subviews
   // typedef typename nnz_lno_persistent_work_view_t::HostMirror
   // nnz_lno_persistent_work_host_view_t; //Host view type
 
-  typedef typename std::make_signed<
-      typename nnz_row_view_t::non_const_value_type>::type signed_integral_t;
-  typedef Kokkos::View<signed_integral_t *,
-                       typename nnz_row_view_t::array_layout,
-                       typename nnz_row_view_t::device_type,
-                       typename nnz_row_view_t::memory_traits>
-      signed_nnz_lno_view_t;
-  typedef typename signed_nnz_lno_view_t::HostMirror host_signed_nnz_lno_view_t;
+  using signed_integral_t = typename std::make_signed<
+      typename nnz_row_view_t::non_const_value_type>::type;
+  using signed_nnz_lno_view_t =
+      Kokkos::View<signed_integral_t *, typename nnz_row_view_t::array_layout,
+                   typename nnz_row_view_t::device_type,
+                   typename nnz_row_view_t::memory_traits>;
 
-  typedef typename Kokkos::View<scalar_t **, HandlePersistentMemorySpace>
-      mtx_scalar_view_t;
+  using host_signed_nnz_lno_view_t = typename signed_nnz_lno_view_t::HostMirror;
+
+  using mtx_scalar_view_t =
+      typename Kokkos::View<scalar_t **, HandlePersistentMemorySpace>;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #if (CUDA_VERSION >= 11030)
@@ -214,7 +217,7 @@ class SPTRSVHandle {
   };
 #endif
 
-  typedef cuSparseHandleType SPTRSVcuSparseHandleType;
+  using SPTRSVcuSparseHandleType = cuSparseHandleType;
 #endif
 
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
@@ -228,7 +231,7 @@ class SPTRSVHandle {
     //~cudaGraphWrapperType() { }
   };
 
-  typedef cudaGraphWrapperType SPTRSVcudaGraphWrapperType;
+  using SPTRSVcudaGraphWrapperType = cudaGraphWrapperType;
 
   void create_SPTRSVcudaGraphWrapperType() {
     destroy_SPTRSVcudaGraphWrapperType();
@@ -296,6 +299,7 @@ class SPTRSVHandle {
   nnz_lno_view_t nodes_grouped_by_level;
   hostspace_nnz_lno_view_t hnodes_grouped_by_level;  // NEW
   size_type nlevel;
+  size_type block_size;  // block_size > 0 implies BSR
 
   int team_size;
   int vector_size;
@@ -423,7 +427,8 @@ class SPTRSVHandle {
 
  public:
   SPTRSVHandle(SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_,
-               bool symbolic_complete_ = false, bool numeric_complete_ = false)
+               const size_type block_size_ = 0, bool symbolic_complete_ = false,
+               bool numeric_complete_ = false)
       :
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
         cudagraphCreated(false),
@@ -438,6 +443,7 @@ class SPTRSVHandle {
         nodes_grouped_by_level(),
         hnodes_grouped_by_level(),
         nlevel(0),
+        block_size(block_size_),
         team_size(-1),
         vector_size(-1),
         stored_diagonal(false),
@@ -1006,6 +1012,14 @@ class SPTRSVHandle {
   size_type get_num_levels() const { return nlevel; }
 
   void set_num_levels(size_type nlevels_) { this->nlevel = nlevels_; }
+
+  KOKKOS_INLINE_FUNCTION
+  size_type get_block_size() const { return block_size; }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_block_size(const size_type block_size_) {
+    this->block_size = block_size_;
+  }
 
   void set_symbolic_complete() { this->symbolic_complete = true; }
   void set_symbolic_incomplete() { this->symbolic_complete = false; }
