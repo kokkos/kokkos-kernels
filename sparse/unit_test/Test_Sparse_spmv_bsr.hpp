@@ -383,9 +383,9 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
   using handle_t = SPMVHandle<execution_space, Bsr, decltype(x), decltype(y)>;
 
   // cover a variety of algorithms
-  std::vector<handle_t *> handles;
+  std::vector<std::unique_ptr<handle_t>> handles;
   for (SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_BSR_V41})
-    handles.push_back(new handle_t(algo));
+    handles.push_back(std::make_unique<handle_t>(algo));
 
   // Tensor core algorithm temporarily disabled, fails on V100
   /*
@@ -405,14 +405,14 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
   }
   */
 
-  for (handle_t *handle : handles) {
+  for (std::unique_ptr<handle_t> &handle : handles) {
     for (scalar_type alpha :
          {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(3.7)}) {
       for (scalar_type beta : {scalar_type(0), scalar_type(1), scalar_type(-1),
                                scalar_type(-1.5)}) {
-        test_spmv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow, x, y);
+        test_spmv(handle.get(), mode, alpha, beta, a, acrs, maxNnzPerRow, x, y);
         if (beta == scalar_type(0)) {
-          test_spmv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow,
+          test_spmv(handle.get(), mode, alpha, beta, a, acrs, maxNnzPerRow,
                     x_with_nans, y_with_nans);
         }
       }
@@ -644,9 +644,9 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
       SPMVHandle<execution_space, Bsr, multivector_t, multivector_t>;
 
   // cover a variety of algorithms
-  std::vector<handle_t *> handles;
+  std::vector<std::unique_ptr<handle_t>> handles;
   for (SPMVAlgorithm algo : {SPMV_DEFAULT, SPMV_NATIVE, SPMV_BSR_V41})
-    handles.push_back(new handle_t(algo));
+    handles.push_back(std::make_unique<handle_t>(algo));
 
   // Tensor core algorithm temporarily disabled, fails on V100
   /*
@@ -670,14 +670,15 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
     auto [x, y] = random_multivecs_for_spm_mv<Layout>(mode, a, numVecs);
     auto [x_with_nans, y_with_nans] =
         random_multivecs_for_spm_mv<Layout>(mode, a, numVecs, true);
-    for (handle_t *handle : handles) {
+    for (std::unique_ptr<handle_t> &handle : handles) {
       for (scalar_type alpha : {scalar_type(0), scalar_type(1), scalar_type(-1),
                                 scalar_type(3.7)}) {
         for (scalar_type beta : {scalar_type(0), scalar_type(1),
                                  scalar_type(-1), scalar_type(-1.5)}) {
-          test_spm_mv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow, x, y);
+          test_spm_mv(handle.get(), mode, alpha, beta, a, acrs, maxNnzPerRow, x,
+                      y);
           if (beta == scalar_type(0)) {
-            test_spm_mv(handle, mode, alpha, beta, a, acrs, maxNnzPerRow,
+            test_spm_mv(handle.get(), mode, alpha, beta, a, acrs, maxNnzPerRow,
                         x_with_nans, y_with_nans);
           }
         }

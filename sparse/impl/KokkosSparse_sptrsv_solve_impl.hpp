@@ -471,6 +471,8 @@ struct SptrsvWrap {
     Vector lget(const size_type row) const {
       return Vector(lhs.data() + (row * block_size), block_size);
     }
+  };
+#endif
 
     // rget
     KOKKOS_INLINE_FUNCTION
@@ -1561,7 +1563,8 @@ struct SptrsvWrap {
 
         if (my_rank < nodes_this_lvl) {
           // THIS is where the mapping of threadid to rowid happens
-          rowid   = nodes_grouped_by_level(my_rank + mut_node_count);
+          rowid = nodes_grouped_by_level(my_rank + mut_node_count);
+
           soffset = row_map(rowid);
           eoffset = row_map(rowid + 1);
           rhs_val = rhs(rowid);
@@ -1643,7 +1646,8 @@ struct SptrsvWrap {
           Kokkos::parallel_reduce(
               Kokkos::ThreadVectorRange(team, trange),
               [&](const int loffset, scalar_t &tdiff) {
-                auto ptr   = soffset + loffset;
+                auto ptr = soffset + loffset;
+
                 auto colid = entries(ptr);
                 auto val   = values(ptr);
                 if (colid != rowid) {
@@ -2910,7 +2914,10 @@ tstf); } // end elseif
               Kokkos::Experimental::WorkItemProperty::HintLightWeight),
             tstf);
         }
-        node_count += lvl_nodes;
+        // TODO: space.fence()
+        Kokkos::fence();  // TODO - is this necessary? that is, can the
+                          // parallel_for launch before the s/echain values have
+                          // been updated?
       }
       // TODO: space.fence()
       Kokkos::fence();  // TODO - is this necessary? that is, can the
