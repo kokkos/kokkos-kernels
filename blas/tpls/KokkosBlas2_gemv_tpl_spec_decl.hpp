@@ -824,6 +824,10 @@ struct kokkos_to_std_type_map<T, true> {
                      const AViewType& A, const XViewType& X,                   \
                      typename YViewType::const_value_type& beta,               \
                      const YViewType& Y) {                                     \
+      if (beta == Kokkos::ArithTraits<SCALAR>::zero()) {                       \
+        Kokkos::deep_copy(Y, Kokkos::ArithTraits<SCALAR>::zero());             \
+      }                                                                        \
+                                                                               \
       bool row_major       = std::is_same<Kokkos::LayoutRight, LAYOUT>::value; \
       const std::int64_t M = A.extent(0);                                      \
       const std::int64_t N = A.extent(1);                                      \
