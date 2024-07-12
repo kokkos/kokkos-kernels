@@ -37,7 +37,7 @@ struct TeamSpmv {
     return Impl::TeamSpmvInternal::invoke<
         MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type, dobeta>(
-        member, x.extent(0), alpha, values.data(), values.stride_0(),
+        member, y.extent(0), alpha, values.data(), values.stride_0(),
         row_ptr.data(), row_ptr.stride_0(), colIndices.data(),
         colIndices.stride_0(), x.data(), x.stride_0(), beta, y.data(),
         y.stride_0());
@@ -56,7 +56,7 @@ struct TeamVectorSpmv {
     return Impl::TeamVectorSpmvInternal::invoke<
         MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type, dobeta>(
-        member, x.extent(0), alpha, values.data(), values.stride_0(),
+        member, y.extent(0), alpha, values.data(), values.stride_0(),
         row_ptr.data(), row_ptr.stride_0(), colIndices.data(),
         colIndices.stride_0(), x.data(), x.stride_0(), beta, y.data(),
         y.stride_0());
