@@ -217,7 +217,7 @@ struct SptrsvWrap {
       }
 
       // If sorted, we already know the diag. Otherwise, get it from the reducer
-      rf.diag = IsSorted ? (IsLower ? values(eoffset - 1) : values(soffset)) : rf.diag;
+      rf.diag = IsSorted ? (IsLower ? eoffset - 1 : soffset) : rf.diag;
 
       // At end, handle the diag element. We need to be careful to avoid race
       // conditions here.
