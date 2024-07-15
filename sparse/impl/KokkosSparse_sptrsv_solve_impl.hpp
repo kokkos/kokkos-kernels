@@ -169,9 +169,10 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION void solve_impl(const member_type *team,
                                            const int my_rank,
                                            const long node_count) const {
-      static_assert(! ((!IsSerial && BlockEnabled) && UseThreadVec),
-                    "ThreadVectorRanges are not yet supported for block-enabled");
-      static_assert(! (IsSerial && UseThreadVec),
+      static_assert(
+          !((!IsSerial && BlockEnabled) && UseThreadVec),
+          "ThreadVectorRanges are not yet supported for block-enabled");
+      static_assert(!(IsSerial && UseThreadVec),
                     "Requested thread vector range in serial?");
 
       const auto rowid   = nodes_grouped_by_level(my_rank + node_count);
@@ -1091,7 +1092,7 @@ struct SptrsvWrap {
     const auto hnodes_per_level       = thandle.get_host_nodes_per_level();
     const auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
     const auto block_size             = thandle.get_block_size();
-    const auto block_enabled = false;  // thandle.is_block_enabled();
+    const auto block_enabled          = false;  // thandle.is_block_enabled();
     assert(block_size == 0);
 
     // Set up functor types
@@ -1489,7 +1490,7 @@ struct SptrsvWrap {
     auto hnodes_per_level       = thandle.get_host_nodes_per_level();
     auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
     const auto block_size       = thandle.get_block_size();
-    const auto block_enabled = false;  // thandle.is_block_enabled();
+    const auto block_enabled    = false;  // thandle.is_block_enabled();
     assert(block_size == 0);
 
     // Set up functor types

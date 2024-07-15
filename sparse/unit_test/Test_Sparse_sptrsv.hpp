@@ -103,12 +103,12 @@ struct SptrsvTest {
     return A;
   }
 
-  static bool do_cusparse()
-  {
+  static bool do_cusparse() {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    return (std::is_same<size_type, int>::value &&
-            std::is_same<lno_t, int>::value &&
-            std::is_same<typename device::execution_space, Kokkos::Cuda>::value);
+    return (
+        std::is_same<size_type, int>::value &&
+        std::is_same<lno_t, int>::value &&
+        std::is_same<typename device::execution_space, Kokkos::Cuda>::value);
 #else
     return false;
 #endif
