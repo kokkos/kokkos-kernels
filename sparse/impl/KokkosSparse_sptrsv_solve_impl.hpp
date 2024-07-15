@@ -111,11 +111,8 @@ struct SptrsvWrap {
     RHSType rhs;
     entries_t nodes_grouped_by_level;
 
-    Common(const RowMapType &row_map_,
-           const EntriesType &entries_,
-           const ValuesType &values_,
-           LHSType &lhs_,
-           const RHSType &rhs_,
+    Common(const RowMapType &row_map_, const EntriesType &entries_,
+           const ValuesType &values_, LHSType &lhs_, const RHSType &rhs_,
            const entries_t &nodes_grouped_by_level_,
            const size_type block_size_ = 0)
         : row_map(row_map_),
@@ -123,80 +120,78 @@ struct SptrsvWrap {
           values(values_),
           lhs(lhs_),
           rhs(rhs_),
-          nodes_grouped_by_level(nodes_grouped_by_level_)
-    {
-      KK_REQUIRE_MSG(!BlockEnabled,    "Blocks are not yet supported.");
+          nodes_grouped_by_level(nodes_grouped_by_level_) {
+      KK_REQUIRE_MSG(!BlockEnabled, "Blocks are not yet supported.");
       KK_REQUIRE_MSG(block_size_ == 0, "Blocks are not yet supported.");
     }
 
-    struct ReduceSumFunctor
-    {
-      const Common* m_obj;
+    struct ReduceSumFunctor {
+      const Common *m_obj;
       const lno_t rowid;
       lno_t diag;
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(size_type i, scalar_t& accum) const
-      {
+      void operator()(size_type i, scalar_t &accum) const {
         const auto colid = m_obj->entries(i);
-        auto val = m_obj->values(i);
-        auto lhs_colid = m_obj->lhs(colid);
+        auto val         = m_obj->values(i);
+        auto lhs_colid   = m_obj->lhs(colid);
         accum -= val * lhs_colid;
         KK_KERNEL_ASSERT_MSG(colid != rowid, "Should not have hit diag");
       }
     };
 
-    struct ReduceSumDiagFunctor
-    {
-      const Common* m_obj;
+    struct ReduceSumDiagFunctor {
+      const Common *m_obj;
       const lno_t rowid;
       lno_t diag;
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(size_type i, scalar_t& accum) const
-      {
+      void operator()(size_type i, scalar_t &accum) const {
         const auto colid = m_obj->entries(i);
         if (colid != rowid) {
-          auto val = m_obj->values(i);
+          auto val       = m_obj->values(i);
           auto lhs_colid = m_obj->lhs(colid);
           accum -= val * lhs_colid;
-        }
-        else {
+        } else {
           diag = i;
         }
       }
     };
 
     KOKKOS_INLINE_FUNCTION
-    static void add_and_divide(scalar_t& lhs_val, const scalar_t& rhs_val, const scalar_t& diag_val)
-    {
+    static void add_and_divide(scalar_t &lhs_val, const scalar_t &rhs_val,
+                               const scalar_t &diag_val) {
       lhs_val = (lhs_val + rhs_val) / diag_val;
     }
 
-    template <bool IsSerial, bool IsSorted, bool IsLower, bool UseThreadVec=false>
-    KOKKOS_INLINE_FUNCTION
-    void solve_impl(const member_type* team, const int my_rank, const long node_count) const
-    {
+    template <bool IsSerial, bool IsSorted, bool IsLower,
+              bool UseThreadVec = false>
+    KOKKOS_INLINE_FUNCTION void solve_impl(const member_type *team,
+                                           const int my_rank,
+                                           const long node_count) const {
       if (!IsSerial && BlockEnabled) {
-        KK_KERNEL_ASSERT_MSG(!UseThreadVec,
-                             "ThreadVectorRanges are not yet supported for block-enabled");
+        KK_KERNEL_ASSERT_MSG(
+            !UseThreadVec,
+            "ThreadVectorRanges are not yet supported for block-enabled");
       }
       if (IsSerial) {
-        KK_KERNEL_ASSERT_MSG(!UseThreadVec, "Requested thread vector range in serial?");
+        KK_KERNEL_ASSERT_MSG(!UseThreadVec,
+                             "Requested thread vector range in serial?");
       }
       const auto rowid   = nodes_grouped_by_level(my_rank + node_count);
       const auto soffset = row_map(rowid);
       const auto eoffset = row_map(rowid + 1);
       const auto rhs_val = rhs(rowid);
-      scalar_t&  lhs_val = lhs(rowid);
+      scalar_t &lhs_val  = lhs(rowid);
 
       // Set up range to auto-skip diag if is sorted
-      const auto itr_b   = soffset + (IsSorted ? (IsLower ? 0 : 1) : 0);
-      const auto itr_e   = eoffset - (IsSorted ? (IsLower ? 1 : 0) : 0);
+      const auto itr_b = soffset + (IsSorted ? (IsLower ? 0 : 1) : 0);
+      const auto itr_e = eoffset - (IsSorted ? (IsLower ? 1 : 0) : 0);
 
       // We don't need the reducer to find the diag item if sorted
-      using reducer_t = std::conditional_t<IsSorted, ReduceSumFunctor, ReduceSumDiagFunctor>;
-      reducer_t rf {this, rowid, -1};
+      using reducer_t =
+          std::conditional_t<IsSorted, ReduceSumFunctor, ReduceSumDiagFunctor>;
+      reducer_t rf{this, rowid, -1};
 
       if (IsSerial) {
         KK_KERNEL_ASSERT_MSG(my_rank == 0, "Non zero rank in serial");
@@ -204,15 +199,16 @@ struct SptrsvWrap {
         for (auto ptr = itr_b; ptr < itr_e; ++ptr) {
           rf(ptr, lhs_val);
         }
-      }
-      else {
-        KK_KERNEL_ASSERT_MSG(team != nullptr, "Cannot do team operations without team");
+      } else {
+        KK_KERNEL_ASSERT_MSG(team != nullptr,
+                             "Cannot do team operations without team");
         if (!UseThreadVec) {
-          Kokkos::parallel_reduce(Kokkos::TeamThreadRange(*team, itr_b, itr_e), rf, lhs_val);
+          Kokkos::parallel_reduce(Kokkos::TeamThreadRange(*team, itr_b, itr_e),
+                                  rf, lhs_val);
           team->team_barrier();
-        }
-        else {
-          Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(*team, itr_b, itr_e), rf, lhs_val);
+        } else {
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(*team, itr_b, itr_e), rf, lhs_val);
         }
       }
 
@@ -222,28 +218,26 @@ struct SptrsvWrap {
       // At end, handle the diag element. We need to be careful to avoid race
       // conditions here.
       if (IsSerial) {
-        // Serial case is easy, there's only 1 thread so just do the add_and_divide
+        // Serial case is easy, there's only 1 thread so just do the
+        // add_and_divide
         KK_KERNEL_ASSERT_MSG(rf.diag != -1, "Serial should always know diag");
         add_and_divide(lhs_val, rhs_val, values(rf.diag));
-      }
-      else {
+      } else {
         if (IsSorted) {
-          // Parallel sorted case is complex. All threads know what the diag is. If
-          // we have a team sharing the work, we need to ensure only one thread performs
-          // the add_and_divide.
+          // Parallel sorted case is complex. All threads know what the diag is.
+          // If we have a team sharing the work, we need to ensure only one
+          // thread performs the add_and_divide.
           KK_KERNEL_ASSERT_MSG(rf.diag != -1, "Sorted should always know diag");
           if (!UseThreadVec) {
             Kokkos::single(Kokkos::PerTeam(*team), [&]() {
               add_and_divide(lhs_val, rhs_val, values(rf.diag));
             });
-          }
-          else {
+          } else {
             add_and_divide(lhs_val, rhs_val, values(rf.diag));
           }
-        }
-        else {
-          // Parallel unsorted case. Only one thread should know what the diag item
-          // is. We have that one do the add_and_divide.
+        } else {
+          // Parallel unsorted case. Only one thread should know what the diag
+          // item is. We have that one do the add_and_divide.
           if (rf.diag != -1) {
             add_and_divide(lhs_val, rhs_val, values(rf.diag));
           }
@@ -254,10 +248,11 @@ struct SptrsvWrap {
 
   template <class RowMapType, class EntriesType, class ValuesType,
             class LHSType, class RHSType, bool IsLower, bool BlockEnabled>
-  struct TriLvlSchedTP1SolverFunctor :
-    public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled>
-  {
-    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled>;
+  struct TriLvlSchedTP1SolverFunctor
+      : public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+                      BlockEnabled> {
+    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+                        BlockEnabled>;
 
     long node_count;  // like "block" offset into ngbl, my_league is the "local"
                       // offset
@@ -269,17 +264,20 @@ struct SptrsvWrap {
                                 const entries_t &nodes_grouped_by_level_,
                                 const long &node_count_,
                                 const size_type block_size_ = 0)
-      : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_, block_size_),
-        node_count(node_count_) {}
+        : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_,
+               block_size_),
+          node_count(node_count_) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const member_type &team) const {
-      Base::template solve_impl<false, true, IsLower>(&team, team.league_rank(), node_count);
+      Base::template solve_impl<false, true, IsLower>(&team, team.league_rank(),
+                                                      node_count);
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const UnsortedTag &, const member_type &team) const {
-      Base::template solve_impl<false, false, IsLower>(&team, team.league_rank(), node_count);
+      Base::template solve_impl<false, false, IsLower>(
+          &team, team.league_rank(), node_count);
     }
   };
 
@@ -287,10 +285,11 @@ struct SptrsvWrap {
 
   template <class RowMapType, class EntriesType, class ValuesType,
             class LHSType, class RHSType, bool IsLower, bool BlockEnabled>
-  struct TriLvlSchedRPSolverFunctor  :
-    public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled>
-  {
-    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled>;
+  struct TriLvlSchedRPSolverFunctor
+      : public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+                      BlockEnabled> {
+    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+                        BlockEnabled>;
 
     TriLvlSchedRPSolverFunctor(const RowMapType &row_map_,
                                const EntriesType &entries_,
@@ -298,8 +297,8 @@ struct SptrsvWrap {
                                const RHSType &rhs_,
                                const entries_t &nodes_grouped_by_level_,
                                const size_type block_size_ = 0)
-      : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_, block_size_)
-    {}
+        : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_,
+               block_size_) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const lno_t i) const {
@@ -314,9 +313,11 @@ struct SptrsvWrap {
 
   template <class RowMapType, class EntriesType, class ValuesType,
             class LHSType, class RHSType, bool IsLower>
-  struct TriLvlSchedTP1SingleBlockFunctor :
-    public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, false> {
-    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, false>;
+  struct TriLvlSchedTP1SingleBlockFunctor
+      : public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+                      false> {
+    using Base =
+        Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, false>;
 
     entries_t nodes_per_level;
 
@@ -334,7 +335,8 @@ struct SptrsvWrap {
         const entries_t &nodes_grouped_by_level_, entries_t &nodes_per_level_,
         long node_count_, long lvl_start_, long lvl_end_,
         const int dense_nrows_ = 0, const int cutoff_ = 0)
-        : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_),
+        : Base(row_map_, entries_, values_, lhs_, rhs_,
+               nodes_grouped_by_level_),
           nodes_per_level(nodes_per_level_),
           node_count(node_count_),
           lvl_start(lvl_start_),
@@ -346,8 +348,7 @@ struct SptrsvWrap {
     // thread to row
 
     template <bool IsSorted, bool LargerCutoff>
-    KOKKOS_INLINE_FUNCTION
-    void common_impl(const member_type& team) const {
+    KOKKOS_INLINE_FUNCTION void common_impl(const member_type &team) const {
       auto mut_node_count = node_count;
 
       for (auto lvl = lvl_start; lvl < lvl_end; ++lvl) {
@@ -356,9 +357,11 @@ struct SptrsvWrap {
         const auto loop_cutoff    = LargerCutoff ? cutoff : my_team_rank + 1;
         // If cutoff > team_size, then a thread will be responsible for multiple
         // rows - this may be a helpful scenario depending on occupancy etc.
-        for (int my_rank = my_team_rank; my_rank < loop_cutoff; my_rank += team.team_size()) {
+        for (int my_rank = my_team_rank; my_rank < loop_cutoff;
+             my_rank += team.team_size()) {
           if (my_rank < nodes_this_lvl) {
-            Base::template solve_impl<false, IsSorted, IsLower, true>(&team, my_rank, mut_node_count);
+            Base::template solve_impl<false, IsSorted, IsLower, true>(
+                &team, my_rank, mut_node_count);
           }
         }
         mut_node_count += nodes_this_lvl;
@@ -1003,11 +1006,9 @@ struct SptrsvWrap {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
   template <bool IsLower, class RowMapType, class EntriesType, class ValuesType,
             class RHSType, class LHSType>
-  static void tri_solve_cg(TriSolveHandle &thandle,
-                           const RowMapType row_map,
-                           const EntriesType entries,
-                           const ValuesType values, const RHSType &rhs,
-                           LHSType &lhs) {
+  static void tri_solve_cg(TriSolveHandle &thandle, const RowMapType row_map,
+                           const EntriesType entries, const ValuesType values,
+                           const RHSType &rhs, LHSType &lhs) {
     typename TriSolveHandle::SPTRSVcudaGraphWrapperType *lcl_cudagraph =
         thandle.get_sptrsvCudaGraph();
 
@@ -1047,8 +1048,8 @@ struct SptrsvWrap {
               Kokkos::Experimental::require(
                   policy,
                   Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-              TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType,
-                                          ValuesType, LHSType, RHSType, IsLower>(
+              TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType,
+                                          LHSType, RHSType, IsLower>(
                   row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
                   node_count));
 
@@ -1072,8 +1073,9 @@ struct SptrsvWrap {
 
 #endif
 
-#define FunctorTypeMacro(Functor, IsLower, BlockEnabled)                \
-  Functor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, IsLower, BlockEnabled>
+#define FunctorTypeMacro(Functor, IsLower, BlockEnabled)                  \
+  Functor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, IsLower, \
+          BlockEnabled>
 
   template <class RowMapType, class EntriesType, class ValuesType,
             class RHSType, class LHSType>
@@ -1093,12 +1095,14 @@ struct SptrsvWrap {
     const auto hnodes_per_level       = thandle.get_host_nodes_per_level();
     const auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
     const auto block_size             = thandle.get_block_size();
-    const auto block_enabled          = false;//thandle.is_block_enabled();
+    const auto block_enabled = false;  // thandle.is_block_enabled();
     assert(block_size == 0);
 
     // Set up functor types
-    using LowerRPFunc = FunctorTypeMacro(TriLvlSchedRPSolverFunctor,  true, false);
-    using LowerTPFunc = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true, false);
+    using LowerRPFunc =
+        FunctorTypeMacro(TriLvlSchedRPSolverFunctor, true, false);
+    using LowerTPFunc =
+        FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true, false);
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     using namespace KokkosSparse::Experimental;
@@ -1164,26 +1168,29 @@ struct SptrsvWrap {
 #endif
         if (thandle.get_algorithm() ==
             KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
-          LowerRPFunc lrpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, block_size);
+          LowerRPFunc lrpp(row_map, entries, values, lhs, rhs,
+                           nodes_grouped_by_level, block_size);
 
           Kokkos::parallel_for(
               "parfor_fixed_lvl",
               Kokkos::Experimental::require(
-                range_policy(space, node_count, node_count + lvl_nodes),
-                Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+                  range_policy(space, node_count, node_count + lvl_nodes),
+                  Kokkos::Experimental::WorkItemProperty::HintLightWeight),
               lrpp);
         } else if (thandle.get_algorithm() ==
                    KokkosSparse::Experimental::SPTRSVAlgorithm::
                        SEQLVLSCHD_TP1) {
-          LowerTPFunc ltpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
+          LowerTPFunc ltpp(row_map, entries, values, lhs, rhs,
+                           nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
-          auto tp = team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
+          auto tp       = team_size == -1
+                        ? team_policy(space, lvl_nodes, Kokkos::AUTO)
+                        : team_policy(space, lvl_nodes, team_size);
           Kokkos::parallel_for(
-            "parfor_l_team",
-            Kokkos::Experimental::require(
-              tp,
-              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-            ltpp);
+              "parfor_l_team",
+              Kokkos::Experimental::require(
+                  tp, Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+              ltpp);
         }
         // TP2 algorithm has issues with some offset-ordinal combo to be
         // addressed
@@ -1230,7 +1237,8 @@ struct SptrsvWrap {
         else if (thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
                  thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
                  thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_DAG) {
-          KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported for supernodal");
+          KK_REQUIRE_MSG(!block_enabled,
+                         "Block matrices not yet supported for supernodal");
 
 #ifdef profile_supernodal_etree
           size_t flops = 0;
@@ -1379,7 +1387,8 @@ struct SptrsvWrap {
                        SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                    thandle.get_algorithm() ==
                        SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
-          KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported for supernodal");
+          KK_REQUIRE_MSG(!block_enabled,
+                         "Block matrices not yet supported for supernodal");
 #ifdef profile_supernodal_etree
           Kokkos::Timer timer;
           timer.reset();
@@ -1480,16 +1489,18 @@ struct SptrsvWrap {
     // Keep this a host View, create device version and copy to back to host
     // during scheduling This requires making sure the host view in the handle
     // is properly updated after the symbolic phase
-    auto nodes_per_level  = thandle.get_nodes_per_level();
-    auto hnodes_per_level = thandle.get_host_nodes_per_level();
+    auto nodes_per_level        = thandle.get_nodes_per_level();
+    auto hnodes_per_level       = thandle.get_host_nodes_per_level();
     auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
-    const auto block_size             = thandle.get_block_size();
-    const auto block_enabled          = false; //thandle.is_block_enabled();
+    const auto block_size       = thandle.get_block_size();
+    const auto block_enabled = false;  // thandle.is_block_enabled();
     assert(block_size == 0);
 
     // Set up functor types
-    using UpperRPFunc = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, false, false);
-    using UpperTPFunc = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, false, false);
+    using UpperRPFunc =
+        FunctorTypeMacro(TriLvlSchedRPSolverFunctor, false, false);
+    using UpperTPFunc =
+        FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, false, false);
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     using namespace KokkosSparse::Experimental;
@@ -1555,7 +1566,8 @@ struct SptrsvWrap {
 
         if (thandle.get_algorithm() ==
             KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
-          UpperRPFunc urpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, block_size);
+          UpperRPFunc urpp(row_map, entries, values, lhs, rhs,
+                           nodes_grouped_by_level, block_size);
           Kokkos::parallel_for(
               "parfor_fixed_lvl",
               Kokkos::Experimental::require(
@@ -1565,15 +1577,17 @@ struct SptrsvWrap {
         } else if (thandle.get_algorithm() ==
                    KokkosSparse::Experimental::SPTRSVAlgorithm::
                        SEQLVLSCHD_TP1) {
-          UpperTPFunc utpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
+          UpperTPFunc utpp(row_map, entries, values, lhs, rhs,
+                           nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
-          auto tp = team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
+          auto tp       = team_size == -1
+                        ? team_policy(space, lvl_nodes, Kokkos::AUTO)
+                        : team_policy(space, lvl_nodes, team_size);
           Kokkos::parallel_for(
-            "parfor_u_team",
-            Kokkos::Experimental::require(
-              tp,
-              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-            utpp);
+              "parfor_u_team",
+              Kokkos::Experimental::require(
+                  tp, Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+              utpp);
         }
         // TP2 algorithm has issues with some offset-ordinal combo to be
         // addressed
@@ -1619,7 +1633,8 @@ tstf); } // end elseif
         else if (thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
                  thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
                  thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_DAG) {
-          KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported for supernodal");
+          KK_REQUIRE_MSG(!block_enabled,
+                         "Block matrices not yet supported for supernodal");
 
 #ifdef profile_supernodal_etree
           size_t flops = 0;
@@ -1873,7 +1888,8 @@ tstf); } // end elseif
                        SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                    thandle.get_algorithm() ==
                        SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
-          KK_REQUIRE_MSG(!block_enabled, "Block matrices not yet supported for supernodal");
+          KK_REQUIRE_MSG(!block_enabled,
+                         "Block matrices not yet supported for supernodal");
 
 #ifdef profile_supernodal_etree
           Kokkos::Timer timer;
@@ -2038,8 +2054,7 @@ tstf); } // end elseif
       // team_size_singleblock is unimportant
     }
 
-    for (size_type chainlink = 0; chainlink < num_chain_entries;
-         ++chainlink) {
+    for (size_type chainlink = 0; chainlink < num_chain_entries; ++chainlink) {
       size_type schain = h_chain_ptr(chainlink);
       size_type echain = h_chain_ptr(chainlink + 1);
 
@@ -2047,21 +2062,21 @@ tstf); } // end elseif
         // if team_size is -1 (unset), get recommended size from Kokkos
         TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType,
                                     LHSType, RHSType, IsLower, false>
-          tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-               node_count);
+            tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
+                 node_count);
         if (team_size == -1) {
           team_size =
-            team_policy(space, 1, 1, vector_size)
-            .team_size_recommended(tstf, Kokkos::ParallelForTag());
+              team_policy(space, 1, 1, vector_size)
+                  .team_size_recommended(tstf, Kokkos::ParallelForTag());
         }
 
         size_type lvl_nodes = hnodes_per_level(schain);  // lvl == echain????
         Kokkos::parallel_for(
-          "parfor_l_team_chain1",
-          Kokkos::Experimental::require(
-            team_policy(space, lvl_nodes, team_size, vector_size),
-            Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-          tstf);
+            "parfor_l_team_chain1",
+            Kokkos::Experimental::require(
+                team_policy(space, lvl_nodes, team_size, vector_size),
+                Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+            tstf);
         node_count += lvl_nodes;
 
       } else {
@@ -2073,39 +2088,38 @@ tstf); } // end elseif
 
         if (team_size_singleblock <= 0) {
           team_size_singleblock =
-            team_policy(space, 1, 1, vector_size)
-            .team_size_recommended(
-              SingleBlockFunctor(row_map, entries, values, lhs, rhs,
-                                 nodes_grouped_by_level,
-                                 nodes_per_level, node_count, schain,
-                                 echain),
-              Kokkos::ParallelForTag());
+              team_policy(space, 1, 1, vector_size)
+                  .team_size_recommended(
+                      SingleBlockFunctor(row_map, entries, values, lhs, rhs,
+                                         nodes_grouped_by_level,
+                                         nodes_per_level, node_count, schain,
+                                         echain),
+                      Kokkos::ParallelForTag());
         }
 
         if (cutoff <= team_size_singleblock) {
-          SingleBlockFunctor
-            tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-                 nodes_per_level, node_count, schain, echain);
+          SingleBlockFunctor tstf(row_map, entries, values, lhs, rhs,
+                                  nodes_grouped_by_level, nodes_per_level,
+                                  node_count, schain, echain);
           Kokkos::parallel_for(
-            "parfor_l_team_chainmulti",
-            Kokkos::Experimental::require(
-              team_policy(space, 1, team_size_singleblock, vector_size),
-              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-            tstf);
+              "parfor_l_team_chainmulti",
+              Kokkos::Experimental::require(
+                  team_policy(space, 1, team_size_singleblock, vector_size),
+                  Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+              tstf);
         } else {
           // team_size_singleblock < cutoff => kernel must allow for a
           // block-stride internally
-          SingleBlockFunctor
-            tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-                 nodes_per_level, node_count, schain, echain, 0,
-                 cutoff);
+          SingleBlockFunctor tstf(row_map, entries, values, lhs, rhs,
+                                  nodes_grouped_by_level, nodes_per_level,
+                                  node_count, schain, echain, 0, cutoff);
           Kokkos::parallel_for(
-            "parfor_l_team_chainmulti_cutoff",
-            Kokkos::Experimental::require(
-              large_cutoff_policy_type(1, team_size_singleblock,
-                                       vector_size),
-              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
-            tstf);
+              "parfor_l_team_chainmulti_cutoff",
+              Kokkos::Experimental::require(
+                  large_cutoff_policy_type(1, team_size_singleblock,
+                                           vector_size),
+                  Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+              tstf);
         }
         // TODO: space.fence()
         Kokkos::fence();  // TODO - is this necessary? that is, can the
@@ -2124,19 +2138,21 @@ tstf); } // end elseif
   // --------------------------------
   template <bool IsLower, class RowMapType, class EntriesType, class ValuesType,
             class RHSType, class LHSType>
-  static void tri_solve_streams(
-      const std::vector<execution_space> &execspace_v,
-      const std::vector<TriSolveHandle *> &thandle_v,
-      const std::vector<RowMapType> &row_map_v,
-      const std::vector<EntriesType> &entries_v,
-      const std::vector<ValuesType> &values_v,
-      const std::vector<RHSType> &rhs_v, std::vector<LHSType> &lhs_v) {
+  static void tri_solve_streams(const std::vector<execution_space> &execspace_v,
+                                const std::vector<TriSolveHandle *> &thandle_v,
+                                const std::vector<RowMapType> &row_map_v,
+                                const std::vector<EntriesType> &entries_v,
+                                const std::vector<ValuesType> &values_v,
+                                const std::vector<RHSType> &rhs_v,
+                                std::vector<LHSType> &lhs_v) {
     // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
     using nodes_per_level_type =
         typename TriSolveHandle::hostspace_nnz_lno_view_t;
     using nodes_grouped_by_level_type = typename TriSolveHandle::nnz_lno_view_t;
-    using RPPointFunctor = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, IsLower, false);
-    using TPPointFunctor = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, IsLower, false);
+    using RPPointFunctor =
+        FunctorTypeMacro(TriLvlSchedRPSolverFunctor, IsLower, false);
+    using TPPointFunctor =
+        FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, IsLower, false);
 
     // Create vectors for handles' data in streams
     int nstreams = execspace_v.size();
@@ -2169,17 +2185,20 @@ tstf); } // end elseif
                   "parfor_fixed_lvl",
                   range_policy(execspace_v[i], node_count_v[i],
                                node_count_v[i] + lvl_nodes),
-                  RPPointFunctor(
-                      row_map_v[i], entries_v[i], values_v[i], lhs_v[i],
-                      rhs_v[i], nodes_grouped_by_level_v[i]));
+                  RPPointFunctor(row_map_v[i], entries_v[i], values_v[i],
+                                 lhs_v[i], rhs_v[i],
+                                 nodes_grouped_by_level_v[i]));
             } else if (thandle_v[i]->get_algorithm() ==
                        KokkosSparse::Experimental::SPTRSVAlgorithm::
                            SEQLVLSCHD_TP1) {
               int team_size = thandle_v[i]->get_team_size();
-              auto tp = team_size == -1 ? team_policy(execspace_v[i], lvl_nodes, Kokkos::AUTO) : team_policy(execspace_v[i], lvl_nodes, team_size);
-              TPPointFunctor
-                  tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i],
-                       rhs_v[i], nodes_grouped_by_level_v[i], node_count_v[i]);
+              auto tp =
+                  team_size == -1
+                      ? team_policy(execspace_v[i], lvl_nodes, Kokkos::AUTO)
+                      : team_policy(execspace_v[i], lvl_nodes, team_size);
+              TPPointFunctor tstf(row_map_v[i], entries_v[i], values_v[i],
+                                  lhs_v[i], rhs_v[i],
+                                  nodes_grouped_by_level_v[i], node_count_v[i]);
               Kokkos::parallel_for("parfor_l_team", tp, tstf);
             }
             node_count_v[i] += lvl_nodes;

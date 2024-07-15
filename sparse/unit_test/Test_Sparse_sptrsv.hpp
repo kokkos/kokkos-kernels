@@ -47,12 +47,12 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 struct SptrsvTest {
   // Define useful types
-  using RowMapType             = Kokkos::View<size_type *, device>;
-  using EntriesType            = Kokkos::View<lno_t *, device>;
-  using ValuesType             = Kokkos::View<scalar_t *, device>;
-  using execution_space        = typename device::execution_space;
-  using memory_space           = typename device::memory_space;
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+  using RowMapType      = Kokkos::View<size_type *, device>;
+  using EntriesType     = Kokkos::View<lno_t *, device>;
+  using ValuesType      = Kokkos::View<scalar_t *, device>;
+  using execution_space = typename device::execution_space;
+  using memory_space    = typename device::memory_space;
+  using KernelHandle    = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
 
   using Crs = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
@@ -112,9 +112,8 @@ struct SptrsvTest {
     void operator()(lno_t i, scalar_t &tsum) const { tsum += lhs(i); }
   };
 
-  static std::tuple<Crs, ValuesType, ValuesType>
-  create_crs_lhs_rhs(const std::vector<std::vector<scalar_t>>& fixture)
-  {
+  static std::tuple<Crs, ValuesType, ValuesType> create_crs_lhs_rhs(
+      const std::vector<std::vector<scalar_t>> &fixture) {
     RowMapType row_map;
     EntriesType entries;
     ValuesType values;
@@ -142,10 +141,13 @@ struct SptrsvTest {
   }
 
   template <typename SpMatrix>
-  static void basic_check(const SpMatrix& triMtx, const ValuesType& lhs, const ValuesType& rhs, const bool is_lower, const size_type block_size=0)
-  {
-    // FIXME Issues with some integral type combos for SEQLVLSCHED_TP2, currently unavailable
-    std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1};
+  static void basic_check(const SpMatrix &triMtx, const ValuesType &lhs,
+                          const ValuesType &rhs, const bool is_lower,
+                          const size_type block_size = 0) {
+    // FIXME Issues with some integral type combos for SEQLVLSCHED_TP2,
+    // currently unavailable
+    std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP,
+                                         SPTRSVAlgorithm::SEQLVLSCHD_TP1};
     if (block_size == 0) {
       // SEQLVLSCHD_TP1CHAIN and SPTRSV_CUSPARSE are not supported for blocks
       algs.push_back(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN);
@@ -158,9 +160,9 @@ struct SptrsvTest {
 #endif
     }
 
-    auto row_map  = triMtx.graph.row_map;
-    auto entries  = triMtx.graph.entries;
-    auto values   = triMtx.values;
+    auto row_map = triMtx.graph.row_map;
+    auto entries = triMtx.graph.entries;
+    auto values  = triMtx.values;
 
     const size_type nrows = row_map.size() - 1;
 
@@ -216,7 +218,8 @@ struct SptrsvTest {
     // Upper tri
     {
       {
-        const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(get_5x5_ut_ones_fixture());
+        const auto [triMtx, lhs, rhs] =
+            create_crs_lhs_rhs(get_5x5_ut_ones_fixture());
 
         basic_check(triMtx, lhs, rhs, false);
       }
@@ -332,7 +335,8 @@ struct SptrsvTest {
     // Lower tri
     {
       {
-        const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(get_5x5_lt_ones_fixture());
+        const auto [triMtx, lhs, rhs] =
+            create_crs_lhs_rhs(get_5x5_lt_ones_fixture());
 
         basic_check(triMtx, lhs, rhs, true);
       }
@@ -483,7 +487,8 @@ struct SptrsvTest {
     }
   }
 
-  static void run_test_sptrsv_streams(SPTRSVAlgorithm test_algo, int nstreams, const bool is_lower) {
+  static void run_test_sptrsv_streams(SPTRSVAlgorithm test_algo, int nstreams,
+                                      const bool is_lower) {
     // Workaround for OpenMP: skip tests if concurrency < nstreams because of
     // not enough resource to partition
     bool run_streams_test = true;
@@ -513,12 +518,13 @@ struct SptrsvTest {
     std::vector<ValuesType> rhs_v(nstreams);
     std::vector<ValuesType> lhs_v(nstreams);
 
-    auto fixture = is_lower ? get_5x5_lt_ones_fixture() : get_5x5_ut_ones_fixture();
+    auto fixture =
+        is_lower ? get_5x5_lt_ones_fixture() : get_5x5_ut_ones_fixture();
     const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(fixture);
 
-    auto row_map  = triMtx.graph.row_map;
-    auto entries  = triMtx.graph.entries;
-    auto values   = triMtx.values;
+    auto row_map = triMtx.graph.row_map;
+    auto entries = triMtx.graph.entries;
+    auto values  = triMtx.values;
 
     for (int i = 0; i < nstreams; i++) {
       // Allocate
@@ -547,7 +553,7 @@ struct SptrsvTest {
       Kokkos::fence();
 
       // Create handle
-      kh_v[i]           = KernelHandle();
+      kh_v[i] = KernelHandle();
       kh_v[i].create_sptrsv_handle(test_algo, nrows, is_lower);
       kh_ptr_v[i] = &kh_v[i];
 
@@ -586,7 +592,8 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_sptrsv_streams() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
-  std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1};
+  std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP,
+                                       SPTRSVAlgorithm::SEQLVLSCHD_TP1};
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
   if (std::is_same<lno_t, int>::value &&
       std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
