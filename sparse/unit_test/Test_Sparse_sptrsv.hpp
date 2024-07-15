@@ -103,6 +103,17 @@ struct SptrsvTest {
     return A;
   }
 
+  static bool do_cusparse()
+  {
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    return (std::is_same<size_type, int>::value &&
+            std::is_same<lno_t, int>::value &&
+            std::is_same<typename device::execution_space, Kokkos::Cuda>::value);
+#else
+    return false;
+#endif
+  }
+
   struct ReductionCheck {
     ValuesType lhs;
 
@@ -151,13 +162,9 @@ struct SptrsvTest {
     if (block_size == 0) {
       // SEQLVLSCHD_TP1CHAIN and SPTRSV_CUSPARSE are not supported for blocks
       algs.push_back(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN);
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      if (std::is_same<size_type, int>::value &&
-          std::is_same<lno_t, int>::value &&
-          std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+      if (do_cusparse()) {
         algs.push_back(SPTRSVAlgorithm::SPTRSV_CUSPARSE);
       }
-#endif
     }
 
     auto row_map = triMtx.graph.row_map;
@@ -594,12 +601,9 @@ void test_sptrsv_streams() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
   std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP,
                                        SPTRSVAlgorithm::SEQLVLSCHD_TP1};
-#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-  if (std::is_same<lno_t, int>::value &&
-      std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+  if (TestStruct::do_cusparse()) {
     algs.push_back(SPTRSVAlgorithm::SPTRSV_CUSPARSE);
   }
-#endif
 
   for (auto alg : algs) {
     for (int nstreams = 1; nstreams <= 4; ++nstreams) {

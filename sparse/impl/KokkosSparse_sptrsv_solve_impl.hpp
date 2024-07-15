@@ -169,15 +169,11 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION void solve_impl(const member_type *team,
                                            const int my_rank,
                                            const long node_count) const {
-      if (!IsSerial && BlockEnabled) {
-        KK_KERNEL_ASSERT_MSG(
-            !UseThreadVec,
-            "ThreadVectorRanges are not yet supported for block-enabled");
-      }
-      if (IsSerial) {
-        KK_KERNEL_ASSERT_MSG(!UseThreadVec,
-                             "Requested thread vector range in serial?");
-      }
+      static_assert(! ((!IsSerial && BlockEnabled) && UseThreadVec),
+                    "ThreadVectorRanges are not yet supported for block-enabled");
+      static_assert(! (IsSerial && UseThreadVec),
+                    "Requested thread vector range in serial?");
+
       const auto rowid   = nodes_grouped_by_level(my_rank + node_count);
       const auto soffset = row_map(rowid);
       const auto eoffset = row_map(rowid + 1);
@@ -193,7 +189,7 @@ struct SptrsvWrap {
           std::conditional_t<IsSorted, ReduceSumFunctor, ReduceSumDiagFunctor>;
       reducer_t rf{this, rowid, -1};
 
-      if (IsSerial) {
+      if constexpr (IsSerial) {
         KK_KERNEL_ASSERT_MSG(my_rank == 0, "Non zero rank in serial");
         KK_KERNEL_ASSERT_MSG(team == nullptr, "Team provided in serial?");
         for (auto ptr = itr_b; ptr < itr_e; ++ptr) {
@@ -202,7 +198,7 @@ struct SptrsvWrap {
       } else {
         KK_KERNEL_ASSERT_MSG(team != nullptr,
                              "Cannot do team operations without team");
-        if (!UseThreadVec) {
+        if constexpr (!UseThreadVec) {
           Kokkos::parallel_reduce(Kokkos::TeamThreadRange(*team, itr_b, itr_e),
                                   rf, lhs_val);
           team->team_barrier();
@@ -217,18 +213,18 @@ struct SptrsvWrap {
 
       // At end, handle the diag element. We need to be careful to avoid race
       // conditions here.
-      if (IsSerial) {
+      if constexpr (IsSerial) {
         // Serial case is easy, there's only 1 thread so just do the
         // add_and_divide
         KK_KERNEL_ASSERT_MSG(rf.diag != -1, "Serial should always know diag");
         add_and_divide(lhs_val, rhs_val, values(rf.diag));
       } else {
-        if (IsSorted) {
+        if constexpr (IsSorted) {
           // Parallel sorted case is complex. All threads know what the diag is.
           // If we have a team sharing the work, we need to ensure only one
           // thread performs the add_and_divide.
           KK_KERNEL_ASSERT_MSG(rf.diag != -1, "Sorted should always know diag");
-          if (!UseThreadVec) {
+          if constexpr (!UseThreadVec) {
             Kokkos::single(Kokkos::PerTeam(*team), [&]() {
               add_and_divide(lhs_val, rhs_val, values(rf.diag));
             });
