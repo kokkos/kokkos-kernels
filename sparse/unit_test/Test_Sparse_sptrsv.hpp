@@ -172,7 +172,7 @@ struct SptrsvTest {
         kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
       }
 
-      sptrsv_symbolic(&kh, row_map, entries);
+      sptrsv_symbolic(&kh, row_map, entries, values);
       Kokkos::fence();
 
       sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
