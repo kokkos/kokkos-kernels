@@ -41,6 +41,9 @@ struct HostLapack {
 
   static int trtri(const char uplo, const char diag, int n, const T *a,
                    int lda);
+
+  static void geqrf(int m, int n, T *a, int lda, T *tau, T *work, int lwork,
+                    int *info);
 };
 }  // namespace Impl
 }  // namespace KokkosLapack

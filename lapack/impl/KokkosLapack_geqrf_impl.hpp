@@ -13,12 +13,22 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef TEST_LAPACK_HPP
-#define TEST_LAPACK_HPP
 
-#include "Test_Lapack_gesv.hpp"
-#include "Test_Lapack_trtri.hpp"
-#include "Test_Lapack_svd.hpp"
-#include "Test_Lapack_geqrf.hpp"
+#ifndef KOKKOSLAPACK_IMPL_GEQRF_HPP_
+#define KOKKOSLAPACK_IMPL_GEQRF_HPP_
 
-#endif  // TEST_LAPACK_HPP
+/// \file KokkosLapack_geqrf_impl.hpp
+/// \brief Implementation(s) of dense linear solve.
+
+#include <KokkosKernels_config.h>
+#include <Kokkos_ArithTraits.hpp>
+
+namespace KokkosLapack {
+namespace Impl {
+
+// NOTE: Might add the implementation of KokkosLapack::geqrf later
+
+}  // namespace Impl
+}  // namespace KokkosLapack
+
+#endif  // KOKKOSLAPACK_IMPL_GEQRF_HPP
