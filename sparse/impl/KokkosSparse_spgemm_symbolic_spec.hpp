@@ -111,6 +111,9 @@ struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t,
       c_size_view_t_ row_mapC, bool /* computeRowptrs */) {
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
     spgemmHandleType *sh = handle->get_spgemm_handle();
+
+    std::cout << "spgemm_symbolic not TPL SPGEMM_SYMBOLIC<..., false, COMPILE_LIBRARY>" << std::endl;
+
     if (sh->is_symbolic_called() && sh->are_rowptrs_computed()) return;
     if (m == 0 || n == 0 || k == 0 || !entriesA.extent(0) ||
         !entriesB.extent(0)) {
