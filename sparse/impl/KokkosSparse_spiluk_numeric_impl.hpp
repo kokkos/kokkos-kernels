@@ -564,7 +564,7 @@ struct IlukWrap {
         const auto prev_row = Base::L_entries(k);
         const auto udiag    = Base::uget(Base::U_row_map(prev_row));
         typename Base::valtype fact;
-        if constexpr (BlockEnabled) {
+        if (BlockEnabled) {
           fact = Base::lcopy(k, &buff1[0]);  // fact = copy(Lval(k))
           Base::divide(team, Base::lget(k), udiag,
                        shared_buff.data());  // Lval(k) *= udiag^-1
@@ -581,7 +581,7 @@ struct IlukWrap {
               if (ipos != -1) {
                 typename Base::reftype C =
                     col < rowid ? Base::lget(ipos) : Base::uget(ipos);
-                if constexpr (BlockEnabled) {
+                if (BlockEnabled) {
                   auto ucopy = Base::ucopy(kk, &buff2[0]);
                   Base::divide_left(ucopy, udiag,
                                     &buff3[0]);  // ucopy = udiag^-1 * Uval(kk)
