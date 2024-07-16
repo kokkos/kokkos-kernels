@@ -135,19 +135,19 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
       }
       if (sptrsv_handle->get_algorithm() ==
           KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
-        Sptrsv::tri_solve_chain(space, *sptrsv_handle, row_map, entries, values,
-                                b, x, true);
+        Sptrsv::template tri_solve_chain<true>(space, *sptrsv_handle, row_map,
+                                               entries, values, b, x);
       } else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
         using ExecSpace = typename RowMapType::memory_space::execution_space;
         if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
           // TODO: set stream in thandle's sptrsvCudaGraph
-          Sptrsv::lower_tri_solve_cg(*sptrsv_handle, row_map, entries, values,
+          Sptrsv::tri_solve_cg<true>(*sptrsv_handle, row_map, entries, values,
                                      b, x);
         else
 #endif
-          Sptrsv::lower_tri_solve(space, *sptrsv_handle, row_map, entries,
-                                  values, b, x);
+          Sptrsv::template lower_tri_solve(space, *sptrsv_handle, row_map,
+                                           entries, values, b, x);
       }
     } else {
       if (sptrsv_handle->is_symbolic_complete() == false) {
@@ -156,19 +156,19 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
       }
       if (sptrsv_handle->get_algorithm() ==
           KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
-        Sptrsv::tri_solve_chain(space, *sptrsv_handle, row_map, entries, values,
-                                b, x, false);
+        Sptrsv::template tri_solve_chain<false>(space, *sptrsv_handle, row_map,
+                                                entries, values, b, x);
       } else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
         using ExecSpace = typename RowMapType::memory_space::execution_space;
         if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
           // TODO: set stream in thandle's sptrsvCudaGraph
-          Sptrsv::upper_tri_solve_cg(*sptrsv_handle, row_map, entries, values,
-                                     b, x);
+          Sptrsv::tri_solve_cg<false>(*sptrsv_handle, row_map, entries, values,
+                                      b, x);
         else
 #endif
-          Sptrsv::upper_tri_solve(space, *sptrsv_handle, row_map, entries,
-                                  values, b, x);
+          Sptrsv::template upper_tri_solve(space, *sptrsv_handle, row_map,
+                                           entries, values, b, x);
       }
     }
     Kokkos::Profiling::popRegion();
@@ -202,8 +202,9 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
                                            entries_v[i]);
         }
       }
-      Sptrsv::lower_tri_solve_streams(execspace_v, sptrsv_handle_v, row_map_v,
-                                      entries_v, values_v, b_v, x_v);
+      Sptrsv::template tri_solve_streams<true>(execspace_v, sptrsv_handle_v,
+                                               row_map_v, entries_v, values_v,
+                                               b_v, x_v);
     } else {
       for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
         if (sptrsv_handle_v[i]->is_symbolic_complete() == false) {
@@ -212,8 +213,9 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
                                            entries_v[i]);
         }
       }
-      Sptrsv::upper_tri_solve_streams(execspace_v, sptrsv_handle_v, row_map_v,
-                                      entries_v, values_v, b_v, x_v);
+      Sptrsv::template tri_solve_streams<false>(execspace_v, sptrsv_handle_v,
+                                                row_map_v, entries_v, values_v,
+                                                b_v, x_v);
     }
     Kokkos::Profiling::popRegion();
   }

@@ -305,7 +305,6 @@ void sptrsvcuSPARSE_solve(ExecutionSpace &space, KernelHandle *sptrsv_handle,
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #if (CUDA_VERSION >= 11030)
   typedef typename KernelHandle::nnz_lno_t idx_type;
-  typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::scalar_t scalar_type;
   typedef typename KernelHandle::memory_space memory_space;
 
@@ -474,7 +473,6 @@ void sptrsvcuSPARSE_solve_streams(
 ) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   using idx_type         = typename KernelHandle::nnz_lno_t;
-  using size_type        = typename KernelHandle::size_type;
   using scalar_type      = typename KernelHandle::nnz_scalar_t;
   using memory_space     = typename KernelHandle::HandlePersistentMemorySpace;
   using sptrsvHandleType = typename KernelHandle::SPTRSVHandleType;
@@ -544,6 +542,8 @@ void sptrsvcuSPARSE_solve_streams(
     }
   }
 #else  // CUDA_VERSION < 11030
+  using size_type = typename KernelHandle::size_type;
+
   const bool is_cuda_space =
       std::is_same<memory_space, Kokkos::CudaSpace>::value ||
       std::is_same<memory_space, Kokkos::CudaUVMSpace>::value ||
