@@ -576,10 +576,11 @@ class TwostageGaussSeidel {
     tic = timer.seconds();
 #endif
     auto *gsHandle        = get_gs_handle();
+    auto my_exec_space    = gsHandle->get_execution_space();
     bool two_stage        = gsHandle->isTwoStage();
     bool compact_form     = gsHandle->isCompactForm();
     GSDirection direction = gsHandle->getSweepDirection();
-    using GS_Functor_t =
+    using TSGS_Functor_t =
         TwostageGaussSeidel_functor<row_map_view_t, entries_view_t,
                                     values_view_t>;
     // count nnz in local L & U matrices (rowmap_viewL/rowmap_viewU stores
@@ -587,28 +588,28 @@ class TwostageGaussSeidel {
     ordinal_t nnzA = column_view.extent(0);
     ordinal_t nnzL = 0;  // lower-part of diagonal block
     ordinal_t nnzU = 0;  // upper-part of diagonal block
-    row_map_view_t rowmap_viewL("row_mapL",
+    row_map_view_t rowmap_viewL(Kokkos::view_alloc(my_exec_space, "row_mapL"),
                                 num_rows + 1);  // lower-part of diagonal block
-    row_map_view_t rowmap_viewU("row_mapU",
+    row_map_view_t rowmap_viewU(Kokkos::view_alloc(my_exec_space, "row_mapU"),
                                 num_rows + 1);  // upper-part of diagonal block
-    row_map_view_t rowmap_viewLa("row_mapLa",
+    row_map_view_t rowmap_viewLa(Kokkos::view_alloc(my_exec_space, "row_mapLa"),
                                  num_rows + 1);  // complement of U+D
-    row_map_view_t rowmap_viewUa("row_mapUa",
+    row_map_view_t rowmap_viewUa(Kokkos::view_alloc(my_exec_space, "row_mapUa"),
                                  num_rows + 1);  // complement of L+D
     if (direction == GS_FORWARD || direction == GS_SYMMETRIC) {
       using range_policy = Kokkos::RangePolicy<Tag_countNnzL, execution_space>;
       Kokkos::parallel_reduce(
-          "nnzL", range_policy(0, num_rows),
-          GS_Functor_t(two_stage, compact_form, num_rows, rowmap_view,
-                       column_view, rowmap_viewL, rowmap_viewUa),
+          "nnzL", range_policy(my_exec_space, 0, num_rows),
+          TSGS_Functor_t(two_stage, compact_form, num_rows, rowmap_view,
+                         column_view, rowmap_viewL, rowmap_viewUa),
           nnzL);
     }
     if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
       using range_policy = Kokkos::RangePolicy<Tag_countNnzU, execution_space>;
       Kokkos::parallel_reduce(
           "nnzU", range_policy(0, num_rows),
-          GS_Functor_t(two_stage, compact_form, num_rows, rowmap_view,
-                       column_view, rowmap_viewU, rowmap_viewLa),
+          TSGS_Functor_t(two_stage, compact_form, num_rows, rowmap_view,
+                         column_view, rowmap_viewU, rowmap_viewLa),
           nnzU);
     }
     ordinal_t nnzLa = 0;  // complement of U+D
@@ -633,19 +634,19 @@ class TwostageGaussSeidel {
     // shift ptr so that it now contains offsets (combine it with the previous
     // functor calls?)
     if (direction == GS_FORWARD || direction == GS_SYMMETRIC) {
-      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
-          1 + num_rows, rowmap_viewL);
+      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum(
+          my_exec_space, 1 + num_rows, rowmap_viewL);
       if (compact_form) {
-        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
-            1 + num_rows, rowmap_viewLa);
+        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum(
+            my_exec_space, 1 + num_rows, rowmap_viewLa);
       }
     }
     if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
-      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
-          1 + num_rows, rowmap_viewU);
+      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum(
+          my_exec_space, 1 + num_rows, rowmap_viewU);
       if (compact_form) {
-        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
-            1 + num_rows, rowmap_viewUa);
+        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum(
+            my_exec_space, 1 + num_rows, rowmap_viewUa);
       }
     }
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
@@ -657,31 +658,48 @@ class TwostageGaussSeidel {
 #endif
     // allocate memory to store local D
     values_view_t viewD(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "diags"), num_rows);
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing, "diags"),
+        num_rows);
 
     // allocate memory to store local L
     entries_view_t column_viewL(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesL"), nnzL);
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                           "entriesL"),
+        nnzL);
     values_view_t values_viewL(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesL"), nnzL);
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                           "valuesL"),
+        nnzL);
 
     // allocate memory to store local U
     entries_view_t column_viewU(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesU"), nnzU);
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                           "entriesU"),
+        nnzU);
     values_view_t values_viewU(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesU"), nnzU);
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                           "valuesU"),
+        nnzU);
 
     // allocate memory to store complement of U+D
     entries_view_t column_viewLa(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesLa"), nnzLa);
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                           "entriesLa"),
+        nnzLa);
     values_view_t values_viewLa(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesLa"), nnzLa);
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                           "valuesLa"),
+        nnzLa);
 
     // allocate memory to store complement of L+D
     entries_view_t column_viewUa(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesUa"), nnzUa);
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                           "entriesUa"),
+        nnzUa);
     values_view_t values_viewUa(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesUa"), nnzUa);
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                           "valuesUa"),
+        nnzUa);
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
     Kokkos::fence();
     tic = timer.seconds();
@@ -694,8 +712,11 @@ class TwostageGaussSeidel {
       // extract local L & U structures (for computing (L+D)^{-1} or (D+U)^{-1})
       using range_policy = Kokkos::RangePolicy<Tag_entriesLU, execution_space>;
       Kokkos::parallel_for(
-          "entriesLU", range_policy(0, num_rows),
-          GS_Functor_t(
+          "entriesLU",
+          Kokkos::Experimental::require(
+              range_policy(my_exec_space, 0, num_rows),
+              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+          TSGS_Functor_t(
               two_stage, compact_form, num_rows, rowmap_view, column_view,
               rowmap_viewL, column_viewL, rowmap_viewU, column_viewU,
               //
@@ -709,6 +730,7 @@ class TwostageGaussSeidel {
     timer.reset();
 #endif
 
+    my_exec_space.fence();  // Wait for non-default stream to finish work
     // construct CrsMat with them
     graph_t graphL(column_viewL, rowmap_viewL);
     graph_t graphU(column_viewU, rowmap_viewU);
@@ -732,7 +754,9 @@ class TwostageGaussSeidel {
       gsHandle->setUa(crsmatUa);
 
       values_view_t viewDa(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "diags"), num_rows);
+          Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                             "diags"),
+          num_rows);
       gsHandle->setDa(viewDa);
     }
 
@@ -744,10 +768,10 @@ class TwostageGaussSeidel {
       if (sptrsv_algo !=
           SPTRSVAlgorithm::SPTRSV_CUSPARSE) {  // symbolic with CuSparse needs
                                                // values
-        sptrsv_symbolic(handle->get_gs_sptrsvL_handle(), rowmap_viewL,
-                        crsmatL.graph.entries);
-        sptrsv_symbolic(handle->get_gs_sptrsvU_handle(), rowmap_viewU,
-                        crsmatU.graph.entries);
+        sptrsv_symbolic(my_exec_space, handle->get_gs_sptrsvL_handle(),
+                        rowmap_viewL, crsmatL.graph.entries);
+        sptrsv_symbolic(my_exec_space, handle->get_gs_sptrsvU_handle(),
+                        rowmap_viewU, crsmatU.graph.entries);
       }
     }
   }
@@ -762,13 +786,14 @@ class TwostageGaussSeidel {
     Kokkos::fence();
     timer.reset();
 #endif
-    using GS_Functor_t =
+    using TSGS_Functor_t =
         TwostageGaussSeidel_functor<const_row_map_view_t, entries_view_t,
                                     values_view_t>;
 
-    auto *gsHandle    = get_gs_handle();
-    bool two_stage    = gsHandle->isTwoStage();
-    bool compact_form = gsHandle->isCompactForm();
+    auto *gsHandle     = get_gs_handle();
+    auto my_exec_space = gsHandle->get_execution_space();
+    bool two_stage     = gsHandle->isTwoStage();
+    bool compact_form  = gsHandle->isCompactForm();
 
     // load local D from handle
     auto viewD  = gsHandle->getD();
@@ -799,12 +824,15 @@ class TwostageGaussSeidel {
     // extract local L, D & U matrices
     using range_policy = Kokkos::RangePolicy<Tag_valuesLU, execution_space>;
     Kokkos::parallel_for(
-        "valueLU", range_policy(0, num_rows),
-        GS_Functor_t(two_stage, compact_form, diagos_given, num_rows,
-                     rowmap_view, column_view, values_view, d_invert_view,
-                     rowmap_viewL, values_viewL, viewD, rowmap_viewU,
-                     values_viewU, rowmap_viewLa, values_viewLa, viewDa,
-                     rowmap_viewUa, values_viewUa));
+        "valueLU",
+        Kokkos::Experimental::require(
+            range_policy(my_exec_space, 0, num_rows),
+            Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+        TSGS_Functor_t(two_stage, compact_form, diagos_given, num_rows,
+                       rowmap_view, column_view, values_view, d_invert_view,
+                       rowmap_viewL, values_viewL, viewD, rowmap_viewU,
+                       values_viewU, rowmap_viewLa, values_viewLa, viewDa,
+                       rowmap_viewUa, values_viewUa));
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
     Kokkos::fence();
     tic = timer.seconds();
@@ -812,7 +840,6 @@ class TwostageGaussSeidel {
               << "TWO-STAGE GS::NUMERIC::INSERT LU TIME : " << tic << std::endl;
     timer.reset();
 #endif
-
     if (!(gsHandle->isTwoStage())) {
       using namespace KokkosSparse::Experimental;
       auto sptrsv_algo =
@@ -830,10 +857,10 @@ class TwostageGaussSeidel {
             rowmap_viewU, column_viewU, values_viewU);
 
         // now do symbolic
-        sptrsv_symbolic(handle->get_gs_sptrsvL_handle(), rowmap_viewL,
-                        crsmatL.graph.entries, values_viewL);
-        sptrsv_symbolic(handle->get_gs_sptrsvU_handle(), rowmap_viewU,
-                        crsmatU.graph.entries, values_viewU);
+        sptrsv_symbolic(my_exec_space, handle->get_gs_sptrsvL_handle(),
+                        rowmap_viewL, crsmatL.graph.entries, values_viewL);
+        sptrsv_symbolic(my_exec_space, handle->get_gs_sptrsvU_handle(),
+                        rowmap_viewU, crsmatU.graph.entries, values_viewU);
       }
     }
   }
@@ -857,10 +884,11 @@ class TwostageGaussSeidel {
 #endif
 
     //
-    auto *gsHandle    = get_gs_handle();
-    bool two_stage    = gsHandle->isTwoStage();
-    bool compact_form = gsHandle->isCompactForm();
-    scalar_t gamma    = gsHandle->getInnerDampFactor();
+    auto *gsHandle     = get_gs_handle();
+    auto my_exec_space = gsHandle->get_execution_space();
+    bool two_stage     = gsHandle->isTwoStage();
+    bool compact_form  = gsHandle->isCompactForm();
+    scalar_t gamma     = gsHandle->getInnerDampFactor();
 
     GSDirection direction = gsHandle->getSweepDirection();
     if (apply_forward && apply_backward) {
@@ -883,7 +911,7 @@ class TwostageGaussSeidel {
     auto crsmatUa =
         gsHandle->getUa();  // complement of U+D (used only for compact form)
 
-    // wratp A into crsmat
+    // wrap A into crsmat
     input_crsmat_t crsmatA("A", num_rows, num_cols, values_view.extent(0),
                            values_view, rowmap_view, column_view);
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
@@ -916,36 +944,36 @@ class TwostageGaussSeidel {
       NumSweeps *= 2;
     }
     if (init_zero_x_vector) {
-      KokkosKernels::Impl::zero_vector<x_value_array_type, execution_space>(
-          nrhs, localX);
+      KokkosKernels::Impl::zero_vector(my_exec_space, nrhs, localX);
     }
     for (int sweep = 0; sweep < NumSweeps; ++sweep) {
       bool forward_sweep = (direction == GS_FORWARD ||
                             (direction == GS_SYMMETRIC && sweep % 2 == 0));
       // compute residual vector
-      KokkosBlas::scal(localR, one, localB);
+      KokkosBlas::scal(my_exec_space, localR, one, localB);
       if (sweep > 0 || !init_zero_x_vector) {
         if (compact_form) {
           if (forward_sweep) {
             // R = B - U*x
-            KokkosSparse::spmv("N", scalar_t(-one), crsmatUa, localX, one,
-                               localR);
+            KokkosSparse::spmv(my_exec_space, "N", scalar_t(-one), crsmatUa,
+                               localX, one, localR);
           } else {
             // R = B - L*x
-            KokkosSparse::spmv("N", scalar_t(-one), crsmatLa, localX, one,
-                               localR);
+            KokkosSparse::spmv(my_exec_space, "N", scalar_t(-one), crsmatLa,
+                               localX, one, localR);
           }
           if (omega != one) {
             // R = B - (U + (1-1/omega)D)*x
             scalar_t omega2 = (one / omega - one);
             auto localY =
                 Kokkos::subview(localX, range_type(0, num_rows), Kokkos::ALL());
-            KokkosBlas::mult(zero, localZ, one, localDa, localY);
-            KokkosBlas::axpy(omega2, localZ, localR);
+            KokkosBlas::mult(my_exec_space, zero, localZ, one, localDa, localY);
+            KokkosBlas::axpy(my_exec_space, omega2, localZ, localR);
           }
         } else {  // not compact_form
           // R = B - A*x
-          KokkosSparse::spmv("N", scalar_t(-one), crsmatA, localX, one, localR);
+          KokkosSparse::spmv(my_exec_space, "N", scalar_t(-one), crsmatA,
+                             localX, one, localR);
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
           {
             auto localRj =
@@ -981,8 +1009,9 @@ class TwostageGaussSeidel {
                 Kokkos::subview(localZ, Kokkos::ALL(), range_type(j, j + 1));
             single_vector_view_t Rj(localRj.data(), num_rows);
             single_vector_view_t Zj(localZj.data(), num_rows);
-            sptrsv_solve(handle->get_gs_sptrsvL_handle(), crsmatL.graph.row_map,
-                         crsmatL.graph.entries, crsmatL.values, Rj, Zj);
+            sptrsv_solve(my_exec_space, handle->get_gs_sptrsvL_handle(),
+                         crsmatL.graph.row_map, crsmatL.graph.entries,
+                         crsmatL.values, Rj, Zj);
           }
         } else {
           using namespace KokkosSparse::Experimental;
@@ -995,8 +1024,9 @@ class TwostageGaussSeidel {
                 Kokkos::subview(localZ, Kokkos::ALL(), range_type(j, j + 1));
             single_vector_view_t Rj(localRj.data(), num_rows);
             single_vector_view_t Zj(localZj.data(), num_rows);
-            sptrsv_solve(handle->get_gs_sptrsvU_handle(), crsmatU.graph.row_map,
-                         crsmatU.graph.entries, crsmatU.values, Rj, Zj);
+            sptrsv_solve(my_exec_space, handle->get_gs_sptrsvU_handle(),
+                         crsmatU.graph.row_map, crsmatU.graph.entries,
+                         crsmatU.values, Rj, Zj);
           }
         }
 
@@ -1005,21 +1035,24 @@ class TwostageGaussSeidel {
             Kokkos::subview(localX, range_type(0, num_rows), Kokkos::ALL());
         if (compact_form) {
           // Y = omega * Z
-          KokkosBlas::scal(localY, one, localZ);
+          KokkosBlas::scal(my_exec_space, localY, one, localZ);
         } else {
           // Y = Y + omega * Z
-          KokkosBlas::axpy(one, localZ, localY);
+          KokkosBlas::axpy(my_exec_space, one, localZ, localY);
         }
       } else {
         // ====== inner Jacobi-Richardson =====
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         // compute initial residual norm
         // > compute RHS for the inner loop, R = B - A*x
-        internal_vector_view_t tempR("tempR", num_rows, 1);
-        KokkosBlas::scal(tempR, one, localB);
-        KokkosSparse::spmv("N", scalar_t(-one), crsmatA, localX, one, tempR);
+        internal_vector_view_t tempR(
+            Kokkos::view_alloc(my_exec_space, std::string("tempR")), num_rows,
+            1);
+        KokkosBlas::scal(my_exec_space, tempR, one, localB);
+        KokkosSparse::spmv(my_exec_space, "N", scalar_t(-one), crsmatA, localX,
+                           one, tempR);
         // > initial vector for the inner loop is zero
-        Kokkos::deep_copy(localZ, zero);
+        Kokkos::deep_copy(my_exec_space, localZ, zero);
         using Norm_Functor_t =
             TwostageGaussSeidel_functor<row_map_view_t, entries_view_t,
                                         values_view_t>;
@@ -1027,7 +1060,7 @@ class TwostageGaussSeidel {
         {
           mag_t normR = zero;
           Kokkos::parallel_reduce(
-              "normR", range_policy(0, num_rows),
+              "normR", range_policy(my_exec_space, 0, num_rows),
               Norm_Functor_t(forward_sweep, num_rows, rowmap_view, column_view,
                              values_view, localD, localZ, tempR),
               normR);
@@ -1042,23 +1075,23 @@ class TwostageGaussSeidel {
 
           // row-scale: (D^{-1}*L)*Y = D^{-1}*B
           // compute Z := D^{-1}*R
-          KokkosBlas::mult(zero, localZ, one, localD, localR);
+          KokkosBlas::mult(my_exec_space, zero, localZ, one, localD, localR);
           // apply inner damping factor, if not one
           if (gamma != one) {
             // Z = gamma * Z
-            KokkosBlas::scal(localZ, gamma, localZ);
+            KokkosBlas::scal(my_exec_space, localZ, gamma, localZ);
           }
         } else {
           // copy to localT (workspace used to save D^{-1}*R for JR iteration)
-          KokkosBlas::mult(zero, localT, one, localD, localR);
+          KokkosBlas::mult(my_exec_space, zero, localT, one, localD, localR);
           // initialize Jacobi-Richardson (using R as workspace for JR
           // iteration)
-          KokkosBlas::scal(localR, one, localT);
+          KokkosBlas::scal(my_exec_space, localR, one, localT);
 
           // apply inner damping factor, if not one
           if (gamma != one) {
             // R = gamma * R
-            KokkosBlas::scal(localR, gamma, localR);
+            KokkosBlas::scal(my_exec_space, localR, gamma, localR);
           }
         }
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
@@ -1066,7 +1099,7 @@ class TwostageGaussSeidel {
           // compute residual norm of the starting vector (D^{-1}R)
           mag_t normR = zero;
           Kokkos::parallel_reduce(
-              "normR", range_policy(0, num_rows),
+              "normR", range_policy(my_exec_space, 0, num_rows),
               Norm_Functor_t(forward_sweep, num_rows, rowmap_view, column_view,
                              values_view, localD, localT, tempR),
               normR);
@@ -1077,34 +1110,34 @@ class TwostageGaussSeidel {
         for (int ii = 0; ii < NumInnerSweeps; ii++) {
           // T = D^{-1}*R, and L = D^{-1}*L and U = D^{-1}*U
           // copy T into Z
-          KokkosBlas::scal(localZ, one, localT);
+          KokkosBlas::scal(my_exec_space, localZ, one, localT);
           if (forward_sweep) {
             // Z = Z - L*R
-            KokkosSparse::spmv("N", scalar_t(-omega), crsmatL, localR, one,
-                               localZ);
+            KokkosSparse::spmv(my_exec_space, "N", scalar_t(-omega), crsmatL,
+                               localR, one, localZ);
           } else {
             // Z = R - U*T
-            KokkosSparse::spmv("N", scalar_t(-omega), crsmatU, localR, one,
-                               localZ);
+            KokkosSparse::spmv(my_exec_space, "N", scalar_t(-omega), crsmatU,
+                               localR, one, localZ);
           }
           // apply inner damping factor, if not one
           if (gamma != one) {
             // Z = gamma * Z
-            KokkosBlas::scal(localZ, gamma, localZ);
+            KokkosBlas::scal(my_exec_space, localZ, gamma, localZ);
             // Z = Z + (one - one/gamma) * R
             scalar_t gamma2 = one - gamma;
-            KokkosBlas::axpy(gamma2, localR, localZ);
+            KokkosBlas::axpy(my_exec_space, gamma2, localR, localZ);
           }
           if (ii + 1 < NumInnerSweeps) {
             // reinitialize (R to be Z)
-            KokkosBlas::scal(localR, one, localZ);
+            KokkosBlas::scal(my_exec_space, localR, one, localZ);
           }
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
           {
             // compute residual norm(r - (L+D)*y)
             mag_t normR = zero;
             Kokkos::parallel_reduce(
-                "normR", range_policy(0, num_rows),
+                "normR", range_policy(my_exec_space, 0, num_rows),
                 Norm_Functor_t(forward_sweep, num_rows, rowmap_view,
                                column_view, values_view, localD, localZ, tempR),
                 normR);
@@ -1119,22 +1152,23 @@ class TwostageGaussSeidel {
             Kokkos::subview(localX, range_type(0, num_rows), Kokkos::ALL());
         if (compact_form) {
           // Y := omega * z
-          KokkosBlas::scal(localY, omega, localZ);
+          KokkosBlas::scal(my_exec_space, localY, omega, localZ);
         } else {
           // Y := X + omega * Z
-          KokkosBlas::axpy(omega, localZ, localY);
+          KokkosBlas::axpy(my_exec_space, omega, localZ, localY);
         }
       }  // end of inner GS sweep
     }    // end of outer GS sweep
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
     {
       // R = B - A*x
-      KokkosBlas::scal(localR, one, localB);
-      KokkosSparse::spmv("N", scalar_t(-one), crsmatA, localX, one, localR);
+      KokkosBlas::scal(my_exec_space, localR, one, localB);
+      KokkosSparse::spmv(my_exec_space, "N", scalar_t(-one), crsmatA, localX,
+                         one, localR);
       auto localRj = Kokkos::subview(localR, Kokkos::ALL(), range_type(0, 1));
       single_vector_view_t Rj(localRj.data(), num_rows);
-      std::cout << "norm(GS)-" << NumSweeps << " " << KokkosBlas::nrm2(Rj)
-                << std::endl;
+      std::cout << "norm(GS)-" << NumSweeps << " "
+                << KokkosBlas::nrm2(my_exec_space, Rj) << std::endl;
     }
 #endif
   }

@@ -54,6 +54,12 @@
 #include <KokkosBlas1_axpby.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#define KOKKOSKERNELS_DEBUG_LEVEL_OLD KOKKOSKERNELS_DEBUG_LEVEL
+#undef KOKKOSKERNELS_DEBUG_LEVEL
+#define KOKKOSKERNELS_DEBUG_LEVEL 2
+#endif
+
 static constexpr int numVecsAxpbyTest = 15;
 
 namespace Test {
@@ -2536,6 +2542,12 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 }
 
 }  // namespace Test
+
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 1)
+#undef KOKKOSKERNELS_DEBUG_LEVEL
+#define KOKKOSKERNELS_DEBUG_LEVEL KOKKOSKERNELS_DEBUG_LEVEL_OLD
+#undef KOKKOSKERNELS_DEBUG_LEVEL_OLD
+#endif
 
 template <class tScalarA, class tScalarX, class tScalarB, class tScalarY,
           class Device>
