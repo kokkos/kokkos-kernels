@@ -24,10 +24,11 @@
 namespace KokkosSparse {
 namespace Impl {
 
-// Helper macro to check that two types are the same (ignoring const)
-#define SAME_TYPE(A, B)                             \
-  std::is_same<typename std::remove_const<A>::type, \
-               typename std::remove_const<B>::type>::value
+// Two types are the same (ignoring const)
+template <typename T, typename U>
+constexpr bool spadd_symbolic_same_type =
+    std::is_same_v<typename std::remove_const_t<T>,
+                   typename std::remove_const_t<U>>;
 
 // get C rowmap for sorted input
 template <typename size_type, typename ordinal_type, typename ARowPtrsT,
@@ -479,29 +480,34 @@ void spadd_symbolic_impl(
   // Check that A/B/C data types match KernelHandle types, and that C data types
   // are nonconst (doesn't matter if A/B types are const)
   static_assert(
-      SAME_TYPE(typename alno_row_view_t_::non_const_value_type, size_type),
+      spadd_symbolic_same_type<typename alno_row_view_t_::non_const_value_type,
+                               size_type>,
       "add_symbolic: A size_type must match KernelHandle size_type (const "
       "doesn't matter)");
   static_assert(
-      SAME_TYPE(typename blno_row_view_t_::non_const_value_type, size_type),
+      spadd_symbolic_same_type<typename blno_row_view_t_::non_const_value_type,
+                               size_type>,
       "add_symbolic: B size_type must match KernelHandle size_type (const "
       "doesn't matter)");
   static_assert(
-      SAME_TYPE(typename clno_row_view_t_::non_const_value_type, size_type),
+      spadd_symbolic_same_type<typename clno_row_view_t_::non_const_value_type,
+                               size_type>,
       "add_symbolic: C size_type must match KernelHandle size_type)");
-  static_assert(std::is_same<typename clno_row_view_t_::non_const_value_type,
-                             typename clno_row_view_t_::value_type>::value,
+  static_assert(std::is_same_v<typename clno_row_view_t_::non_const_value_type,
+                               typename clno_row_view_t_::value_type>,
                 "add_symbolic: C size_type must not be const");
   static_assert(
-      SAME_TYPE(typename alno_nnz_view_t_::non_const_value_type, ordinal_type),
+      spadd_symbolic_same_type<typename alno_nnz_view_t_::non_const_value_type,
+                               ordinal_type>,
       "add_symbolic: A entry type must match KernelHandle entry type (aka "
       "nnz_lno_t, and const doesn't matter)");
   static_assert(
-      SAME_TYPE(typename blno_nnz_view_t_::non_const_value_type, ordinal_type),
+      spadd_symbolic_same_type<typename blno_nnz_view_t_::non_const_value_type,
+                               ordinal_type>,
       "add_symbolic: B entry type must match KernelHandle entry type (aka "
       "nnz_lno_t, and const doesn't matter)");
-  static_assert(std::is_same<typename clno_row_view_t_::non_const_value_type,
-                             typename clno_row_view_t_::value_type>::value,
+  static_assert(std::is_same_v<typename clno_row_view_t_::non_const_value_type,
+                               typename clno_row_view_t_::value_type>,
                 "add_symbolic: C entry type must not be const");
   // symbolic just needs to compute c_rowmap
   // easy for sorted, but for unsorted is easiest to just compute the whole sum
@@ -540,9 +546,7 @@ void spadd_symbolic_impl(
           "KokkosSparse::SpAdd:Symbolic::InputNotSorted::CountEntries",
           range_type(exec, 0, nrows), countEntries);
       KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(
-          exec, nrows + 1, c_rowmap_upperbound);
-      Kokkos::deep_copy(exec, c_nnz_upperbound,
-                        Kokkos::subview(c_rowmap_upperbound, nrows));
+          exec, nrows + 1, c_rowmap_upperbound, c_nnz_upperbound);
     }
     ordinal_view_t c_entries_uncompressed(
         Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
@@ -589,12 +593,11 @@ void spadd_symbolic_impl(
   // provide the number of NNZ in C to user through handle
   size_type cmax;
   Kokkos::deep_copy(exec, cmax, Kokkos::subview(c_rowmap, nrows));
+  exec.fence("fence before cmax used on host");
   addHandle->set_c_nnz(cmax);
   addHandle->set_call_symbolic();
   addHandle->set_call_numeric(false);
 }
-
-#undef SAME_TYPE
 
 }  // namespace Impl
 }  // namespace KokkosSparse

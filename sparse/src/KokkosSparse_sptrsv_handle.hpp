@@ -1022,7 +1022,6 @@ class SPTRSVHandle {
   }
 
   bool is_block_enabled() const { return block_size > 0; }
-
   void set_symbolic_complete() { this->symbolic_complete = true; }
   void set_symbolic_incomplete() { this->symbolic_complete = false; }
 

@@ -62,7 +62,7 @@ int KOKKOS_INLINE_FUNCTION team_spmv(
     return 1;
   }
 
-  if (x.extent(0) != y.extent(0) || (x.extent(0) + 1) != row_ptr.extent(0)) {
+  if ((x.extent(0) + 1) != row_ptr.extent(0)) {
     Kokkos::printf(
         "KokkosSparse::spmv: Dimensions of x, y, and row_ptr do not match: "
         "x: %d, y: %d, row_ptr: %d",
@@ -116,7 +116,7 @@ int KOKKOS_INLINE_FUNCTION team_vector_spmv(
     return 1;
   }
 
-  if (x.extent(0) != y.extent(0) || (x.extent(0) + 1) != row_ptr.extent(0)) {
+  if ((x.extent(0) + 1) != row_ptr.extent(0)) {
     Kokkos::printf(
         "KokkosSparse::spmv: Dimensions of x, y, and row_ptr do not match: "
         "x: %d, y: %d, row_ptr: %d",

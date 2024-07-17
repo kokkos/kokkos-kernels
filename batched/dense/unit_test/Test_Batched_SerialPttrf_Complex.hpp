@@ -13,20 +13,19 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef TEST_COMMON_HPP
-#define TEST_COMMON_HPP
 
-#include <Test_Common_AlignPtrTo.hpp>
-#include <Test_Common_ArithTraits.hpp>
-// #include<Test_Common_float128.hpp>
-#include <Test_Common_set_bit_count.hpp>
-#include <Test_Common_Sorting.hpp>
-#include <Test_Common_IOUtils.hpp>
-#include <Test_Common_Error.hpp>
-#include <Test_Common_Version.hpp>
-#include <Test_Common_PrintConfiguration.hpp>
-#include <Test_Common_Iota.hpp>
-#include <Test_Common_LowerBound.hpp>
-#include <Test_Common_UpperBound.hpp>
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+TEST_F(TestCategory, test_batched_pttrf_fcomplex) {
+  using algo_tag_type = typename Algo::Pttrf::Unblocked;
 
-#endif  // TEST_COMMON_HPP
+  test_batched_pttrf<TestDevice, float, algo_tag_type>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+TEST_F(TestCategory, test_batched_pttrf_dcomplex) {
+  using algo_tag_type = typename Algo::Pttrf::Unblocked;
+
+  test_batched_pttrf<TestDevice, double, algo_tag_type>();
+}
+#endif

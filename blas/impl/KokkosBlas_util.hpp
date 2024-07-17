@@ -85,6 +85,7 @@ struct Algo {
   using SolveLU   = Level3;
   using QR        = Level3;
   using UTV       = Level3;
+  using Pttrf     = Level3;
 
   struct Level2 {
     struct Unblocked {};
@@ -116,6 +117,7 @@ struct Algo {
   using Gemv   = Level2;
   using Trsv   = Level2;
   using ApplyQ = Level2;
+  using Tbsv   = Level2;
 };
 
 namespace Impl {

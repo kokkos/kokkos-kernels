@@ -304,7 +304,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     nnz_lno_t *keys = (nnz_lno_t *)(all_shared_memory);
     all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
     scalar_t *vals =
-        KokkosKernels::Impl::alignPtr<char *, scalar_t>(all_shared_memory);
+        KokkosKernels::Impl::alignPtrTo<scalar_t>(all_shared_memory);
 
     KokkosKernels::Experimental::HashmapAccumulator<
         nnz_lno_t, nnz_lno_t, scalar_t,
@@ -468,6 +468,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
         c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_,
         c_scalar_nnz_view_t valuesC_,
         KokkosKernels::Impl::ExecSpaceType my_exec_space_) {
+  Kokkos::Profiling::pushRegion("KokkosSparse::spgemm_numeric[NATIVE/SPEED]");
   if (KOKKOSKERNELS_VERBOSE) {
     std::cout << "\tSPEED MODE" << std::endl;
   }
@@ -604,6 +605,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     std::cout << "\t\tNumeric SPEED TIME WITH FREE:"
               << numeric_speed_timer_with_free.seconds() << std::endl;
   }
+  Kokkos::Profiling::popRegion();
 }
 }  // namespace Impl
 }  // namespace KokkosSparse
