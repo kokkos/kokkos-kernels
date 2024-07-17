@@ -133,8 +133,6 @@ struct SptrsvWrap {
       static int shmem_size(size_type, size_type) { return 0; }
     };
 
-    static constexpr size_type BUFF_SIZE = 1;
-
     Common(const RowMapType &row_map_, const EntriesType &entries_,
            const ValuesType &values_, LHSType &lhs_, const RHSType &rhs_,
            const entries_t &nodes_grouped_by_level_,
@@ -195,6 +193,9 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void copy(const member_type&, scalar_t&, const scalar_t&) {}
 
+    KOKKOS_INLINE_FUNCTION
+    static void copy(scalar_t&, const scalar_t&) {}
+
     // lget
     KOKKOS_INLINE_FUNCTION
     scalar_t& lget(const size_type row) const { return lhs(row); }
@@ -207,12 +208,22 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     scalar_t vget(const size_type nnz) const { return values(nnz); }
 
-    // lhs = (lhs + rhs) / diag
+    // lhs = (lhs + rhs) / diag (team)
+    KOKKOS_INLINE_FUNCTION
+    static void add_and_divide(const member_type& team, scalar_t &lhs_val, const scalar_t &rhs_val,
+                               const scalar_t &diag_val) {
+      Kokkos::single(Kokkos::PerTeam(team), [&]() {
+        lhs_val = (lhs_val + rhs_val) / diag_val;
+      });
+    }
+
+    // lhs = (lhs + rhs) / diag (serial)
     KOKKOS_INLINE_FUNCTION
     static void add_and_divide(scalar_t &lhs_val, const scalar_t &rhs_val,
                                const scalar_t &diag_val) {
       lhs_val = (lhs_val + rhs_val) / diag_val;
     }
+
 
     // print
     KOKKOS_INLINE_FUNCTION
@@ -220,117 +231,6 @@ struct SptrsvWrap {
 
     KOKKOS_INLINE_FUNCTION
     static void print(ArrayType rhs, const int) { std::cout << rhs << std::endl; }
-
-    struct ReduceSumFunctor {
-      const Common *m_obj;
-      const lno_t rowid;
-      lno_t diag;
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(size_type i, scalar_t &accum) const {
-        const auto colid = m_obj->entries(i);
-        auto val         = m_obj->values(i);
-        auto lhs_colid   = m_obj->lhs(colid);
-        accum -= val * lhs_colid;
-        KK_KERNEL_ASSERT_MSG(colid != rowid, "Should not have hit diag");
-      }
-    };
-
-    struct ReduceSumDiagFunctor {
-      const Common *m_obj;
-      const lno_t rowid;
-      lno_t diag;
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(size_type i, scalar_t &accum) const {
-        const auto colid = m_obj->entries(i);
-        if (colid != rowid) {
-          auto val       = m_obj->values(i);
-          auto lhs_colid = m_obj->lhs(colid);
-          accum -= val * lhs_colid;
-        } else {
-          diag = i;
-        }
-      }
-    };
-
-    template <bool IsSerial, bool IsSorted, bool IsLower,
-              bool UseThreadVec = false>
-    KOKKOS_INLINE_FUNCTION void solve_impl(const member_type *team,
-                                           const int my_rank,
-                                           const long node_count) const {
-      static_assert(
-          !((!IsSerial && BlockEnabled) && UseThreadVec),
-          "ThreadVectorRanges are not yet supported for block-enabled");
-      static_assert(!(IsSerial && UseThreadVec),
-                    "Requested thread vector range in serial?");
-
-      const auto rowid   = nodes_grouped_by_level(my_rank + node_count);
-      const auto soffset = row_map(rowid);
-      const auto eoffset = row_map(rowid + 1);
-      const auto rhs_val = rhs(rowid);
-      scalar_t &lhs_val  = lhs(rowid);
-
-      // Set up range to auto-skip diag if is sorted
-      const auto itr_b = soffset + (IsSorted ? (IsLower ? 0 : 1) : 0);
-      const auto itr_e = eoffset - (IsSorted ? (IsLower ? 1 : 0) : 0);
-
-      // We don't need the reducer to find the diag item if sorted
-      using reducer_t =
-          std::conditional_t<IsSorted, ReduceSumFunctor, ReduceSumDiagFunctor>;
-      reducer_t rf{this, rowid, -1};
-
-      if constexpr (IsSerial) {
-        KK_KERNEL_ASSERT_MSG(my_rank == 0, "Non zero rank in serial");
-        KK_KERNEL_ASSERT_MSG(team == nullptr, "Team provided in serial?");
-        for (auto ptr = itr_b; ptr < itr_e; ++ptr) {
-          rf(ptr, lhs_val);
-        }
-      } else {
-        KK_KERNEL_ASSERT_MSG(team != nullptr,
-                             "Cannot do team operations without team");
-        if constexpr (!UseThreadVec) {
-          Kokkos::parallel_reduce(Kokkos::TeamThreadRange(*team, itr_b, itr_e),
-                                  rf, lhs_val);
-          team->team_barrier();
-        } else {
-          Kokkos::parallel_reduce(
-              Kokkos::ThreadVectorRange(*team, itr_b, itr_e), rf, lhs_val);
-        }
-      }
-
-      // If sorted, we already know the diag. Otherwise, get it from the reducer
-      rf.diag = IsSorted ? (IsLower ? eoffset - 1 : soffset) : rf.diag;
-
-      // At end, handle the diag element. We need to be careful to avoid race
-      // conditions here.
-      if constexpr (IsSerial) {
-        // Serial case is easy, there's only 1 thread so just do the
-        // add_and_divide
-        KK_KERNEL_ASSERT_MSG(rf.diag != -1, "Serial should always know diag");
-        add_and_divide(lhs_val, rhs_val, values(rf.diag));
-      } else {
-        if constexpr (IsSorted) {
-          // Parallel sorted case is complex. All threads know what the diag is.
-          // If we have a team sharing the work, we need to ensure only one
-          // thread performs the add_and_divide.
-          KK_KERNEL_ASSERT_MSG(rf.diag != -1, "Sorted should always know diag");
-          if constexpr (!UseThreadVec) {
-            Kokkos::single(Kokkos::PerTeam(*team), [&]() {
-              add_and_divide(lhs_val, rhs_val, values(rf.diag));
-            });
-          } else {
-            add_and_divide(lhs_val, rhs_val, values(rf.diag));
-          }
-        } else {
-          // Parallel unsorted case. Only one thread should know what the diag
-          // item is. We have that one do the add_and_divide.
-          if (rf.diag != -1) {
-            add_and_divide(lhs_val, rhs_val, values(rf.diag));
-          }
-        }
-      }
-    }
   };
 
   // Partial specialization for block support
@@ -362,20 +262,21 @@ struct SptrsvWrap {
       const scalar_t *, Layout, typename ValuesType::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
+    static constexpr size_type MAX_VEC_SIZE = 11;
     static constexpr size_type BUFF_SIZE = 128;
 
     using reftype = Vector;
 
     struct ArrayType
     {
-      scalar_t m_data[BUFF_SIZE];
+      scalar_t m_data[MAX_VEC_SIZE];
 
       KOKKOS_INLINE_FUNCTION
       ArrayType() { init(); }
 
       KOKKOS_INLINE_FUNCTION
       ArrayType(const ArrayType& rhs_) {
-        for (size_type i = 0; i < BUFF_SIZE; ++i) m_data[i] = rhs_.m_data[i];
+        for (size_type i = 0; i < MAX_VEC_SIZE; ++i) m_data[i] = rhs_.m_data[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -383,12 +284,12 @@ struct SptrsvWrap {
 
       KOKKOS_INLINE_FUNCTION
       void init() {
-        for (size_type i = 0; i < BUFF_SIZE; ++i) m_data[i] = 0;
+        for (size_type i = 0; i < MAX_VEC_SIZE; ++i) m_data[i] = 0;
       }
 
       KOKKOS_INLINE_FUNCTION
       ArrayType& operator +=(const ArrayType& rhs_) {
-        for (size_type i = 0; i < BUFF_SIZE; ++i) m_data[i] += rhs_.m_data[i];
+        for (size_type i = 0; i < MAX_VEC_SIZE; ++i) m_data[i] += rhs_.m_data[i];
         return *this;
       }
 
@@ -458,7 +359,7 @@ struct SptrsvWrap {
     {
       KK_REQUIRE_MSG(block_size > 0,
                      "Tried to use block_size=0 with the blocked Common?");
-      KK_REQUIRE_MSG(block_size <= 11, "Max supported block size is 11");
+      KK_REQUIRE_MSG(block_size <= MAX_VEC_SIZE, "Max supported block size is " << MAX_VEC_SIZE);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -509,11 +410,13 @@ struct SptrsvWrap {
 
     // divide. b /= A (b = b * A^-1)
     KOKKOS_INLINE_FUNCTION
-    static void divide(const member_type &team, const Vector &b, const CBlock &A,
-                scalar_t* buff) {
-      // Need a temp block to do LU of A
+    static void divide(const member_type &team, const Vector &b, const CBlock &A) {
+      // Team-shared buffer. Use for team work.
       const auto block_size = b.size();
-      Block LU(buff, block_size, block_size);
+      SBlock shared_buff(team.team_shmem(), block_size, block_size);
+
+      // Need a temp block to do LU of A
+      Block LU(shared_buff.data(), block_size, block_size);
       assign(team, LU, A);
       KokkosBatched::TeamLU<member_type,
                             KokkosBatched::Algo::LU::Blocked>::invoke(team, LU);
@@ -534,10 +437,13 @@ struct SptrsvWrap {
 
     // serial divide. b /= A (b = b * A^-1)
     KOKKOS_INLINE_FUNCTION
-    static void divide(const Vector &b, const CBlock &A, scalar_t* buff) {
+    static void divide(const Vector &b, const CBlock &A) {
+      // Thread-local buffers. Use for Serial (non-team) work
+      scalar_t buff[BUFF_SIZE];
+
       // Need a temp block to do LU of A
       const auto block_size = b.size();
-      Block LU(buff, block_size, block_size);
+      Block LU(&buff[0], block_size, block_size);
       assign(LU, A);
       KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Blocked>::invoke(LU);
 
@@ -578,6 +484,12 @@ struct SptrsvWrap {
       assign(team, lhs_, rhs_);
     }
 
+    KOKKOS_INLINE_FUNCTION
+    static void copy(const Vector& lhs_, ArrayType& rhsa) {
+      CVector rhs_(&rhsa.m_data[0], lhs_.size());
+      assign(lhs_, rhs_);
+    }
+
     // lget
     KOKKOS_INLINE_FUNCTION
     Vector lget(const size_type row) const {
@@ -595,6 +507,22 @@ struct SptrsvWrap {
     CBlock vget(const size_type block) const {
       return CBlock(values.data() + (block * block_items), block_size, block_size);
     }
+
+    // lhs = (lhs + rhs) / diag
+    KOKKOS_INLINE_FUNCTION
+    static void add_and_divide(const member_type& team, const Vector &lhs_val, const CVector &rhs_val,
+                               const CBlock &diag_val) {
+      add(team, rhs_val, lhs_val);
+      divide(team, lhs_val, diag_val);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    static void add_and_divide(const Vector &lhs_val, const CVector &rhs_val,
+                               const CBlock &diag_val) {
+      add(rhs_val, lhs_val);
+      divide(lhs_val, diag_val);
+    }
+
 
     // print
     KOKKOS_INLINE_FUNCTION
@@ -640,6 +568,145 @@ struct SptrsvWrap {
     }
   };
 
+  /**
+   * Intermediate class that contains implementation that identical
+   * for blocked / non-blocked
+   */
+  template <class RowMapType, class EntriesType, class ValuesType,
+            class LHSType, class RHSType, bool BlockEnabled>
+  struct Intermediate :
+    public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+                  BlockEnabled> {
+    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+                        BlockEnabled>;
+    using accum_t = std::conditional_t<BlockEnabled, typename Base::ArrayType, scalar_t>;
+
+    Intermediate(const RowMapType &row_map_, const EntriesType &entries_,
+                 const ValuesType &values_, LHSType &lhs_, const RHSType &rhs_,
+                 const entries_t &nodes_grouped_by_level_,
+                 const size_type block_size_ = 0)
+        : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_,
+               block_size_) {}
+
+    struct ReduceSumFunctor {
+      const Base *m_obj;
+      const lno_t rowid;
+      lno_t diag;
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(size_type i, accum_t &accum) const {
+        const auto colid = m_obj->entries(i);
+        auto val         = m_obj->vget(i);
+        auto lhs_colid   = m_obj->lget(colid);
+        //accum -= val * lhs_colid;
+        Base::multiply_subtract(val, lhs_colid, accum);
+        KK_KERNEL_ASSERT_MSG(colid != rowid, "Should not have hit diag");
+      }
+    };
+
+    struct ReduceSumDiagFunctor {
+      const Base *m_obj;
+      const lno_t rowid;
+      lno_t diag;
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(size_type i, accum_t &accum) const {
+        const auto colid = m_obj->entries(i);
+        if (colid != rowid) {
+          auto val       = m_obj->vget(i);
+          auto lhs_colid = m_obj->lget(colid);
+          //accum -= val * lhs_colid;
+          Base::multiply_subtract(val, lhs_colid, accum);
+        } else {
+          diag = i;
+        }
+      }
+    };
+
+    template <bool IsSerial, bool IsSorted, bool IsLower,
+              bool UseThreadVec = false>
+    KOKKOS_INLINE_FUNCTION void solve_impl(const member_type *team,
+                                           const int my_rank,
+                                           const long node_count) const {
+      using reduce_item_t = typename Base::ArrayType;
+      using reducer_t     = typename Base::SumArray;
+      using functor_t    = std::conditional_t<IsSorted, ReduceSumFunctor, ReduceSumDiagFunctor>;
+
+      static_assert(
+          !((!IsSerial && BlockEnabled) && UseThreadVec),
+          "ThreadVectorRanges are not yet supported for block-enabled");
+      static_assert(!(IsSerial && UseThreadVec),
+                    "Requested thread vector range in serial?");
+
+      const auto rowid   = Base::nodes_grouped_by_level(my_rank + node_count);
+      const auto soffset = Base::row_map(rowid);
+      const auto eoffset = Base::row_map(rowid + 1);
+      const auto rhs_val = Base::rget(rowid);
+
+      // Set up range to auto-skip diag if is sorted
+      const auto itr_b = soffset + (IsSorted ? (IsLower ? 0 : 1) : 0);
+      const auto itr_e = eoffset - (IsSorted ? (IsLower ? 1 : 0) : 0);
+
+      // We don't need the reducer to find the diag item if sorted
+      functor_t rf{this, rowid, -1};
+      typename Base::reftype lhs_val = Base::lget(rowid);
+      reduce_item_t reduce = lhs_val;
+
+      if constexpr (IsSerial) {
+        KK_KERNEL_ASSERT_MSG(my_rank == 0, "Non zero rank in serial");
+        KK_KERNEL_ASSERT_MSG(team == nullptr, "Team provided in serial?");
+        for (auto ptr = itr_b; ptr < itr_e; ++ptr) {
+          rf(ptr, reduce);
+        }
+        Base::copy(lhs_val, reduce);
+      } else {
+        KK_KERNEL_ASSERT_MSG(team != nullptr,
+                             "Cannot do team operations without team");
+        if constexpr (!UseThreadVec) {
+          Kokkos::parallel_reduce(Kokkos::TeamThreadRange(*team, itr_b, itr_e),
+                                  rf, reducer_t(reduce));
+          team->team_barrier();
+          Base::copy(*team, lhs_val, reduce);
+        } else {
+          Kokkos::parallel_reduce(
+            Kokkos::ThreadVectorRange(*team, itr_b, itr_e), rf, reducer_t(reduce));
+          Base::copy(lhs_val, reduce);
+        }
+      }
+
+      // If sorted, we already know the diag. Otherwise, get it from the reducer
+      rf.diag = IsSorted ? (IsLower ? eoffset - 1 : soffset) : rf.diag;
+
+      // At end, handle the diag element. We need to be careful to avoid race
+      // conditions here.
+      if constexpr (IsSerial) {
+        // Serial case is easy, there's only 1 thread so just do the
+        // add_and_divide
+        KK_KERNEL_ASSERT_MSG(rf.diag != -1, "Serial should always know diag");
+        Base::add_and_divide(lhs_val, rhs_val, Base::vget(rf.diag));
+      } else {
+        if constexpr (IsSorted) {
+          // Parallel sorted case is complex. All threads know what the diag is.
+          // If we have a team sharing the work, we need to ensure only one
+          // thread performs the add_and_divide (except in BlockEnabled, then
+          // we can use team operations).
+          KK_KERNEL_ASSERT_MSG(rf.diag != -1, "Sorted should always know diag");
+          if constexpr (!UseThreadVec) {
+            Base::add_and_divide(*team, lhs_val, rhs_val, Base::vget(rf.diag));
+          } else {
+            Base::add_and_divide(lhs_val, rhs_val, Base::vget(rf.diag));
+          }
+        } else {
+          // Parallel unsorted case. Only one thread should know what the diag
+          // item is. We have that one do the add_and_divide.
+          if (rf.diag != -1) {
+            Base::add_and_divide(lhs_val, rhs_val, Base::vget(rf.diag));
+          }
+        }
+      }
+    }
+  };
+
   //
   // TriLvlSched functors
   //
@@ -647,9 +714,9 @@ struct SptrsvWrap {
   template <class RowMapType, class EntriesType, class ValuesType,
             class LHSType, class RHSType, bool IsLower, bool BlockEnabled>
   struct TriLvlSchedTP1SolverFunctor
-      : public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+      : public Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
                       BlockEnabled> {
-    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+    using Base = Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
                         BlockEnabled>;
 
     long node_count;  // like "block" offset into ngbl, my_league is the "local"
@@ -682,9 +749,9 @@ struct SptrsvWrap {
   template <class RowMapType, class EntriesType, class ValuesType,
             class LHSType, class RHSType, bool IsLower, bool BlockEnabled>
   struct TriLvlSchedRPSolverFunctor
-      : public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+      : public Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
                       BlockEnabled> {
-    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+    using Base = Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
                         BlockEnabled>;
 
     TriLvlSchedRPSolverFunctor(const RowMapType &row_map_,
@@ -710,10 +777,10 @@ struct SptrsvWrap {
   template <class RowMapType, class EntriesType, class ValuesType,
             class LHSType, class RHSType, bool IsLower>
   struct TriLvlSchedTP1SingleBlockFunctor
-      : public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
+      : public Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
                       false> {
     using Base =
-        Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, false>;
+        Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType, false>;
 
     entries_t nodes_per_level;
 
@@ -1855,7 +1922,7 @@ struct SptrsvWrap {
     auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
     const auto block_size       = thandle.get_block_size();
     const auto block_enabled    = thandle.is_block_enabled();
-    assert(block_size == BlockEnabled);
+    assert(block_enabled == BlockEnabled);
 
     // Set up functor types
     using UpperRPFunc =
