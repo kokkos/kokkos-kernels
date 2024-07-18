@@ -27,16 +27,14 @@ using namespace KokkosBatched;
 namespace Test {
 namespace Pttrf {
 
-template <typename DeviceType, typename DViewType, typename EViewType,
-          typename AlgoTagType>
+template <typename DeviceType, typename DViewType, typename EViewType, typename AlgoTagType>
 struct Functor_BatchedSerialPttrf {
   using execution_space = typename DeviceType::execution_space;
   DViewType _d;
   EViewType _e;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialPttrf(const DViewType &d, const EViewType &e)
-      : _d(d), _e(e) {}
+  Functor_BatchedSerialPttrf(const DViewType &d, const EViewType &e) : _d(d), _e(e) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int k, int &info) const {
@@ -60,8 +58,8 @@ struct Functor_BatchedSerialPttrf {
   }
 };
 
-template <typename DeviceType, typename ScalarType, typename AViewType,
-          typename BViewType, typename CViewType, typename ArgTransB>
+template <typename DeviceType, typename ScalarType, typename AViewType, typename BViewType, typename CViewType,
+          typename ArgTransB>
 struct Functor_BatchedSerialGemm {
   using execution_space = typename DeviceType::execution_space;
   AViewType _a;
@@ -70,8 +68,7 @@ struct Functor_BatchedSerialGemm {
   ScalarType _alpha, _beta;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialGemm(const ScalarType alpha, const AViewType &a,
-                            const BViewType &b, const ScalarType beta,
+  Functor_BatchedSerialGemm(const ScalarType alpha, const AViewType &a, const BViewType &b, const ScalarType beta,
                             const CViewType &c)
       : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
 
@@ -81,9 +78,7 @@ struct Functor_BatchedSerialGemm {
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
     auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::SerialGemm<Trans::NoTranspose, ArgTransB,
-                              Algo::Gemm::Unblocked>::invoke(_alpha, aa, bb,
-                                                             _beta, cc);
+    KokkosBatched::SerialGemm<Trans::NoTranspose, ArgTransB, Algo::Gemm::Unblocked>::invoke(_alpha, aa, bb, _beta, cc);
   }
 
   inline void run() {
@@ -96,8 +91,7 @@ struct Functor_BatchedSerialGemm {
   }
 };
 
-template <typename DeviceType, typename ScalarType, typename LayoutType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 /// \brief Implementation details of batched pttrf test for random matrix
 ///
 /// \param N [in] Batch size of matrix A
@@ -109,16 +103,13 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
 
-  View3DType A("A", N, BlkSize, BlkSize),
-      A_reconst("A_reconst", N, BlkSize, BlkSize);
-  View3DType EL("EL", N, BlkSize, BlkSize), EU("EU", N, BlkSize, BlkSize),
-      D("D", N, BlkSize, BlkSize), LD("LD", N, BlkSize, BlkSize),
-      L("L", N, BlkSize, BlkSize), I("I", N, BlkSize, BlkSize);
+  View3DType A("A", N, BlkSize, BlkSize), A_reconst("A_reconst", N, BlkSize, BlkSize);
+  View3DType EL("EL", N, BlkSize, BlkSize), EU("EU", N, BlkSize, BlkSize), D("D", N, BlkSize, BlkSize),
+      LD("LD", N, BlkSize, BlkSize), L("L", N, BlkSize, BlkSize), I("I", N, BlkSize, BlkSize);
   RealView2DType d("d", N, BlkSize),  // Diagonal components
       ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing), N, BlkSize);
-  View2DType e_upper("e_upper", N, BlkSize - 1),
-      e_lower("e_lower", N,
-              BlkSize - 1);  // upper and lower diagonal components
+  View2DType e_upper("e_upper", N, BlkSize - 1), e_lower("e_lower", N,
+                                                         BlkSize - 1);  // upper and lower diagonal components
 
   using execution_space = typename DeviceType::execution_space;
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
@@ -129,19 +120,16 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   KokkosKernels::Impl::getRandomBounds(1.0, randStart, randEnd);
 
   // Add BlkSize to ensure positive definiteness
-  Kokkos::fill_random(d, rand_pool, realRandStart + BlkSize,
-                      realRandEnd + BlkSize);
+  Kokkos::fill_random(d, rand_pool, realRandStart + BlkSize, realRandEnd + BlkSize);
   Kokkos::fill_random(e_upper, rand_pool, randStart, randEnd);
 
-  auto h_e_upper =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), e_upper);
+  auto h_e_upper = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), e_upper);
   auto h_e_lower = Kokkos::create_mirror_view(e_lower);
 
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize - 1; i++) {
       // Fill the lower diagonal with conjugate of the upper diagonal
-      h_e_lower(ib, i) =
-          Kokkos::ArithTraits<ScalarType>::conj(h_e_upper(ib, i));
+      h_e_lower(ib, i) = Kokkos::ArithTraits<ScalarType>::conj(h_e_upper(ib, i));
     }
   }
 
@@ -157,23 +145,21 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
 
   // Matrix matrix addition by Gemm
   // D + EU by D * I + EU (result stored in EU)
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::NoTranspose>(1.0, D, I, 1.0, EU)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose>(1.0, D, I,
+                                                                                                            1.0, EU)
       .run();
 
   // Copy EL to A
   Kokkos::deep_copy(A, EL);
 
   // EU + EL by EU * I + A (result stored in A)
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::NoTranspose>(1.0, EU, I, 1.0, A)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose>(1.0, EU, I,
+                                                                                                            1.0, A)
       .run();
 
   // Factorize matrix A -> L * D * L**H
   // d and e are updated by pttrf
-  auto info = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
-                                         AlgoTagType>(d, e_lower)
-                  .run();
+  auto info = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType, AlgoTagType>(d, e_lower).run();
 
   Kokkos::fence();
 
@@ -189,14 +175,14 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   Kokkos::deep_copy(L, I);
 
   // EL + I by EL * I + L (result stored in L)
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::NoTranspose>(1.0, EL, I, 1.0, L)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose>(1.0, EL, I,
+                                                                                                            1.0, L)
       .run();
 
   // Reconstruct A by L*D*L**H
   // Gemm to compute L*D -> LD
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::NoTranspose>(1.0, L, D, 0.0, LD)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose>(1.0, L, D,
+                                                                                                            0.0, LD)
       .run();
 
   // FIXME: We should use SerialGemm Trans::ConjTranspose.
@@ -222,9 +208,8 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   Kokkos::deep_copy(L, h_L);
 
   // Gemm to compute (L*D)*(conj(L))**T -> A_reconst
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::Transpose>(1.0, LD, L, 0.0,
-                                                          A_reconst)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::Transpose>(
+      1.0, LD, L, 0.0, A_reconst)
       .run();
 
   Kokkos::fence();
@@ -232,9 +217,8 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   // this eps is about 10^-14
   RealType eps = 1.0e3 * ats::epsilon();
 
-  auto h_A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
-  auto h_A_reconst =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_reconst);
+  auto h_A         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
+  auto h_A_reconst = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_reconst);
 
   // Check A = L*D*L**H
   for (int ib = 0; ib < N; ib++) {
@@ -246,8 +230,7 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   }
 }
 
-template <typename DeviceType, typename ScalarType, typename LayoutType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 /// \brief Implementation details of batched pttrf test for early return
 ///        BlkSize must be 0 or 1
 ///
@@ -263,8 +246,7 @@ void impl_test_batched_pttrf_quick_return(const int N, const int BlkSize) {
 
   const int BlkSize_minus_1 = BlkSize > 0 ? BlkSize - 1 : 0;
 
-  RealView2DType d("d", N, BlkSize),
-      d2("d2", N, BlkSize);  // Diagonal components
+  RealView2DType d("d", N, BlkSize), d2("d2", N, BlkSize);  // Diagonal components
   View2DType e("e", N,
                BlkSize_minus_1);  // lower diagonal components
 
@@ -277,14 +259,10 @@ void impl_test_batched_pttrf_quick_return(const int N, const int BlkSize) {
   // Factorize matrix A -> L * D * L**H
   // d and e are updated by pttrf
   // Early return if BlkSize is 0 or 1
-  auto info = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
-                                         AlgoTagType>(d, e)
-                  .run();
+  auto info = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType, AlgoTagType>(d, e).run();
 
   // For negative values, info should be 1 for BlkSize = 1
-  auto info2 = Functor_BatchedSerialPttrf<DeviceType, RealView2DType,
-                                          View2DType, AlgoTagType>(d2, e)
-                   .run();
+  auto info2 = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType, AlgoTagType>(d2, e).run();
 
   Kokkos::fence();
 
@@ -307,8 +285,7 @@ void impl_test_batched_pttrf_quick_return(const int N, const int BlkSize) {
   }
 }
 
-template <typename DeviceType, typename ScalarType, typename LayoutType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 /// \brief Implementation details of batched pttrf test
 ///
 /// \param N [in] Batch size of matrix A
@@ -320,11 +297,9 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
 
-  View3DType A("A", N, BlkSize, BlkSize),
-      A_reconst("A_reconst", N, BlkSize, BlkSize);
-  View3DType EL("EL", N, BlkSize, BlkSize), EU("EU", N, BlkSize, BlkSize),
-      D("D", N, BlkSize, BlkSize), LD("LD", N, BlkSize, BlkSize),
-      L("L", N, BlkSize, BlkSize), I("I", N, BlkSize, BlkSize);
+  View3DType A("A", N, BlkSize, BlkSize), A_reconst("A_reconst", N, BlkSize, BlkSize);
+  View3DType EL("EL", N, BlkSize, BlkSize), EU("EU", N, BlkSize, BlkSize), D("D", N, BlkSize, BlkSize),
+      LD("LD", N, BlkSize, BlkSize), L("L", N, BlkSize, BlkSize), I("I", N, BlkSize, BlkSize);
   RealView2DType d(Kokkos::view_alloc("d", Kokkos::WithoutInitializing), N,
                    BlkSize),  // Diagonal components
       ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing), N, BlkSize);
@@ -344,23 +319,21 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
 
   // Matrix matrix addition by Gemm
   // D + EU by D * I + EU (result stored in EU)
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::NoTranspose>(1.0, D, I, 1.0, EU)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose>(1.0, D, I,
+                                                                                                            1.0, EU)
       .run();
 
   // Copy EL to A
   Kokkos::deep_copy(A, EL);
 
   // EU + EL by EU * I + A (result stored in A)
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::NoTranspose>(1.0, EU, I, 1.0, A)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose>(1.0, EU, I,
+                                                                                                            1.0, A)
       .run();
 
   // Factorize matrix A -> L * D * L**T
   // d and e are updated by pttrf
-  auto info = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType,
-                                         AlgoTagType>(d, e)
-                  .run();
+  auto info = Functor_BatchedSerialPttrf<DeviceType, RealView2DType, View2DType, AlgoTagType>(d, e).run();
 
   Kokkos::fence();
 
@@ -376,20 +349,19 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
   Kokkos::deep_copy(L, I);
 
   // EL + I by EL * I + L (result stored in L)
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::NoTranspose>(1.0, EL, I, 1.0, L)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose>(1.0, EL, I,
+                                                                                                            1.0, L)
       .run();
 
   // Reconstruct A by L*D*L**T
   // Gemm to compute L*D -> LD
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::NoTranspose>(1.0, L, D, 0.0, LD)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose>(1.0, L, D,
+                                                                                                            0.0, LD)
       .run();
 
   // Gemm to compute (L*D)*L**T -> A_reconst
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType, Trans::Transpose>(1.0, LD, L, 0.0,
-                                                          A_reconst)
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::Transpose>(
+      1.0, LD, L, 0.0, A_reconst)
       .run();
 
   Kokkos::fence();
@@ -397,9 +369,8 @@ void impl_test_batched_pttrf_analytical(const int N, const int BlkSize) {
   // this eps is about 10^-14
   RealType eps = 1.0e3 * ats::epsilon();
 
-  auto h_A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
-  auto h_A_reconst =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_reconst);
+  auto h_A         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
+  auto h_A_reconst = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_reconst);
 
   // Check A = L*D*L.T
   for (int ib = 0; ib < N; ib++) {
@@ -420,22 +391,14 @@ int test_batched_pttrf() {
   {
     using LayoutType = Kokkos::LayoutLeft;
     for (int i = 0; i < 2; i++) {
-      Test::Pttrf::impl_test_batched_pttrf_quick_return<
-          DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
-      Test::Pttrf::impl_test_batched_pttrf_quick_return<
-          DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
+      Test::Pttrf::impl_test_batched_pttrf_quick_return<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Pttrf::impl_test_batched_pttrf_quick_return<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
     }
     for (int i = 2; i < 10; i++) {
-      Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType,
-                                           AlgoTagType>(1, i);
-      Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType,
-                                           AlgoTagType>(2, i);
-      Test::Pttrf::impl_test_batched_pttrf_analytical<DeviceType, ScalarType,
-                                                      LayoutType, AlgoTagType>(
-          1, i);
-      Test::Pttrf::impl_test_batched_pttrf_analytical<DeviceType, ScalarType,
-                                                      LayoutType, AlgoTagType>(
-          2, i);
+      Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
+      Test::Pttrf::impl_test_batched_pttrf_analytical<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Pttrf::impl_test_batched_pttrf_analytical<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
     }
   }
 #endif
@@ -443,22 +406,14 @@ int test_batched_pttrf() {
   {
     using LayoutType = Kokkos::LayoutRight;
     for (int i = 0; i < 2; i++) {
-      Test::Pttrf::impl_test_batched_pttrf_quick_return<
-          DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
-      Test::Pttrf::impl_test_batched_pttrf_quick_return<
-          DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
+      Test::Pttrf::impl_test_batched_pttrf_quick_return<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Pttrf::impl_test_batched_pttrf_quick_return<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
     }
     for (int i = 2; i < 10; i++) {
-      Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType,
-                                           AlgoTagType>(1, i);
-      Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType,
-                                           AlgoTagType>(2, i);
-      Test::Pttrf::impl_test_batched_pttrf_analytical<DeviceType, ScalarType,
-                                                      LayoutType, AlgoTagType>(
-          1, i);
-      Test::Pttrf::impl_test_batched_pttrf_analytical<DeviceType, ScalarType,
-                                                      LayoutType, AlgoTagType>(
-          2, i);
+      Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Pttrf::impl_test_batched_pttrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
+      Test::Pttrf::impl_test_batched_pttrf_analytical<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Pttrf::impl_test_batched_pttrf_analytical<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
     }
   }
 #endif

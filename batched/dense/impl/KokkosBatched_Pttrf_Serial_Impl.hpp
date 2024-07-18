@@ -24,17 +24,13 @@
 namespace KokkosBatched {
 
 template <typename DViewType, typename EViewType>
-KOKKOS_INLINE_FUNCTION static int checkPttrfInput(
-    [[maybe_unused]] const DViewType &d, [[maybe_unused]] const EViewType &e) {
-  static_assert(Kokkos::is_view<DViewType>::value,
-                "KokkosBatched::pttrf: DViewType is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<EViewType>::value,
-                "KokkosBatched::pttrf: EViewType is not a Kokkos::View.");
+KOKKOS_INLINE_FUNCTION static int checkPttrfInput([[maybe_unused]] const DViewType &d,
+                                                  [[maybe_unused]] const EViewType &e) {
+  static_assert(Kokkos::is_view<DViewType>::value, "KokkosBatched::pttrf: DViewType is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<EViewType>::value, "KokkosBatched::pttrf: EViewType is not a Kokkos::View.");
 
-  static_assert(DViewType::rank == 1,
-                "KokkosBatched::pttrf: DViewType must have rank 1.");
-  static_assert(EViewType::rank == 1,
-                "KokkosBatched::pttrf: EViewType must have rank 1.");
+  static_assert(DViewType::rank == 1, "KokkosBatched::pttrf: DViewType must have rank 1.");
+  static_assert(EViewType::rank == 1, "KokkosBatched::pttrf: EViewType must have rank 1.");
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   const int nd = d.extent(0);
@@ -55,8 +51,7 @@ KOKKOS_INLINE_FUNCTION static int checkPttrfInput(
 template <>
 struct SerialPttrf<Algo::Pttrf::Unblocked> {
   template <typename DViewType, typename EViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d,
-                                           const EViewType &e) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d, const EViewType &e) {
     // Quick return if possible
     if (d.extent(0) == 0) return 0;
     if (d.extent(0) == 1) return (d(0) < 0 ? 1 : 0);
@@ -64,8 +59,8 @@ struct SerialPttrf<Algo::Pttrf::Unblocked> {
     auto info = checkPttrfInput(d, e);
     if (info) return info;
 
-    return SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
-        d.extent(0), d.data(), d.stride(0), e.data(), e.stride(0));
+    return SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(d.extent(0), d.data(), d.stride(0), e.data(),
+                                                               e.stride(0));
   }
 };
 }  // namespace KokkosBatched

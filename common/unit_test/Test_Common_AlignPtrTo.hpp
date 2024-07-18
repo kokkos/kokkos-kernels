@@ -60,16 +60,14 @@ KOKKOS_INLINE_FUNCTION T *f1(InPtr p) {
 template <typename T, typename InPtr>
 KOKKOS_INLINE_FUNCTION T *f2(InPtr p) {
   std::uintptr_t ptrVal = reinterpret_cast<std::uintptr_t>(p);
-  return reinterpret_cast<T *>((ptrVal + alignof(T) - 1) / alignof(T) *
-                               alignof(T));
+  return reinterpret_cast<T *>((ptrVal + alignof(T) - 1) / alignof(T) * alignof(T));
 }
 
 // the way GCC does it (roughly)
 template <typename T, typename InPtr>
 KOKKOS_INLINE_FUNCTION T *f3(InPtr p) {
   std::uintptr_t ptrVal = reinterpret_cast<std::uintptr_t>(p);
-  return reinterpret_cast<T *>((ptrVal - uint64_t(1) + alignof(T)) &
-                               -alignof(T));
+  return reinterpret_cast<T *>((ptrVal - uint64_t(1) + alignof(T)) & -alignof(T));
 }
 
 // Function to be executed by each team
@@ -81,8 +79,7 @@ struct TeamFunction {
   template <typename Team>
   KOKKOS_INLINE_FUNCTION void operator()(const Team &team) const {
     // get an "aligned" pointer to scratch memory
-    char *shmem = (char *)(team.team_shmem().get_shmem(team.team_size() *
-                                                       sizeof(double)));
+    char *shmem = (char *)(team.team_shmem().get_shmem(team.team_size() * sizeof(double)));
     double *vals;
     if constexpr (0 == TEST_FN) {
       vals = f0<double>(shmem);
@@ -109,9 +106,7 @@ struct TeamFunction {
     results_(i) = vals[i];
   }
 
-  size_t team_shmem_size(int team_size) const {
-    return team_size * sizeof(double);
-  }
+  size_t team_shmem_size(int team_size) const { return team_size * sizeof(double); }
 
   Results results_;
 };
@@ -119,20 +114,18 @@ struct TeamFunction {
 // use atomic add to set result(i) = i
 template <int TEST_FN, typename Device>
 void test_alignPtrTo() {
-  using MemorySpace  = typename Device::memory_space;
-  using ExecSpace    = typename Device::execution_space;
-  using TestView     = Kokkos::View<double *, MemorySpace>;
-  using TestPolicy   = Kokkos::TeamPolicy<ExecSpace>;
-  const int teamSize = TestPolicy(1, Kokkos::AUTO)
-                           .team_size_max(TeamFunction<TEST_FN, TestView>(),
-                                          Kokkos::ParallelForTag{});
+  using MemorySpace = typename Device::memory_space;
+  using ExecSpace   = typename Device::execution_space;
+  using TestView    = Kokkos::View<double *, MemorySpace>;
+  using TestPolicy  = Kokkos::TeamPolicy<ExecSpace>;
+  const int teamSize =
+      TestPolicy(1, Kokkos::AUTO).team_size_max(TeamFunction<TEST_FN, TestView>(), Kokkos::ParallelForTag{});
 
   ExecSpace space;
 
   TestView results("TestView", teamSize);
   TestPolicy policy(space, 1, teamSize);
-  Kokkos::parallel_for("test alignment", policy,
-                       TeamFunction<TEST_FN, TestView>(results));
+  Kokkos::parallel_for("test alignment", policy, TeamFunction<TEST_FN, TestView>(results));
 
   int errs;
   Kokkos::parallel_reduce(
