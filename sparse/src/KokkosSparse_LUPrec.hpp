@@ -61,7 +61,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  public:
   //! Constructor:
   template <class CRSArg>
-  LUPrec(const CRSArg &L, const CRSArg &U, const size_type block_size=0)
+  LUPrec(const CRSArg &L, const CRSArg &U, const size_type block_size = 0)
       : _L(L),
         _U(U),
         _tmp("LUPrec::_tmp", L.numPointRows()),

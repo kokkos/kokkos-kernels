@@ -124,7 +124,7 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
         Experimental::SptrsvWrap<typename KernelHandle::SPTRSVHandleType>;
 
     // Call specific algorithm type
-    auto sptrsv_handle = handle->get_sptrsv_handle();
+    auto sptrsv_handle       = handle->get_sptrsv_handle();
     const auto block_enabled = sptrsv_handle->is_block_enabled();
     Kokkos::Profiling::pushRegion(sptrsv_handle->is_lower_tri()
                                       ? "KokkosSparse_sptrsv[lower]"
@@ -149,12 +149,11 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
 #endif
         {
           if (block_enabled) {
-            Sptrsv::template lower_tri_solve<true>(space, *sptrsv_handle, row_map, entries,
-                                                   values, b, x);
-          }
-          else {
-            Sptrsv::template lower_tri_solve<false>(space, *sptrsv_handle, row_map, entries,
-                                                    values, b, x);
+            Sptrsv::template lower_tri_solve<true>(
+                space, *sptrsv_handle, row_map, entries, values, b, x);
+          } else {
+            Sptrsv::template lower_tri_solve<false>(
+                space, *sptrsv_handle, row_map, entries, values, b, x);
           }
         }
       }
@@ -178,12 +177,11 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
 #endif
         {
           if (block_enabled) {
-            Sptrsv::template upper_tri_solve<true>(space, *sptrsv_handle, row_map, entries,
-                                                   values, b, x);
-          }
-          else {
-            Sptrsv::template upper_tri_solve<false>(space, *sptrsv_handle, row_map, entries,
-                                                    values, b, x);
+            Sptrsv::template upper_tri_solve<true>(
+                space, *sptrsv_handle, row_map, entries, values, b, x);
+          } else {
+            Sptrsv::template upper_tri_solve<false>(
+                space, *sptrsv_handle, row_map, entries, values, b, x);
           }
         }
       }
