@@ -25,16 +25,12 @@ namespace KokkosBatched {
 template <typename AlgoType>
 struct SerialPttrfInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int n,
-                                           ValueType *KOKKOS_RESTRICT d,
-                                           const int ds0,
-                                           ValueType *KOKKOS_RESTRICT e,
-                                           const int es0);
+  KOKKOS_INLINE_FUNCTION static int invoke(const int n, ValueType *KOKKOS_RESTRICT d, const int ds0,
+                                           ValueType *KOKKOS_RESTRICT e, const int es0);
 
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const int n, ValueType *KOKKOS_RESTRICT d, const int ds0,
-      Kokkos::complex<ValueType> *KOKKOS_RESTRICT e, const int es0);
+  KOKKOS_INLINE_FUNCTION static int invoke(const int n, ValueType *KOKKOS_RESTRICT d, const int ds0,
+                                           Kokkos::complex<ValueType> *KOKKOS_RESTRICT e, const int es0);
 };
 
 ///
@@ -44,8 +40,7 @@ struct SerialPttrfInternal {
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
-    const int n, ValueType *KOKKOS_RESTRICT d, const int ds0,
-    ValueType *KOKKOS_RESTRICT e, const int es0) {
+    const int n, ValueType *KOKKOS_RESTRICT d, const int ds0, ValueType *KOKKOS_RESTRICT e, const int es0) {
   int info = 0;
 
   auto update = [&](const int i) {
@@ -54,9 +49,7 @@ KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
     d[(i + 1) * ds0] -= e[i * es0] * ei_tmp;
   };
 
-  auto check_positive_definitiveness = [&](const int i) {
-    return (d[i] <= 0.0) ? (i + 1) : 0;
-  };
+  auto check_positive_definitiveness = [&](const int i) { return (d[i] <= 0.0) ? (i + 1) : 0; };
 
   // Compute the L*D*L' (or U'*D*U) factorization of A.
   const int i4 = (n - 1) % 4;
@@ -127,8 +120,8 @@ KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
-    const int n, ValueType *KOKKOS_RESTRICT d, const int ds0,
-    Kokkos::complex<ValueType> *KOKKOS_RESTRICT e, const int es0) {
+    const int n, ValueType *KOKKOS_RESTRICT d, const int ds0, Kokkos::complex<ValueType> *KOKKOS_RESTRICT e,
+    const int es0) {
   int info = 0;
 
   auto update = [&](const int i) {
@@ -140,9 +133,7 @@ KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
     d[(i + 1) * ds0] = d[(i + 1) * ds0] - f_tmp * eir_tmp - g_tmp * eii_tmp;
   };
 
-  auto check_positive_definitiveness = [&](const int i) {
-    return (d[i] <= 0.0) ? (i + 1) : 0;
-  };
+  auto check_positive_definitiveness = [&](const int i) { return (d[i] <= 0.0) ? (i + 1) : 0; };
 
   // Compute the L*D*L' (or U'*D*U) factorization of A.
   const int i4 = (n - 1) % 4;

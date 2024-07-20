@@ -34,33 +34,24 @@ struct TestIOUtils {
   using EntriesType = Kokkos::View<lno_t*, host_device>;
   using ValuesType  = Kokkos::View<scalar_t*, host_device>;
 
-  using sp_matrix_type =
-      KokkosSparse::CrsMatrix<scalar_t, lno_t, host_device, void, size_type>;
+  using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, host_device, void, size_type>;
 
   static std::vector<std::vector<scalar_t>> get_sym_fixture() {
     std::vector<std::vector<scalar_t>> A = {
-        {11.00, 12.00, 13.00, 14.00, 15.00, 16.00},
-        {12.00, 2.00, 0.00, 0.00, 0.00, 0.00},
-        {13.00, 0.00, 0.00, 0.00, 0.00, 0.00},
-        {14.00, 0.00, 0.00, 4.00, 0.00, 0.00},
-        {15.00, 0.00, 0.00, 0.00, 5.00, 0.00},
-        {16.00, 0.00, 0.00, 0.00, 0.00, 6.00}};
+        {11.00, 12.00, 13.00, 14.00, 15.00, 16.00}, {12.00, 2.00, 0.00, 0.00, 0.00, 0.00},
+        {13.00, 0.00, 0.00, 0.00, 0.00, 0.00},      {14.00, 0.00, 0.00, 4.00, 0.00, 0.00},
+        {15.00, 0.00, 0.00, 0.00, 5.00, 0.00},      {16.00, 0.00, 0.00, 0.00, 0.00, 6.00}};
     return A;
   }
 
   static std::vector<std::vector<scalar_t>> get_asym_fixture() {
-    std::vector<std::vector<scalar_t>> A = {
-        {1.00, 0.00, 0.00, 9.00, 0.00, 0.00},
-        {0.00, 2.00, 0.00, 0.00, 0.00, 0.00},
-        {0.00, 0.00, 0.00, 0.00, 0.00, 8.00},
-        {0.00, 0.00, 0.00, 4.00, 0.00, 0.00},
-        {0.00, 7.00, 0.00, 0.00, 5.00, 0.00},
-        {0.00, 0.00, 0.00, 0.00, 0.00, 6.00}};
+    std::vector<std::vector<scalar_t>> A = {{1.00, 0.00, 0.00, 9.00, 0.00, 0.00}, {0.00, 2.00, 0.00, 0.00, 0.00, 0.00},
+                                            {0.00, 0.00, 0.00, 0.00, 0.00, 8.00}, {0.00, 0.00, 0.00, 4.00, 0.00, 0.00},
+                                            {0.00, 7.00, 0.00, 0.00, 5.00, 0.00}, {0.00, 0.00, 0.00, 0.00, 0.00, 6.00}};
     return A;
   }
 
-  static void compare_matrices(const sp_matrix_type& A1,
-                               const sp_matrix_type& A2) {
+  static void compare_matrices(const sp_matrix_type& A1, const sp_matrix_type& A2) {
     // Compare matrices
     auto row_map1 = A1.graph.row_map;
     auto entries1 = A1.graph.entries;
@@ -82,9 +73,8 @@ struct TestIOUtils {
   }
 
   template <typename RowMapView, typename EntriesView, typename ValuesView>
-  static void write_as_hb(const RowMapView& row_map, const EntriesView& entries,
-                          const ValuesView& values, const std::string& filename,
-                          const char mtx_type) {
+  static void write_as_hb(const RowMapView& row_map, const EntriesView& entries, const ValuesView& values,
+                          const std::string& filename, const char mtx_type) {
     std::ofstream out(filename);
     size_type nrows = row_map.size() - 1;
     size_type nnz   = entries.size();
@@ -93,8 +83,7 @@ struct TestIOUtils {
            "BEAM.     NOS1    \n";  // Title is inaccurate, but doesn't matter
     out << "             3             1             1             1           "
            "  0          \n";
-    out << "R" << mtx_type << "A                        " << nrows
-        << "             " << nrows << "             " << nnz
+    out << "R" << mtx_type << "A                        " << nrows << "             " << nrows << "             " << nnz
         << "             0          \n";
     out << "(16I5)          (16I5)          (5E16.8)                           "
            "             \n";
@@ -115,25 +104,21 @@ struct TestIOUtils {
   }
 
   template <typename RowMapView, typename EntriesView, typename ValuesView>
-  static void write_as_mtx(const RowMapView& row_map,
-                           const EntriesView& entries, const ValuesView& values,
+  static void write_as_mtx(const RowMapView& row_map, const EntriesView& entries, const ValuesView& values,
                            const std::string& filename, const char mtx_type) {
     std::ofstream out(filename);
     size_type nrows = row_map.size() - 1;
 
-    std::map<char, std::string> type_name_map = {{'U', "general"},
-                                                 {'S', "symmetric"},
-                                                 {'H', "hermitian"},
-                                                 {'Z', "skew-symmetric"}};
-    std::string type_name                     = type_name_map[mtx_type];
+    std::map<char, std::string> type_name_map = {
+        {'U', "general"}, {'S', "symmetric"}, {'H', "hermitian"}, {'Z', "skew-symmetric"}};
+    std::string type_name = type_name_map[mtx_type];
 
     out << "%%MatrixMarket matrix coordinate real " << type_name << "\n";
     out << nrows << " " << nrows << " " << entries.size() << "\n";
     for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
       const size_type row_nnz_begin = row_map(row_idx);
       const size_type row_nnz_end   = row_map(row_idx + 1);
-      for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end;
-           ++row_nnz) {
+      for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
         const auto col_idx   = entries(row_nnz);
         const scalar_t value = values(row_nnz);
         out << row_idx + 1 << " " << col_idx + 1 << " " << value << "\n";
@@ -143,24 +128,22 @@ struct TestIOUtils {
     out.close();
   }
 
-  static void full_test(const std::vector<std::vector<scalar_t>>& fixture,
-                        const std::string& filename_root, const char mtx_type) {
+  static void full_test(const std::vector<std::vector<scalar_t>>& fixture, const std::string& filename_root,
+                        const char mtx_type) {
     RowMapType row_map;
     EntriesType entries;
     ValuesType values;
     compress_matrix(row_map, entries, values, fixture);
-    sp_matrix_type A("A", row_map.size() - 1, row_map.size() - 1,
-                     values.extent(0), values, row_map, entries);
+    sp_matrix_type A("A", row_map.size() - 1, row_map.size() - 1, values.extent(0), values, row_map, entries);
     const bool is_symmetric = mtx_type != 'U';
     std::string hb_file     = filename_root + ".hb";
     std::string mtx_file    = filename_root + ".mtx";
 
     if (is_symmetric) {
-      sp_matrix_type L = KokkosSparse::Impl::kk_get_lower_triangle(
-          A, NULL, false, 4, true, true);
-      auto lrow_map = L.graph.row_map;
-      auto lentries = L.graph.entries;
-      auto lvalues  = L.values;
+      sp_matrix_type L = KokkosSparse::Impl::kk_get_lower_triangle(A, NULL, false, 4, true, true);
+      auto lrow_map    = L.graph.row_map;
+      auto lentries    = L.graph.entries;
+      auto lvalues     = L.values;
 
       write_as_hb(lrow_map, lentries, lvalues, hb_file, mtx_type);
       write_as_mtx(lrow_map, lentries, lvalues, mtx_file, mtx_type);
@@ -169,10 +152,8 @@ struct TestIOUtils {
       write_as_mtx(row_map, entries, values, mtx_file, mtx_type);
     }
 
-    auto Ahb = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(
-        hb_file.c_str());
-    auto Amtx = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(
-        mtx_file.c_str());
+    auto Ahb  = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(hb_file.c_str());
+    auto Amtx = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(mtx_file.c_str());
     if (mtx_type == 'Z') {
       compare_matrices(Ahb, Amtx);
     } else {
