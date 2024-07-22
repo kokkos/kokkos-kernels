@@ -61,9 +61,6 @@ struct SptrsvTest {
 
   using range_policy_t = Kokkos::RangePolicy<execution_space>;
 
-  static inline const scalar_t ZERO = scalar_t(0);
-  static inline const scalar_t ONE  = scalar_t(1);
-
   static std::vector<std::vector<scalar_t>> get_5x5_ut_ones_fixture() {
     std::vector<std::vector<scalar_t>> A = {{1.00, 0.00, 1.00, 0.00, 0.00},
                                             {0.00, 1.00, 0.00, 0.00, 1.00},
@@ -133,7 +130,7 @@ struct SptrsvTest {
     // known_lhs
     ValuesType known_lhs("known_lhs", nrows);
     // Create known solution lhs set to all 1's
-    Kokkos::deep_copy(known_lhs, ONE);
+    Kokkos::deep_copy(known_lhs, scalar_t(1));
 
     // Solution to find
     ValuesType lhs("lhs", nrows);
@@ -142,7 +139,7 @@ struct SptrsvTest {
     ValuesType rhs("rhs", nrows);
 
     Crs triMtx("triMtx", nrows, nrows, nnz, values, row_map, entries);
-    KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs);
+    KokkosSparse::spmv("N", scalar_t(1), triMtx, known_lhs, scalar_t(0), rhs);
 
     return std::make_tuple(triMtx, lhs, rhs);
   }
@@ -185,7 +182,7 @@ struct SptrsvTest {
       Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)), ReductionCheck(lhs), sum);
       EXPECT_EQ(sum, lhs.extent(0));
 
-      Kokkos::deep_copy(lhs, ZERO);
+      Kokkos::deep_copy(lhs, scalar_t(0));
 
       kh.destroy_sptrsv_handle();
     }
@@ -259,8 +256,8 @@ struct SptrsvTest {
           Kokkos::deep_copy(Uvalues, hUvalues);
 
           Crs mtxU("mtxU", nrows, nrows, nnz_sp, Uvalues, Urowptr, Ucolind);
-          Kokkos::deep_copy(B, ONE);
-          KokkosSparse::spmv("N", ONE, mtxU, B, ZERO, X);
+          Kokkos::deep_copy(B, scalar_t(1));
+          KokkosSparse::spmv("N", scalar_t(1), mtxU, B, scalar_t(0), X);
         }
       }
 
@@ -304,23 +301,23 @@ struct SptrsvTest {
         // values
         // first column (first supernode)
         hUvalues(0) = FIVE;
-        hUvalues(1) = ZERO;
+        hUvalues(1) = scalar_t(0);
         // second column (first supernode)
-        hUvalues(2) = ONE;
+        hUvalues(2) = scalar_t(1);
         hUvalues(3) = FIVE;
         // third column (second supernode)
         hUvalues(4) = FIVE;
-        hUvalues(5) = ONE;
-        hUvalues(6) = ZERO;
+        hUvalues(5) = scalar_t(1);
+        hUvalues(6) = scalar_t(0);
         // fourth column (third supernode)
         hUvalues(7) = FIVE;
-        hUvalues(8) = ONE;
+        hUvalues(8) = scalar_t(1);
         // fifth column (fourth supernode)
         hUvalues(9)  = FIVE;
-        hUvalues(10) = ZERO;
-        hUvalues(11) = ONE;
-        hUvalues(12) = ONE;
-        hUvalues(13) = ONE;
+        hUvalues(10) = scalar_t(0);
+        hUvalues(11) = scalar_t(1);
+        hUvalues(12) = scalar_t(1);
+        hUvalues(13) = scalar_t(1);
 
         // store Ut in crsmat
         host_graph_t static_graph(hUrowind, hUcolptr);
@@ -372,7 +369,7 @@ struct SptrsvTest {
           Kokkos::deep_copy(Lvalues, hLvalues);
 
           Crs mtxL("mtxL", nrows, nrows, nnz_sp, Lvalues, Lcolptr, Lrowind);
-          KokkosSparse::spmv("T", ONE, mtxL, X, ZERO, B);
+          KokkosSparse::spmv("T", scalar_t(1), mtxL, X, scalar_t(0), B);
         }
       }
 
@@ -403,7 +400,7 @@ struct SptrsvTest {
         // > solve
         ValuesType b("b", nrows);
         Kokkos::deep_copy(b, B);
-        Kokkos::deep_copy(X, ZERO);
+        Kokkos::deep_copy(X, scalar_t(0));
         sptrsv_solve(&khL, &khU, X, b);
         Kokkos::fence();
 
@@ -459,7 +456,7 @@ struct SptrsvTest {
         // > solve
         ValuesType b("b", nrows);
         Kokkos::deep_copy(b, B);
-        Kokkos::deep_copy(X, ZERO);
+        Kokkos::deep_copy(X, scalar_t(0));
         sptrsv_solve(&khLd, &khUd, X, b);
         Kokkos::fence();
 
@@ -525,7 +522,7 @@ struct SptrsvTest {
       // known_lhs
       ValuesType known_lhs("known_lhs", nrows);
       // Create known solution lhs set to all 1's
-      Kokkos::deep_copy(known_lhs, ONE);
+      Kokkos::deep_copy(known_lhs, scalar_t(1));
 
       // Solution to find
       lhs_v[i] = ValuesType("lhs", nrows);
@@ -533,7 +530,7 @@ struct SptrsvTest {
       // A*known_lhs generates rhs: rhs is dense, use spmv
       rhs_v[i] = ValuesType("rhs", nrows);
 
-      KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs_v[i]);
+      KokkosSparse::spmv("N", scalar_t(1), triMtx, known_lhs, scalar_t(0), rhs_v[i]);
       Kokkos::fence();
 
       // Create handle
