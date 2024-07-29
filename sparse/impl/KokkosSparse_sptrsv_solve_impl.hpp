@@ -147,28 +147,6 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     void lset(const size_type row, const scalar_t value) const { lhs(row) = value; }
 
-    // add. y += x
-    KOKKOS_INLINE_FUNCTION
-    static void add(const member_type &team, const scalar_t &x, scalar_t &y) {
-      Kokkos::single(Kokkos::PerTeam(team), [&]() { y += x; });
-      team.team_barrier();
-    }
-
-    // serial add. y += x
-    KOKKOS_INLINE_FUNCTION
-    static void add(const scalar_t &x, scalar_t &y) { y += x; }
-
-    // divide. b /= A
-    KOKKOS_INLINE_FUNCTION
-    static void divide(const member_type &team, scalar_t &b, const scalar_t &A, scalar_t *) {
-      Kokkos::single(Kokkos::PerTeam(team), [&]() { b /= A; });
-      team.team_barrier();
-    }
-
-    // serial divide. b /= A
-    KOKKOS_INLINE_FUNCTION
-    static void divide(scalar_t &b, const scalar_t &A, scalar_t *) { b /= A; }
-
     // multiply_subtract. C -= A * B
     KOKKOS_INLINE_FUNCTION
     static void multiply_subtract(const scalar_t &A, const scalar_t &B, scalar_t &C) { C -= A * B; }
@@ -203,13 +181,6 @@ struct SptrsvWrap {
     static void add_and_divide(scalar_t &lhs_val, const scalar_t &rhs_val, const scalar_t &diag_val) {
       lhs_val = (lhs_val + rhs_val) / diag_val;
     }
-
-    // print
-    KOKKOS_INLINE_FUNCTION
-    static void print(const scalar_t &item) { std::cout << item << std::endl; }
-
-    KOKKOS_INLINE_FUNCTION
-    static void print(ArrayType rhs, const int) { std::cout << rhs << std::endl; }
   };
 
   // Partial specialization for block support
@@ -370,15 +341,18 @@ struct SptrsvWrap {
       // Need a temp block to do LU of A
       Block LU(shared_buff.data(), block_size, block_size);
       assign(team, LU, A);
+      team.team_barrier();
       KokkosBatched::TeamLU<member_type, KokkosBatched::Algo::LU::Blocked>::invoke(team, LU);
 
       // A = LU
       // A^-1 = U^-1 * L^-1
       // b = (b * U^-1) * L^-1, so do U trsv first
+      team.team_barrier();
       KokkosBatched::TeamTrsv<member_type, KokkosBatched::Uplo::Upper, KokkosBatched::Trans::NoTranspose,
                               KokkosBatched::Diag::NonUnit, KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU,
                                                                                                         b);
 
+      team.team_barrier();
       KokkosBatched::TeamTrsv<member_type, KokkosBatched::Uplo::Lower, KokkosBatched::Trans::NoTranspose,
                               KokkosBatched::Diag::Unit, KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU, b);
     }
@@ -450,6 +424,7 @@ struct SptrsvWrap {
     static void add_and_divide(const member_type &team, const Vector &lhs_val, const CVector &rhs_val,
                                const CBlock &diag_val) {
       add(team, rhs_val, lhs_val);
+      team.team_barrier();
       divide(team, lhs_val, diag_val);
     }
 
@@ -457,47 +432,6 @@ struct SptrsvWrap {
     static void add_and_divide(const Vector &lhs_val, const CVector &rhs_val, const CBlock &diag_val) {
       add(rhs_val, lhs_val);
       divide(lhs_val, diag_val);
-    }
-
-    // print
-    KOKKOS_INLINE_FUNCTION
-    static void print(const CBlock &item) {
-      std::cout << "Block: ";
-      for (size_type i = 0; i < item.extent(0); ++i) {
-        std::cout << "      ";
-        for (size_type j = 0; j < item.extent(1); ++j) {
-          std::cout << item(i, j) << " ";
-        }
-        std::cout << std::endl;
-      }
-    }
-
-    // print
-    KOKKOS_INLINE_FUNCTION
-    static void print(const CVector &item) {
-      std::cout << "Vector: ";
-      for (size_type i = 0; i < item.extent(0); ++i) {
-        std::cout << item(i) << " ";
-      }
-      std::cout << std::endl;
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    static void print(const ArrayType &rhs_, const int block_size) {
-      std::cout << "Array: ";
-      for (int i = 0; i < block_size; ++i) {
-        std::cout << rhs_.m_data[i] << " ";
-      }
-      std::cout << std::endl;
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    static void print(const SumArray &rhs_, const int block_size) {
-      std::cout << "SumArray: ";
-      for (int i = 0; i < block_size; ++i) {
-        std::cout << rhs_.reference().m_data[i] << " ";
-      }
-      std::cout << std::endl;
     }
   };
 
@@ -586,6 +520,7 @@ struct SptrsvWrap {
           Kokkos::parallel_reduce(Kokkos::TeamThreadRange(*team, itr_b, itr_e), rf, reducer_t(reduce));
           team->team_barrier();
           Base::copy(*team, lhs_val, reduce);
+          team->team_barrier();
         } else {
           Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(*team, itr_b, itr_e), rf, reducer_t(reduce));
           Base::copy(lhs_val, reduce);
