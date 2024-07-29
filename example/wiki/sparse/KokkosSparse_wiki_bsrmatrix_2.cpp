@@ -43,8 +43,7 @@ struct bsr_fill {
       block_tmp(1, 0) = 0.0;
       block_tmp(1, 1) = 1.0;
     } else if (rowIdx == bsr_mat.numRows() - 1) {  // Right boundary condition
-      auto block_tmp =
-          bsr_mat.unmanaged_block(bsr_mat.graph.row_map(rowIdx) + 1);
+      auto block_tmp  = bsr_mat.unmanaged_block(bsr_mat.graph.row_map(rowIdx) + 1);
       block_tmp(0, 0) = 1.0;
       block_tmp(1, 1) = 1.0;
     } else {
@@ -54,13 +53,13 @@ struct bsr_fill {
       block_tmp(1, 0) = 0.0;
       block_tmp(1, 1) = -1.0;
 
-      block_tmp = bsr_mat.unmanaged_block(bsr_mat.graph.row_map(rowIdx) + 1);
+      block_tmp       = bsr_mat.unmanaged_block(bsr_mat.graph.row_map(rowIdx) + 1);
       block_tmp(0, 0) = 2.0;
       block_tmp(0, 1) = 0.0;
       block_tmp(1, 0) = 0.0;
       block_tmp(1, 1) = 2.0;
 
-      block_tmp = bsr_mat.unmanaged_block(bsr_mat.graph.row_map(rowIdx) + 2);
+      block_tmp       = bsr_mat.unmanaged_block(bsr_mat.graph.row_map(rowIdx) + 2);
       block_tmp(0, 0) = -1.0;
       block_tmp(0, 1) = 1.0 / 2.0;
       block_tmp(1, 0) = 0.0;
@@ -89,8 +88,7 @@ struct diagonal_extractor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& rowIdx) const {
-    for (Offset entryIdx = row_map(rowIdx); entryIdx < row_map(rowIdx + 1);
-         ++entryIdx) {
+    for (Offset entryIdx = row_map(rowIdx); entryIdx < row_map(rowIdx + 1); ++entryIdx) {
       if (entries(entryIdx) == rowIdx) {
         bsr_block_type bsr_diag_block = bsr_mat.unmanaged_block(entryIdx);
         for (int i = 0; i < bsr_mat.blockDim(); ++i) {
@@ -104,15 +102,12 @@ struct diagonal_extractor {
 };
 
 int main(int argc, char* argv[]) {
-  using device_type = typename Kokkos::Device<
-      Kokkos::DefaultExecutionSpace,
-      typename Kokkos::DefaultExecutionSpace::memory_space>;
-  using bsrmatrix_type =
-      typename KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal,
-                                                     device_type, void, Offset>;
-  using graph_type   = typename bsrmatrix_type::staticcrsgraph_type;
-  using row_map_type = typename graph_type::row_map_type;
-  using entries_type = typename graph_type::entries_type;
+  using device_type =
+      typename Kokkos::Device<Kokkos::DefaultExecutionSpace, typename Kokkos::DefaultExecutionSpace::memory_space>;
+  using bsrmatrix_type = typename KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, device_type, void, Offset>;
+  using graph_type     = typename bsrmatrix_type::staticcrsgraph_type;
+  using row_map_type   = typename graph_type::row_map_type;
+  using entries_type   = typename graph_type::entries_type;
 
   Kokkos::initialize(argc, argv);
   {
@@ -143,16 +138,12 @@ int main(int argc, char* argv[]) {
     bsrmatrix_type bsr_mat;
 
     {
-      typename row_map_type::non_const_type row_map(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "row pointers"),
-          numRows + 1);
-      typename entries_type::non_const_type entries(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "column indices"),
-          numNNZ);
-      typename row_map_type::HostMirror row_map_h =
-          Kokkos::create_mirror_view(row_map);
-      typename entries_type::HostMirror entries_h =
-          Kokkos::create_mirror_view(entries);
+      typename row_map_type::non_const_type row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row pointers"),
+                                                    numRows + 1);
+      typename entries_type::non_const_type entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "column indices"),
+                                                    numNNZ);
+      typename row_map_type::HostMirror row_map_h = Kokkos::create_mirror_view(row_map);
+      typename entries_type::HostMirror entries_h = Kokkos::create_mirror_view(entries);
 
       // First Step: build the CrsGraph
       {
@@ -181,8 +172,8 @@ int main(int argc, char* argv[]) {
 
         if (row_map_h(numRows) != numNNZ) {
           std::ostringstream error_msg;
-          error_msg << "error: row_map(numRows) != numNNZ, row_map_h(numRows)="
-                    << row_map_h(numRows) << ", numNNZ=" << numNNZ;
+          error_msg << "error: row_map(numRows) != numNNZ, row_map_h(numRows)=" << row_map_h(numRows)
+                    << ", numNNZ=" << numNNZ;
           throw std::runtime_error(error_msg.str());
         }
         Kokkos::deep_copy(row_map, row_map_h);
@@ -204,16 +195,13 @@ int main(int argc, char* argv[]) {
           std::cout << " ";
         }
         std::cout << "*";
-        for (Offset entryIdx = row_map_h(rowIdx);
-             entryIdx < row_map_h(rowIdx + 1) - 1; ++entryIdx) {
-          for (int colIdx = entries_h(entryIdx) + 1;
-               colIdx < entries_h(entryIdx + 1); ++colIdx) {
+        for (Offset entryIdx = row_map_h(rowIdx); entryIdx < row_map_h(rowIdx + 1) - 1; ++entryIdx) {
+          for (int colIdx = entries_h(entryIdx) + 1; colIdx < entries_h(entryIdx + 1); ++colIdx) {
             std::cout << " ";
           }
           std::cout << "*";
         }
-        for (int colIdx = entries_h(row_map_h(rowIdx + 1) - 1) + 1;
-             colIdx < numRows; ++colIdx) {
+        for (int colIdx = entries_h(row_map_h(rowIdx + 1) - 1) + 1; colIdx < numRows; ++colIdx) {
           std::cout << " ";
         }
         std::cout << "]" << std::endl;
@@ -221,24 +209,17 @@ int main(int argc, char* argv[]) {
     }
 
     // Extract diagonal block and store them in a rank-3 view
-    using diag_blocks_type =
-        Kokkos::View<Scalar***, typename bsrmatrix_type::block_layout_type,
-                     device_type>;
-    diag_blocks_type diag_blocks("diagonal blocks", numRows, blockSize,
-                                 blockSize);
+    using diag_blocks_type = Kokkos::View<Scalar***, typename bsrmatrix_type::block_layout_type, device_type>;
+    diag_blocks_type diag_blocks("diagonal blocks", numRows, blockSize, blockSize);
     diagonal_extractor myFunc(bsr_mat, diag_blocks);
     Kokkos::parallel_for(Kokkos::RangePolicy<int>(0, numRows), myFunc);
 
-    auto diag_blocks_h =
-        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, diag_blocks);
+    auto diag_blocks_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, diag_blocks);
 
     std::cout << "\nBsrMatrix diagonal blocks: " << std::endl;
     for (int blockId = 0; blockId < diag_blocks_h.extent_int(0); ++blockId) {
-      std::cout << "  [" << diag_blocks_h(blockId, 0, 0) << ", "
-                << diag_blocks_h(blockId, 0, 1) << "]" << std::endl;
-      std::cout << "  [" << diag_blocks_h(blockId, 1, 0) << ", "
-                << diag_blocks_h(blockId, 1, 1) << "]\n"
-                << std::endl;
+      std::cout << "  [" << diag_blocks_h(blockId, 0, 0) << ", " << diag_blocks_h(blockId, 0, 1) << "]" << std::endl;
+      std::cout << "  [" << diag_blocks_h(blockId, 1, 0) << ", " << diag_blocks_h(blockId, 1, 1) << "]\n" << std::endl;
     }
   }
   Kokkos::finalize();

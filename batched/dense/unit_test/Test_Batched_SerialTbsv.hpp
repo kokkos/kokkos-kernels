@@ -34,8 +34,8 @@ struct ParamTag {
   using diag  = D;
 };
 
-template <typename DeviceType, typename AViewType, typename BViewType,
-          typename ScalarType, typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename AViewType, typename BViewType, typename ScalarType, typename ParamTagType,
+          typename AlgoTagType>
 struct Functor_BatchedSerialTrsv {
   using execution_space = typename DeviceType::execution_space;
   AViewType _a;
@@ -44,8 +44,7 @@ struct Functor_BatchedSerialTrsv {
   ScalarType _alpha;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialTrsv(const ScalarType alpha, const AViewType &a,
-                            const BViewType &b)
+  Functor_BatchedSerialTrsv(const ScalarType alpha, const AViewType &a, const BViewType &b)
       : _a(a), _b(b), _alpha(alpha) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -53,9 +52,8 @@ struct Functor_BatchedSerialTrsv {
     auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL());
 
-    KokkosBatched::SerialTrsv<
-        typename ParamTagType::uplo, typename ParamTagType::trans,
-        typename ParamTagType::diag, AlgoTagType>::invoke(_alpha, aa, bb);
+    KokkosBatched::SerialTrsv<typename ParamTagType::uplo, typename ParamTagType::trans, typename ParamTagType::diag,
+                              AlgoTagType>::invoke(_alpha, aa, bb);
   }
 
   inline void run() {
@@ -68,8 +66,7 @@ struct Functor_BatchedSerialTrsv {
   }
 };
 
-template <typename DeviceType, typename AViewType, typename BViewType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename AViewType, typename BViewType, typename ParamTagType, typename AlgoTagType>
 struct Functor_BatchedSerialTbsv {
   using execution_space = typename DeviceType::execution_space;
   AViewType _a;
@@ -77,17 +74,15 @@ struct Functor_BatchedSerialTbsv {
   int _k;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialTbsv(const AViewType &a, const BViewType &b, const int k)
-      : _a(a), _b(b), _k(k) {}
+  Functor_BatchedSerialTbsv(const AViewType &a, const BViewType &b, const int k) : _a(a), _b(b), _k(k) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ParamTagType &, const int k) const {
     auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL());
 
-    KokkosBatched::SerialTbsv<
-        typename ParamTagType::uplo, typename ParamTagType::trans,
-        typename ParamTagType::diag, AlgoTagType>::invoke(aa, bb, _k);
+    KokkosBatched::SerialTbsv<typename ParamTagType::uplo, typename ParamTagType::trans, typename ParamTagType::diag,
+                              AlgoTagType>::invoke(aa, bb, _k);
   }
 
   inline void run() {
@@ -102,8 +97,7 @@ struct Functor_BatchedSerialTbsv {
   }
 };
 
-template <typename DeviceType, typename ScalarType, typename LayoutType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 /// \brief Implementation details of batched tbsv test
 ///
 /// \param N [in] Batch size of RHS (banded matrix can also be batched matrix)
@@ -111,8 +105,8 @@ template <typename DeviceType, typename ScalarType, typename LayoutType,
 /// \param BlkSize [in] Block size of matrix A
 void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   using execution_space = typename DeviceType::execution_space;
-  using View2DType = Kokkos::View<ScalarType **, LayoutType, execution_space>;
-  using View3DType = Kokkos::View<ScalarType ***, LayoutType, execution_space>;
+  using View2DType      = Kokkos::View<ScalarType **, LayoutType, execution_space>;
+  using View3DType      = Kokkos::View<ScalarType ***, LayoutType, execution_space>;
 
   // Reference is created by trsv from triangular matrix
   View3DType A("A", N, BlkSize, BlkSize), Ref("Ref", N, BlkSize, BlkSize);
@@ -128,22 +122,16 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   Kokkos::deep_copy(x1, x0);
 
   // Create triangluar or banded matrix
-  create_banded_triangular_matrix<View3DType, View3DType,
-                                  typename ParamTagType::uplo>(Ref, A, k,
-                                                               false);
-  create_banded_triangular_matrix<View3DType, View3DType,
-                                  typename ParamTagType::uplo>(Ref, Ab, k,
-                                                               true);
+  create_banded_triangular_matrix<View3DType, View3DType, typename ParamTagType::uplo>(Ref, A, k, false);
+  create_banded_triangular_matrix<View3DType, View3DType, typename ParamTagType::uplo>(Ref, Ab, k, true);
 
   // Reference trsv
-  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType,
-                            ParamTagType, Algo::Trsv::Unblocked>(1.0, A, x0)
+  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(1.0, A,
+                                                                                                                 x0)
       .run();
 
   // tbsv
-  Functor_BatchedSerialTbsv<DeviceType, View3DType, View2DType, ParamTagType,
-                            AlgoTagType>(Ab, x1, k)
-      .run();
+  Functor_BatchedSerialTbsv<DeviceType, View3DType, View2DType, ParamTagType, AlgoTagType>(Ab, x1, k).run();
 
   Kokkos::fence();
 
@@ -162,17 +150,15 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   }
 }
 
-template <typename DeviceType, typename ScalarType, typename LayoutType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 /// \brief Implementation details of batched tbsv test
 ///
 /// \param N [in] Batch size of RHS (banded matrix can also be batched matrix)
 void impl_test_batched_tbsv_analytical(const std::size_t N) {
-  using execution_space = typename DeviceType::execution_space;
-  using View2DType = Kokkos::View<ScalarType **, LayoutType, execution_space>;
-  using StridedView2DType =
-      Kokkos::View<ScalarType **, Kokkos::LayoutStride, execution_space>;
-  using View3DType = Kokkos::View<ScalarType ***, LayoutType, execution_space>;
+  using execution_space   = typename DeviceType::execution_space;
+  using View2DType        = Kokkos::View<ScalarType **, LayoutType, execution_space>;
+  using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, execution_space>;
+  using View3DType        = Kokkos::View<ScalarType ***, LayoutType, execution_space>;
 
   // Reference is created by trsv from triangular matrix
   constexpr std::size_t BlkSize = 3, k = 2, incx = 2;
@@ -187,8 +173,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
 
   Kokkos::RangePolicy<execution_space> policy(0, N);
   Kokkos::parallel_for(
-      "KokkosBatched::Test::SerialTbsv::Initialize", policy,
-      KOKKOS_LAMBDA(const std::size_t ib) {
+      "KokkosBatched::Test::SerialTbsv::Initialize", policy, KOKKOS_LAMBDA(const std::size_t ib) {
         for (std::size_t i = 0; i < BlkSize; i++) {
           for (std::size_t j = 0; j < BlkSize; j++) {
             ref(ib, i, j) = i + 1;
@@ -199,10 +184,8 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
           x1(ib, j) = 1;
         }
 
-        if (std::is_same_v<typename ParamTagType::uplo,
-                           KokkosBatched::Uplo::Upper>) {
-          if (std::is_same_v<typename ParamTagType::trans,
-                             Trans::NoTranspose>) {
+        if (std::is_same_v<typename ParamTagType::uplo, KokkosBatched::Uplo::Upper>) {
+          if (std::is_same_v<typename ParamTagType::trans, Trans::NoTranspose>) {
             if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
               x_ref(ib, 0) = 1.0 / 2.0;
               x_ref(ib, 1) = 1.0 / 6.0;
@@ -224,8 +207,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
             }
           }
         } else {
-          if (std::is_same_v<typename ParamTagType::trans,
-                             Trans::NoTranspose>) {
+          if (std::is_same_v<typename ParamTagType::trans, Trans::NoTranspose>) {
             if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
               x_ref(ib, 0) = 1.0;
               x_ref(ib, 1) = -1.0 / 2.0;
@@ -252,22 +234,14 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
   Kokkos::fence();
 
   // Create triangluar or banded matrix
-  create_banded_triangular_matrix<View3DType, View3DType,
-                                  typename ParamTagType::uplo>(ref, A, k,
-                                                               false);
-  create_banded_triangular_matrix<View3DType, View3DType,
-                                  typename ParamTagType::uplo>(ref, Ab, k,
-                                                               true);
+  create_banded_triangular_matrix<View3DType, View3DType, typename ParamTagType::uplo>(ref, A, k, false);
+  create_banded_triangular_matrix<View3DType, View3DType, typename ParamTagType::uplo>(ref, Ab, k, true);
 
   // tbsv
-  Functor_BatchedSerialTbsv<DeviceType, View3DType, View2DType, ParamTagType,
-                            AlgoTagType>(Ab, x0, k)
-      .run();
+  Functor_BatchedSerialTbsv<DeviceType, View3DType, View2DType, ParamTagType, AlgoTagType>(Ab, x0, k).run();
 
   // tbsv with incx == 2
-  Functor_BatchedSerialTbsv<DeviceType, View3DType, StridedView2DType,
-                            ParamTagType, AlgoTagType>(Ab, x1, k)
-      .run();
+  Functor_BatchedSerialTbsv<DeviceType, View3DType, StridedView2DType, ParamTagType, AlgoTagType>(Ab, x1, k).run();
 
   Kokkos::fence();
 
@@ -280,8 +254,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
 
   // Pack x1 into x0 for contiguous storage
   Kokkos::parallel_for(
-      "KokkosBatched::Test::SerialTbsv::Copy", policy,
-      KOKKOS_LAMBDA(const std::size_t ib) {
+      "KokkosBatched::Test::SerialTbsv::Copy", policy, KOKKOS_LAMBDA(const std::size_t ib) {
         for (std::size_t j = 0; j < BlkSize; j++) {
           x0(ib, j) = x1(ib, j);
         }
@@ -295,8 +268,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
   using mag_type = typename ats::mag_type;
   mag_type eps   = 1.0e3 * ats::epsilon();
 
-  auto h_x_ref =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_ref);
+  auto h_x_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_ref);
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t j = 0; j < BlkSize; j++) {
       // Check x0 = x_ref
@@ -311,36 +283,27 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
 }  // namespace Tbsv
 }  // namespace Test
 
-template <typename DeviceType, typename ScalarType, typename ParamTagType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 int test_batched_tbsv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     using LayoutType = Kokkos::LayoutLeft;
-    Test::Tbsv::impl_test_batched_tbsv_analytical<
-        DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0);
-    Test::Tbsv::impl_test_batched_tbsv_analytical<
-        DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1);
-    Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType,
-                                       ParamTagType, AlgoTagType>(0, 1, 10);
+    Test::Tbsv::impl_test_batched_tbsv_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0);
+    Test::Tbsv::impl_test_batched_tbsv_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1);
+    Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0, 1, 10);
     for (int i = 0; i < 10; i++) {
-      Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType,
-                                         ParamTagType, AlgoTagType>(1, 1, i);
+      Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1, 1, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     using LayoutType = Kokkos::LayoutRight;
-    Test::Tbsv::impl_test_batched_tbsv_analytical<
-        DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0);
-    Test::Tbsv::impl_test_batched_tbsv_analytical<
-        DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1);
-    Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType,
-                                       ParamTagType, AlgoTagType>(0, 1, 10);
+    Test::Tbsv::impl_test_batched_tbsv_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0);
+    Test::Tbsv::impl_test_batched_tbsv_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1);
+    Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0, 1, 10);
     for (int i = 0; i < 10; i++) {
-      Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType,
-                                         ParamTagType, AlgoTagType>(1, 1, i);
+      Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1, 1, i);
     }
   }
 #endif

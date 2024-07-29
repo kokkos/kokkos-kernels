@@ -29,29 +29,19 @@ namespace Experimental {
 
 /// \brief Sparse matrix-vector multiply: y = beta*y + alpha*A*x.
 ///
-template <class TeamType, class ScalarType, class ValuesViewType, class IntView,
-          class xViewType, class yViewType>
-int KOKKOS_INLINE_FUNCTION team_spmv(
-    const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
-    const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
-    const ScalarType &beta, const yViewType &y, const int dobeta) {
+template <class TeamType, class ScalarType, class ValuesViewType, class IntView, class xViewType, class yViewType>
+int KOKKOS_INLINE_FUNCTION team_spmv(const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
+                                     const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
+                                     const ScalarType &beta, const yViewType &y, const int dobeta) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  static_assert(Kokkos::is_view<ValuesViewType>::value,
-                "ValuesViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<IntView>::value,
-                "IntView must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<xViewType>::value,
-                "xViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<yViewType>::value,
-                "yViewType must be a Kokkos::View.");
-  static_assert(static_cast<int>(ValuesViewType::rank) == 1,
-                "ValuesViewType must have rank 1.");
-  static_assert(static_cast<int>(IntView::rank) == 1,
-                "IntView must have rank 1.");
-  static_assert(static_cast<int>(xViewType::rank) == 1,
-                "xViewType must have rank 1.");
-  static_assert(static_cast<int>(yViewType::rank) == 1,
-                "yViewType must have rank 1.");
+  static_assert(Kokkos::is_view<ValuesViewType>::value, "ValuesViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<IntView>::value, "IntView must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<xViewType>::value, "xViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<yViewType>::value, "yViewType must be a Kokkos::View.");
+  static_assert(static_cast<int>(ValuesViewType::rank) == 1, "ValuesViewType must have rank 1.");
+  static_assert(static_cast<int>(IntView::rank) == 1, "IntView must have rank 1.");
+  static_assert(static_cast<int>(xViewType::rank) == 1, "xViewType must have rank 1.");
+  static_assert(static_cast<int>(yViewType::rank) == 1, "yViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
@@ -72,40 +62,28 @@ int KOKKOS_INLINE_FUNCTION team_spmv(
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL
 
   if (dobeta == 1)
-    return KokkosSparse::TeamSpmv<TeamType>::template invoke<
-        ScalarType, ValuesViewType, IntView, xViewType, yViewType, 1>(
-        team, alpha, values, row_ptr, colIndices, x, beta, y);
+    return KokkosSparse::TeamSpmv<TeamType>::template invoke<ScalarType, ValuesViewType, IntView, xViewType, yViewType,
+                                                             1>(team, alpha, values, row_ptr, colIndices, x, beta, y);
   else
-    return KokkosSparse::TeamSpmv<TeamType>::template invoke<
-        ScalarType, ValuesViewType, IntView, xViewType, yViewType, 0>(
-        team, alpha, values, row_ptr, colIndices, x, beta, y);
+    return KokkosSparse::TeamSpmv<TeamType>::template invoke<ScalarType, ValuesViewType, IntView, xViewType, yViewType,
+                                                             0>(team, alpha, values, row_ptr, colIndices, x, beta, y);
 }
 
 /// \brief Sparse matrix-vector multiply: y = beta*y + alpha*A*x.
 ///
-template <class TeamType, class ScalarType, class ValuesViewType, class IntView,
-          class xViewType, class yViewType>
-int KOKKOS_INLINE_FUNCTION team_vector_spmv(
-    const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
-    const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
-    const ScalarType &beta, const yViewType &y, const int dobeta) {
+template <class TeamType, class ScalarType, class ValuesViewType, class IntView, class xViewType, class yViewType>
+int KOKKOS_INLINE_FUNCTION team_vector_spmv(const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
+                                            const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
+                                            const ScalarType &beta, const yViewType &y, const int dobeta) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  static_assert(Kokkos::is_view<ValuesViewType>::value,
-                "ValuesViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<IntView>::value,
-                "IntView must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<xViewType>::value,
-                "xViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<yViewType>::value,
-                "yViewType must be a Kokkos::View.");
-  static_assert(static_cast<int>(ValuesViewType::rank) == 1,
-                "ValuesViewType must have rank 1.");
-  static_assert(static_cast<int>(IntView::rank) == 1,
-                "IntView must have rank 1.");
-  static_assert(static_cast<int>(xViewType::rank) == 1,
-                "xViewType must have rank 1.");
-  static_assert(static_cast<int>(yViewType::rank) == 1,
-                "yViewType must have rank 1.");
+  static_assert(Kokkos::is_view<ValuesViewType>::value, "ValuesViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<IntView>::value, "IntView must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<xViewType>::value, "xViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<yViewType>::value, "yViewType must be a Kokkos::View.");
+  static_assert(static_cast<int>(ValuesViewType::rank) == 1, "ValuesViewType must have rank 1.");
+  static_assert(static_cast<int>(IntView::rank) == 1, "IntView must have rank 1.");
+  static_assert(static_cast<int>(xViewType::rank) == 1, "xViewType must have rank 1.");
+  static_assert(static_cast<int>(yViewType::rank) == 1, "yViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
@@ -126,13 +104,13 @@ int KOKKOS_INLINE_FUNCTION team_vector_spmv(
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL
 
   if (dobeta == 1)
-    return KokkosSparse::TeamVectorSpmv<TeamType>::template invoke<
-        ScalarType, ValuesViewType, IntView, xViewType, yViewType, 1>(
-        team, alpha, values, row_ptr, colIndices, x, beta, y);
+    return KokkosSparse::TeamVectorSpmv<TeamType>::template invoke<ScalarType, ValuesViewType, IntView, xViewType,
+                                                                   yViewType, 1>(team, alpha, values, row_ptr,
+                                                                                 colIndices, x, beta, y);
   else
-    return KokkosSparse::TeamVectorSpmv<TeamType>::template invoke<
-        ScalarType, ValuesViewType, IntView, xViewType, yViewType, 0>(
-        team, alpha, values, row_ptr, colIndices, x, beta, y);
+    return KokkosSparse::TeamVectorSpmv<TeamType>::template invoke<ScalarType, ValuesViewType, IntView, xViewType,
+                                                                   yViewType, 0>(team, alpha, values, row_ptr,
+                                                                                 colIndices, x, beta, y);
 }
 
 }  // namespace Experimental

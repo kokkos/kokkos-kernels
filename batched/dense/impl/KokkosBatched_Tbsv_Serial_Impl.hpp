@@ -25,17 +25,12 @@
 namespace KokkosBatched {
 
 template <typename AViewType, typename XViewType>
-KOKKOS_INLINE_FUNCTION static int checkTbsvInput(
-    [[maybe_unused]] const AViewType &A, [[maybe_unused]] const XViewType &x,
-    [[maybe_unused]] const int k) {
-  static_assert(Kokkos::is_view<AViewType>::value,
-                "KokkosBatched::tbsv: AViewType is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<XViewType>::value,
-                "KokkosBatched::tbsv: XViewType is not a Kokkos::View.");
-  static_assert(AViewType::rank == 2,
-                "KokkosBatched::tbsv: AViewType must have rank 2.");
-  static_assert(XViewType::rank == 1,
-                "KokkosBatched::tbsv: XViewType must have rank 1.");
+KOKKOS_INLINE_FUNCTION static int checkTbsvInput([[maybe_unused]] const AViewType &A,
+                                                 [[maybe_unused]] const XViewType &x, [[maybe_unused]] const int k) {
+  static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::tbsv: AViewType is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::tbsv: XViewType is not a Kokkos::View.");
+  static_assert(AViewType::rank == 2, "KokkosBatched::tbsv: AViewType must have rank 2.");
+  static_assert(XViewType::rank == 1, "KokkosBatched::tbsv: XViewType must have rank 1.");
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   if (k < 0) {
@@ -70,97 +65,79 @@ KOKKOS_INLINE_FUNCTION static int checkTbsvInput(
 
 //// Lower non-transpose ////
 template <typename ArgDiag>
-struct SerialTbsv<Uplo::Lower, Trans::NoTranspose, ArgDiag,
-                  Algo::Tbsv::Unblocked> {
+struct SerialTbsv<Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Tbsv::Unblocked> {
   template <typename AViewType, typename XViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const XViewType &x, const int k) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const XViewType &x, const int k) {
     auto info = checkTbsvInput(A, x, k);
     if (info) return info;
 
     return SerialTbsvInternalLower<Algo::Tbsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(),
-        A.stride_1(), x.data(), x.stride_0(), k);
+        ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), k);
   }
 };
 
 //// Lower transpose ////
 template <typename ArgDiag>
-struct SerialTbsv<Uplo::Lower, Trans::Transpose, ArgDiag,
-                  Algo::Tbsv::Unblocked> {
+struct SerialTbsv<Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Tbsv::Unblocked> {
   template <typename AViewType, typename XViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const XViewType &x, const int k) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const XViewType &x, const int k) {
     auto info = checkTbsvInput(A, x, k);
     if (info) return info;
 
     return SerialTbsvInternalLowerTranspose<Algo::Tbsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), A.data(), A.stride_0(),
-        A.stride_1(), x.data(), x.stride_0(), k);
+        ArgDiag::use_unit_diag, false, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), k);
   }
 };
 
 //// Lower conjugate-transpose ////
 template <typename ArgDiag>
-struct SerialTbsv<Uplo::Lower, Trans::ConjTranspose, ArgDiag,
-                  Algo::Tbsv::Unblocked> {
+struct SerialTbsv<Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Tbsv::Unblocked> {
   template <typename AViewType, typename XViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const XViewType &x, const int k) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const XViewType &x, const int k) {
     auto info = checkTbsvInput(A, x, k);
     if (info) return info;
 
     return SerialTbsvInternalLowerTranspose<Algo::Tbsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), A.data(), A.stride_0(),
-        A.stride_1(), x.data(), x.stride_0(), k);
+        ArgDiag::use_unit_diag, true, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), k);
   }
 };
 
 //// Upper non-transpose ////
 template <typename ArgDiag>
-struct SerialTbsv<Uplo::Upper, Trans::NoTranspose, ArgDiag,
-                  Algo::Tbsv::Unblocked> {
+struct SerialTbsv<Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Tbsv::Unblocked> {
   template <typename AViewType, typename XViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const XViewType &x, const int k) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const XViewType &x, const int k) {
     auto info = checkTbsvInput(A, x, k);
     if (info) return info;
 
     return SerialTbsvInternalUpper<Algo::Tbsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(),
-        A.stride_1(), x.data(), x.stride_0(), k);
+        ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), k);
   }
 };
 
 //// Upper transpose ////
 template <typename ArgDiag>
-struct SerialTbsv<Uplo::Upper, Trans::Transpose, ArgDiag,
-                  Algo::Tbsv::Unblocked> {
+struct SerialTbsv<Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Tbsv::Unblocked> {
   template <typename AViewType, typename XViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const XViewType &x, const int k) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const XViewType &x, const int k) {
     auto info = checkTbsvInput(A, x, k);
     if (info) return info;
 
     return SerialTbsvInternalUpperTranspose<Algo::Tbsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), A.data(), A.stride_0(),
-        A.stride_1(), x.data(), x.stride_0(), k);
+        ArgDiag::use_unit_diag, false, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), k);
   }
 };
 
 //// Upper conjugate-transpose ////
 template <typename ArgDiag>
-struct SerialTbsv<Uplo::Upper, Trans::ConjTranspose, ArgDiag,
-                  Algo::Tbsv::Unblocked> {
+struct SerialTbsv<Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Tbsv::Unblocked> {
   template <typename AViewType, typename XViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const XViewType &x, const int k) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const XViewType &x, const int k) {
     auto info = checkTbsvInput(A, x, k);
     if (info) return info;
 
     return SerialTbsvInternalUpperTranspose<Algo::Tbsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), A.data(), A.stride_0(),
-        A.stride_1(), x.data(), x.stride_0(), k);
+        ArgDiag::use_unit_diag, true, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), k);
   }
 };
 

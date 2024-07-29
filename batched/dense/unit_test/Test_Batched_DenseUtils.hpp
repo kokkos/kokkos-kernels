@@ -20,14 +20,9 @@
 
 namespace KokkosBatched {
 template <typename MatrixViewType, typename VectorViewType>
-void create_tridiagonal_batched_matrices(const MatrixViewType& A,
-                                         const VectorViewType& B) {
-  Kokkos::Random_XorShift64_Pool<
-      typename VectorViewType::device_type::execution_space>
-      random(13718);
-  Kokkos::fill_random(
-      B, random,
-      Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+void create_tridiagonal_batched_matrices(const MatrixViewType& A, const VectorViewType& B) {
+  Kokkos::Random_XorShift64_Pool<typename VectorViewType::device_type::execution_space> random(13718);
+  Kokkos::fill_random(B, random, Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
 
   auto A_host = Kokkos::create_mirror_view(A);
 
@@ -58,8 +53,7 @@ void create_tridiagonal_batched_matrices(const MatrixViewType& A,
 }
 
 template <typename InViewType, typename OutViewType, typename UploType>
-void create_banded_triangular_matrix(InViewType& in, OutViewType& out,
-                                     int k = 1, bool band_storage = true) {
+void create_banded_triangular_matrix(InViewType& in, OutViewType& out, int k = 1, bool band_storage = true) {
   auto h_in   = Kokkos::create_mirror_view(in);
   auto h_out  = Kokkos::create_mirror_view(out);
   const int N = in.extent(0), BlkSize = in.extent(1);

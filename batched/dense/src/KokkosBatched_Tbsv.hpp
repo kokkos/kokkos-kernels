@@ -41,12 +41,10 @@ namespace KokkosBatched {
 /// No nested parallel_for is used inside of the function.
 ///
 
-template <typename ArgUplo, typename ArgTrans, typename ArgDiag,
-          typename ArgAlgo>
+template <typename ArgUplo, typename ArgTrans, typename ArgDiag, typename ArgAlgo>
 struct SerialTbsv {
   template <typename AViewType, typename XViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const XViewType &X, const int k);
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const XViewType &X, const int k);
 };
 
 }  // namespace KokkosBatched

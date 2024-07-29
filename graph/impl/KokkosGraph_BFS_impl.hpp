@@ -39,10 +39,8 @@ struct SerialRCM {
 
   SerialRCM(const rowmap_t& rowmap_, const entries_t& entries_)
       : numVerts(std::max(rowmap_.extent_int(0), 1) - 1),
-        rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostRowmap"),
-               rowmap_.extent(0)),
-        entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostEntries"),
-                entries_.extent(0)) {
+        rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostRowmap"), rowmap_.extent(0)),
+        entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostEntries"), entries_.extent(0)) {
     Kokkos::deep_copy(rowmap, rowmap_);
     Kokkos::deep_copy(entries, entries_);
   }
@@ -51,11 +49,8 @@ struct SerialRCM {
     // Given a label L, labelReverse - L gives the reversed label (as in reverse
     // Cuthill McKee)
     lno_t labelReverse = numVerts - 1;
-    host_lno_view_t q(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Queue"),
-                      numVerts);
-    host_lno_view_t label(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "Permutation"),
-        numVerts);
+    host_lno_view_t q(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Queue"), numVerts);
+    host_lno_view_t label(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Permutation"), numVerts);
     for (lno_t i = 0; i < numVerts; i++) label(i) = -1;
     lno_t qhead = 0;
     lno_t qtail = 0;
@@ -63,16 +58,12 @@ struct SerialRCM {
     // (heuristic for best to worst starting vertex for RCM).
     // If the graph has multiple connected components, restart at the first
     // unlabeled vertex in this list.
-    host_lno_view_t allVertices(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "allVertices"),
-        numVerts);
+    host_lno_view_t allVertices(Kokkos::view_alloc(Kokkos::WithoutInitializing, "allVertices"), numVerts);
     for (lno_t i = 0; i < numVerts; i++) allVertices(i) = i;
-    std::sort(allVertices.data(), allVertices.data() + numVerts,
-              [&](lno_t n1, lno_t n2) -> bool {
-                // return true if n1 has a lower degree than n2
-                return (rowmap(n1 + 1) - rowmap(n1)) <
-                       (rowmap(n2 + 1) - rowmap(n2));
-              });
+    std::sort(allVertices.data(), allVertices.data() + numVerts, [&](lno_t n1, lno_t n2) -> bool {
+      // return true if n1 has a lower degree than n2
+      return (rowmap(n1 + 1) - rowmap(n1)) < (rowmap(n2 + 1) - rowmap(n2));
+    });
     lno_t allVerticesIter = 0;
     // Start RCM with the first vertex in allVertices
     lno_t start  = allVertices(allVerticesIter++);
@@ -90,12 +81,10 @@ struct SerialRCM {
           neighbors.push_back(nei);
         }
       }
-      std::sort(neighbors.begin(), neighbors.end(),
-                [&](lno_t n1, lno_t n2) -> bool {
-                  // return true if n1 has a lower degree than n2
-                  return (rowmap(n1 + 1) - rowmap(n1)) <
-                         (rowmap(n2 + 1) - rowmap(n2));
-                });
+      std::sort(neighbors.begin(), neighbors.end(), [&](lno_t n1, lno_t n2) -> bool {
+        // return true if n1 has a lower degree than n2
+        return (rowmap(n1 + 1) - rowmap(n1)) < (rowmap(n2 + 1) - rowmap(n2));
+      });
       // label and enqueue all unlabeled neighbors
       for (lno_t nei : neighbors) {
         label(nei) = labelReverse - qtail;
@@ -112,9 +101,7 @@ struct SerialRCM {
         q(qtail++)     = restart;
       }
     }
-    lno_view_t labelOut(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "RCM Permutation"),
-        numVerts);
+    lno_view_t labelOut(Kokkos::view_alloc(Kokkos::WithoutInitializing, "RCM Permutation"), numVerts);
     Kokkos::deep_copy(labelOut, label);
     return labelOut;
   }

@@ -43,8 +43,7 @@ using kokkos_complex_float  = Kokkos::complex<float>;
 
 namespace Test {
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 struct SptrsvTest {
   // Define useful types
   using RowMapType      = Kokkos::View<size_type *, device>;
@@ -52,8 +51,8 @@ struct SptrsvTest {
   using ValuesType      = Kokkos::View<scalar_t *, device>;
   using execution_space = typename device::execution_space;
   using memory_space    = typename device::memory_space;
-  using KernelHandle    = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
+  using KernelHandle    = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, execution_space,
+                                                                        memory_space, memory_space>;
 
   using Crs = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using Bsr = BsrMatrix<scalar_t, lno_t, device, void, size_type>;
@@ -127,10 +126,8 @@ struct SptrsvTest {
 
   static bool do_cusparse() {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    return (
-        std::is_same<size_type, int>::value &&
-        std::is_same<lno_t, int>::value &&
-        std::is_same<typename device::execution_space, Kokkos::Cuda>::value);
+    return (std::is_same<size_type, int>::value && std::is_same<lno_t, int>::value &&
+            std::is_same<typename device::execution_space, Kokkos::Cuda>::value);
 #else
     return false;
 #endif
@@ -145,8 +142,7 @@ struct SptrsvTest {
     void operator()(lno_t i, scalar_t &tsum) const { tsum += lhs(i); }
   };
 
-  static std::tuple<Crs, ValuesType, ValuesType> create_crs_lhs_rhs(
-      const std::vector<std::vector<scalar_t>> &fixture) {
+  static std::tuple<Crs, ValuesType, ValuesType> create_crs_lhs_rhs(const std::vector<std::vector<scalar_t>> &fixture) {
     RowMapType row_map;
     EntriesType entries;
     ValuesType values;
@@ -174,13 +170,11 @@ struct SptrsvTest {
   }
 
   template <typename SpMatrix>
-  static void basic_check(const SpMatrix &triMtx, const ValuesType &lhs,
-                          const ValuesType &rhs, const bool is_lower,
+  static void basic_check(const SpMatrix &triMtx, const ValuesType &lhs, const ValuesType &rhs, const bool is_lower,
                           const size_type block_size = 0) {
     // FIXME Issues with some integral type combos for SEQLVLSCHED_TP2,
     // currently unavailable
-    std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP,
-                                         SPTRSVAlgorithm::SEQLVLSCHD_TP1};
+    std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1};
     if (block_size == 0) {
       // SEQLVLSCHD_TP1CHAIN and SPTRSV_CUSPARSE are not supported for blocks
       algs.push_back(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN);
@@ -210,8 +204,7 @@ struct SptrsvTest {
       Kokkos::fence();
 
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
-                              ReductionCheck(lhs), sum);
+      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)), ReductionCheck(lhs), sum);
       EXPECT_EQ(sum, lhs.extent(0));
 
       Kokkos::deep_copy(lhs, ZERO);
@@ -224,9 +217,8 @@ struct SptrsvTest {
     const size_type nrows = 5;
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
-    using host_crsmat_t =
-        typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
-    using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
+    using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
+    using host_graph_t  = typename host_crsmat_t::StaticCrsGraphType;
 
     using row_map_view_t = typename host_graph_t::row_map_type::non_const_type;
     using cols_view_t    = typename host_graph_t::entries_type::non_const_type;
@@ -247,8 +239,7 @@ struct SptrsvTest {
     // Upper tri
     {
       {
-        const auto [triMtx, lhs, rhs] =
-            create_crs_lhs_rhs(get_5x5_ut_ones_fixture());
+        const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(get_5x5_ut_ones_fixture());
 
         basic_check(triMtx, lhs, rhs, false);
       }
@@ -277,8 +268,7 @@ struct SptrsvTest {
 
         // create handle for Supernodal Sptrsv
         bool is_lower_tri = false;
-        khU.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows,
-                                 is_lower_tri);
+        khU.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, is_lower_tri);
 
         // X = U*ONES to generate B = A*ONES (on device)
         {
@@ -364,8 +354,7 @@ struct SptrsvTest {
     // Lower tri
     {
       {
-        const auto [triMtx, lhs, rhs] =
-            create_crs_lhs_rhs(get_5x5_lt_ones_fixture());
+        const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(get_5x5_lt_ones_fixture());
 
         basic_check(triMtx, lhs, rhs, true);
       }
@@ -392,8 +381,7 @@ struct SptrsvTest {
         L = host_crsmat_t("CrsMatrixL", nrows, hLvalues, static_graph);
 
         bool is_lower_tri = true;
-        khL.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows,
-                                 is_lower_tri);
+        khL.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, is_lower_tri);
 
         // generate B = A*ONES = L*(U*ONES), where X = U*ONES (on device)
         {
@@ -414,8 +402,7 @@ struct SptrsvTest {
         // unit-test for supernode SpTrsv (default)
         // > set up supernodes (block size = one)
         size_type nsupers = 4;
-        Kokkos::View<int *, Kokkos::HostSpace> supercols("supercols",
-                                                         1 + nsupers);
+        Kokkos::View<int *, Kokkos::HostSpace> supercols("supercols", 1 + nsupers);
         supercols(0) = 0;
         supercols(1) = 2;     // two columns
         supercols(2) = 3;     // one column
@@ -429,8 +416,7 @@ struct SptrsvTest {
         khU.set_sptrsv_invert_diagonal(invert_diag);
 
         // > symbolic (on host)
-        sptrsv_supernodal_symbolic(nsupers, supercols.data(), etree, L.graph,
-                                   &khL, U.graph, &khU);
+        sptrsv_supernodal_symbolic(nsupers, supercols.data(), etree, L.graph, &khL, U.graph, &khU);
         // > numeric (on host)
         sptrsv_compute(&khL, L);
         sptrsv_compute(&khU, U);
@@ -445,8 +431,7 @@ struct SptrsvTest {
 
         // > check
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, X.extent(0)),
-                                ReductionCheck(X), sum);
+        Kokkos::parallel_reduce(range_policy_t(0, X.extent(0)), ReductionCheck(X), sum);
         EXPECT_EQ(sum, X.extent(0));
 
         khL.destroy_sptrsv_handle();
@@ -457,8 +442,7 @@ struct SptrsvTest {
         // unit-test for supernode SpTrsv (running TRMM on device for compute)
         // > set up supernodes
         size_type nsupers = 4;
-        Kokkos::View<int *, Kokkos::HostSpace> supercols("supercols",
-                                                         1 + nsupers);
+        Kokkos::View<int *, Kokkos::HostSpace> supercols("supercols", 1 + nsupers);
         supercols(0) = 0;
         supercols(1) = 2;     // two columns
         supercols(2) = 3;     // one column
@@ -470,8 +454,7 @@ struct SptrsvTest {
         KernelHandle khLd;
         KernelHandle khUd;
         khLd.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
-        khUd.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows,
-                                  false);
+        khUd.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
 
         // > invert diagonal blocks
         bool invert_diag = true;
@@ -489,8 +472,7 @@ struct SptrsvTest {
         khUd.set_sptrsv_diag_supernode_sizes(1, 1);
 
         // > symbolic (on host)
-        sptrsv_supernodal_symbolic(nsupers, supercols.data(), etree, L.graph,
-                                   &khLd, Ut.graph, &khUd);
+        sptrsv_supernodal_symbolic(nsupers, supercols.data(), etree, L.graph, &khLd, Ut.graph, &khUd);
         // > numeric (on host)
         sptrsv_compute(&khLd, L);
         sptrsv_compute(&khUd, Ut);
@@ -505,8 +487,7 @@ struct SptrsvTest {
 
         // > check
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(range_policy_t(0, X.extent(0)),
-                                ReductionCheck(X), sum);
+        Kokkos::parallel_reduce(range_policy_t(0, X.extent(0)), ReductionCheck(X), sum);
         EXPECT_EQ(sum, X.extent(0));
 
         khLd.destroy_sptrsv_handle();
@@ -543,8 +524,7 @@ struct SptrsvTest {
       int exec_concurrency = execution_space().concurrency();
       if (exec_concurrency < nstreams) {
         run_streams_test = false;
-        std::cout << "  Skip stream test: concurrency = " << exec_concurrency
-                  << std::endl;
+        std::cout << "  Skip stream test: concurrency = " << exec_concurrency << std::endl;
       }
     }
 #endif
@@ -553,8 +533,7 @@ struct SptrsvTest {
     const size_type nrows = 5;
     const size_type nnz   = 10;
 
-    auto instances = Kokkos::Experimental::partition_space(
-        execution_space(), std::vector<int>(nstreams, 1));
+    auto instances = Kokkos::Experimental::partition_space(execution_space(), std::vector<int>(nstreams, 1));
 
     std::vector<KernelHandle> kh_v(nstreams);
     std::vector<KernelHandle *> kh_ptr_v(nstreams);
@@ -564,8 +543,7 @@ struct SptrsvTest {
     std::vector<ValuesType> rhs_v(nstreams);
     std::vector<ValuesType> lhs_v(nstreams);
 
-    auto fixture =
-        is_lower ? get_5x5_lt_ones_fixture() : get_5x5_ut_ones_fixture();
+    auto fixture                  = is_lower ? get_5x5_lt_ones_fixture() : get_5x5_ut_ones_fixture();
     const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(fixture);
 
     auto row_map = triMtx.graph.row_map;
@@ -609,16 +587,14 @@ struct SptrsvTest {
     }  // Done handle creation and sptrsv_symbolic on all streams
 
     // Solve phase
-    sptrsv_solve_streams(instances, kh_ptr_v, row_map_v, entries_v, values_v,
-                         rhs_v, lhs_v);
+    sptrsv_solve_streams(instances, kh_ptr_v, row_map_v, entries_v, values_v, rhs_v, lhs_v);
 
     for (int i = 0; i < nstreams; i++) instances[i].fence();
 
     // Checking
     for (int i = 0; i < nstreams; i++) {
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce(range_policy_t(0, lhs_v[i].extent(0)),
-                              ReductionCheck(lhs_v[i]), sum);
+      Kokkos::parallel_reduce(range_policy_t(0, lhs_v[i].extent(0)), ReductionCheck(lhs_v[i]), sum);
       EXPECT_EQ(sum, lhs_v[i].extent(0));
       kh_v[i].destroy_sptrsv_handle();
     }
@@ -627,20 +603,17 @@ struct SptrsvTest {
 
 }  // namespace Test
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_sptrsv() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
   TestStruct::run_test_sptrsv();
   TestStruct::run_test_sptrsv_blocks();
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_sptrsv_streams() {
-  using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
-  std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP,
-                                       SPTRSVAlgorithm::SEQLVLSCHD_TP1};
+  using TestStruct                  = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
+  std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1};
   if (TestStruct::do_cusparse()) {
     algs.push_back(SPTRSVAlgorithm::SPTRSV_CUSPARSE);
   }
@@ -653,11 +626,10 @@ void test_sptrsv_streams() {
   }
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \
-  TEST_F(TestCategory,                                                     \
-         sparse##_##sptrsv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_sptrsv<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
-    test_sptrsv_streams<SCALAR, ORDINAL, OFFSET, DEVICE>();                \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                      \
+  TEST_F(TestCategory, sparse##_##sptrsv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_sptrsv<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
+    test_sptrsv_streams<SCALAR, ORDINAL, OFFSET, DEVICE>();                              \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
