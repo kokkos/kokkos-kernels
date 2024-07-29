@@ -740,8 +740,7 @@ struct SpilukTest {
           gmres_handle->set_verbose(verbose);
 
           // Make precond.
-          KokkosSparse::Experimental::LUPrec<sp_matrix_type, KernelHandle>
-              myPrec(L, U, UseBlocks ? block_size : 0);
+          KokkosSparse::Experimental::LUPrec<sp_matrix_type, KernelHandle> myPrec(L, U, UseBlocks ? block_size : 0);
 
           // reset X for next gmres call
           Kokkos::deep_copy(X, 0.0);

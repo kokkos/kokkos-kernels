@@ -129,18 +129,15 @@ struct SptrsvWrap {
       static int shmem_size(size_type, size_type) { return 0; }
     };
 
-    Common(const RowMapType &row_map_, const EntriesType &entries_,
-           const ValuesType &values_, LHSType &lhs_, const RHSType &rhs_,
-           const entries_t &nodes_grouped_by_level_,
-           const size_type block_size_ = 0)
+    Common(const RowMapType &row_map_, const EntriesType &entries_, const ValuesType &values_, LHSType &lhs_,
+           const RHSType &rhs_, const entries_t &nodes_grouped_by_level_, const size_type block_size_ = 0)
         : row_map(row_map_),
           entries(entries_),
           values(values_),
           lhs(lhs_),
           rhs(rhs_),
           nodes_grouped_by_level(nodes_grouped_by_level_) {
-      KK_REQUIRE_MSG(block_size_ == 0,
-                     "Tried to use blocks with the unblocked Common?");
+      KK_REQUIRE_MSG(block_size_ == 0, "Tried to use blocks with the unblocked Common?");
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -148,9 +145,7 @@ struct SptrsvWrap {
 
     // lset
     KOKKOS_INLINE_FUNCTION
-    void lset(const size_type row, const scalar_t value) const {
-      lhs(row) = value;
-    }
+    void lset(const size_type row, const scalar_t value) const { lhs(row) = value; }
 
     // add. y += x
     KOKKOS_INLINE_FUNCTION
@@ -165,8 +160,7 @@ struct SptrsvWrap {
 
     // divide. b /= A
     KOKKOS_INLINE_FUNCTION
-    static void divide(const member_type &team, scalar_t &b, const scalar_t &A,
-                       scalar_t *) {
+    static void divide(const member_type &team, scalar_t &b, const scalar_t &A, scalar_t *) {
       Kokkos::single(Kokkos::PerTeam(team), [&]() { b /= A; });
       team.team_barrier();
     }
@@ -177,10 +171,7 @@ struct SptrsvWrap {
 
     // multiply_subtract. C -= A * B
     KOKKOS_INLINE_FUNCTION
-    static void multiply_subtract(const scalar_t &A, const scalar_t &B,
-                                  scalar_t &C) {
-      C -= A * B;
-    }
+    static void multiply_subtract(const scalar_t &A, const scalar_t &B, scalar_t &C) { C -= A * B; }
 
     KOKKOS_INLINE_FUNCTION
     static void copy(const member_type &, scalar_t &, const scalar_t &) {}
@@ -202,17 +193,14 @@ struct SptrsvWrap {
 
     // lhs = (lhs + rhs) / diag (team)
     KOKKOS_INLINE_FUNCTION
-    static void add_and_divide(const member_type &team, scalar_t &lhs_val,
-                               const scalar_t &rhs_val,
+    static void add_and_divide(const member_type &team, scalar_t &lhs_val, const scalar_t &rhs_val,
                                const scalar_t &diag_val) {
-      Kokkos::single(Kokkos::PerTeam(team),
-                     [&]() { lhs_val = (lhs_val + rhs_val) / diag_val; });
+      Kokkos::single(Kokkos::PerTeam(team), [&]() { lhs_val = (lhs_val + rhs_val) / diag_val; });
     }
 
     // lhs = (lhs + rhs) / diag (serial)
     KOKKOS_INLINE_FUNCTION
-    static void add_and_divide(scalar_t &lhs_val, const scalar_t &rhs_val,
-                               const scalar_t &diag_val) {
+    static void add_and_divide(scalar_t &lhs_val, const scalar_t &rhs_val, const scalar_t &diag_val) {
       lhs_val = (lhs_val + rhs_val) / diag_val;
     }
 
@@ -221,39 +209,31 @@ struct SptrsvWrap {
     static void print(const scalar_t &item) { std::cout << item << std::endl; }
 
     KOKKOS_INLINE_FUNCTION
-    static void print(ArrayType rhs, const int) {
-      std::cout << rhs << std::endl;
-    }
+    static void print(ArrayType rhs, const int) { std::cout << rhs << std::endl; }
   };
 
   // Partial specialization for block support
-  template <class RowMapType, class EntriesType, class ValuesType,
-            class LHSType, class RHSType>
+  template <class RowMapType, class EntriesType, class ValuesType, class LHSType, class RHSType>
   struct Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, true> {
     // BSR data is in LayoutRight!
     using Layout = Kokkos::LayoutRight;
 
-    using Block = Kokkos::View<
-        scalar_t **, Layout, typename ValuesType::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
+    using Block = Kokkos::View<scalar_t **, Layout, typename ValuesType::device_type,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
 
     // const block
-    using CBlock = Kokkos::View<
-        const scalar_t **, Layout, typename ValuesType::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
+    using CBlock = Kokkos::View<const scalar_t **, Layout, typename ValuesType::device_type,
+                                Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
 
     // scratch block
-    using SBlock = Kokkos::View<
-        scalar_t **, Layout, typename execution_space::scratch_memory_space,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
+    using SBlock = Kokkos::View<scalar_t **, Layout, typename execution_space::scratch_memory_space,
+                                Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
 
-    using Vector = Kokkos::View<
-        scalar_t *, Layout, typename ValuesType::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
+    using Vector = Kokkos::View<scalar_t *, Layout, typename ValuesType::device_type,
+                                Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
 
-    using CVector = Kokkos::View<
-        const scalar_t *, Layout, typename ValuesType::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
+    using CVector = Kokkos::View<const scalar_t *, Layout, typename ValuesType::device_type,
+                                 Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
 
     static constexpr size_type MAX_VEC_SIZE = 11;
     static constexpr size_type BUFF_SIZE    = 128;
@@ -281,8 +261,7 @@ struct SptrsvWrap {
 
       KOKKOS_INLINE_FUNCTION
       ArrayType &operator+=(const ArrayType &rhs_) {
-        for (size_type i = 0; i < MAX_VEC_SIZE; ++i)
-          m_data[i] += rhs_.m_data[i];
+        for (size_type i = 0; i < MAX_VEC_SIZE; ++i) m_data[i] += rhs_.m_data[i];
         return *this;
       }
 
@@ -294,10 +273,9 @@ struct SptrsvWrap {
     };
 
     struct SumArray {
-      using reducer    = SumArray;
-      using value_type = ArrayType;
-      using result_view_type =
-          Kokkos::View<value_type *, execution_space, Kokkos::MemoryUnmanaged>;
+      using reducer          = SumArray;
+      using value_type       = ArrayType;
+      using result_view_type = Kokkos::View<value_type *, execution_space, Kokkos::MemoryUnmanaged>;
 
      private:
       value_type &m_value;
@@ -331,10 +309,8 @@ struct SptrsvWrap {
     size_type block_size;
     size_type block_items;
 
-    Common(const RowMapType &row_map_, const EntriesType &entries_,
-           const ValuesType &values_, LHSType &lhs_, const RHSType &rhs_,
-           const entries_t &nodes_grouped_by_level_,
-           const size_type block_size_)
+    Common(const RowMapType &row_map_, const EntriesType &entries_, const ValuesType &values_, LHSType &lhs_,
+           const RHSType &rhs_, const entries_t &nodes_grouped_by_level_, const size_type block_size_)
         : row_map(row_map_),
           entries(entries_),
           values(values_),
@@ -343,10 +319,8 @@ struct SptrsvWrap {
           nodes_grouped_by_level(nodes_grouped_by_level_),
           block_size(block_size_),
           block_items(block_size * block_size) {
-      KK_REQUIRE_MSG(block_size > 0,
-                     "Tried to use block_size=0 with the blocked Common?");
-      KK_REQUIRE_MSG(block_size <= MAX_VEC_SIZE,
-                     "Max supported block size is " << MAX_VEC_SIZE);
+      KK_REQUIRE_MSG(block_size > 0, "Tried to use block_size=0 with the blocked Common?");
+      KK_REQUIRE_MSG(block_size <= MAX_VEC_SIZE, "Max supported block size is " << MAX_VEC_SIZE);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -354,9 +328,7 @@ struct SptrsvWrap {
 
     // lset
     KOKKOS_INLINE_FUNCTION
-    void lset(const size_type row, const scalar_t &value) const {
-      KokkosBlas::SerialSet::invoke(value, lget(row));
-    }
+    void lset(const size_type row, const scalar_t &value) const { KokkosBlas::SerialSet::invoke(value, lget(row)); }
 
     KOKKOS_INLINE_FUNCTION
     void lset(const size_type row, const CVector &rhs_) const {
@@ -366,39 +338,31 @@ struct SptrsvWrap {
 
     // assign
     template <typename View1, typename View2>
-    KOKKOS_INLINE_FUNCTION static void assign(const View1 &lhs_,
-                                              const View2 &rhs_) {
+    KOKKOS_INLINE_FUNCTION static void assign(const View1 &lhs_, const View2 &rhs_) {
       for (size_t i = 0; i < lhs_.size(); ++i) {
         lhs_.data()[i] = rhs_.data()[i];
       }
     }
 
     template <typename View1, typename View2>
-    KOKKOS_INLINE_FUNCTION static void assign(const member_type &team,
-                                              const View1 &lhs_,
-                                              const View2 &rhs_) {
-      Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, lhs_.size()),
-          [&](const size_type i) { lhs_.data()[i] = rhs_.data()[i]; });
+    KOKKOS_INLINE_FUNCTION static void assign(const member_type &team, const View1 &lhs_, const View2 &rhs_) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, lhs_.size()),
+                           [&](const size_type i) { lhs_.data()[i] = rhs_.data()[i]; });
     }
 
     // add. y += x
     KOKKOS_INLINE_FUNCTION
-    static void add(const member_type &team, const CVector &x,
-                    const Vector &y) {
+    static void add(const member_type &team, const CVector &x, const Vector &y) {
       KokkosBlas::Experimental::axpy(team, 1.0, x, y);
     }
 
     // serial add. y += x
     KOKKOS_INLINE_FUNCTION
-    static void add(const CVector &x, const Vector &y) {
-      KokkosBlas::serial_axpy(1.0, x, y);
-    }
+    static void add(const CVector &x, const Vector &y) { KokkosBlas::serial_axpy(1.0, x, y); }
 
     // divide. b /= A (b = b * A^-1)
     KOKKOS_INLINE_FUNCTION
-    static void divide(const member_type &team, const Vector &b,
-                       const CBlock &A) {
+    static void divide(const member_type &team, const Vector &b, const CBlock &A) {
       // Team-shared buffer. Use for team work.
       const auto block_size = b.size();
       SBlock shared_buff(team.team_shmem(), block_size, block_size);
@@ -406,21 +370,17 @@ struct SptrsvWrap {
       // Need a temp block to do LU of A
       Block LU(shared_buff.data(), block_size, block_size);
       assign(team, LU, A);
-      KokkosBatched::TeamLU<member_type,
-                            KokkosBatched::Algo::LU::Blocked>::invoke(team, LU);
+      KokkosBatched::TeamLU<member_type, KokkosBatched::Algo::LU::Blocked>::invoke(team, LU);
 
       // A = LU
       // A^-1 = U^-1 * L^-1
       // b = (b * U^-1) * L^-1, so do U trsv first
-      KokkosBatched::TeamTrsv<
-          member_type, KokkosBatched::Uplo::Upper,
-          KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit,
-          KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU, b);
+      KokkosBatched::TeamTrsv<member_type, KokkosBatched::Uplo::Upper, KokkosBatched::Trans::NoTranspose,
+                              KokkosBatched::Diag::NonUnit, KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU,
+                                                                                                        b);
 
-      KokkosBatched::TeamTrsv<
-          member_type, KokkosBatched::Uplo::Lower,
-          KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::Unit,
-          KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU, b);
+      KokkosBatched::TeamTrsv<member_type, KokkosBatched::Uplo::Lower, KokkosBatched::Trans::NoTranspose,
+                              KokkosBatched::Diag::Unit, KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU, b);
     }
 
     // serial divide. b /= A (b = b * A^-1)
@@ -438,42 +398,29 @@ struct SptrsvWrap {
       // A = LU
       // A^-1 = U^-1 * L^-1
       // b = (b * U^-1) * L^-1, so do U trsv first
-      KokkosBatched::SerialTrsv<KokkosBatched::Uplo::Upper,
-                                KokkosBatched::Trans::NoTranspose,
-                                KokkosBatched::Diag::NonUnit,
-                                KokkosBatched::Algo::Trsv::Blocked>::invoke(1.0,
-                                                                            LU,
-                                                                            b);
+      KokkosBatched::SerialTrsv<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::NoTranspose,
+                                KokkosBatched::Diag::NonUnit, KokkosBatched::Algo::Trsv::Blocked>::invoke(1.0, LU, b);
 
-      KokkosBatched::SerialTrsv<KokkosBatched::Uplo::Lower,
-                                KokkosBatched::Trans::NoTranspose,
-                                KokkosBatched::Diag::Unit,
-                                KokkosBatched::Algo::Trsv::Blocked>::invoke(1.0,
-                                                                            LU,
-                                                                            b);
+      KokkosBatched::SerialTrsv<KokkosBatched::Uplo::Lower, KokkosBatched::Trans::NoTranspose,
+                                KokkosBatched::Diag::Unit, KokkosBatched::Algo::Trsv::Blocked>::invoke(1.0, LU, b);
     }
 
     // multiply_subtract. C -= A * B
     KOKKOS_INLINE_FUNCTION
-    static void multiply_subtract(const CBlock &A, const CVector &B,
-                                  ArrayType &Ca) {
+    static void multiply_subtract(const CBlock &A, const CVector &B, ArrayType &Ca) {
       Vector C(&Ca.m_data[0], B.size());
       multiply_subtract(A, B, C);
     }
 
     KOKKOS_INLINE_FUNCTION
-    static void multiply_subtract(const CBlock &A, const CVector &B,
-                                  Vector &C) {
+    static void multiply_subtract(const CBlock &A, const CVector &B, Vector &C) {
       // Use gemv. alpha is hardcoded to -1, beta hardcoded to 1
-      KokkosBlas::SerialGemv<KokkosBlas::Trans::NoTranspose,
-                             KokkosBlas::Algo::Gemv::Blocked>::invoke(-1.0, A,
-                                                                      B, 1.0,
-                                                                      C);
+      KokkosBlas::SerialGemv<KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Blocked>::invoke(-1.0, A, B, 1.0,
+                                                                                                      C);
     }
 
     KOKKOS_INLINE_FUNCTION
-    static void copy(const member_type &team, const Vector &lhs_,
-                     ArrayType &rhsa) {
+    static void copy(const member_type &team, const Vector &lhs_, ArrayType &rhsa) {
       CVector rhs_(&rhsa.m_data[0], lhs_.size());
       assign(team, lhs_, rhs_);
     }
@@ -486,34 +433,28 @@ struct SptrsvWrap {
 
     // lget
     KOKKOS_INLINE_FUNCTION
-    Vector lget(const size_type row) const {
-      return Vector(lhs.data() + (row * block_size), block_size);
-    }
+    Vector lget(const size_type row) const { return Vector(lhs.data() + (row * block_size), block_size); }
 
     // rget
     KOKKOS_INLINE_FUNCTION
-    CVector rget(const size_type row) const {
-      return CVector(rhs.data() + (row * block_size), block_size);
-    }
+    CVector rget(const size_type row) const { return CVector(rhs.data() + (row * block_size), block_size); }
 
     // vget
     KOKKOS_INLINE_FUNCTION
     CBlock vget(const size_type block) const {
-      return CBlock(values.data() + (block * block_items), block_size,
-                    block_size);
+      return CBlock(values.data() + (block * block_items), block_size, block_size);
     }
 
     // lhs = (lhs + rhs) / diag
     KOKKOS_INLINE_FUNCTION
-    static void add_and_divide(const member_type &team, const Vector &lhs_val,
-                               const CVector &rhs_val, const CBlock &diag_val) {
+    static void add_and_divide(const member_type &team, const Vector &lhs_val, const CVector &rhs_val,
+                               const CBlock &diag_val) {
       add(team, rhs_val, lhs_val);
       divide(team, lhs_val, diag_val);
     }
 
     KOKKOS_INLINE_FUNCTION
-    static void add_and_divide(const Vector &lhs_val, const CVector &rhs_val,
-                               const CBlock &diag_val) {
+    static void add_and_divide(const Vector &lhs_val, const CVector &rhs_val, const CBlock &diag_val) {
       add(rhs_val, lhs_val);
       divide(lhs_val, diag_val);
     }
@@ -564,21 +505,14 @@ struct SptrsvWrap {
    * Intermediate class that contains implementation that identical
    * for blocked / non-blocked
    */
-  template <class RowMapType, class EntriesType, class ValuesType,
-            class LHSType, class RHSType, bool BlockEnabled>
-  struct Intermediate : public Common<RowMapType, EntriesType, ValuesType,
-                                      LHSType, RHSType, BlockEnabled> {
-    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType,
-                        BlockEnabled>;
-    using accum_t =
-        std::conditional_t<BlockEnabled, typename Base::ArrayType, scalar_t>;
+  template <class RowMapType, class EntriesType, class ValuesType, class LHSType, class RHSType, bool BlockEnabled>
+  struct Intermediate : public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled> {
+    using Base    = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled>;
+    using accum_t = std::conditional_t<BlockEnabled, typename Base::ArrayType, scalar_t>;
 
-    Intermediate(const RowMapType &row_map_, const EntriesType &entries_,
-                 const ValuesType &values_, LHSType &lhs_, const RHSType &rhs_,
-                 const entries_t &nodes_grouped_by_level_,
-                 const size_type block_size_ = 0)
-        : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_,
-               block_size_) {}
+    Intermediate(const RowMapType &row_map_, const EntriesType &entries_, const ValuesType &values_, LHSType &lhs_,
+                 const RHSType &rhs_, const entries_t &nodes_grouped_by_level_, const size_type block_size_ = 0)
+        : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_, block_size_) {}
 
     struct ReduceSumFunctor {
       const Base *m_obj;
@@ -615,21 +549,15 @@ struct SptrsvWrap {
       }
     };
 
-    template <bool IsSerial, bool IsSorted, bool IsLower,
-              bool UseThreadVec = false>
-    KOKKOS_INLINE_FUNCTION void solve_impl(const member_type *team,
-                                           const int my_rank,
-                                           const long node_count) const {
+    template <bool IsSerial, bool IsSorted, bool IsLower, bool UseThreadVec = false>
+    KOKKOS_INLINE_FUNCTION void solve_impl(const member_type *team, const int my_rank, const long node_count) const {
       using reduce_item_t = typename Base::ArrayType;
       using reducer_t     = typename Base::SumArray;
-      using functor_t =
-          std::conditional_t<IsSorted, ReduceSumFunctor, ReduceSumDiagFunctor>;
+      using functor_t     = std::conditional_t<IsSorted, ReduceSumFunctor, ReduceSumDiagFunctor>;
 
-      static_assert(
-          !((!IsSerial && BlockEnabled) && UseThreadVec),
-          "ThreadVectorRanges are not yet supported for block-enabled");
-      static_assert(!(IsSerial && UseThreadVec),
-                    "Requested thread vector range in serial?");
+      static_assert(!((!IsSerial && BlockEnabled) && UseThreadVec),
+                    "ThreadVectorRanges are not yet supported for block-enabled");
+      static_assert(!(IsSerial && UseThreadVec), "Requested thread vector range in serial?");
 
       const auto rowid   = Base::nodes_grouped_by_level(my_rank + node_count);
       const auto soffset = Base::row_map(rowid);
@@ -655,14 +583,11 @@ struct SptrsvWrap {
       } else {
         KK_KERNEL_ASSERT_MSG(team != nullptr, "Cannot do team operations without team");
         if constexpr (!UseThreadVec) {
-          Kokkos::parallel_reduce(Kokkos::TeamThreadRange(*team, itr_b, itr_e),
-                                  rf, reducer_t(reduce));
+          Kokkos::parallel_reduce(Kokkos::TeamThreadRange(*team, itr_b, itr_e), rf, reducer_t(reduce));
           team->team_barrier();
           Base::copy(*team, lhs_val, reduce);
         } else {
-          Kokkos::parallel_reduce(
-              Kokkos::ThreadVectorRange(*team, itr_b, itr_e), rf,
-              reducer_t(reduce));
+          Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(*team, itr_b, itr_e), rf, reducer_t(reduce));
           Base::copy(lhs_val, reduce);
         }
       }
@@ -704,13 +629,11 @@ struct SptrsvWrap {
   // TriLvlSched functors
   //
 
-  template <class RowMapType, class EntriesType, class ValuesType,
-            class LHSType, class RHSType, bool IsLower, bool BlockEnabled>
+  template <class RowMapType, class EntriesType, class ValuesType, class LHSType, class RHSType, bool IsLower,
+            bool BlockEnabled>
   struct TriLvlSchedTP1SolverFunctor
-      : public Intermediate<RowMapType, EntriesType, ValuesType, LHSType,
-                            RHSType, BlockEnabled> {
-    using Base = Intermediate<RowMapType, EntriesType, ValuesType, LHSType,
-                              RHSType, BlockEnabled>;
+      : public Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled> {
+    using Base = Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled>;
 
     long node_count;  // like "block" offset into ngbl, my_league is the "local"
                       // offset
@@ -732,19 +655,14 @@ struct SptrsvWrap {
     }
   };
 
-  template <class RowMapType, class EntriesType, class ValuesType,
-            class LHSType, class RHSType, bool IsLower, bool BlockEnabled>
+  template <class RowMapType, class EntriesType, class ValuesType, class LHSType, class RHSType, bool IsLower,
+            bool BlockEnabled>
   struct TriLvlSchedRPSolverFunctor
-      : public Intermediate<RowMapType, EntriesType, ValuesType, LHSType,
-                            RHSType, BlockEnabled> {
-    using Base = Intermediate<RowMapType, EntriesType, ValuesType, LHSType,
-                              RHSType, BlockEnabled>;
+      : public Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled> {
+    using Base = Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled>;
 
-    TriLvlSchedRPSolverFunctor(const RowMapType &row_map_,
-                               const EntriesType &entries_,
-                               const ValuesType &values_, LHSType &lhs_,
-                               const RHSType &rhs_,
-                               const entries_t &nodes_grouped_by_level_,
+    TriLvlSchedRPSolverFunctor(const RowMapType &row_map_, const EntriesType &entries_, const ValuesType &values_,
+                               LHSType &lhs_, const RHSType &rhs_, const entries_t &nodes_grouped_by_level_,
                                const size_type block_size_ = 0)
         : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_, block_size_) {}
 
@@ -759,10 +677,8 @@ struct SptrsvWrap {
 
   template <class RowMapType, class EntriesType, class ValuesType, class LHSType, class RHSType, bool IsLower>
   struct TriLvlSchedTP1SingleBlockFunctor
-      : public Intermediate<RowMapType, EntriesType, ValuesType, LHSType,
-                            RHSType, false> {
-    using Base = Intermediate<RowMapType, EntriesType, ValuesType, LHSType,
-                              RHSType, false>;
+      : public Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType, false> {
+    using Base = Intermediate<RowMapType, EntriesType, ValuesType, LHSType, RHSType, false>;
 
     entries_t nodes_per_level;
 
@@ -1407,17 +1323,12 @@ struct SptrsvWrap {
 
 #endif
 
-#define FunctorTypeMacro(Functor, IsLower, BlockEnabled)                  \
-  Functor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, IsLower, \
-          BlockEnabled>
+#define FunctorTypeMacro(Functor, IsLower, BlockEnabled) \
+  Functor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, IsLower, BlockEnabled>
 
-  template <bool BlockEnabled, class RowMapType, class EntriesType,
-            class ValuesType, class RHSType, class LHSType>
-  static void lower_tri_solve(execution_space &space, TriSolveHandle &thandle,
-                              const RowMapType row_map,
-                              const EntriesType entries,
-                              const ValuesType values, const RHSType &rhs,
-                              LHSType &lhs) {
+  template <bool BlockEnabled, class RowMapType, class EntriesType, class ValuesType, class RHSType, class LHSType>
+  static void lower_tri_solve(execution_space &space, TriSolveHandle &thandle, const RowMapType row_map,
+                              const EntriesType entries, const ValuesType values, const RHSType &rhs, LHSType &lhs) {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSPSTRSV_SOLVE_IMPL_PROFILE)
     cudaProfilerStop();
 #endif
@@ -1433,10 +1344,8 @@ struct SptrsvWrap {
     assert(block_enabled == BlockEnabled);
 
     // Set up functor types
-    using LowerRPFunc =
-        FunctorTypeMacro(TriLvlSchedRPSolverFunctor, true, BlockEnabled);
-    using LowerTPFunc =
-        FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true, BlockEnabled);
+    using LowerRPFunc = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, true, BlockEnabled);
+    using LowerTPFunc = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true, BlockEnabled);
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     using namespace KokkosSparse::Experimental;
@@ -1507,12 +1416,10 @@ struct SptrsvWrap {
         } else if (thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
           LowerTPFunc ltpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
-          auto tp       = team_size == -1
-                        ? team_policy(space, lvl_nodes, Kokkos::AUTO)
-                        : team_policy(space, lvl_nodes, team_size);
-          const int scratch_size =
-              LowerTPFunc::SBlock::shmem_size(block_size, block_size);
-          tp = tp.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
+          auto tp =
+              team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
+          const int scratch_size = LowerTPFunc::SBlock::shmem_size(block_size, block_size);
+          tp                     = tp.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
           Kokkos::parallel_for(
               "parfor_l_team",
               Kokkos::Experimental::require(tp, Kokkos::Experimental::WorkItemProperty::HintLightWeight), ltpp);
@@ -1711,13 +1618,9 @@ struct SptrsvWrap {
 #endif
   }  // end lower_tri_solve
 
-  template <bool BlockEnabled, class RowMapType, class EntriesType,
-            class ValuesType, class RHSType, class LHSType>
-  static void upper_tri_solve(execution_space &space, TriSolveHandle &thandle,
-                              const RowMapType row_map,
-                              const EntriesType entries,
-                              const ValuesType values, const RHSType &rhs,
-                              LHSType &lhs) {
+  template <bool BlockEnabled, class RowMapType, class EntriesType, class ValuesType, class RHSType, class LHSType>
+  static void upper_tri_solve(execution_space &space, TriSolveHandle &thandle, const RowMapType row_map,
+                              const EntriesType entries, const ValuesType values, const RHSType &rhs, LHSType &lhs) {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSPSTRSV_SOLVE_IMPL_PROFILE)
     cudaProfilerStop();
 #endif
@@ -1735,10 +1638,8 @@ struct SptrsvWrap {
     assert(block_enabled == BlockEnabled);
 
     // Set up functor types
-    using UpperRPFunc =
-        FunctorTypeMacro(TriLvlSchedRPSolverFunctor, false, BlockEnabled);
-    using UpperTPFunc =
-        FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, false, BlockEnabled);
+    using UpperRPFunc = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, false, BlockEnabled);
+    using UpperTPFunc = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, false, BlockEnabled);
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     using namespace KokkosSparse::Experimental;
@@ -1808,12 +1709,10 @@ struct SptrsvWrap {
         } else if (thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
           UpperTPFunc utpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
-          auto tp       = team_size == -1
-                        ? team_policy(space, lvl_nodes, Kokkos::AUTO)
-                        : team_policy(space, lvl_nodes, team_size);
-          const int scratch_size =
-              UpperTPFunc::SBlock::shmem_size(block_size, block_size);
-          tp = tp.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
+          auto tp =
+              team_size == -1 ? team_policy(space, lvl_nodes, Kokkos::AUTO) : team_policy(space, lvl_nodes, team_size);
+          const int scratch_size = UpperTPFunc::SBlock::shmem_size(block_size, block_size);
+          tp                     = tp.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
           Kokkos::parallel_for(
               "parfor_u_team",
               Kokkos::Experimental::require(tp, Kokkos::Experimental::WorkItemProperty::HintLightWeight), utpp);

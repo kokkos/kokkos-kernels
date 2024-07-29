@@ -62,19 +62,11 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //! Constructor:
   template <class CRSArg>
   LUPrec(const CRSArg &L, const CRSArg &U, const size_type block_size = 0)
-      : _L(L),
-        _U(U),
-        _tmp("LUPrec::_tmp", L.numPointRows()),
-        _tmp2("LUPrec::_tmp", L.numPointRows()),
-        _khL(),
-        _khU() {
-    KK_REQUIRE_MSG(L.numPointRows() == U.numPointRows(),
-                   "LUPrec: L.numRows() != U.numRows()");
+      : _L(L), _U(U), _tmp("LUPrec::_tmp", L.numPointRows()), _tmp2("LUPrec::_tmp", L.numPointRows()), _khL(), _khU() {
+    KK_REQUIRE_MSG(L.numPointRows() == U.numPointRows(), "LUPrec: L.numRows() != U.numRows()");
 
-    _khL.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, L.numRows(),
-                              true, block_size);
-    _khU.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, U.numRows(),
-                              false, block_size);
+    _khL.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, L.numRows(), true, block_size);
+    _khU.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, U.numRows(), false, block_size);
   }
 
   //! Destructor.
@@ -94,20 +86,16 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   /////
   ///// It takes L and U and the stores U^inv L^inv X in Y
   //
-  virtual void apply(const Kokkos::View<const ScalarType *, DEVICE> &X,
-                     const Kokkos::View<ScalarType *, DEVICE> &Y,
-                     const char transM[] = "N",
-                     ScalarType alpha    = karith::one(),
-                     ScalarType beta     = karith::zero()) const {
-    KK_REQUIRE_MSG(transM[0] == NoTranspose[0],
-                   "LUPrec::apply only supports 'N' for transM");
+  virtual void apply(const Kokkos::View<const ScalarType *, DEVICE> &X, const Kokkos::View<ScalarType *, DEVICE> &Y,
+                     const char transM[] = "N", ScalarType alpha = karith::one(),
+                     ScalarType beta = karith::zero()) const {
+    KK_REQUIRE_MSG(transM[0] == NoTranspose[0], "LUPrec::apply only supports 'N' for transM");
 
     sptrsv_symbolic(&_khL, _L.graph.row_map, _L.graph.entries);
     sptrsv_solve(&_khL, _L.graph.row_map, _L.graph.entries, _L.values, X, _tmp);
 
     sptrsv_symbolic(&_khU, _U.graph.row_map, _U.graph.entries);
-    sptrsv_solve(&_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp,
-                 _tmp2);
+    sptrsv_solve(&_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp, _tmp2);
 
     KokkosBlas::axpby(alpha, _tmp2, beta, Y);
   }
