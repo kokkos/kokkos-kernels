@@ -214,10 +214,12 @@ void doAllCoo2Crs(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_coo2crs) {
+#if defined(KOKKOS_ENABLE_SYCL)
   if constexpr (std::is_same_v<typename TestDevice::execution_space, Kokkos::Experimental::SYCL>) {
     std::cout << "Not running coo2csr on SYCL execution space" << std::endl;
     return;
   }
+#endif
 
   uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
   std::srand(ticks);
@@ -246,10 +248,12 @@ TEST_F(TestCategory, sparse_coo2crs) {
 }
 
 TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
+#if defined(KOKKOS_ENABLE_SYCL)
   if constexpr (std::is_same_v<typename TestDevice::execution_space, Kokkos::Experimental::SYCL>) {
     std::cout << "Not running coo2csr on SYCL execution space" << std::endl;
     return;
   }
+#endif
 
   int m = 4;
   int n = 4;
