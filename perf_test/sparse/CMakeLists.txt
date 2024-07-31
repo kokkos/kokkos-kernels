@@ -116,6 +116,11 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         SOURCES KokkosSparse_mdf.cpp
 )
 
+KOKKOSKERNELS_ADD_EXECUTABLE(
+        sparse_sort_crs
+        SOURCES KokkosSparse_sort_crs.cpp
+)
+
 if (KokkosKernels_ENABLE_BENCHMARK)
   KOKKOSKERNELS_ADD_BENCHMARK(
     sparse_par_ilut
