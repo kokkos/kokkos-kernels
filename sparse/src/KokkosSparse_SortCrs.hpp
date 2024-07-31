@@ -66,6 +66,9 @@ void sort_crs_matrix(
                 "sort_crs_matrix: value_t must not be const-valued");
   using Ordinal   = typename entries_t::non_const_value_type;
   using Scalar    = typename values_t::non_const_value_type;
+  if (entries.extent(0) <= size_t(1)) {
+    return;
+  }
   Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if (numRows == 0) return;
   if constexpr (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
@@ -193,6 +196,9 @@ void sort_bsr_matrix(
       std::is_same_v<Ordinal, typename entries_t::non_const_value_type>,
       "sort_bsr_matrix: Ordinal type must match nonconst value type of "
       "entries_t (default template parameter)");
+  if (entries.extent(0) <= size_t(1)) {
+    return;
+  }
   Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
     KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0), entries,
@@ -269,7 +275,9 @@ void sort_crs_graph(
   static_assert(!std::is_const_v<typename entries_t::value_type>,
                 "sort_crs_graph: entries_t must not be const-valued");
   Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
-  if (numRows == 0) return;
+  if (entries.extent(0) <= size_t(1)) {
+    return;
+  }
   if constexpr (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
     // If on CPU, sort each row independently. Don't need to know numCols for
     // this. Need a 2nd buffer for radix sort. Use a new entries view type in
