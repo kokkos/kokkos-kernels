@@ -128,7 +128,9 @@ struct GMRES<KernelHandle, AT, AO, AD, AM, AS, BType, XType, false, KOKKOSKERNEL
                    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
       false, true>;
 
-#define KOKKOSSPARSE_GMRES_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
+#include <generated_specializations_hpp/KokkosSparse_gmres_eti_spec_decl.hpp>
+
+#define KOKKOSSPARSE_GMRES_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
                                          MEM_SPACE_TYPE)                                                         \
   template struct GMRES<                                                                                         \
       KokkosKernels::Experimental::KokkosKernelsHandle<const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE, \
