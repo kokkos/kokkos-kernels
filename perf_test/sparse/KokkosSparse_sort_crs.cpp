@@ -35,7 +35,8 @@ void print_options() {
   std::cerr << perf_test::list_common_options();
 
   std::cerr << "\t[Required] --mtx <path> :: matrix to sort\n";
-  std::cerr << "\t[Optional] --repeat      :: how many times to repeat sorting\n";
+  std::cerr
+      << "\t[Optional] --repeat      :: how many times to repeat sorting\n";
 }
 
 int parse_inputs(LocalParams& params, int argc, char** argv) {
@@ -53,7 +54,8 @@ int parse_inputs(LocalParams& params, int argc, char** argv) {
 }
 
 template <typename exec_space>
-void run_experiment(int argc, char** argv, const CommonInputParams& common_params) {
+void run_experiment(int argc, char** argv,
+                    const CommonInputParams& common_params) {
   using namespace KokkosSparse;
 
   using mem_space = typename exec_space::memory_space;
@@ -64,25 +66,28 @@ void run_experiment(int argc, char** argv, const CommonInputParams& common_param
   using crsMat_t =
       KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
 
-  using graph_t   = typename crsMat_t::StaticCrsGraphType;
+  using graph_t = typename crsMat_t::StaticCrsGraphType;
 
   LocalParams params;
   if (parse_inputs(params, argc, argv)) return;
 
   crsMat_t A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
-        params.mtxFile.c_str());
-  std::cout << "Loaded matrix: " << A.numRows() << "x" << A.numCols() << " with " << A.nnz() << " entries.\n";
+      params.mtxFile.c_str());
+  std::cout << "Loaded matrix: " << A.numRows() << "x" << A.numCols()
+            << " with " << A.nnz() << " entries.\n";
   // This first sort call serves as a warm-up
   KokkosSparse::sort_crs_matrix(A);
   lno_t m = A.numRows();
   lno_t n = A.numCols();
-  auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
-  auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
+  auto rowmapHost =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
+  auto entriesHost =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
   typename crsMat_t::index_type shuffledEntries("shuffled entries", A.nnz());
-  // Randomly shuffle the entries within each row, so that the rows aren't already sorted.
-  // Leave the values alone; this changes the matrix numerically but this doesn't affect sorting.
-  for(lno_t i = 0; i < m; i++)
-  {
+  // Randomly shuffle the entries within each row, so that the rows aren't
+  // already sorted. Leave the values alone; this changes the matrix numerically
+  // but this doesn't affect sorting.
+  for (lno_t i = 0; i < m; i++) {
     std::random_shuffle(entriesHost.data() + i, entriesHost.data() + i + 1);
   }
   Kokkos::deep_copy(shuffledEntries, entriesHost);
@@ -97,7 +102,8 @@ void run_experiment(int argc, char** argv, const CommonInputParams& common_param
     exec.fence();
     totalTime += timer.seconds();
   }
-  std::cout << "Mean sort_crs_matrix time over " << common_params.repeat << " trials: ";
+  std::cout << "Mean sort_crs_matrix time over " << common_params.repeat
+            << " trials: ";
   std::cout << totalTime / common_params.repeat << "\n";
 }
 

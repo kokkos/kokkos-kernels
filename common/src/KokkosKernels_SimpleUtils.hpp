@@ -359,8 +359,7 @@ struct ReduceMaxFunctor {
 
 template <typename view_type, typename MyExecSpace>
 void kk_view_reduce_max(
-    const MyExecSpace& exec,
-    size_t num_elements, view_type view_to_reduce,
+    const MyExecSpace &exec, size_t num_elements, view_type view_to_reduce,
     typename view_type::non_const_value_type &max_reduction) {
   typedef Kokkos::RangePolicy<MyExecSpace> policy_t;
   Kokkos::parallel_reduce(
@@ -372,7 +371,8 @@ template <typename view_type, typename MyExecSpace>
 void kk_view_reduce_max(
     size_t num_elements, view_type view_to_reduce,
     typename view_type::non_const_value_type &max_reduction) {
-  kk_view_reduce_max(MyExecSpace(), num_elements, view_to_reduce, max_reduction);
+  kk_view_reduce_max(MyExecSpace(), num_elements, view_to_reduce,
+                     max_reduction);
 }
 
 // xorshift hash/pseudorandom function (supported for 32- and 64-bit integer
@@ -440,10 +440,10 @@ struct SequentialFillFunctor {
 };
 
 template <typename ExecSpace, typename V>
-void sequential_fill(const ExecSpace& exec, const V &v, typename V::non_const_value_type start = 0) {
-  Kokkos::parallel_for(
-      Kokkos::RangePolicy<ExecSpace>(exec, 0, v.extent(0)),
-      SequentialFillFunctor<V>(v, start));
+void sequential_fill(const ExecSpace &exec, const V &v,
+                     typename V::non_const_value_type start = 0) {
+  Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(exec, 0, v.extent(0)),
+                       SequentialFillFunctor<V>(v, start));
 }
 
 template <typename V>

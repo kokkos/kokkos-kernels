@@ -1447,8 +1447,8 @@ void kk_create_incidence_matrix_from_original_matrix(typename cols_view_t::non_c
             lno_t col_perm = col;
             if (perm) col_perm = perm[col];
             if (row_perm < col_perm) {
-              typedef typename std::remove_reference<
-                  decltype(out_rowmap_copy[0])>::type atomic_incr_type;
+              typedef typename std::remove_reference<decltype(
+                  out_rowmap_copy[0])>::type atomic_incr_type;
               size_type row_write_index = Kokkos::atomic_fetch_add(
                   &(out_rowmap_copy[row]), atomic_incr_type(1));
               size_type col_write_index = Kokkos::atomic_fetch_add(

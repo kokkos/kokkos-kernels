@@ -424,7 +424,7 @@ void sort_and_merge_matrix(
 
   if (numRows == 0) {
     rowmap_out  = typename rowmap_t::non_const_type("SortedMerged rowmap",
-                                                    rowmap_in.extent(0));
+                                                   rowmap_in.extent(0));
     entries_out = entries_t();
     values_out  = values_t();
     return;
@@ -471,8 +471,8 @@ void sort_and_merge_matrix(
                                              "SortedMerged entries"),
                           numCompressedEntries);
   values_out  = values_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
-                                            "SortedMerged values"),
-                         numCompressedEntries);
+                                           "SortedMerged values"),
+                        numCompressedEntries);
   // Compute merged entries and values
   Kokkos::parallel_for(range_t(exec, 0, numRows),
                        Impl::MatrixMergedEntriesFunctor<rowmap_t, entries_t, values_t>(
@@ -547,7 +547,7 @@ void sort_and_merge_graph(
   Ordinal numRows = rowmap_in.extent(0) ? rowmap_in.extent(0) - 1 : 0;
   if (numRows == 0) {
     rowmap_out  = typename rowmap_t::non_const_type("SortedMerged rowmap",
-                                                    rowmap_in.extent(0));
+                                                   rowmap_in.extent(0));
     entries_out = entries_t();
     return;
   }
