@@ -149,7 +149,7 @@ struct SptrsvWrap {
 
     // multiply_subtract. C -= A * B
     KOKKOS_INLINE_FUNCTION
-    static void multiply_subtract(const scalar_t &A, const scalar_t &B, scalar_t &C) { C -= A * B; }
+    static void multiply_subtract(const scalar_t &a, const scalar_t &b, scalar_t &c) { c -= a * b; }
 
     KOKKOS_INLINE_FUNCTION
     static void copy(const member_type &, scalar_t &, const scalar_t &) {}
@@ -233,12 +233,6 @@ struct SptrsvWrap {
       KOKKOS_INLINE_FUNCTION
       ArrayType &operator+=(const ArrayType &rhs_) {
         for (size_type i = 0; i < MAX_VEC_SIZE; ++i) m_data[i] += rhs_.m_data[i];
-        return *this;
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      ArrayType &operator+=(const values_t &rhs_) {
-        for (int i = 0; i < rhs_.size(); ++i) m_data[i] += rhs_(i);
         return *this;
       }
     };
@@ -381,16 +375,16 @@ struct SptrsvWrap {
 
     // multiply_subtract. C -= A * B
     KOKKOS_INLINE_FUNCTION
-    static void multiply_subtract(const CBlock &A, const CVector &B, ArrayType &Ca) {
-      Vector C(&Ca.m_data[0], B.size());
-      multiply_subtract(A, B, C);
+    static void multiply_subtract(const CBlock &A, const CVector &b, ArrayType &ca) {
+      Vector c(&ca.m_data[0], b.size());
+      multiply_subtract(A, b, c);
     }
 
     KOKKOS_INLINE_FUNCTION
-    static void multiply_subtract(const CBlock &A, const CVector &B, Vector &C) {
+    static void multiply_subtract(const CBlock &A, const CVector &b, Vector &c) {
       // Use gemv. alpha is hardcoded to -1, beta hardcoded to 1
-      KokkosBlas::SerialGemv<KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Blocked>::invoke(-1.0, A, B, 1.0,
-                                                                                                      C);
+      KokkosBlas::SerialGemv<KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Blocked>::invoke(-1.0, A, b, 1.0,
+                                                                                                      c);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -467,7 +461,7 @@ struct SptrsvWrap {
     struct ReduceSumDiagFunctor {
       const Base *m_obj;
       const lno_t rowid;
-      lno_t diag;
+      mutable lno_t diag;
 
       KOKKOS_INLINE_FUNCTION
       void operator()(size_type i, accum_t &accum) const {
