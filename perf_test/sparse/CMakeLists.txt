@@ -116,10 +116,12 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         SOURCES KokkosSparse_mdf.cpp
 )
 
-KOKKOSKERNELS_ADD_EXECUTABLE(
-        sparse_sort_crs
-        SOURCES KokkosSparse_sort_crs.cpp
-)
+# Do not build this CRS sorting perf test by default.
+# It can be enabled if needed by uncommenting these lines.
+#KOKKOSKERNELS_ADD_EXECUTABLE(
+#        sparse_sort_crs
+#        SOURCES KokkosSparse_sort_crs.cpp
+#)
 
 if (KokkosKernels_ENABLE_BENCHMARK)
   KOKKOSKERNELS_ADD_BENCHMARK(

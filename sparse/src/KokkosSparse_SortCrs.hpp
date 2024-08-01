@@ -17,6 +17,7 @@
 #define _KOKKOSSPARSE_SORTCRS_HPP
 
 #include "KokkosSparse_sort_crs_impl.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_Sorting.hpp"
 
 namespace KokkosSparse {
@@ -64,15 +65,17 @@ void sort_crs_matrix(
                 "sort_crs_matrix: entries_t must not be const-valued");
   static_assert(!std::is_const_v<typename values_t::value_type>,
                 "sort_crs_matrix: value_t must not be const-valued");
-  using Ordinal   = typename entries_t::non_const_value_type;
-  using Scalar    = typename values_t::non_const_value_type;
+  using Offset  = typename rowmap_t::non_const_value_type;
+  using Ordinal = typename entries_t::non_const_value_type;
+  using Scalar  = typename values_t::non_const_value_type;
+  // This early return condition covers having 0 or 1 entries,
+  // which is also implied by having 0 rows or 0 columns.
+  // If only 1 entry, the matrix is already sorted.
   if (entries.extent(0) <= size_t(1)) {
     return;
   }
   Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
-  if (numRows == 0) return;
   if constexpr (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
-    using Offset            = typename rowmap_t::non_const_value_type;
     using UnsignedOrdinal   = typename std::make_unsigned<Ordinal>::type;
     using entries_managed_t = Kokkos::View<typename entries_t::data_type,
                                            typename entries_t::device_type>;
@@ -100,37 +103,24 @@ void sort_crs_matrix(
               values.data() + rowStart, valuesAux.data() + rowStart, rowNum);
         });
   } else {
-    // On GPUs, prefer to do a single bulk sort.
-    if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
-      KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0), entries,
-                                              numCols);
-      numCols++;
-    }
-    uint64_t maxBulkKey = (uint64_t)numRows * (uint64_t)numCols;
-    if (maxBulkKey / numRows != (uint64_t)numCols) {
-      using Offset  = typename rowmap_t::non_const_value_type;
-      using TeamPol = Kokkos::TeamPolicy<execution_space>;
-      using TeamMem = typename TeamPol::member_type;
-      // Can't use bulk sort approach as matrix dimensions are too large.
-      // Fall back to parallel thread-level sort within each row.
-      Ordinal vectorLength = 1;
-      Ordinal avgDeg       = (entries.extent(0) + numRows - 1) / numRows;
-      while (vectorLength < avgDeg / 2) {
-        vectorLength *= 2;
+    // On GPUs:
+    //   If the matrix is highly imbalanced, or has long rows AND the dimensions
+    //   are not too large to do one large bulk sort, do that. Otherwise, sort
+    //   using one Kokkos thread per row.
+    Ordinal avgDeg   = (entries.extent(0) + numRows - 1) / numRows;
+    Ordinal maxDeg   = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
+    bool useBulkSort = false;
+    if (KokkosSparse::Impl::useBulkSortHeuristic(avgDeg, maxDeg)) {
+      // Calculate the true number of columns if user didn't pass it in
+      if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
+        KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0),
+                                                entries, numCols);
+        numCols++;
       }
-      if (vectorLength > TeamPol ::vector_length_max())
-        vectorLength = TeamPol ::vector_length_max();
-      Impl::MatrixSortThreadFunctor<TeamPol, Ordinal, rowmap_t, entries_t,
-                                    values_t>
-          funct(numRows, rowmap, entries, values);
-      Ordinal teamSize =
-          TeamPol(exec, 1, 1, vectorLength)
-              .team_size_recommended(funct, Kokkos::ParallelForTag());
-      Kokkos::parallel_for("sort_crs_matrix",
-                           TeamPol(exec, (numRows + teamSize - 1) / teamSize,
-                                   teamSize, vectorLength),
-                           funct);
-    } else {
+      uint64_t maxBulkKey = (uint64_t)numRows * (uint64_t)numCols;
+      useBulkSort         = maxBulkKey / numRows == (uint64_t)numCols;
+    }
+    if (useBulkSort) {
       auto permutation = KokkosSparse::Impl::computeEntryPermutation(
           exec, rowmap, entries, numCols);
       // Permutations cannot be done in-place
@@ -147,6 +137,27 @@ void sort_crs_matrix(
                                            entries);
       KokkosSparse::Impl::applyPermutation(exec, permutation, origValues,
                                            values);
+    } else {
+      using TeamPol = Kokkos::TeamPolicy<execution_space>;
+      using TeamMem = typename TeamPol::member_type;
+      // Can't use bulk sort approach as matrix dimensions are too large.
+      // Fall back to parallel thread-level sort within each row.
+      Ordinal vectorLength = 1;
+      while (vectorLength < avgDeg / 2) {
+        vectorLength *= 2;
+      }
+      if (vectorLength > TeamPol ::vector_length_max())
+        vectorLength = TeamPol ::vector_length_max();
+      Impl::MatrixSortThreadFunctor<TeamPol, Ordinal, rowmap_t, entries_t,
+                                    values_t>
+          funct(numRows, rowmap, entries, values);
+      Ordinal teamSize =
+          TeamPol(exec, 1, 1, vectorLength)
+              .team_size_recommended(funct, Kokkos::ParallelForTag());
+      Kokkos::parallel_for("sort_crs_matrix",
+                           TeamPol(exec, (numRows + teamSize - 1) / teamSize,
+                                   teamSize, vectorLength),
+                           funct);
     }
   }
 }
@@ -262,6 +273,7 @@ void sort_crs_graph(
     typename entries_t::non_const_value_type numCols =
         Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
   using Ordinal = typename entries_t::non_const_value_type;
+  using Offset  = typename rowmap_t::non_const_value_type;
   static_assert(
       Kokkos::SpaceAccessibility<execution_space,
                                  typename rowmap_t::memory_space>::accessible,
@@ -285,7 +297,6 @@ void sort_crs_graph(
     using entries_managed_t = Kokkos::View<typename entries_t::data_type,
                                            typename entries_t::device_type>;
     using UnsignedOrdinal   = typename std::make_unsigned<Ordinal>::type;
-    using Offset            = typename rowmap_t::non_const_value_type;
     entries_managed_t entriesAux(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries aux"),
         entries.extent(0));
@@ -303,22 +314,32 @@ void sort_crs_graph(
               (UnsignedOrdinal*)entriesAux.data() + rowStart, rowNum);
         });
   } else {
-    // On GPU, prefer to sort all entries in one bulk sort.
-    // This is only possible if (row, col) pairs can be numbered using uint64_t
-    if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
-      KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0), entries,
-                                              numCols);
-      numCols++;
+    // On GPUs:
+    //   If the graph is highly imbalanced AND the dimensions are not too large
+    //   to do one large bulk sort, do that. Otherwise, sort using one Kokkos
+    //   thread per row.
+    Ordinal avgDeg   = (entries.extent(0) + numRows - 1) / numRows;
+    Ordinal maxDeg   = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
+    bool useBulkSort = false;
+    if (KokkosSparse::Impl::useBulkSortHeuristic(avgDeg, maxDeg)) {
+      // Calculate the true number of columns if user didn't pass it in
+      if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
+        KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0),
+                                                entries, numCols);
+        numCols++;
+      }
+      uint64_t maxBulkKey = (uint64_t)numRows * (uint64_t)numCols;
+      useBulkSort         = maxBulkKey / numRows == (uint64_t)numCols;
     }
-    uint64_t maxBulkKey = (uint64_t)numRows * (uint64_t)numCols;
-    // Check if the multiplication above overflowed
-    if (maxBulkKey / numRows != (uint64_t)numCols) {
-      using Offset  = typename rowmap_t::non_const_value_type;
+    if (useBulkSort) {
+      auto keys = KokkosSparse::Impl::generateBulkCrsKeys(exec, rowmap, entries,
+                                                          numCols);
+      Kokkos::Experimental::sort_by_key(exec, keys, entries);
+    } else {
       using TeamPol = Kokkos::TeamPolicy<execution_space>;
       using TeamMem = typename TeamPol::member_type;
       // Fall back to thread-level sort within each row
       Ordinal vectorLength = 1;
-      Ordinal avgDeg       = (entries.extent(0) + numRows - 1) / numRows;
       while (vectorLength < avgDeg / 2) {
         vectorLength *= 2;
       }
@@ -334,10 +355,6 @@ void sort_crs_graph(
                            TeamPol(exec, (numRows + teamSize - 1) / teamSize,
                                    teamSize, vectorLength),
                            funct);
-    } else {
-      auto keys = KokkosSparse::Impl::generateBulkCrsKeys(exec, rowmap, entries,
-                                                          numCols);
-      Kokkos::Experimental::sort_by_key(exec, keys, entries);
     }
   }
 }

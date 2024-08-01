@@ -316,6 +316,15 @@ void applyPermutationBlockValues(const ExecSpace& exec,
         out(i) = in(permutation(blockIndex) * scalarsPerBlock + offsetInBlock);
       });
 }
+
+// Heuristic for choosing bulk sorting algorithm
+template <typename Ordinal>
+bool useBulkSortHeuristic(Ordinal avgDeg, Ordinal maxDeg) {
+  // Use bulk sort if matrix is highly imbalanced,
+  // OR the longest rows have many entries.
+  return (maxDeg / 10 > avgDeg) || (maxDeg > 1024);
+}
+
 }  // namespace Impl
 }  // namespace KokkosSparse
 
