@@ -113,7 +113,9 @@ struct SPTRSV_SYMBOLIC<ExecutionSpace, KernelHandle, RowMapType, EntriesType, fa
                    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,                             \
       false, true>;
 
-#define KOKKOSSPARSE_SPTRSV_SYMBOLIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,          \
+#include <generated_specializations_hpp/KokkosSparse_sptrsv_symbolic_eti_spec_decl.hpp>
+
+#define KOKKOSSPARSE_SPTRSV_SYMBOLIC_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,	\
                                                    EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                              \
   template struct SPTRSV_SYMBOLIC<                                                                               \
       EXEC_SPACE_TYPE,                                                                                           \
