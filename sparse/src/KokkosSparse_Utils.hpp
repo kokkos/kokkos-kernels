@@ -849,8 +849,7 @@ ordinal_t graph_max_degree(const rowmap_t &rowmap) {
 }
 
 template <typename execution_space, typename rowmap_t>
-typename rowmap_t::non_const_value_type graph_max_degree(
-    const execution_space &exec, const rowmap_t &rowmap) {
+typename rowmap_t::non_const_value_type graph_max_degree(const execution_space &exec, const rowmap_t &rowmap) {
   using Offset  = typename rowmap_t::non_const_value_type;
   using Reducer = Kokkos::Max<Offset>;
   Offset nrows  = rowmap.extent(0);
@@ -858,8 +857,7 @@ typename rowmap_t::non_const_value_type graph_max_degree(
   if (nrows == 0) return 0;
   Offset val;
   Kokkos::parallel_reduce(Kokkos::RangePolicy<execution_space>(exec, 0, nrows),
-                          MaxDegreeFunctor<Reducer, Offset, rowmap_t>(rowmap),
-                          Reducer(val));
+                          MaxDegreeFunctor<Reducer, Offset, rowmap_t>(rowmap), Reducer(val));
   return val;
 }
 
@@ -1447,12 +1445,9 @@ void kk_create_incidence_matrix_from_original_matrix(typename cols_view_t::non_c
             lno_t col_perm = col;
             if (perm) col_perm = perm[col];
             if (row_perm < col_perm) {
-              typedef typename std::remove_reference<decltype(
-                  out_rowmap_copy[0])>::type atomic_incr_type;
-              size_type row_write_index = Kokkos::atomic_fetch_add(
-                  &(out_rowmap_copy[row]), atomic_incr_type(1));
-              size_type col_write_index = Kokkos::atomic_fetch_add(
-                  &(out_rowmap_copy[col]), atomic_incr_type(1));
+              typedef typename std::remove_reference<decltype(out_rowmap_copy[0])>::type atomic_incr_type;
+              size_type row_write_index    = Kokkos::atomic_fetch_add(&(out_rowmap_copy[row]), atomic_incr_type(1));
+              size_type col_write_index    = Kokkos::atomic_fetch_add(&(out_rowmap_copy[col]), atomic_incr_type(1));
               out_entries[row_write_index] = used_edge_index + used_count;
               out_entries[col_write_index] = used_edge_index + used_count;
               ++used_count;
