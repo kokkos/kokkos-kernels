@@ -14,11 +14,13 @@
 //
 //@HEADER
 
-#ifndef KOKKOSBLAS1_DOT_ETI_SPEC_AVAIL_HPP_
-#define KOKKOSBLAS1_DOT_ETI_SPEC_AVAIL_HPP_
+#ifndef KOKKOSBLAS3_TRMM_ETI_SPEC_DECL_HPP_
+#define KOKKOSBLAS3_TRMM_ETI_SPEC_DECL_HPP_
 namespace KokkosBlas {
 namespace Impl {
-@BLAS1_DOT_ETI_AVAIL_BLOCK@
-} //IMPL 
-} //Kokkos
-#endif
+
+@BLAS3_TRMM_ETI_DECL_BLOCK@
+
+} // Impl
+} // KokkosBlas
+#endif // KOKKOSBLAS3_TRMM_ETI_SPEC_DECL_HPP_

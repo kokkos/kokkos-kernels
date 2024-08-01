@@ -292,7 +292,9 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2, fa
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
       1, false, true>;
 
-#define KOKKOSBLAS1_SCAL_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                         \
+#include <generated_specializations_hpp/KokkosBlas1_scal_eti_spec_decl.hpp>
+
+#define KOKKOSBLAS1_SCAL_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template struct Scal<                                                                                               \
       EXEC_SPACE,                                                                                                     \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -323,6 +325,8 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2, fa
       Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
       2, false, true>;
+
+#include <generated_specializations_hpp/KokkosBlas1_scal_mv_eti_spec_decl.hpp>
 
 #define KOKKOSBLAS1_SCAL_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
   template struct Scal<                                                                                                \
