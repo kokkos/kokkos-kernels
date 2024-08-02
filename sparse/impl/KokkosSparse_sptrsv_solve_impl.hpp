@@ -2040,4 +2040,6 @@ struct SptrsvWrap {
 }  // namespace Impl
 }  // namespace KokkosSparse
 
+#undef FunctorTypeMacro
+
 #endif
