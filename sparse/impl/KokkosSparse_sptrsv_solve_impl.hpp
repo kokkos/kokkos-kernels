@@ -143,10 +143,6 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     size_type get_block_size() const { return 0; }
 
-    // lset
-    KOKKOS_INLINE_FUNCTION
-    void lset(const size_type row, const scalar_t value) const { lhs(row) = value; }
-
     // multiply_subtract. C -= A * B
     KOKKOS_INLINE_FUNCTION
     static void multiply_subtract(const scalar_t &a, const scalar_t &b, scalar_t &c) { c -= a * b; }
@@ -290,16 +286,6 @@ struct SptrsvWrap {
 
     KOKKOS_INLINE_FUNCTION
     size_type get_block_size() const { return block_size; }
-
-    // lset
-    KOKKOS_INLINE_FUNCTION
-    void lset(const size_type row, const scalar_t &value) const { KokkosBlas::SerialSet::invoke(value, lget(row)); }
-
-    KOKKOS_INLINE_FUNCTION
-    void lset(const size_type row, const CVector &rhs_) const {
-      auto lvec = lget(row);
-      assign(lvec, rhs_);
-    }
 
     // assign
     template <typename View1, typename View2>
