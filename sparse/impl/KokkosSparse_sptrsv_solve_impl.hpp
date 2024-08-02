@@ -439,7 +439,14 @@ struct SptrsvWrap {
         auto val         = m_obj->vget(i);
         auto lhs_colid   = m_obj->lget(colid);
         // accum -= val * lhs_colid;
-        Base::multiply_subtract(val, lhs_colid, accum);
+        if constexpr(BlockEnabled) {
+          accum_t temp;
+          Base::multiply_subtract(val, lhs_colid, temp);
+          accum += temp;
+        }
+        else {
+          Base::multiply_subtract(val, lhs_colid, accum);
+        }
         KK_KERNEL_ASSERT_MSG(colid != rowid, "Should not have hit diag");
       }
     };
@@ -456,7 +463,14 @@ struct SptrsvWrap {
           auto val       = m_obj->vget(i);
           auto lhs_colid = m_obj->lget(colid);
           // accum -= val * lhs_colid;
-          Base::multiply_subtract(val, lhs_colid, accum);
+          if constexpr(BlockEnabled) {
+              accum_t temp;
+              Base::multiply_subtract(val, lhs_colid, temp);
+              accum += temp;
+            }
+          else {
+            Base::multiply_subtract(val, lhs_colid, accum);
+          }
         } else {
           diag = i;
         }
