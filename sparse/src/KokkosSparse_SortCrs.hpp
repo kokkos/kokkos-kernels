@@ -114,7 +114,6 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
       KokkosSparse::Impl::applyPermutation(exec, permutation, origValues, values);
     } else {
       using TeamPol = Kokkos::TeamPolicy<execution_space>;
-      using TeamMem = typename TeamPol::member_type;
       // Can't use bulk sort approach as matrix dimensions are too large.
       // Fall back to parallel thread-level sort within each row.
       Ordinal vectorLength = 1;
@@ -270,7 +269,6 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
       Kokkos::Experimental::sort_by_key(exec, keys, entries);
     } else {
       using TeamPol = Kokkos::TeamPolicy<execution_space>;
-      using TeamMem = typename TeamPol::member_type;
       // Fall back to thread-level sort within each row
       Ordinal vectorLength = 1;
       while (vectorLength < avgDeg / 2) {
