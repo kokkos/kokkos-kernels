@@ -215,9 +215,9 @@ struct MaxScanFunctor {
     }
   }
 
+  uint64_t ncols;
   Keys keys;
   Entries entries;
-  uint64_t ncols;
 };
 
 template <typename ExecSpace, typename Rowmap, typename Entries>
@@ -247,10 +247,9 @@ Kokkos::View<uint64_t*, ExecSpace> generateBulkCrsKeys(const ExecSpace& exec, co
 template <typename ExecSpace, typename Rowmap, typename Entries>
 Kokkos::View<typename Rowmap::non_const_value_type*, ExecSpace> computeEntryPermutation(
     const ExecSpace& exec, const Rowmap& rowmap, const Entries& entries, typename Entries::non_const_value_type ncols) {
-  using Offset    = typename Rowmap::non_const_value_type;
-  using Ordinal   = typename Entries::non_const_value_type;
-  Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
-  auto keys       = generateBulkCrsKeys(exec, rowmap, entries, ncols);
+  using Offset  = typename Rowmap::non_const_value_type;
+  using Ordinal = typename Entries::non_const_value_type;
+  auto keys     = generateBulkCrsKeys(exec, rowmap, entries, ncols);
   Kokkos::View<Offset*, ExecSpace> permutation(Kokkos::view_alloc(Kokkos::WithoutInitializing, "permutation"),
                                                entries.extent(0));
   // This initializes permutation as the identity
@@ -266,10 +265,10 @@ void applyPermutation(const ExecSpace& exec, const Permutation& permutation, con
       KOKKOS_LAMBDA(size_t i) { out(i) = in(permutation(i)); });
 }
 
-template <typename ExecSpace, typename Permutation, typename InView, typename OutView>
+template <typename ExecSpace, typename Permutation, typename InView, typename OutView, typename Ordinal>
 void applyPermutationBlockValues(const ExecSpace& exec, const Permutation& permutation, const InView& in,
-                                 const OutView& out) {
-  uint64_t scalarsPerBlock = in.extent(0) / permutation.extent(0);
+                                 const OutView& out, Ordinal blockSize) {
+  uint64_t scalarsPerBlock = (uint64_t)blockSize * blockSize;
   if (in.extent(0) % scalarsPerBlock)
     throw std::invalid_argument(
         "sort_bsr_matrix: matrix values extent not divisible by graph entries "

@@ -158,7 +158,7 @@ void sort_crs_matrix(const crsMat_t& A) {
 // permute the values accordingly.
 template <typename execution_space, typename rowmap_t, typename entries_t, typename values_t,
           typename Ordinal = typename entries_t::non_const_value_type>
-void sort_bsr_matrix(const execution_space& exec, Ordinal blockdim, const rowmap_t& rowmap, const entries_t& entries,
+void sort_bsr_matrix(const execution_space& exec, Ordinal blockSize, const rowmap_t& rowmap, const entries_t& entries,
                      const values_t& values,
                      typename entries_t::non_const_value_type numCols =
                          Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
@@ -187,7 +187,7 @@ void sort_bsr_matrix(const execution_space& exec, Ordinal blockdim, const rowmap
   Kokkos::deep_copy(exec, origValues, values);
   Kokkos::deep_copy(exec, origEntries, entries);
   KokkosSparse::Impl::applyPermutation(exec, permutation, origEntries, entries);
-  KokkosSparse::Impl::applyPermutationBlockValues(exec, permutation, origValues, values);
+  KokkosSparse::Impl::applyPermutationBlockValues(exec, permutation, origValues, values, blockSize);
 }
 
 template <typename execution_space, typename rowmap_t, typename entries_t, typename values_t, typename Ordinal>
