@@ -190,8 +190,8 @@ struct SptrsvWrap {
     using CVector = Kokkos::View<const scalar_t *, Layout, typename ValuesType::device_type,
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
 
-    static constexpr size_type MAX_VEC_SIZE = 11;
-    static constexpr size_type BUFF_SIZE    = 128;
+    static constexpr size_type MAX_VEC_SIZE = 16;
+    static constexpr size_type BUFF_SIZE    = 256;
 
     using reftype = Vector;
 
@@ -215,7 +215,6 @@ struct SptrsvWrap {
           block_size(block_size_),
           block_items(block_size * block_size) {
       KK_REQUIRE_MSG(block_size > 0, "Tried to use block_size=0 with the blocked Common?");
-      KK_REQUIRE_MSG(block_size <= MAX_VEC_SIZE, "Max supported block size is " << MAX_VEC_SIZE);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -279,6 +278,9 @@ struct SptrsvWrap {
 
       // Need a temp block to do LU of A
       const auto block_size = b.size();
+      KK_KERNEL_REQUIRE_MSG(block_size <= MAX_VEC_SIZE,
+                            "Max supported block size for range-policy is 16. Use team-policy alg if you need more.");
+
       Block LU(&buff[0], block_size, block_size);
       assign(LU, A);
       KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Blocked>::invoke(LU);
