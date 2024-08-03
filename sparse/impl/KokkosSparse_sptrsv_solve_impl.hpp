@@ -340,6 +340,7 @@ struct SptrsvWrap {
     struct ReduceFunctorBasic {
       const Base *m_obj;
 
+      KOKKOS_INLINE_FUNCTION
       ReduceFunctorBasic(const Base *obj, const lno_t = 0) : m_obj(obj) {}
 
       KOKKOS_INLINE_FUNCTION
@@ -360,6 +361,7 @@ struct SptrsvWrap {
       const size_type block_size;
       const size_type b;
 
+      KOKKOS_INLINE_FUNCTION
       ReduceFunctorBlock(const Base *obj, const size_type block_size_, const size_type b_, const lno_t = 0)
           : P(obj), block_size(block_size_), b(b_) {}
 
