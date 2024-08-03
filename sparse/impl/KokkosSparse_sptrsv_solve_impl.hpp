@@ -79,7 +79,7 @@ struct SptrsvWrap {
   using range_type      = Kokkos::pair<int, int>;
 
   // Tag structs
-  struct UnsortedTag {}; //  This doesn't appear to be supported
+  struct UnsortedTag {};  //  This doesn't appear to be supported
   struct LargerCutoffTag {};
   struct UnsortedLargerCutoffTag {};
 
@@ -115,7 +115,7 @@ struct SptrsvWrap {
     RHSType rhs;
     entries_t nodes_grouped_by_level;
 
-    using reftype   = scalar_t &;
+    using reftype = scalar_t &;
 
     struct SBlock {
       template <typename T>
@@ -331,45 +331,40 @@ struct SptrsvWrap {
    */
   template <class RowMapType, class EntriesType, class ValuesType, class LHSType, class RHSType, bool BlockEnabled>
   struct Intermediate : public Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled> {
-    using Base    = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled>;
+    using Base = Common<RowMapType, EntriesType, ValuesType, LHSType, RHSType, BlockEnabled>;
 
     Intermediate(const RowMapType &row_map_, const EntriesType &entries_, const ValuesType &values_, LHSType &lhs_,
                  const RHSType &rhs_, const entries_t &nodes_grouped_by_level_, const size_type block_size_ = 0)
         : Base(row_map_, entries_, values_, lhs_, rhs_, nodes_grouped_by_level_, block_size_) {}
 
-    struct ReduceFunctorBasic
-    {
+    struct ReduceFunctorBasic {
       const Base *m_obj;
 
-      ReduceFunctorBasic(const Base* obj, const lno_t=0) : m_obj(obj) {}
+      ReduceFunctorBasic(const Base *obj, const lno_t = 0) : m_obj(obj) {}
 
       KOKKOS_INLINE_FUNCTION
-      static void multiply_subtract(const scalar_t& val, const scalar_t& lhs_col_val, scalar_t& accum)
-      {
+      static void multiply_subtract(const scalar_t &val, const scalar_t &lhs_col_val, scalar_t &accum) {
         accum -= val * lhs_col_val;
       }
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(size_type i, scalar_t& accum) const
-      {
+      void operator()(size_type i, scalar_t &accum) const {
         const auto colid = m_obj->entries(i);
         multiply_subtract(m_obj->vget(i), m_obj->lget(colid), accum);
       }
     };
 
-    struct ReduceFunctorBlock : public ReduceFunctorBasic
-    {
+    struct ReduceFunctorBlock : public ReduceFunctorBasic {
       using P = ReduceFunctorBasic;
 
       const size_type block_size;
       const size_type b;
 
-      ReduceFunctorBlock(const Base* obj, const size_type block_size_, const size_type b_, const lno_t=0)
-        : P(obj), block_size(block_size_), b(b_) {}
+      ReduceFunctorBlock(const Base *obj, const size_type block_size_, const size_type b_, const lno_t = 0)
+          : P(obj), block_size(block_size_), b(b_) {}
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(size_type i, scalar_t& accum) const
-      {
+      void operator()(size_type i, scalar_t &accum) const {
         const auto idx   = i / block_size;
         const auto colid = P::m_obj->entries(idx);
         P::multiply_subtract(P::m_obj->vget(idx)(b, i % block_size), P::m_obj->lget(colid)(b), accum);
@@ -411,8 +406,7 @@ struct SptrsvWrap {
               rf(i, lhs_val(b));
             }
           }
-        }
-        else {
+        } else {
           ReduceFunctorBasic rf(this, rowid);
           for (size_type i = itr_b; i < itr_e; ++i) {
             rf(i, lhs_val);
@@ -424,10 +418,10 @@ struct SptrsvWrap {
           if constexpr (BlockEnabled) {
             Kokkos::parallel_for(Kokkos::TeamThreadRange(*team, block_size), [&](size_type b) {
               ReduceFunctorBlock rf(this, Base::block_size, b, rowid);
-              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(*team, itr_b * block_size, itr_e * block_size), rf, lhs_val(b));
+              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(*team, itr_b * block_size, itr_e * block_size), rf,
+                                      lhs_val(b));
             });
-          }
-          else {
+          } else {
             ReduceFunctorBasic rf(this, rowid);
             Kokkos::parallel_reduce(Kokkos::TeamThreadRange(*team, itr_b, itr_e), rf, lhs_val);
           }
@@ -439,9 +433,8 @@ struct SptrsvWrap {
               for (size_type i = itr_b * block_size; i < itr_e * block_size; ++i) {
                 rf(i, lhs_val(b));
               }
-           });
-          }
-          else {
+            });
+          } else {
             ReduceFunctorBasic rf(this, rowid);
             Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(*team, itr_b, itr_e), rf, lhs_val);
           }
