@@ -229,7 +229,7 @@ Kokkos::View<uint64_t*, ExecSpace> generateBulkCrsKeys(const ExecSpace& exec, co
   Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   Kokkos::View<uint64_t*, ExecSpace> keys("keys", entries.extent(0));
   Kokkos::parallel_for(
-      "Fill CRS key rows", Kokkos::RangePolicy<ExecSpace>(exec, 0, numRows), KOKKOS_LAMBDA(Ordinal i) {
+      "CRS bulk sorting: mark row begins", Kokkos::RangePolicy<ExecSpace>(exec, 0, numRows), KOKKOS_LAMBDA(Ordinal i) {
         Offset rowBegin = rowmap(i);
         // Only mark the beginnings of non-empty rows.
         // Otherwise multiple rows could try to update the same key.
@@ -238,7 +238,7 @@ Kokkos::View<uint64_t*, ExecSpace> generateBulkCrsKeys(const ExecSpace& exec, co
         }
       });
   Kokkos::fence();
-  Kokkos::parallel_scan("Compute CRS keys", Kokkos::RangePolicy<ExecSpace>(exec, 0, entries.extent(0)),
+  Kokkos::parallel_scan("CRS bulk sorting: compute keys", Kokkos::RangePolicy<ExecSpace>(exec, 0, entries.extent(0)),
                         MaxScanFunctor<Offset, decltype(keys), Entries>(ncols, keys, entries));
   Kokkos::fence();
   return keys;
@@ -261,7 +261,7 @@ Kokkos::View<typename Rowmap::non_const_value_type*, ExecSpace> computeEntryPerm
 template <typename ExecSpace, typename Permutation, typename InView, typename OutView>
 void applyPermutation(const ExecSpace& exec, const Permutation& permutation, const InView& in, const OutView& out) {
   Kokkos::parallel_for(
-      "Apply CRS sorting permutation", Kokkos::RangePolicy<ExecSpace>(exec, 0, in.extent(0)),
+      "CRS bulk sorting: permute", Kokkos::RangePolicy<ExecSpace>(exec, 0, in.extent(0)),
       KOKKOS_LAMBDA(size_t i) { out(i) = in(permutation(i)); });
 }
 
@@ -274,7 +274,7 @@ void applyPermutationBlockValues(const ExecSpace& exec, const Permutation& permu
         "sort_bsr_matrix: matrix values extent not divisible by graph entries "
         "extent");
   Kokkos::parallel_for(
-      "Apply BSR sorting permutation", Kokkos::RangePolicy<ExecSpace>(exec, 0, in.extent(0)), KOKKOS_LAMBDA(size_t i) {
+      "BSR bulk sorting: permute", Kokkos::RangePolicy<ExecSpace>(exec, 0, in.extent(0)), KOKKOS_LAMBDA(size_t i) {
         uint64_t blockIndex    = i / scalarsPerBlock;
         uint64_t offsetInBlock = i % scalarsPerBlock;
         out(i)                 = in(permutation(blockIndex) * scalarsPerBlock + offsetInBlock);

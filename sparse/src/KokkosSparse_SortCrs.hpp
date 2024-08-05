@@ -74,7 +74,8 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
     values_managed_t valuesAux(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values aux"), values.extent(0));
     // On CPUs, use a sequential radix sort within each row.
     Kokkos::parallel_for(
-        "sort_crs_matrix", Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
+        "sort_crs_matrix[CPU,radix]",
+        Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
         KOKKOS_LAMBDA(Ordinal i) {
           Offset rowStart = rowmap(i);
           Offset rowEnd   = rowmap(i + 1);
@@ -124,7 +125,7 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
       Impl::MatrixSortThreadFunctor<TeamPol, Ordinal, rowmap_t, entries_t, values_t> funct(numRows, rowmap, entries,
                                                                                            values);
       Ordinal teamSize = TeamPol(exec, 1, 1, vectorLength).team_size_recommended(funct, Kokkos::ParallelForTag());
-      Kokkos::parallel_for("sort_crs_matrix",
+      Kokkos::parallel_for("sort_crs_matrix[GPU,bitonic]",
                            TeamPol(exec, (numRows + teamSize - 1) / teamSize, teamSize, vectorLength), funct);
     }
   }
@@ -238,7 +239,8 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
     using UnsignedOrdinal   = typename std::make_unsigned<Ordinal>::type;
     entries_managed_t entriesAux(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries aux"), entries.extent(0));
     Kokkos::parallel_for(
-        "sort_crs_graph", Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
+        "sort_crs_graph[CPU,radix]",
+        Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
         KOKKOS_LAMBDA(Ordinal i) {
           Offset rowStart = rowmap(i);
           Offset rowEnd   = rowmap(i + 1);
@@ -278,8 +280,8 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
 
       Impl::GraphSortThreadFunctor<TeamPol, Ordinal, rowmap_t, entries_t> funct(numRows, rowmap, entries);
       Ordinal teamSize = TeamPol(exec, 1, 1, vectorLength).team_size_recommended(funct, Kokkos::ParallelForTag());
-      Kokkos::parallel_for("sort_crs_graph", TeamPol(exec, (numRows + teamSize - 1) / teamSize, teamSize, vectorLength),
-                           funct);
+      Kokkos::parallel_for("sort_crs_graph[GPU,bitonic]",
+                           TeamPol(exec, (numRows + teamSize - 1) / teamSize, teamSize, vectorLength), funct);
     }
   }
 }
@@ -352,7 +354,7 @@ void sort_and_merge_matrix(const exec_space& exec, const typename rowmap_t::cons
   // done
   nc_rowmap_t nc_rowmap_out(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing, "SortedMerged rowmap"), numRows + 1);
   Offset numCompressedEntries = 0;
-  Kokkos::parallel_reduce(range_t(exec, 0, numRows),
+  Kokkos::parallel_reduce("KokkosSparse::Impl::MergedRowmapFunctor", range_t(exec, 0, numRows),
                           Impl::MergedRowmapFunctor<nc_rowmap_t, entries_t>(nc_rowmap_out, rowmap_in, entries_in),
                           numCompressedEntries);
   if (nnz == numCompressedEntries) {
@@ -384,7 +386,7 @@ void sort_and_merge_matrix(const exec_space& exec, const typename rowmap_t::cons
   values_out =
       values_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing, "SortedMerged values"), numCompressedEntries);
   // Compute merged entries and values
-  Kokkos::parallel_for(range_t(exec, 0, numRows),
+  Kokkos::parallel_for("KokkosSparse::Impl::MatrixMergedEntriesFunctor", range_t(exec, 0, numRows),
                        Impl::MatrixMergedEntriesFunctor<rowmap_t, entries_t, values_t>(
                            rowmap_orig, entries_orig, values_orig, rowmap_out, entries_out, values_out));
 }
@@ -460,7 +462,7 @@ void sort_and_merge_graph(const exec_space& exec, const typename rowmap_t::const
   // done
   nc_rowmap_t nc_rowmap_out(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing, "SortedMerged rowmap"), numRows + 1);
   Offset numCompressedEntries = 0;
-  Kokkos::parallel_reduce(range_t(exec, 0, numRows),
+  Kokkos::parallel_reduce("KokkosSparse::Impl::MergedRowmapFunctor", range_t(exec, 0, numRows),
                           Impl::MergedRowmapFunctor<rowmap_t, entries_t>(nc_rowmap_out, rowmap_in, entries_in),
                           numCompressedEntries);
   if (entries_in.extent(0) == size_t(numCompressedEntries)) {
@@ -491,8 +493,9 @@ void sort_and_merge_graph(const exec_space& exec, const typename rowmap_t::const
   entries_out =
       entries_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing, "SortedMerged entries"), numCompressedEntries);
   // Compute merged entries and values
-  Kokkos::parallel_for(range_t(exec, 0, numRows), Impl::GraphMergedEntriesFunctor<rowmap_t, entries_t>(
-                                                      rowmap_orig, entries_orig, rowmap_out, entries_out));
+  Kokkos::parallel_for(
+      "KokkosSparse::Impl::GraphMergedEntriesFunctor", range_t(exec, 0, numRows),
+      Impl::GraphMergedEntriesFunctor<rowmap_t, entries_t>(rowmap_orig, entries_orig, rowmap_out, entries_out));
 }
 
 template <typename exec_space, typename rowmap_t, typename entries_t>
