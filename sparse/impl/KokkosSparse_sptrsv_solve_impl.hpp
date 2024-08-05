@@ -396,15 +396,16 @@ struct SptrsvWrap {
       // We don't need the reducer to find the diag item if sorted
       typename Base::reftype lhs_val = Base::lget(rowid);
 
-      const auto block_size = BlockEnabled ? Base::get_block_size() : 1;
+      const auto block_size_ = BlockEnabled ? Base::get_block_size() : 1;
+      (void) block_size_; // Some settings do not use this var
 
       if constexpr (IsSerial) {
         KK_KERNEL_ASSERT_MSG(my_rank == 0, "Non zero rank in serial");
         KK_KERNEL_ASSERT_MSG(team == nullptr, "Team provided in serial?");
         if constexpr (BlockEnabled) {
-          for (size_type b = 0; b < block_size; ++b) {
-            ReduceFunctorBlock rf(this, Base::block_size, b, rowid);
-            for (size_type i = itr_b * block_size; i < itr_e * block_size; ++i) {
+          for (size_type b = 0; b < block_size_; ++b) {
+            ReduceFunctorBlock rf(this, block_size_, b, rowid);
+            for (size_type i = itr_b * block_size_; i < itr_e * block_size_; ++i) {
               rf(i, lhs_val(b));
             }
           }
@@ -418,9 +419,9 @@ struct SptrsvWrap {
         KK_KERNEL_ASSERT_MSG(team != nullptr, "Cannot do team operations without team");
         if constexpr (!UseThreadVec) {
           if constexpr (BlockEnabled) {
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(*team, block_size), [&](size_type b) {
-              ReduceFunctorBlock rf(this, Base::block_size, b, rowid);
-              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(*team, itr_b * block_size, itr_e * block_size), rf,
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(*team, block_size_), [&](size_type b) {
+              ReduceFunctorBlock rf(this, block_size_, b, rowid);
+              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(*team, itr_b * block_size_, itr_e * block_size_), rf,
                                       lhs_val(b));
             });
           } else {
@@ -430,9 +431,9 @@ struct SptrsvWrap {
           team->team_barrier();
         } else {
           if constexpr (BlockEnabled) {
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(*team, block_size), [&](size_type b) {
-              ReduceFunctorBlock rf(this, Base::block_size, b, rowid);
-              for (size_type i = itr_b * block_size; i < itr_e * block_size; ++i) {
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(*team, block_size_), [&](size_type b) {
+              ReduceFunctorBlock rf(this, block_size_, b, rowid);
+              for (size_type i = itr_b * block_size_; i < itr_e * block_size_; ++i) {
                 rf(i, lhs_val(b));
               }
             });
