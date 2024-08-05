@@ -397,7 +397,7 @@ struct SptrsvWrap {
       typename Base::reftype lhs_val = Base::lget(rowid);
 
       const auto block_size_ = BlockEnabled ? Base::get_block_size() : 1;
-      (void) block_size_; // Some settings do not use this var
+      (void)block_size_;  // Some settings do not use this var
 
       if constexpr (IsSerial) {
         KK_KERNEL_ASSERT_MSG(my_rank == 0, "Non zero rank in serial");
