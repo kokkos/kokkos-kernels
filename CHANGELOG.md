@@ -29,7 +29,6 @@
 - cusparse spgemm: provide non-null row-ptr [\#2213](https://github.com/kokkos/kokkos-kernels/pull/2213)
 - spmv_mv wrappers for rocsparse [\#2233](https://github.com/kokkos/kokkos-kernels/pull/2233)
 - Update rocsparse algo defaults [\#2245](https://github.com/kokkos/kokkos-kernels/pull/2245)
-- BLAS - gemv: using fallback when mode is 't' or 'c' and onemkl is used [\#2272](https://github.com/kokkos/kokkos-kernels/pull/2272)
 
 ### Build System:
 - cmake: add CMake language support for CUDA/HIP [\#2173](https://github.com/kokkos/kokkos-kernels/pull/2173)
