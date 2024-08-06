@@ -19,6 +19,14 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Sort.hpp"
 
+// Workaround for issue with Kokkos::Experimental::sort_by_key, with nvcc and OpenMP enabled
+// (Kokkos issue #7036, fixed in 4.4 release)
+// Once support for Kokkos < 4.4 is dropped,
+// all code inside "ifdef KK_DISABLE_BULK_SORT_BY_KEY" can be deleted.
+#if (KOKKOS_VERSION < 40400) && defined(KOKKOS_ENABLE_CUDA)
+#define KK_DISABLE_BULK_SORT_BY_KEY
+#endif
+
 namespace KokkosSparse {
 namespace Impl {
 
@@ -244,6 +252,7 @@ Kokkos::View<uint64_t*, ExecSpace> generateBulkCrsKeys(const ExecSpace& exec, co
   return keys;
 }
 
+#ifndef KK_DISABLE_BULK_SORT_BY_KEY
 template <typename ExecSpace, typename Rowmap, typename Entries>
 Kokkos::View<typename Rowmap::non_const_value_type*, ExecSpace> computeEntryPermutation(
     const ExecSpace& exec, const Rowmap& rowmap, const Entries& entries, typename Entries::non_const_value_type ncols) {
@@ -257,6 +266,15 @@ Kokkos::View<typename Rowmap::non_const_value_type*, ExecSpace> computeEntryPerm
   Kokkos::Experimental::sort_by_key(exec, keys, permutation);
   return permutation;
 }
+
+// Heuristic for choosing bulk sorting algorithm
+template <typename Ordinal>
+bool useBulkSortHeuristic(Ordinal avgDeg, Ordinal maxDeg) {
+  // Use bulk sort if matrix is highly imbalanced,
+  // OR the longest rows have many entries.
+  return (maxDeg / 10 > avgDeg) || (maxDeg > 1024);
+}
+#endif
 
 template <typename ExecSpace, typename Permutation, typename InView, typename OutView>
 void applyPermutation(const ExecSpace& exec, const Permutation& permutation, const InView& in, const OutView& out) {
@@ -279,14 +297,6 @@ void applyPermutationBlockValues(const ExecSpace& exec, const Permutation& permu
         uint64_t offsetInBlock = i % scalarsPerBlock;
         out(i)                 = in(permutation(blockIndex) * scalarsPerBlock + offsetInBlock);
       });
-}
-
-// Heuristic for choosing bulk sorting algorithm
-template <typename Ordinal>
-bool useBulkSortHeuristic(Ordinal avgDeg, Ordinal maxDeg) {
-  // Use bulk sort if matrix is highly imbalanced,
-  // OR the longest rows have many entries.
-  return (maxDeg / 10 > avgDeg) || (maxDeg > 1024);
 }
 
 }  // namespace Impl
