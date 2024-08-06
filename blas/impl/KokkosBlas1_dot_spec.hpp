@@ -481,7 +481,7 @@ struct Dot<execution_space, RV, XV, YV, X_Rank, Y_Rank, false, KOKKOSKERNELS_IMP
 
 #include <generated_specializations_hpp/KokkosBlas1_dot_mv_eti_spec_decl.hpp>
 
-#define KOKKOSBLAS1_DOT_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)	\
+#define KOKKOSBLAS1_DOT_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                           \
   template struct Dot<                                                                                    \
       EXEC_SPACE,                                                                                         \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \

@@ -294,7 +294,7 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2, fa
 
 #include <generated_specializations_hpp/KokkosBlas1_scal_eti_spec_decl.hpp>
 
-#define KOKKOSBLAS1_SCAL_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+#define KOKKOSBLAS1_SCAL_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                         \
   template struct Scal<                                                                                               \
       EXEC_SPACE,                                                                                                     \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \

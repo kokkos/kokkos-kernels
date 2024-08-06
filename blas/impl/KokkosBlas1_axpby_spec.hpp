@@ -563,7 +563,7 @@ struct Axpby<execution_space, typename XV::non_const_value_type, XV, typename YV
 
 #include <generated_specializations_hpp/KokkosBlas1_axpby_mv_eti_spec_decl.hpp>
 
-#define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+#define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                      \
   template struct Axpby<                                                                                               \
       EXEC_SPACE, SCALAR,                                                                                              \
       Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \

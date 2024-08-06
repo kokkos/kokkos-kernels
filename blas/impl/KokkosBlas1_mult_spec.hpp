@@ -261,7 +261,7 @@ struct Mult<execution_space, YV, AV, XV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LI
 
 #include <generated_specializations_hpp/KokkosBlas1_mult_mv_eti_spec_decl.hpp>
 
-#define KOKKOSBLAS1_MULT_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+#define KOKKOSBLAS1_MULT_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
   template struct Mult<                                                                                                \
       EXEC_SPACE,                                                                                                      \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
