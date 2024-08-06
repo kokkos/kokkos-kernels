@@ -192,14 +192,15 @@ void sort_bsr_matrix(const execution_space& exec, Ordinal blockSize, const rowma
   auto keys = Impl::generateBulkCrsKeys(exec, rowmap, entries, numCols);
   Kokkos::View<Offset*, execution_space> permutation(Kokkos::view_alloc(Kokkos::WithoutInitializing, "permutation"),
                                                      entries.extent(0));
+  KokkosKernels::Impl::sequential_fill(exec, permutation);
   Ordinal vectorLength = 1;
   Ordinal avgDeg       = (entries.extent(0) + numRows - 1) / numRows;
   while (vectorLength < avgDeg / 2) {
     vectorLength *= 2;
   }
   if (vectorLength > TeamPol ::vector_length_max()) vectorLength = TeamPol ::vector_length_max();
-  Impl::MatrixSortThreadFunctor<TeamPol, Ordinal, rowmap_t, entries_t, decltype(permutation)> funct(
-      numRows, rowmap, entries, permutation);
+  Impl::MatrixSortThreadFunctor<TeamPol, Ordinal, rowmap_t, decltype(keys), decltype(permutation)> funct(
+      numRows, rowmap, keys, permutation);
   Ordinal teamSize = TeamPol(exec, 1, 1, vectorLength).team_size_recommended(funct, Kokkos::ParallelForTag());
   Kokkos::parallel_for("sort_bulk_keys_by_row[GPU,bitonic]",
                        TeamPol(exec, (numRows + teamSize - 1) / teamSize, teamSize, vectorLength), funct);
