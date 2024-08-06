@@ -70,6 +70,13 @@ struct SptrsvTest {
     return A;
   }
 
+  static std::vector<std::vector<scalar_t>> get_6x6_ut_ones_fixture() {
+    std::vector<std::vector<scalar_t>> A = {{1.00, 1.00, 0.00, 0.00, 0.00, 0.00}, {0.00, 1.00, 0.00, 0.00, 0.00, 1.00},
+                                            {0.00, 0.00, 1.00, 1.00, 0.00, 1.00}, {0.00, 0.00, 0.00, 1.00, 0.00, 1.00},
+                                            {0.00, 0.00, 0.00, 0.00, 1.00, 1.00}, {0.00, 0.00, 0.00, 0.00, 0.00, 1.00}};
+    return A;
+  }
+
   static std::vector<std::vector<scalar_t>> get_5x5_ut_fixture() {
     const auto KZ                        = KEEP_ZERO<scalar_t>();
     std::vector<std::vector<scalar_t>> A = {{5.00, 1.00, 1.00, 0.00, KZ},
@@ -96,6 +103,13 @@ struct SptrsvTest {
                                             {1.00, 0.00, 1.00, 0.00, 0.00},
                                             {0.00, 0.00, 1.00, 1.00, 0.00},
                                             {0.00, 1.00, 1.00, 1.00, 1.00}};
+    return A;
+  }
+
+  static std::vector<std::vector<scalar_t>> get_6x6_lt_ones_fixture() {
+    std::vector<std::vector<scalar_t>> A = {{1.00, 0.00, 0.00, 0.00, 0.00, 0.00}, {1.00, 1.00, 0.00, 0.00, 0.00, 0.00},
+                                            {0.00, 0.00, 1.00, 0.00, 0.00, 0.00}, {0.00, 0.00, 0.00, 1.00, 0.00, 0.00},
+                                            {0.00, 0.00, 0.00, 1.00, 1.00, 0.00}, {0.00, 1.00, 1.00, 1.00, 1.00, 1.00}};
     return A;
   }
 
@@ -472,6 +486,21 @@ struct SptrsvTest {
     }
   }
 
+  static void run_test_sptrsv_blocks_impl(const bool is_lower, const size_type block_size) {
+    auto fixture                      = is_lower ? get_6x6_lt_ones_fixture() : get_6x6_ut_ones_fixture();
+    const auto [triMtx_crs, lhs, rhs] = create_crs_lhs_rhs(fixture);
+
+    Bsr triMtx(triMtx_crs, block_size);
+    basic_check(triMtx, lhs, rhs, is_lower, block_size);
+  }
+
+  static void run_test_sptrsv_blocks() {
+    for (size_type block_size : {1, 2, 3}) {
+      run_test_sptrsv_blocks_impl(true, block_size);
+      run_test_sptrsv_blocks_impl(false, block_size);
+    }
+  }
+
   static void run_test_sptrsv_streams(SPTRSVAlgorithm test_algo, int nstreams, const bool is_lower) {
     // Workaround for OpenMP: skip tests if concurrency < nstreams because of
     // not enough resource to partition
@@ -564,6 +593,7 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_sptrsv() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
   TestStruct::run_test_sptrsv();
+  TestStruct::run_test_sptrsv_blocks();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
