@@ -256,9 +256,8 @@ Kokkos::View<uint64_t*, ExecSpace> generateBulkCrsKeys(const ExecSpace& exec, co
 template <typename ExecSpace, typename Rowmap, typename Entries>
 Kokkos::View<typename Rowmap::non_const_value_type*, ExecSpace> computeEntryPermutation(
     const ExecSpace& exec, const Rowmap& rowmap, const Entries& entries, typename Entries::non_const_value_type ncols) {
-  using Offset  = typename Rowmap::non_const_value_type;
-  using Ordinal = typename Entries::non_const_value_type;
-  auto keys     = generateBulkCrsKeys(exec, rowmap, entries, ncols);
+  using Offset = typename Rowmap::non_const_value_type;
+  auto keys    = generateBulkCrsKeys(exec, rowmap, entries, ncols);
   Kokkos::View<Offset*, ExecSpace> permutation(Kokkos::view_alloc(Kokkos::WithoutInitializing, "permutation"),
                                                entries.extent(0));
   // This initializes permutation as the identity
