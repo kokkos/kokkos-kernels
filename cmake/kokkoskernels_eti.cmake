@@ -177,7 +177,7 @@ MACRO(KOKKOSKERNELS_GENERATE_ETI FUNCTION_NAME SUBFOLDER)
 
   LIST(APPEND ${ETI_HEADER_LIST} ${CMAKE_CURRENT_BINARY_DIR}/${AVAIL_HEADER})
 
-  IF(COMPONENTS STREQUAL "sparse")
+  IF("sparse" IN_LIST ETI_COMPONENTS)
     SET(DECL_HEADER   "${ETI_COMPONENTS}/eti/generated_specializations_hpp/Kokkos${FUNCTION_NAME}_eti_spec_decl.hpp")
     SET(DECL_TEMPLATE "${DECL_HEADER}.in")
 
@@ -191,7 +191,6 @@ MACRO(KOKKOSKERNELS_GENERATE_ETI FUNCTION_NAME SUBFOLDER)
 
   STRING(FIND "Blas1_scal;Blas1_scal_mv;Blas1_nrm2;Blas1_nrm2_mv;Blas1_dot;Blas1_dot_mv;KokkosBlas1_axpby;KokkosBlas1_axpby_mv;KokkosBlas1_mult;KokkosBlas1_mult_mv;KokkosBlas2_gemv;KokkosBlas3_trmm;KokkosBlas3_trsm" ${FUNCTION_NAME} DO_ETI)
   IF(${DO_ETI} GREATER -1)
-    MESSAGE(STATUS "Generating decl file: ${ETI_COMPONENTS}/eti/generated_specializations_hpp/Kokkos${FUNCTION_NAME}_eti_spec_decl.hpp")
     SET(DECL_HEADER   "${ETI_COMPONENTS}/eti/generated_specializations_hpp/Kokkos${FUNCTION_NAME}_eti_spec_decl.hpp")
     SET(DECL_TEMPLATE "${DECL_HEADER}.in")
 
