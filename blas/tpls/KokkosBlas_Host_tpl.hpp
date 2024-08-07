@@ -32,7 +32,7 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(MKL_PROVIDES_BLAS_LAPACK)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
 using KK_INT = MKL_INT;
 #else
 using KK_INT = int;
