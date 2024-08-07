@@ -248,11 +248,11 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void divide(const member_type &team, const Vector &b, const CBlock &A) {
       // Team-shared buffer. Use for team work.
-      const auto block_size = b.size();
-      SBlock shared_buff(team.team_shmem(), block_size, block_size);
+      const auto block_size_ = b.size();
+      SBlock shared_buff(team.team_shmem(), block_size_, block_size_);
 
       // Need a temp block to do LU of A
-      Block LU(shared_buff.data(), block_size, block_size);
+      Block LU(shared_buff.data(), block_size_, block_size_);
       assign(team, LU, A);
       team.team_barrier();
       KokkosBatched::TeamLU<member_type, KokkosBatched::Algo::LU::Blocked>::invoke(team, LU);
@@ -277,11 +277,11 @@ struct SptrsvWrap {
       scalar_t buff[BUFF_SIZE];
 
       // Need a temp block to do LU of A
-      const auto block_size = b.size();
-      KK_KERNEL_REQUIRE_MSG(block_size <= MAX_VEC_SIZE,
+      const auto block_size_ = b.size();
+      KK_KERNEL_REQUIRE_MSG(block_size_ <= MAX_VEC_SIZE,
                             "Max supported block size for range-policy is 16. Use team-policy alg if you need more.");
 
-      Block LU(&buff[0], block_size, block_size);
+      Block LU(&buff[0], block_size_, block_size_);
       assign(LU, A);
       KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Blocked>::invoke(LU);
 
