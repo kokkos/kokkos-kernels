@@ -5,6 +5,9 @@
 
 ### New Features
 
+#### Sparse
+- Add support for BSRs to sptrsv [\#2281](https://github.com/kokkos/kokkos-kernels/pull/2281)
+
 #### Batched updates
 - Add batched serial tbsv [\#2202](https://github.com/kokkos/kokkos-kernels/pull/2202)
 - Implement batched serial pttrf [\#2256](https://github.com/kokkos/kokkos-kernels/pull/2256)
@@ -23,7 +26,6 @@
 #### Misc updates
 
 #### TPL support
-- Changes to enable OneAPI usage with Trilinos build [\#2185](https://github.com/kokkos/kokkos-kernels/pull/2185)
 - Performance improvement: disable cuBLAS dot wrapper [\#2206](https://github.com/kokkos/kokkos-kernels/pull/2206)
 - SPMV TPLs: improve profile region labels [\#2219](https://github.com/kokkos/kokkos-kernels/pull/2219)
 - cusparse spgemm: provide non-null row-ptr [\#2213](https://github.com/kokkos/kokkos-kernels/pull/2213)
