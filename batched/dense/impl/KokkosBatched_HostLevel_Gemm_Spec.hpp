@@ -165,8 +165,6 @@ struct BatchedGemmSpec {
 }  // namespace Impl
 }  // namespace KokkosBatched
 
-
-
 // ETI instantiation macros, consumed by *.cpp.in files
 #define KOKKOSBATCHED_GEMM_ETI_SPEC_DECL_INNER(ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, SCALAR, LAYOUT, EXEC_SPACE, \
                                                MEM_SPACE)                                                              \

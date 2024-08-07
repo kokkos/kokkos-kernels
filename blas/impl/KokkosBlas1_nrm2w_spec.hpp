@@ -192,7 +192,7 @@ struct Nrm2w<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
 //
 #define KOKKOSBLAS1_NRM2W_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                    \
   extern template struct Nrm2w<EXEC_SPACE,                                                                        \
-			       Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
+                               Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
                                             LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                                Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,         \
                                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                            \
