@@ -55,9 +55,7 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
   static_assert(!std::is_const_v<typename entries_t::value_type>,
                 "sort_crs_matrix: entries_t must not be const-valued");
   static_assert(!std::is_const_v<typename values_t::value_type>, "sort_crs_matrix: value_t must not be const-valued");
-  using Offset  = typename rowmap_t::non_const_value_type;
   using Ordinal = typename entries_t::non_const_value_type;
-  using Scalar  = typename values_t::non_const_value_type;
   // This early return condition covers having 0 or 1 entries,
   // which is also implied by having 0 rows or 0 columns.
   // If only 1 entry, the matrix is already sorted.
@@ -231,7 +229,6 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
                     typename entries_t::non_const_value_type numCols =
                         Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
   using Ordinal = typename entries_t::non_const_value_type;
-  using Offset  = typename rowmap_t::non_const_value_type;
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename rowmap_t::memory_space>::accessible,
                 "sort_crs_graph: rowmap_t is not accessible from the given execution "
                 "space");
