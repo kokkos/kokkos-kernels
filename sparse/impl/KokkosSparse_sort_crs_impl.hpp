@@ -18,6 +18,7 @@
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Sort.hpp"
+#include "KokkosKernels_Sorting.hpp"
 
 // Workaround for issue with Kokkos::Experimental::sort_by_key, with nvcc and OpenMP enabled
 // (Kokkos issue #7036, fixed in 4.4 release)
@@ -30,11 +31,45 @@
 namespace KokkosSparse {
 namespace Impl {
 
+template <typename rowmap_t, typename entries_t, typename values_t>
+struct MatrixRadixSortFunctor {
+  using Offset          = typename rowmap_t::non_const_value_type;
+  using Ordinal         = typename entries_t::non_const_value_type;
+  using UnsignedOrdinal = typename std::make_unsigned<Ordinal>::type;
+  using Scalar          = typename values_t::non_const_value_type;
+  // The functor owns memory for entriesAux, so it can't have
+  // MemoryTraits<Unmanaged>
+  using entries_managed_t = Kokkos::View<typename entries_t::data_type, typename entries_t::device_type>;
+  using values_managed_t  = Kokkos::View<typename values_t::data_type, typename values_t::device_type>;
+
+  MatrixRadixSortFunctor(const rowmap_t& rowmap_, const entries_t& entries_, const values_t& values_)
+      : rowmap(rowmap_), entries(entries_), values(values_) {
+    entriesAux = entries_managed_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries aux"), entries.extent(0));
+    valuesAux  = values_managed_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values aux"), values.extent(0));
+  }
+
+  KOKKOS_INLINE_FUNCTION void operator()(Ordinal i) const {
+    Offset rowStart = rowmap(i);
+    Offset rowEnd   = rowmap(i + 1);
+    Ordinal rowNum  = rowEnd - rowStart;
+    // Radix sort requires unsigned keys for comparison
+    KokkosKernels::SerialRadixSort2<Ordinal, UnsignedOrdinal, Scalar>(
+        (UnsignedOrdinal*)entries.data() + rowStart, (UnsignedOrdinal*)entriesAux.data() + rowStart,
+        values.data() + rowStart, valuesAux.data() + rowStart, rowNum);
+  }
+
+  rowmap_t rowmap;
+  entries_t entries;
+  entries_managed_t entriesAux;
+  values_t values;
+  values_managed_t valuesAux;
+};
+
 template <typename Policy, typename Ordinal, typename rowmap_t, typename entries_t, typename values_t>
-struct MatrixSortThreadFunctor {
+struct MatrixThreadSortFunctor {
   using Offset = typename rowmap_t::non_const_value_type;
 
-  MatrixSortThreadFunctor(Ordinal numRows_, const rowmap_t& rowmap_, const entries_t& entries_, const values_t& values_)
+  MatrixThreadSortFunctor(Ordinal numRows_, const rowmap_t& rowmap_, const entries_t& entries_, const values_t& values_)
       : numRows(numRows_), rowmap(rowmap_), entries(entries_), values(values_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const typename Policy::member_type& t) const {
@@ -53,11 +88,38 @@ struct MatrixSortThreadFunctor {
   values_t values;
 };
 
+template <typename rowmap_t, typename entries_t>
+struct GraphRadixSortFunctor {
+  using Offset          = typename rowmap_t::non_const_value_type;
+  using Ordinal         = typename entries_t::non_const_value_type;
+  using UnsignedOrdinal = typename std::make_unsigned<Ordinal>::type;
+  // The functor owns memory for entriesAux, so it can't have
+  // MemoryTraits<Unmanaged>
+  using entries_managed_t = Kokkos::View<typename entries_t::data_type, typename entries_t::device_type>;
+
+  GraphRadixSortFunctor(const rowmap_t& rowmap_, const entries_t& entries_) : rowmap(rowmap_), entries(entries_) {
+    entriesAux = entries_managed_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries aux"), entries.extent(0));
+  }
+
+  KOKKOS_INLINE_FUNCTION void operator()(Ordinal i) const {
+    Offset rowStart = rowmap(i);
+    Offset rowEnd   = rowmap(i + 1);
+    Ordinal rowNum  = rowEnd - rowStart;
+    // Radix sort requires unsigned keys for comparison
+    KokkosKernels::SerialRadixSort<Ordinal, UnsignedOrdinal>((UnsignedOrdinal*)entries.data() + rowStart,
+                                                             (UnsignedOrdinal*)entriesAux.data() + rowStart, rowNum);
+  }
+
+  rowmap_t rowmap;
+  entries_t entries;
+  entries_managed_t entriesAux;
+};
+
 template <typename Policy, typename Ordinal, typename rowmap_t, typename entries_t>
-struct GraphSortThreadFunctor {
+struct GraphThreadSortFunctor {
   using Offset = typename rowmap_t::non_const_value_type;
 
-  GraphSortThreadFunctor(Ordinal numRows_, const rowmap_t& rowmap_, const entries_t& entries_)
+  GraphThreadSortFunctor(Ordinal numRows_, const rowmap_t& rowmap_, const entries_t& entries_)
       : numRows(numRows_), rowmap(rowmap_), entries(entries_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const typename Policy::member_type& t) const {

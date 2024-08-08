@@ -18,7 +18,6 @@
 
 #include "KokkosSparse_sort_crs_impl.hpp"
 #include "KokkosSparse_Utils.hpp"
-#include "KokkosKernels_Sorting.hpp"
 
 namespace KokkosSparse {
 
@@ -67,24 +66,10 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
   }
   Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if constexpr (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
-    using UnsignedOrdinal   = typename std::make_unsigned<Ordinal>::type;
-    using entries_managed_t = Kokkos::View<typename entries_t::data_type, typename entries_t::device_type>;
-    using values_managed_t  = Kokkos::View<typename values_t::data_type, typename values_t::device_type>;
-    entries_managed_t entriesAux(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries aux"), entries.extent(0));
-    values_managed_t valuesAux(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values aux"), values.extent(0));
     // On CPUs, use a sequential radix sort within each row.
-    Kokkos::parallel_for(
-        "sort_crs_matrix[CPU,radix]",
-        Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
-        KOKKOS_LAMBDA(Ordinal i) {
-          Offset rowStart = rowmap(i);
-          Offset rowEnd   = rowmap(i + 1);
-          Ordinal rowNum  = rowEnd - rowStart;
-          // Radix sort requires unsigned keys for comparison
-          KokkosKernels::SerialRadixSort2<Ordinal, UnsignedOrdinal, Scalar>(
-              (UnsignedOrdinal*)entries.data() + rowStart, (UnsignedOrdinal*)entriesAux.data() + rowStart,
-              values.data() + rowStart, valuesAux.data() + rowStart, rowNum);
-        });
+    Kokkos::parallel_for("sort_crs_matrix[CPU,radix]",
+                         Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
+                         Impl::MatrixRadixSortFunctor<rowmap_t, entries_t, values_t>(rowmap, entries, values));
   } else {
     // On GPUs:
     //   If the matrix is highly imbalanced, or has long rows AND the dimensions
@@ -127,7 +112,7 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
         vectorLength *= 2;
       }
       if (vectorLength > TeamPol ::vector_length_max()) vectorLength = TeamPol ::vector_length_max();
-      Impl::MatrixSortThreadFunctor<TeamPol, Ordinal, rowmap_t, entries_t, values_t> funct(numRows, rowmap, entries,
+      Impl::MatrixThreadSortFunctor<TeamPol, Ordinal, rowmap_t, entries_t, values_t> funct(numRows, rowmap, entries,
                                                                                            values);
       Ordinal teamSize = TeamPol(exec, 1, 1, vectorLength).team_size_recommended(funct, Kokkos::ParallelForTag());
       Kokkos::parallel_for("sort_crs_matrix[GPU,bitonic]",
@@ -199,7 +184,7 @@ void sort_bsr_matrix(const execution_space& exec, Ordinal blockSize, const rowma
     vectorLength *= 2;
   }
   if (vectorLength > TeamPol ::vector_length_max()) vectorLength = TeamPol ::vector_length_max();
-  Impl::MatrixSortThreadFunctor<TeamPol, Ordinal, rowmap_t, decltype(keys), decltype(permutation)> funct(
+  Impl::MatrixThreadSortFunctor<TeamPol, Ordinal, rowmap_t, decltype(keys), decltype(permutation)> funct(
       numRows, rowmap, keys, permutation);
   Ordinal teamSize = TeamPol(exec, 1, 1, vectorLength).team_size_recommended(funct, Kokkos::ParallelForTag());
   Kokkos::parallel_for("sort_bulk_keys_by_row[GPU,bitonic]",
@@ -260,22 +245,10 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
   }
   if constexpr (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
     // If on CPU, sort each row independently. Don't need to know numCols for
-    // this. Need a 2nd buffer for radix sort. Use a new entries view type in
-    // case entries_t is unmanaged
-    using entries_managed_t = Kokkos::View<typename entries_t::data_type, typename entries_t::device_type>;
-    using UnsignedOrdinal   = typename std::make_unsigned<Ordinal>::type;
-    entries_managed_t entriesAux(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries aux"), entries.extent(0));
-    Kokkos::parallel_for(
-        "sort_crs_graph[CPU,radix]",
-        Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
-        KOKKOS_LAMBDA(Ordinal i) {
-          Offset rowStart = rowmap(i);
-          Offset rowEnd   = rowmap(i + 1);
-          Ordinal rowNum  = rowEnd - rowStart;
-          // Radix sort requires unsigned keys for comparison
-          KokkosKernels::SerialRadixSort<Ordinal, UnsignedOrdinal>(
-              (UnsignedOrdinal*)entries.data() + rowStart, (UnsignedOrdinal*)entriesAux.data() + rowStart, rowNum);
-        });
+    // this.
+    Kokkos::parallel_for("sort_crs_graph[CPU,radix]",
+                         Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
+                         Impl::GraphRadixSortFunctor<rowmap_t, entries_t>(rowmap, entries));
   } else {
     // On GPUs:
     //   If the graph is highly imbalanced AND the dimensions are not too large
@@ -310,7 +283,7 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
       }
       if (vectorLength > TeamPol ::vector_length_max()) vectorLength = TeamPol ::vector_length_max();
 
-      Impl::GraphSortThreadFunctor<TeamPol, Ordinal, rowmap_t, entries_t> funct(numRows, rowmap, entries);
+      Impl::GraphThreadSortFunctor<TeamPol, Ordinal, rowmap_t, entries_t> funct(numRows, rowmap, entries);
       Ordinal teamSize = TeamPol(exec, 1, 1, vectorLength).team_size_recommended(funct, Kokkos::ParallelForTag());
       Kokkos::parallel_for("sort_crs_graph[GPU,bitonic]",
                            TeamPol(exec, (numRows + teamSize - 1) / teamSize, teamSize, vectorLength), funct);
