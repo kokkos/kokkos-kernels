@@ -1,0 +1,19 @@
+#
+# Add formatting and other uninteresting commits here and
+# 'git blame $file' will skip them IF
+# A) you have it configured to do so globally (dangerous, this will break git blame on repos that don't have a .git-blame-ignore-revs file.
+#   git config --global blame.ignoreRevsFile .git-blame-ignore-revs
+# OR
+# B) you have it configured to do so locally (tedious, you have to remember to do this in every KK clone)
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# OR
+# C) you have an aliased blame command for KokkosKernels:
+#   git config --global alias.kkblame 'blame --ignore-revs-file=.git-blame-ignore-revs'
+#   NOTE: this implies you run 'git kkblame $file'
+# OR
+# D) you explicitly tell blame to skip them
+#  git blame --ignore-revs-file=.git-blame-ignore-revs $file
+#
+# List skips here:
+985c3a9e7343c2f612560024cae4d968f800c8ac
+0ffb820881335beb0e78463c19988a0c61044705

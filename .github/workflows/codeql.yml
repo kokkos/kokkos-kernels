@@ -1,0 +1,105 @@
+# For most projects, this workflow file will not need changing; you simply need
+# to commit it to your repository.
+#
+# You may wish to alter this file to override the set of languages analyzed,
+# or to provide custom queries or build logic.
+#
+# ******** NOTE ********
+# We have attempted to detect the languages in your repository. Please check
+# the `language` matrix defined below to confirm you have the correct set of
+# supported CodeQL languages.
+#
+name: "CodeQL"
+
+on:
+  push:
+    branches: ["master", "develop", "release-*"]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: ["develop"]
+  schedule:
+    - cron: "0 8 * * 0"
+
+permissions: read-all
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@0d381219ddf674d61a7572ddd19d7941e271515c # v2.9.0
+      with:
+        egress-policy: audit
+
+    - name: checkout_kokkos_kernels
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      with:
+        path: kokkos-kernels
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@afb54ba388a7dca6ecae48f608c4ff05ff4cc77a # v3.25.15
+      with:
+        languages: c-cpp
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the list here with "+" to use these queries and those in the config file.
+
+    - name: checkout_kokkos
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      with:
+        repository: 'kokkos/kokkos'
+        path: 'kokkos'
+        ref: '4.3.01'
+
+    - name: configure_kokkos
+      run: |
+        mkdir -p kokkos/{build,install}
+        cd kokkos/build
+        cmake -S ${{github.workspace}}/kokkos \
+        -B ${{github.workspace}}/kokkos/build \
+        -D Kokkos_ENABLE_SERIAL=ON \
+        -D CMAKE_CXX_FLAGS="-Werror" \
+        -D CMAKE_CXX_STANDARD=17 \
+        -D Kokkos_ENABLE_COMPILER_WARNINGS=ON \
+        -D Kokkos_ENABLE_TESTS=OFF \
+        -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+        -D CMAKE_BUILD_TYPE=RELEASE \
+        -D CMAKE_INSTALL_PREFIX=${{github.workspace}}/kokkos/install
+
+    - name: build_and_install_kokkos
+      working-directory: kokkos/build
+      run: make -j2 install
+
+    - name: configure_kokkos_kernels
+      run: |
+        mkdir -p kokkos-kernels/{build,install}
+        cd kokkos-kernels/build
+        cmake \
+        -S ${{github.workspace}}/kokkos-kernels \
+        -DKokkos_ROOT=${{github.workspace}}/kokkos/install \
+        -DCMAKE_BUILD_TYPE=RELEASE \
+        -DCMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
+        -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/kokkos-kernels/install \
+        -DKokkosKernels_ENABLE_TESTS=ON \
+        -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+        -DKokkosKernels_INST_DOUBLE=ON \
+        -DKokkosKernels_INST_LAYOUTLEFT:BOOL=ON \
+        -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=OFF \
+        -DKokkosKernels_INST_OFFSET_INT=ON \
+        -DKokkosKernels_INST_OFFSET_SIZE_T=OFF
+
+    - name: build_kokkos_kernels
+      working-directory: kokkos-kernels/build
+      run: make -j2
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@afb54ba388a7dca6ecae48f608c4ff05ff4cc77a # v3.25.15
+      with:
+        category: "/language:c-cpp"
