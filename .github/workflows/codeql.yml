@@ -56,7 +56,7 @@ jobs:
       with:
         repository: 'kokkos/kokkos'
         path: 'kokkos'
-        ref: '4.3.00'
+        ref: '4.3.01'
 
     - name: configure_kokkos
       run: |
