@@ -24,6 +24,13 @@
 
 namespace KokkosKernels {
 
+namespace Impl {
+template <typename Value>
+struct DefaultComparator {
+  KOKKOS_INLINE_FUNCTION bool operator()(const Value lhs, const Value rhs) const { return lhs < rhs; }
+};
+}  // namespace Impl
+
 // ----------------------------
 // General device-level sorting
 // ----------------------------
@@ -31,7 +38,7 @@ namespace KokkosKernels {
 // Bitonic sort: sorts v according to the comparator object's operator().
 // Default comparator is just operator< for v's element type.
 template <typename View, typename ExecSpace, typename Ordinal,
-          typename Comparator = Kokkos::Experimental::Impl::StdAlgoLessThanBinaryPredicate<typename View::value_type>>
+          typename Comparator = Impl::DefaultComparator<typename View::value_type>>
 void bitonicSort(View v, const Comparator& comp = Comparator());
 
 // --------------------------------------------------------
@@ -366,7 +373,7 @@ KOKKOS_INLINE_FUNCTION void SerialRadixSort2(ValueType* values, ValueType* value
 // memory references are coalesced Con: O(n log^2(n)) serial time is bad on CPUs
 // Good diagram of the algorithm at https://en.wikipedia.org/wiki/Bitonic_sorter
 template <typename Ordinal, typename ValueType, typename TeamMember,
-          typename Comparator = Kokkos::Experimental::Impl::StdAlgoLessThanBinaryPredicate<ValueType>>
+          typename Comparator = Impl::DefaultComparator<ValueType>>
 [[deprecated("Use Kokkos::Experimental::sort_team instead")]] KOKKOS_INLINE_FUNCTION void TeamBitonicSort(
     ValueType* values, Ordinal n, const TeamMember mem, const Comparator& comp = Comparator()) {
   Kokkos::View<ValueType*, Kokkos::AnonymousSpace> valuesView(values, n);
@@ -375,7 +382,7 @@ template <typename Ordinal, typename ValueType, typename TeamMember,
 
 // Sort "values", while applying the same swaps to "perm"
 template <typename Ordinal, typename ValueType, typename PermType, typename TeamMember,
-          typename Comparator = Kokkos::Experimental::Impl::StdAlgoLessThanBinaryPredicate<ValueType>>
+          typename Comparator = Impl::DefaultComparator<ValueType>>
 [[deprecated("Use Kokkos::Experimental::sort_by_key_team instead")]] KOKKOS_INLINE_FUNCTION void TeamBitonicSort2(
     ValueType* values, PermType* perm, Ordinal n, const TeamMember mem, const Comparator& comp = Comparator()) {
   Kokkos::View<ValueType*, Kokkos::AnonymousSpace> valuesView(values, n);
