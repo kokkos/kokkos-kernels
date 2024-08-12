@@ -1,0 +1,99 @@
+name: github-H100
+
+# Only allow manual runs until at2 runners are available.
+on:
+  pull_request:
+    paths-ignore:
+    - '**/*.rst'
+    - '**/*.md'
+    - '**/requirements.txt'
+    - '**/*.py'
+    - 'docs/**'
+    types: [ opened, reopened, synchronize ]
+  pull_request_review:
+    types:
+      - submitted
+
+permissions:
+  contents: none
+
+# Cancels any in progress 'workflow' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL:
+    name: PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL
+    runs-on: [kk-env-cuda-11.8.0-gcc-11.3.0-latest]
+    
+    steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ github.base_ref }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          nvidia-smi
+          cd kokkos/build
+          cmake -DCMAKE_CXX_COMPILER=$PWD/../bin/nvcc_wrapper \
+            -DCMAKE_CXX_FLAGS= \
+            -DCMAKE_EXE_LINKER_FLAGS= \
+            -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+            -DKokkos_ENABLE_CUDA=ON \
+            -DKokkos_ARCH_HOPPER90=ON \
+            -DKokkos_ENABLE_TESTS=OFF \
+            -DKokkos_ENABLE_EXAMPLES=OFF \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            ..
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j12 install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cd kokkos-kernels/build
+          cmake \
+            -DCMAKE_CXX_COMPILER=$PWD/../../kokkos/bin/nvcc_wrapper \
+            -DKokkos_DIR=$PWD/../../kokkos/install/lib64/cmake/Kokkos \
+            -DCMAKE_CXX_FLAGS="" \
+            -DCMAKE_INSTALL_PREFIX= \
+            -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+            -DKokkosKernels_ENABLE_TESTS=ON \
+            -DKokkosKernels_ENABLE_PERFTESTS=ON \
+            -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
+            -DKokkosKernels_ENABLE_TPL_ROCSPARSE=OFF \
+            -DKokkosKernels_ENABLE_TPL_ROCBLAS=OFF \
+            -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
+            -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
+            -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
+            -DKokkosKernels_INST_LAYOUTRIGHT=ON \
+            -DCMAKE_EXE_LINKER_FLAGS="" \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DKokkosKernels_ENABLE_DOCS=OFF \
+            ..
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        run: make -j12 all
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest --output-on-failure -V --timeout 3600

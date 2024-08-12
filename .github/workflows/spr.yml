@@ -1,0 +1,63 @@
+name: github-SPR
+
+# Only allow manual runs until at2 runners are available.
+on: workflow_dispatch
+  #pull_request:
+  #  paths-ignore:
+  #  - '**/*.rst'
+  #  - '**/*.md'
+  #  - '**/requirements.txt'
+  #  - '**/*.py'
+  #  - 'docs/**'
+  #  types: [ opened, reopened, synchronize ]
+  #pull_request_review:
+  #  types:
+  #    - submitted
+
+permissions:
+  contents: none
+
+# Cancels any in progress 'workflow' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  PR_SPR_ONEAPI202310_OPENMP_LEFT_MKLBLAS_MKLLAPACK_REL:
+    name: PR_SPR_ONEAPI202310_OPENMP_LEFT_MKLBLAS_MKLLAPACK_REL
+    runs-on: [kk-env-intel-oneapi-compilers-2023.1.0-latest]
+    
+    steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ github.base_ref }}
+          path: kokkos
+
+      - name: configure
+        run: |
+          mkdir -p build
+          cd build
+          ../kokkos-kernels/cm_generate_makefile.bash \
+            --with-openmp \
+            --with-serial \
+            --arch=SPR \
+            --compiler=icpx \
+            --cxxflags="-fp-model=precise" \
+            --with-tpls=mkl \
+            --kokkos-cmake-flags=-DKokkos_ENABLE_ONEDPL=OFF \
+            --kokkos-path=$PWD/../kokkos
+
+      - name: build
+        working-directory: build
+        run: make -j16
+
+      - name: test
+        working-directory: build
+        run: ctest --output-on-failure -V --timeout 3600
