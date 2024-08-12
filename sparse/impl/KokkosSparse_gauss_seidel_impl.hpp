@@ -606,8 +606,8 @@ class PointGaussSeidel {
       nnz_lno_t color      = t.league_rank();
       nnz_lno_t colorBegin = color_xadj(color);
       nnz_lno_t colorLen   = color_xadj(color + 1) - colorBegin;
-      KokkosKernels::TeamBitonicSort(color_adj.data() + colorBegin, colorLen, t, comp);
-      t.team_barrier();
+      Kokkos::Experimental::sort_team(
+          t, Kokkos::subview(color_adj, Kokkos::make_pair(colorBegin, colorBegin + colorLen)), comp);
       // Now that the color set is sorted, count how many long rows there were
       nnz_lno_t numLongRows;
       Kokkos::parallel_reduce(

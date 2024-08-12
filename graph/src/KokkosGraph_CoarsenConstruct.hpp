@@ -73,8 +73,8 @@ struct SortLowDegreeCrsMatrixFunctor {
       Kokkos::single(Kokkos::PerTeam(t), [&]() { reducer++; });
       return;
     }
-    KokkosKernels::TeamBitonicSort2<lno_t, lno_t, scalar_t, team_mem>(entries.data() + rowStart,
-                                                                      values.data() + rowStart, rowNum, t);
+    Kokkos::Experimental::sort_by_key_team(t, Kokkos::subview(entries, Kokkos::make_pair(rowStart, rowEnd)),
+                                           Kokkos::subview(values, Kokkos::make_pair(rowStart, rowEnd)));
   }
 
   rowmap_t rowmap;
