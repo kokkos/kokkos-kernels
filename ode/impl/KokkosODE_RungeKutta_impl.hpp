@@ -155,7 +155,7 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
 
     // Update time and initial condition for next time step
     t_now += dt;
-    *count += 1;
+    *step_count += 1;
     for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
       y0(eqIdx) = y(eqIdx);
     }
