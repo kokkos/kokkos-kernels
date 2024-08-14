@@ -321,6 +321,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, true
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
       false, true>;
 
+#include <generated_specializations_hpp/KokkosSparse_spmv_bsrmatrix_eti_spec_decl.hpp>
+
 #define KOKKOSSPARSE_SPMV_BSRMATRIX_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,             \
                                                   EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                                 \
   template struct SPMV_BSRMATRIX<                                                                                  \
@@ -351,6 +353,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, true
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
       std::is_integral_v<SCALAR_TYPE>, false, true>;
+
+#include <generated_specializations_hpp/KokkosSparse_spmv_mv_bsrmatrix_eti_spec_decl.hpp>
 
 #define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,          \
                                                      EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                              \
