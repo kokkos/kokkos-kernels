@@ -19,14 +19,12 @@ TEST_F(TestCategory, test_batched_pttrs_l_fcomplex) {
   using algo_tag_type  = typename Algo::Pttrs::Unblocked;
   using param_tag_type = ::Test::Pttrs::ParamTag<Uplo::Lower>;
 
-  test_batched_pttrs<TestDevice, Kokkos::complex<float>, param_tag_type,
-                     algo_tag_type>();
+  test_batched_pttrs<TestDevice, Kokkos::complex<float>, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, test_batched_pttrs_u_fcomplex) {
   using algo_tag_type  = typename Algo::Pttrs::Unblocked;
   using param_tag_type = ::Test::Pttrs::ParamTag<Uplo::Upper>;
-  test_batched_pttrs<TestDevice, Kokkos::complex<float>, param_tag_type,
-                     algo_tag_type>();
+  test_batched_pttrs<TestDevice, Kokkos::complex<float>, param_tag_type, algo_tag_type>();
 }
 #endif
 
@@ -35,13 +33,11 @@ TEST_F(TestCategory, test_batched_pttrs_l_dcomplex) {
   using algo_tag_type  = typename Algo::Pttrs::Unblocked;
   using param_tag_type = ::Test::Pttrs::ParamTag<Uplo::Lower>;
 
-  test_batched_pttrs<TestDevice, Kokkos::complex<double>, param_tag_type,
-                     algo_tag_type>();
+  test_batched_pttrs<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 TEST_F(TestCategory, test_batched_pttrs_u_dcomplex) {
   using algo_tag_type  = typename Algo::Pttrs::Unblocked;
   using param_tag_type = ::Test::Pttrs::ParamTag<Uplo::Upper>;
-  test_batched_pttrs<TestDevice, Kokkos::complex<double>, param_tag_type,
-                     algo_tag_type>();
+  test_batched_pttrs<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
 #endif

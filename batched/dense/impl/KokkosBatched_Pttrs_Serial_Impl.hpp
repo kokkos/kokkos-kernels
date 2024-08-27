@@ -25,22 +25,16 @@
 namespace KokkosBatched {
 
 template <typename DViewType, typename EViewType, typename BViewType>
-KOKKOS_INLINE_FUNCTION static int checkPttrsInput(
-    [[maybe_unused]] const DViewType &d, [[maybe_unused]] const EViewType &e,
-    [[maybe_unused]] const BViewType &b) {
-  static_assert(Kokkos::is_view_v<DViewType>,
-                "KokkosBatched::pttrs: DViewType is not a Kokkos::View.");
-  static_assert(Kokkos::is_view_v<EViewType>,
-                "KokkosBatched::pttrs: EViewType is not a Kokkos::View.");
-  static_assert(Kokkos::is_view_v<BViewType>,
-                "KokkosBatched::pttrs: BViewType is not a Kokkos::View.");
+KOKKOS_INLINE_FUNCTION static int checkPttrsInput([[maybe_unused]] const DViewType &d,
+                                                  [[maybe_unused]] const EViewType &e,
+                                                  [[maybe_unused]] const BViewType &b) {
+  static_assert(Kokkos::is_view_v<DViewType>, "KokkosBatched::pttrs: DViewType is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<EViewType>, "KokkosBatched::pttrs: EViewType is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<BViewType>, "KokkosBatched::pttrs: BViewType is not a Kokkos::View.");
 
-  static_assert(DViewType::rank == 1,
-                "KokkosBatched::pttrs: DViewType must have rank 1.");
-  static_assert(EViewType::rank == 1,
-                "KokkosBatched::pttrs: EViewType must have rank 1.");
-  static_assert(BViewType::rank == 1,
-                "KokkosBatched::pttrs: BViewType must have rank 1.");
+  static_assert(DViewType::rank == 1, "KokkosBatched::pttrs: DViewType must have rank 1.");
+  static_assert(EViewType::rank == 1, "KokkosBatched::pttrs: EViewType must have rank 1.");
+  static_assert(BViewType::rank == 1, "KokkosBatched::pttrs: BViewType must have rank 1.");
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   const int nd  = d.extent(0);
@@ -71,9 +65,7 @@ KOKKOS_INLINE_FUNCTION static int checkPttrsInput(
 template <typename ArgUplo>
 struct SerialPttrs<ArgUplo, Algo::Pttrs::Unblocked> {
   template <typename DViewType, typename EViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d,
-                                           const EViewType &e,
-                                           const BViewType &b) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d, const EViewType &e, const BViewType &b) {
     // Quick return if possible
     if (d.extent(0) == 0) return 0;
 
@@ -90,8 +82,8 @@ struct SerialPttrs<ArgUplo, Algo::Pttrs::Unblocked> {
 
     // Solve A * X = B using the factorization A = L*D*L**T,
     // overwriting each right hand side vector with its solution.
-    return SerialPttrsInternal<ArgUplo, Algo::Pttrs::Unblocked>::invoke(
-        n, d.data(), d.stride(0), e.data(), e.stride(0), b.data(), b.stride(0));
+    return SerialPttrsInternal<ArgUplo, Algo::Pttrs::Unblocked>::invoke(n, d.data(), d.stride(0), e.data(), e.stride(0),
+                                                                        b.data(), b.stride(0));
   }
 };
 }  // namespace KokkosBatched

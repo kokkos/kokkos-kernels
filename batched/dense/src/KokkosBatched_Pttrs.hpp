@@ -44,9 +44,7 @@ namespace KokkosBatched {
 template <typename ArgUplo, typename ArgAlgo>
 struct SerialPttrs {
   template <typename DViewType, typename EViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d,
-                                           const EViewType &e,
-                                           const BViewType &b);
+  KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d, const EViewType &e, const BViewType &b);
 };
 
 }  // namespace KokkosBatched
