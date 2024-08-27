@@ -28,11 +28,11 @@ template <typename DViewType, typename EViewType, typename BViewType>
 KOKKOS_INLINE_FUNCTION static int checkPttrsInput(
     [[maybe_unused]] const DViewType &d, [[maybe_unused]] const EViewType &e,
     [[maybe_unused]] const BViewType &b) {
-  static_assert(Kokkos::is_view<DViewType>::value,
+  static_assert(Kokkos::is_view_v<DViewType>,
                 "KokkosBatched::pttrs: DViewType is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<EViewType>::value,
+  static_assert(Kokkos::is_view_v<EViewType>,
                 "KokkosBatched::pttrs: EViewType is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<BViewType>::value,
+  static_assert(Kokkos::is_view_v<BViewType>,
                 "KokkosBatched::pttrs: BViewType is not a Kokkos::View.");
 
   static_assert(DViewType::rank == 1,
@@ -82,7 +82,6 @@ struct SerialPttrs<ArgUplo, Algo::Pttrs::Unblocked> {
 
     using ScalarType = typename DViewType::non_const_value_type;
     int n            = d.extent(0);
-    int ldb          = b.extent(0);
 
     if (n == 1) {
       const ScalarType alpha = 1.0 / d(0);
@@ -92,8 +91,7 @@ struct SerialPttrs<ArgUplo, Algo::Pttrs::Unblocked> {
     // Solve A * X = B using the factorization A = L*D*L**T,
     // overwriting each right hand side vector with its solution.
     return SerialPttrsInternal<ArgUplo, Algo::Pttrs::Unblocked>::invoke(
-        n, d.data(), d.stride(0), e.data(), e.stride(0), b.data(), b.stride(0),
-        ldb);
+        n, d.data(), d.stride(0), e.data(), e.stride(0), b.data(), b.stride(0));
   }
 };
 }  // namespace KokkosBatched
