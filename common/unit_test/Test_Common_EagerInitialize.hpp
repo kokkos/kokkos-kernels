@@ -13,21 +13,16 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef TEST_COMMON_HPP
-#define TEST_COMMON_HPP
 
-#include <Test_Common_AlignPtrTo.hpp>
-#include <Test_Common_ArithTraits.hpp>
-// #include<Test_Common_float128.hpp>
-#include <Test_Common_set_bit_count.hpp>
-#include <Test_Common_Sorting.hpp>
-#include <Test_Common_IOUtils.hpp>
-#include <Test_Common_Error.hpp>
-#include <Test_Common_Version.hpp>
-#include <Test_Common_PrintConfiguration.hpp>
-#include <Test_Common_Iota.hpp>
-#include <Test_Common_LowerBound.hpp>
-#include <Test_Common_UpperBound.hpp>
-#include <Test_Common_EagerInitialize.hpp>
+#ifndef KK_EAGERINIT_TEST_HPP
+#define KK_EAGERINIT_TEST_HPP
 
-#endif  // TEST_COMMON_HPP
+#include "KokkosKernels_EagerInitialize.hpp"
+
+TEST_F(TestCategory, common_eager_initialize)
+{
+  KokkosKernels::eager_initialize();
+  KokkosKernels::eager_initialize();
+};
+
+#endif
