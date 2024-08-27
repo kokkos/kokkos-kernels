@@ -19,8 +19,7 @@
 
 #include "KokkosKernels_EagerInitialize.hpp"
 
-TEST_F(TestCategory, common_eager_initialize)
-{
+TEST_F(TestCategory, common_eager_initialize) {
   KokkosKernels::eager_initialize();
   KokkosKernels::eager_initialize();
 };
