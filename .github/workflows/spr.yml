@@ -10,9 +10,6 @@ on: workflow_dispatch
   #  - '**/*.py'
   #  - 'docs/**'
   #  types: [ opened, reopened, synchronize ]
-  #pull_request_review:
-  #  types:
-  #    - submitted
 
 permissions:
   contents: none
