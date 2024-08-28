@@ -86,6 +86,7 @@ struct Algo {
   using QR        = Level3;
   using UTV       = Level3;
   using Pttrf     = Level3;
+  using Pttrs     = Level3;
 
   struct Level2 {
     struct Unblocked {};
