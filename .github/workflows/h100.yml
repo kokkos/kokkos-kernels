@@ -1,4 +1,4 @@
-name: github-H100
+name: github-AT2
 
 # Only allow manual runs until at2 runners are available.
 on:

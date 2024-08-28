@@ -1,4 +1,4 @@
-name: github-MI210
+name: github-AT2
 
 on: 
   pull_request:
