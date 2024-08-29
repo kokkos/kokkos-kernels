@@ -37,7 +37,7 @@ jobs:
 
       - name: build
         working-directory: build
-        run: make -j16
+        run: make -j8
 
       - name: test
         working-directory: build
