@@ -31,6 +31,9 @@ jobs:
             --arch=SPR \
             --compiler=icpx \
             --cxxflags="-fp-model=precise" \
+            --with-scalars=double,complex_double,float,complex_float \
+            --with-ordinals=int,int64_t \
+            --with-offsets=int,size_t \
             --with-tpls=mkl \
             --kokkos-cmake-flags=-DKokkos_ENABLE_ONEDPL=OFF \
             --kokkos-path=$PWD/../kokkos
