@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           repository: kokkos/kokkos
-          ref: ${{ github.base_ref }}
+          ref: 4.3.01
           path: kokkos
 
       - name: configure
