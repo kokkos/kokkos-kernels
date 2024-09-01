@@ -281,9 +281,8 @@ void create_banded_pds_matrix(InViewType& in, OutViewType& out, int k = 1, bool 
 ///
 template <typename InViewType, typename OutViewType, typename UploType>
 void banded_to_full(InViewType& in, OutViewType& out, int k = 1) {
-  auto h_in        = Kokkos::create_mirror_view(in);
-  auto h_out       = Kokkos::create_mirror_view(out);
-  using value_type = typename InViewType::non_const_value_type;
+  auto h_in   = Kokkos::create_mirror_view(in);
+  auto h_out  = Kokkos::create_mirror_view(out);
   const int N = in.extent(0), BlkSize = in.extent(2);
 
   Kokkos::deep_copy(h_in, in);

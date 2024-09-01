@@ -107,9 +107,9 @@ void impl_test_batched_pbtrf_analytical(const int N) {
       Ab("Ab", N, k + 1, BlkSize);  // Banded matrix
 
   auto h_A_reconst = Kokkos::create_mirror_view(A_reconst);
-  for (std::size_t ib = 0; ib < N; ib++) {
-    for (std::size_t i = 0; i < BlkSize; i++) {
-      for (std::size_t j = 0; j < BlkSize; j++) {
+  for (int ib = 0; ib < N; ib++) {
+    for (int i = 0; i < BlkSize; i++) {
+      for (int j = 0; j < BlkSize; j++) {
         h_A_reconst(ib, i, j) = i == j ? 4.0 : 1.0;
       }
     }
