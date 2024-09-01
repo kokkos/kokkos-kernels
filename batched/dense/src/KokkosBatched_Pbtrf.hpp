@@ -23,7 +23,7 @@
 namespace KokkosBatched {
 
 /// \brief Serial Batched Pbtrf:
-/// Compute the Cholesky factorization L*D*L**T (or L*D*L**H) of a real
+/// Compute the Cholesky factorization U**H * U (or L * L**H) of a real
 /// symmetric (or complex Hermitian) positive definite banded matrix A_l
 /// for all l = 0, ...,
 /// The factorization has the form
