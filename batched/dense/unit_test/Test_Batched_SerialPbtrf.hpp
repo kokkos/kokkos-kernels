@@ -126,9 +126,9 @@ void impl_test_batched_pbtrf_analytical(const int N) {
   Kokkos::deep_copy(A_reconst, 0.0);
 
   // Factorize with Pbtrf: A = U**H * U or A = L * L**H
-  Functor_BatchedSerialPbtrf<DeviceType, View3DType, ParamTagType, AlgoTagType>(Ab).run();
-
+  auto info = Functor_BatchedSerialPbtrf<DeviceType, View3DType, ParamTagType, AlgoTagType>(Ab).run();
   Kokkos::fence();
+  EXPECT_EQ(info, 0);
 
   if (std::is_same_v<typename ParamTagType::uplo, KokkosBatched::Uplo::Upper>) {
     // A = U**H * U
@@ -230,9 +230,10 @@ void impl_test_batched_pbtrf(const int N, const int k, const int BlkSize) {
   Kokkos::deep_copy(A_reconst, 0.0);
 
   // Factorize with Pbtrf: A = U**H * U or A = L * L**H
-  Functor_BatchedSerialPbtrf<DeviceType, View3DType, ParamTagType, AlgoTagType>(Ab).run();
+  auto info = Functor_BatchedSerialPbtrf<DeviceType, View3DType, ParamTagType, AlgoTagType>(Ab).run();
 
   Kokkos::fence();
+  EXPECT_EQ(info, 0);
 
   if (std::is_same_v<typename ParamTagType::uplo, KokkosBatched::Uplo::Upper>) {
     // A = U**H * U
