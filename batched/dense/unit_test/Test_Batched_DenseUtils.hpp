@@ -221,7 +221,7 @@ void create_banded_pds_matrix(InViewType& in, OutViewType& out, int k = 1, bool 
 
   if (band_storage) {
     assert(out.extent(0) == in.extent(0));
-    assert(out.extent(1) == k + 1);
+    assert(out.extent(1) == static_cast<std::size_t>(k + 1));
     assert(out.extent(2) == in.extent(2));
     if constexpr (std::is_same_v<UploType, KokkosBatched::Uplo::Upper>) {
       for (int i0 = 0; i0 < N; i0++) {
@@ -287,7 +287,7 @@ void banded_to_full(InViewType& in, OutViewType& out, int k = 1) {
 
   Kokkos::deep_copy(h_in, in);
   assert(in.extent(0) == out.extent(0));
-  assert(in.extent(1) == k + 1);
+  assert(in.extent(1) == static_cast<std::size_t>(k + 1));
   assert(in.extent(2) == out.extent(2));
   if constexpr (std::is_same_v<UploType, KokkosBatched::Uplo::Upper>) {
     for (int i0 = 0; i0 < N; i0++) {
