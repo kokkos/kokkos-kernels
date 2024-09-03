@@ -78,8 +78,8 @@ jobs:
         working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
 
-  PR_POWER9_VOLTA70_GCC930_CLANG13_CUDA10_CUDA_LEFT_OPENBLAS_REL:
-    name: PR_POWER9_VOLTA70_GCC930_CLANG13_CUDA10_CUDA_LEFT_OPENBLAS_REL
+  PR_OLTA70_GCC930_CLANG13_CUDA10_CUDA_LEFT_OPENBLAS_REL:
+    name: PR_VOLTA70_GCC930_CLANG13_CUDA10_CUDA_LEFT_OPENBLAS_REL
     runs-on: [kk-env-cuda-10.1.243-openblas-0.3.20-llvm-13.0.0-latest]
     
     steps:
@@ -106,7 +106,6 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=$PWD/../install \
             -DKokkos_ENABLE_CUDA=ON \
             -DKokkos_ARCH_VOLTA70=ON \
-            -DKokkos_ARCH_POWER9=ON \
             -DKokkos_ENABLE_TESTS=OFF \
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_VERBOSE_MAKEFILE=ON \
