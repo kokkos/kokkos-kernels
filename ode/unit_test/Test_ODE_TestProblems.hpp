@@ -38,6 +38,9 @@ struct DegreeOnePoly {
     }
   }
 
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return t + 1.0;
   }
@@ -65,6 +68,9 @@ struct DegreeTwoPoly {
     }
   }
 
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return 0.5 * t * t + t + 1.0;
   }
@@ -92,6 +98,9 @@ struct DegreeThreePoly {
     }
   }
 
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return (1. / 3) * (t * t * t) + (1. / 2) * (t * t) + t + 1;
   }
@@ -119,6 +128,9 @@ struct DegreeFivePoly {
     }
   }
 
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return (1. / 5) * (t * t * t * t * t) + (1. / 4) * (t * t * t * t) +
            (1. / 3) * (t * t * t) + (1. / 2) * (t * t) + t + 1;
@@ -153,6 +165,9 @@ struct Exponential {
     }
   }
 
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return Kokkos::exp(rate * t);
   }
@@ -181,8 +196,9 @@ struct SpringMassDamper {
     jac(1, 1) = -c;
   }
 
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 1.0; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     using Kokkos::exp;
 
@@ -231,8 +247,9 @@ struct CosExp {
     }
   }
 
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 10.0; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 10.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return Kokkos::exp(lambda * (t - t0)) * (eta - Kokkos::cos(t0)) + Kokkos::cos(t);
   }
@@ -272,8 +289,9 @@ struct StiffChemicalDecayProcess {
     jac(2, 2) = 0.;
   }
 
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 0.2; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 0.2; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     using Kokkos::exp;
 
@@ -313,14 +331,17 @@ struct Tracer {
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1 & y, View2 & dydt) const {
     for (int i = 0; i < neqs; i += 2) {
-      const double R = Kokkos::sqrt(y[i] * y[i] + y[i + 1] * y[i + 1]);
-      dydt[i] = -rate * y[i + 1] / R;
-      dydt[i + 1] = rate * y[i] / R;
+      // const double R = Kokkos::sqrt(y[i] * y[i] + y[i + 1] * y[i + 1]);
+      // dydt[i] = -rate * y[i + 1] / R;
+      // dydt[i + 1] = rate * y[i] / R;
+      dydt[i] = -rate * y[i + 1];
+      dydt[i + 1] = rate * y[i];
     }
   }
 
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 2.0 * pi; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 2.0 * pi; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     const double theta = rate * t;
     double val = 0.0;
@@ -335,7 +356,7 @@ struct Tracer {
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
 
   static constexpr int neqs = 2;
-  const double pi = 4.0 * Kokkos::atan(1.0);
+  static constexpr double pi = 3.14159265358979323846;
   const double rate;
   static constexpr char name[] = "Tracer";
 };
@@ -373,8 +394,9 @@ struct EnrightB5 {
     jac(5, 5) = -0.1;
   }
  
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 0.2; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 0.2; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     using Kokkos::cos;
     using Kokkos::exp;
@@ -444,8 +466,9 @@ struct EnrightC1 {
     jac(3, 3) = -100.;
   }
 
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 20.0; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 20.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const
   {
     if (t == 0) {
@@ -497,8 +520,9 @@ struct EnrightC5 {
     jac(3, 3) = -100.;
   }
 
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 20.0; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 20.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const
   {
     if (t == 0) {
@@ -544,13 +568,14 @@ struct EnrightD2 {
     jac(2, 1) = 60. * y[1];
   }
 
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 40.0; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 40.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 100; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const
   {
     if (t == 0.)
       {
-	constexpr Kokkos::Array<double, neqs> y = {1., 0., 0};
+	constexpr Kokkos::Array<double, neqs> y = {1., 0., 0.};
 	return y[n];
       } else {
       // cvode solution
@@ -591,8 +616,9 @@ struct EnrightD4 {
     jac(2, 2) = jac(0, 2) + jac(1, 2);
   }
 
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 50.0; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 50.0; } //50.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     if (t == 0.) {
       constexpr Kokkos::Array<double, neqs> y = {1., 1., 0};
@@ -630,8 +656,9 @@ struct KKStiffChemistry {
     jac(2, 2) = 0.0;
   }
 
-  KOKKOS_FUNCTION double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION double tend() const { return 500.0; }
+  KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 500.0; }
+  KOKKOS_FUNCTION constexpr int numsteps() const { return 1000; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     if (t == 0) {
       return n == 0 ? 1. : 0.;

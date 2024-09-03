@@ -28,6 +28,64 @@
 namespace KokkosODE {
 namespace Impl {
 
+template <class ode_type, class mat_type, class vec_type, class res_type, class scalar_type>
+KOKKOS_FUNCTION void first_step_size(const ode_type ode, const int order, const scalar_type t0,
+				     const scalar_type atol, const scalar_type rtol, const vec_type& y0,
+				     const res_type& f0, const vec_type y1, const mat_type temp,
+				     scalar_type& dt_ini) {
+  using KAT = Kokkos::ArithTraits<scalar_type>;
+
+  // Extract subviews to store intermediate data
+  auto f1 = Kokkos::subview(temp, Kokkos::ALL(), 1);
+
+  // Compute norms for y0 and f0
+  double n0 = KAT::zero(), n1 = KAT::zero(), dt0, scale;
+  for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+    scale = atol + rtol * Kokkos::abs(y0(eqIdx));
+    n0 += Kokkos::pow(y0(eqIdx) / scale, 2);
+    n1 += Kokkos::pow(f0(eqIdx) / scale, 2);
+  }
+  n0 = Kokkos::sqrt(n0) / Kokkos::sqrt(ode.neqs);
+  n1 = Kokkos::sqrt(n1) / Kokkos::sqrt(ode.neqs);
+
+  // Select dt0
+  if ((n0 < 1e-5) || (n1 < 1e-5)) {
+    dt0 = 1e-6;
+  } else {
+    dt0 = 0.01 * n0 / n1;
+  }
+
+  // Estimate y at t0 + dt0
+  for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+    y1(eqIdx) = y0(eqIdx) + dt0 * f0(eqIdx);
+  }
+
+  // Compute f at t0+dt0 and y1,
+  // then compute the norm of f(t0+dt0, y1) - f(t0, y0)
+  scalar_type n2 = KAT::zero();
+  ode.evaluate_function(t0 + dt0, dt0, y1, f1);
+  for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+    n2 += Kokkos::pow((f1(eqIdx) - f0(eqIdx)) / (atol + rtol * Kokkos::abs(y0(eqIdx))), 2);
+  }
+  n2 = Kokkos::sqrt(n2) / (dt0 * Kokkos::sqrt(ode.neqs));
+
+  // Finally select initial time step dt_ini
+  if ((n1 <= 1e-15) && (n2 <= 1e-15)) {
+    dt_ini = Kokkos::max(1e-6, dt0 * 1e-3);
+  } else {
+    dt_ini = Kokkos::pow(0.01 / Kokkos::max(n1, n2), KAT::one() / order);
+  }
+
+  dt_ini = Kokkos::min(100 * dt0, dt_ini);
+
+  // Zero out temp variables just to be safe...
+  for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+    f0(eqIdx) = 0.0;
+    y1(eqIdx) = 0.0;
+    f1(eqIdx) = 0.0;
+  }
+}  // initial_step_size
+
 // y_new = y_old + dt*sum(b_i*k_i)    i in [1, nstages]
 // k_i = f(t+c_i*dt, y_old+sum(a_{ij}*k_i))  j in [1, i-1]
 // we need to compute the k_i and store them as we go
@@ -95,8 +153,13 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
   }
 
   // Set current time and initial time step
-  scalar_type t_now = t_start;
-  scalar_type dt    = (t_end - t_start) / params.num_steps;
+  scalar_type t_now = t_start, dt = 0.0;
+  ode.evaluate_function(t_start, 0, y0, temp);
+  first_step_size(ode, table_type::order, t_start,
+		  params.abs_tol, params.rel_tol,
+		  y0, temp, y, k_vecs, dt);
+  if(dt < params.min_step_size) { dt = params.min_step_size; }
+
   *step_count = 0;
 
   // Loop over time steps to integrate ODE
@@ -137,8 +200,9 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
           for (int stageIdx = 0; stageIdx < table.nstages; ++stageIdx) {
             error_n += dt * table.e[stageIdx] * k_vecs(stageIdx, eqIdx);
           }
-          error = Kokkos::max(error, Kokkos::abs(error_n) / tol);
+          error += (error_n*error_n) / (tol*tol);
         }
+	error = Kokkos::sqrt(error / ode.neqs);
 
         // Reduce the time step if error
         // is too large and current step

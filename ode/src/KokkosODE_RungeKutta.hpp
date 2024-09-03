@@ -38,7 +38,8 @@ enum RK_type : int {
   RK4   = 4,  ///< Runge-Kutta classic order 4 method
   RKF45 = 5,  ///< Fehlberg order 5 method
   RKCK  = 6,  ///< Cash-Karp method
-  RKDP  = 7   ///< Dormand-Prince method
+  RKDP  = 7,  ///< Dormand-Prince method
+  VER56 = 8   ///< Verner order 6 method
 };
 
 template <RK_type T>
@@ -84,6 +85,11 @@ struct RK_Tableau_helper<RK_type::RKCK> {
 template <>
 struct RK_Tableau_helper<RK_type::RKDP> {
   using table_type = KokkosODE::Impl::ButcherTableau<4, 6>;
+};
+
+template <>
+struct RK_Tableau_helper<RK_type::VER56> {
+  using table_type = KokkosODE::Impl::ButcherTableau<5, 7>;
 };
 
 /// \brief Unspecialized version of the RungeKutta solvers

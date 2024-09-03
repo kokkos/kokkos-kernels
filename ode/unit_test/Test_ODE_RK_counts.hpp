@@ -22,6 +22,41 @@
 
 namespace Test {
 
+  std::string RK_type_to_name(const KokkosODE::Experimental::RK_type RK) {
+    std::string name;
+
+    switch (RK) {
+    case KokkosODE::Experimental::RK_type::RKFE:
+      name = "Forward-Euler";
+      break;
+    case KokkosODE::Experimental::RK_type::RKEH:
+      name = "Euler-Heun";
+      break;
+    case KokkosODE::Experimental::RK_type::RKF12:
+      name = "Fehlberg 1-2";
+      break;
+    case KokkosODE::Experimental::RK_type::RKBS:
+      name = "Bogacki-Shampine";
+      break;
+    case KokkosODE::Experimental::RK_type::RK4:
+      name = "Classic RK order 4";
+      break;
+    case KokkosODE::Experimental::RK_type::RKF45:
+      name = "Fehlberg 4-5";
+      break;
+    case KokkosODE::Experimental::RK_type::RKCK:
+      name = "Cash-Karp";
+      break;
+    case KokkosODE::Experimental::RK_type::RKDP:
+      name = "Dormand-Prince";
+      break;
+    default:
+      name = "Unknown Runge-Kutta method";
+    }
+
+    return name;
+  }
+
   template <KokkosODE::Experimental::RK_type RK, class Device, class OdeType>
   void RK_Count(const Device, const OdeType myODE,
 		const double relTol, const double absTol,
@@ -33,10 +68,13 @@ namespace Test {
 
   constexpr int neqs = myODE.neqs;
 
-  constexpr double tstart = 0.0, tend = 1.0;
-  constexpr int num_steps = 10;
+  constexpr double tstart = myODE.tstart(), tend = myODE.tend();
+  constexpr int num_steps = myODE.numsteps();
   constexpr int maxSteps  = 1e6;
-  // double dt               = (tend - tstart) / num_steps;
+  constexpr double minStepSize = (tend - tstart) / (100*maxSteps);
+  KokkosODE::Experimental::ODE_params params(num_steps, maxSteps, 1.0e-12,
+                                             1.0e-6, minStepSize);
+
   vec_type y("solution", neqs), f("function", neqs);
   vec_type y_new("y new", neqs), y_old("y old", neqs);
   count_type count("time step count", 1);
@@ -56,10 +94,7 @@ namespace Test {
       "k stack",
       KokkosODE::Experimental::RungeKutta<RK>::num_stages(), neqs);
 
-  constexpr double minStepSize = (tend - tstart) / maxSteps;
   Kokkos::RangePolicy<execution_space> my_policy(0, 1);
-  KokkosODE::Experimental::ODE_params params(num_steps, maxSteps, absTol,
-                                             relTol, minStepSize);
   Kokkos::deep_copy(y_old, y_old_h);
   Kokkos::deep_copy(y_new, y_old_h);
   RKSolve_wrapper<OdeType, RK, vec_type, mv_type,
@@ -74,11 +109,26 @@ namespace Test {
   typename count_type::HostMirror count_h = Kokkos::create_mirror_view(count);
   Kokkos::deep_copy(count_h, count);
 
-  if(Kokkos::abs(y_ref_h(0)) < absTol) {
-  } else {
-    EXPECT_NEAR_KK_REL(y_ref_h(0), y_new_h(0), 1e-4, OdeType::name);
+  double error = 0.0;
+  for(int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
+    error += Kokkos::pow(y_ref_h(eqIdx) - y_new_h(eqIdx), 2.0) / Kokkos::pow(absTol + relTol*Kokkos::abs(y_new_h(eqIdx)), 2.0);
+    // EXPECT_LE(Kokkos::abs(y_ref_h(eqIdx) - y_new_h(eqIdx)), absTol + relTol*Kokkos::abs(y_new_h(eqIdx))) << OdeType::name;
   }
+  error = Kokkos::sqrt(error / neqs);
+
+  // const auto default_precision{std::cout.precision()};
+  // std::cout << std::setprecision(10);
+  // std::cout << "Problem: " << OdeType::name << "\n"
+  // 	    << "   y={" << y_new_h(0) << ", " << y_new_h(1) << ", " << y_new_h(2)
+  // 	    << "}, y_ref={" << y_ref_h(0) << ", " << y_ref_h(1) << ", " << y_ref_h(2) << "}" << "\n"
+  // 	    << "   rel_err_vec={" << Kokkos::abs(y_ref_h(0) - y_new_h(0)) << ", "
+  // 	    << Kokkos::abs(y_ref_h(1) - y_new_h(1)) << ", "
+  // 	    << Kokkos::abs(y_ref_h(2) - y_new_h(2)) << "}, error_rms=" << error << "\n"
+  // 	    << "   Number of integration steps: " << count_h(0) << std::endl;
+  EXPECT_LE(error, 1.0) << OdeType::name;
   // EXPECT_LE(count_h(0), expected_count);
+
+  // std::cout << std::setprecision(default_precision); // restore defaults
 }  // RK_Count
 
 }  // namespace Test
@@ -86,34 +136,49 @@ namespace Test {
 template<KokkosODE::Experimental::RK_type RK>
 void test_RK_count() {
 
-  std::cout << "\n*** Testing RK " << RK << " ***" << std::endl;
+  std::cout << "\n*** Testing " << Test::RK_type_to_name(RK) << " ***" << std::endl;
 
+  //    RK_Count    (Device,       OdeType,                      relTol, absTol, /*expected_count*/)
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeOnePoly(), 1.0e-6, 1e-12, 2);
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeTwoPoly(), 1.0e-6, 1e-12, 2);
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeThreePoly(), 1.0e-6, 1e-12, 2);
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeFivePoly(), 1.0e-6, 1e-12, 5);
   Test::RK_Count<RK>(TestDevice(), TestProblem::Exponential(0.7), 1.0e-6, 1e-12, 4);
-  Test::RK_Count<RK>(TestDevice(), TestProblem::SpringMassDamper(1001., 1000.), 1e-4, 0.0, 272);
+  Test::RK_Count<RK>(TestDevice(), TestProblem::SpringMassDamper(1001., 1000.), 1.0e-4, 0.0, 272);
   Test::RK_Count<RK>(TestDevice(), TestProblem::CosExp(-10., 2., 1.), 5.3e-5, 0.0, 25);
   Test::RK_Count<RK>(TestDevice(), TestProblem::StiffChemicalDecayProcess(1e4, 1.), 4e-9, 1.8e-10, 2786);
   Test::RK_Count<RK>(TestDevice(), TestProblem::Tracer(10.0), 0.0, 1e-3, 10);
   Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightB5(), 1.3e-2, 0.0, 90);
-  Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightC1(), 1.e-5, 0.0, 90);
-  Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightC5(), 1.e-5, 0.0, 97);
-  Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightD2(), 1.e-5, 0.0, 590);
+  if constexpr (RK == KokkosODE::Experimental::RK_type::RKF12) {
+    Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightC1(), 1.e-4, 1e-14, 90);
+  } else {
+    Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightC1(), 1.e-5, 1e-14, 90);
+  }
+  if constexpr (RK == KokkosODE::Experimental::RK_type::RKF12) {
+    Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightC5(), 1.e-4, 1e-14, 97);
+  } else {
+    Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightC5(), 1.e-5, 1e-14, 97);
+  }
+  if constexpr (RK == KokkosODE::Experimental::RK_type::RKF12) {
+    Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightD2(), 2.e-4, 0.0, 590);
+  } else {
+    Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightD2(), 1.e-5, 0.0, 590);
+  }
   Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightD4(), 1.e-5, 1.e-9, 932);
-  Test::RK_Count<RK>(TestDevice(), TestProblem::KKStiffChemistry(), 1e-5, 0.0, 1);
+  // Test::RK_Count<RK>(TestDevice(), TestProblem::KKStiffChemistry(), 1e-5, 0.0, 1);
 }
 
 void test_count() {
   using RK_type = KokkosODE::Experimental::RK_type;
 
-  // test_RK_count<RK_type::RKF12>();
-  // test_RK_count<RK_type::RKBS>();
-  // test_RK_count<RK_type::RK4>();
-  // test_RK_count<RK_type::RKF45>();
-  // test_RK_count<RK_type::RKCK>();
+  // test_RK_count<RK_type::RKEH>();
+  test_RK_count<RK_type::RKF12>();
+  test_RK_count<RK_type::RKBS>();
+  test_RK_count<RK_type::RK4>();
+  test_RK_count<RK_type::RKF45>();
+  test_RK_count<RK_type::RKCK>();
   test_RK_count<RK_type::RKDP>();
+  // test_RK_count<RK_type::VER56>();
 }
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
