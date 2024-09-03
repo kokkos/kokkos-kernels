@@ -120,6 +120,7 @@ struct Algo {
   using ApplyQ = Level2;
   using Tbsv   = Level2;
   using Pbtrf  = Level2;
+  using Pbtrs  = Level2;
 };
 
 namespace Impl {
