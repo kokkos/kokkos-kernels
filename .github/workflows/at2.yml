@@ -25,5 +25,5 @@ jobs:
     uses: ./.github/workflows/h100.yml
   bdw:
     uses: ./.github/workflows/bdw.yml
-  #spr:
-    #uses: ./.github/workflows/spr.yml
+  volta70:
+    uses: ./.github/workflows/volta70.yml
