@@ -30,7 +30,7 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS= \
             -DCMAKE_INSTALL_PREFIX=$PWD/../install \
             -DKokkos_ENABLE_CUDA=ON \
-            -DKokkos_ARCH_HOPPER90=ON \
+            -DKokkos_ARCH_VOLTA70=ON \
             -DKokkos_ENABLE_TESTS=OFF \
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_VERBOSE_MAKEFILE=ON \
