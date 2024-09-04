@@ -40,7 +40,6 @@ jobs:
             -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
             ..
-          cat CMakeCache.txt | grep -i arch | grep ON
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
@@ -116,6 +115,7 @@ jobs:
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
             -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
             ..
+          cat CMakeCache.txt | grep -i arch | grep ON
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
