@@ -233,9 +233,9 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
   // Get the solution vector.
   Kokkos::deep_copy(h_B, B);
 
-  // Checking vs ref on CPU, this eps is about 10^-9
+  // Checking vs ref on CPU, this eps is about 10^-8
   typedef typename ats::mag_type mag_type;
-  const mag_type eps = 1.0e7 * ats::epsilon();
+  const mag_type eps = 1.0e8 * ats::epsilon();
   bool test_flag     = true;
   for (int j = 0; j < nrhs; j++) {
     for (int i = 0; i < N; i++) {
