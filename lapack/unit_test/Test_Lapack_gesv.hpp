@@ -16,11 +16,11 @@
 
 // only enable this test where KokkosLapack supports gesv:
 // CUDA+(MAGMA or CUSOLVER), HIP+(MAGMA or ROCSOLVER) and HOST+LAPACK
-#if (defined(TEST_CUDA_LAPACK_CPP) &&                                                            \
-     (defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) || defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER))) || \
-    (defined(TEST_HIP_LAPACK_CPP) &&                                                             \
-     (defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) || defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)))|| \
-    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                                                 \
+#if (defined(TEST_CUDA_LAPACK_CPP) &&                                                             \
+     (defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) || defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER))) ||  \
+    (defined(TEST_HIP_LAPACK_CPP) &&                                                              \
+     (defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) || defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER))) || \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                                                  \
      (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
 
 #include <gtest/gtest.h>

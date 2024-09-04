@@ -197,37 +197,36 @@ void magmaGesvWrapper(const ExecSpace& space, const AViewType& A, const BViewTyp
   Kokkos::Profiling::popRegion();
 }
 
-#define KOKKOSLAPACK_GESV_MAGMA(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                                 \
-  template <>                                                                                                          \
-  struct GESV<EXEC_SPACE,                                                                                              \
-              Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                    \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                   \
-              Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                    \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                   \
-              Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                   \
-              true,                                                                                                    \
-              gesv_eti_spec_avail<EXEC_SPACE,                                                                          \
-                                  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \
-                                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                               \
-                                  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \
-                                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                               \
-                                  Kokkos::View<magma_int_t*, LAYOUT,                                                   \
-                                               Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,   \
-                                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                     \
-    using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                            \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                            \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    using PViewType =                                                                                                  \
-        Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,       \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                                         \
-                                                                                                                       \
-    static void gesv(const EXEC_SPACE& space, const AViewType& A, const BViewType& B, const PViewType& IPIV) {       \
-      magmaGesvWrapper(space, A, B, IPIV);                                                                             \
-    }                                                                                                                  \
+#define KOKKOSLAPACK_GESV_MAGMA(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                                \
+  template <>                                                                                                         \
+  struct GESV<                                                                                                        \
+      EXEC_SPACE,                                                                                                     \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,        \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
+      true,                                                                                                           \
+      gesv_eti_spec_avail<                                                                                            \
+          EXEC_SPACE,                                                                                                 \
+          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
+          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
+          Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,    \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                                            \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                           \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
+    using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                           \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
+    using PViewType =                                                                                                 \
+        Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,      \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                                        \
+                                                                                                                      \
+    static void gesv(const EXEC_SPACE& space, const AViewType& A, const BViewType& B, const PViewType& IPIV) {        \
+      magmaGesvWrapper(space, A, B, IPIV);                                                                            \
+    }                                                                                                                 \
   };
-  
+
 #if defined(KOKKOS_ENABLE_CUDA)
 KOKKOSLAPACK_GESV_MAGMA(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
 KOKKOSLAPACK_GESV_MAGMA(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
