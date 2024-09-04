@@ -15,10 +15,11 @@
 //@HEADER
 
 // only enable this test where KokkosLapack supports gesv:
-// CUDA+(MAGMA or CUSOLVER), HIP+ROCSOLVER and HOST+LAPACK
+// CUDA+(MAGMA or CUSOLVER), HIP+(MAGMA or ROCSOLVER) and HOST+LAPACK
 #if (defined(TEST_CUDA_LAPACK_CPP) &&                                                            \
      (defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) || defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER))) || \
-    (defined(TEST_HIP_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) ||             \
+    (defined(TEST_HIP_LAPACK_CPP) &&                                                             \
+     (defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) || defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)))|| \
     (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                                                 \
      (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
 
@@ -97,8 +98,13 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     bool notpl_runtime_err   = false;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
+#if defined(KOKKOS_ENABLE_CUDA)
     nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::CudaSpace>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
+#elif defined(KOKKOS_ENABLE_HIP)
+    nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::HIPSpace>::value) &&
+                          (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
+#endif
     notpl_runtime_err = false;
 #else
     notpl_runtime_err = true;
@@ -200,8 +206,13 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
     bool notpl_runtime_err   = false;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
+#if defined(KOKKOS_ENABLE_CUDA)
     nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::CudaSpace>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
+#elif defined(KOKKOS_ENABLE_HIP)
+    nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::HIPSpace>::value) &&
+                          (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
+#endif
     notpl_runtime_err = false;
 #else
     notpl_runtime_err = true;
@@ -273,6 +284,19 @@ int test_gesv(const char* mode) {
     Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "Y",
                                                                        179);  // padding
   }
+#elif defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && defined(KOKKOS_ENABLE_HIP)
+  if constexpr (std::is_same_v<Kokkos::HIP, typename Device::execution_space>) {
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 2);     // no padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 13);    // no padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 179);   // no padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 64);    // no padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 1024);  // no padding
+
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "Y",
+                                                                       13);  // padding
+    Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "Y",
+                                                                       179);  // padding
+  }
 #endif
 #endif
 
@@ -301,6 +325,17 @@ int test_gesv_mrhs(const char* mode) {
 // When appropriate run MAGMA specific tests
 #elif defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && defined(KOKKOS_ENABLE_CUDA)
   if constexpr (std::is_same_v<Kokkos::Cuda, typename Device::execution_space>) {
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 2, 5);     // no padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 13, 5);    // no padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 179, 5);   // no padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 64, 5);    // no padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 1024, 5);  // no padding
+
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "Y", 13, 5);   // padding
+    Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "Y", 179, 5);  // padding
+  }
+#elif defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && defined(KOKKOS_ENABLE_HIP)
+  if constexpr (std::is_same_v<Kokkos::HIP, typename Device::execution_space>) {
     Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 2, 5);     // no padding
     Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 13, 5);    // no padding
     Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(&mode[0], "N", 179, 5);   // no padding
