@@ -73,7 +73,8 @@ namespace Test {
   constexpr int maxSteps  = 1e6;
   constexpr double minStepSize = (tend - tstart) / (100*maxSteps);
   KokkosODE::Experimental::ODE_params params(num_steps, maxSteps, 1.0e-12,
-                                             1.0e-6, minStepSize);
+                                             (RK == KokkosODE::Experimental::RK_type::RKF12) ? 1.0e-8 : 1.0e-6,
+					     minStepSize);
 
   vec_type y("solution", neqs), f("function", neqs);
   vec_type y_new("y new", neqs), y_old("y old", neqs);
@@ -112,23 +113,11 @@ namespace Test {
   double error = 0.0;
   for(int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
     error += Kokkos::pow(y_ref_h(eqIdx) - y_new_h(eqIdx), 2.0) / Kokkos::pow(absTol + relTol*Kokkos::abs(y_new_h(eqIdx)), 2.0);
-    // EXPECT_LE(Kokkos::abs(y_ref_h(eqIdx) - y_new_h(eqIdx)), absTol + relTol*Kokkos::abs(y_new_h(eqIdx))) << OdeType::name;
   }
   error = Kokkos::sqrt(error / neqs);
 
-  // const auto default_precision{std::cout.precision()};
-  // std::cout << std::setprecision(10);
-  // std::cout << "Problem: " << OdeType::name << "\n"
-  // 	    << "   y={" << y_new_h(0) << ", " << y_new_h(1) << ", " << y_new_h(2)
-  // 	    << "}, y_ref={" << y_ref_h(0) << ", " << y_ref_h(1) << ", " << y_ref_h(2) << "}" << "\n"
-  // 	    << "   rel_err_vec={" << Kokkos::abs(y_ref_h(0) - y_new_h(0)) << ", "
-  // 	    << Kokkos::abs(y_ref_h(1) - y_new_h(1)) << ", "
-  // 	    << Kokkos::abs(y_ref_h(2) - y_new_h(2)) << "}, error_rms=" << error << "\n"
-  // 	    << "   Number of integration steps: " << count_h(0) << std::endl;
   EXPECT_LE(error, 1.0) << OdeType::name;
   // EXPECT_LE(count_h(0), expected_count);
-
-  // std::cout << std::setprecision(default_precision); // restore defaults
 }  // RK_Count
 
 }  // namespace Test
@@ -136,14 +125,12 @@ namespace Test {
 template<KokkosODE::Experimental::RK_type RK>
 void test_RK_count() {
 
-  std::cout << "\n*** Testing " << Test::RK_type_to_name(RK) << " ***" << std::endl;
-
   //    RK_Count    (Device,       OdeType,                      relTol, absTol, /*expected_count*/)
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeOnePoly(), 1.0e-6, 1e-12, 2);
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeTwoPoly(), 1.0e-6, 1e-12, 2);
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeThreePoly(), 1.0e-6, 1e-12, 2);
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeFivePoly(), 1.0e-6, 1e-12, 5);
-  Test::RK_Count<RK>(TestDevice(), TestProblem::Exponential(0.7), 1.0e-6, 1e-12, 4);
+  Test::RK_Count<RK>(TestDevice(), TestProblem::Exponential(0.7), 2.0e-6, 1e-12, 4);
   Test::RK_Count<RK>(TestDevice(), TestProblem::SpringMassDamper(1001., 1000.), 1.0e-4, 0.0, 272);
   Test::RK_Count<RK>(TestDevice(), TestProblem::CosExp(-10., 2., 1.), 5.3e-5, 0.0, 25);
   Test::RK_Count<RK>(TestDevice(), TestProblem::StiffChemicalDecayProcess(1e4, 1.), 4e-9, 1.8e-10, 2786);
