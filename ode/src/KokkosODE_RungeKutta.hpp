@@ -132,14 +132,12 @@ struct RungeKutta {
   /// \return ode_solver_status an enum that describes success of failure
   /// of the integration method once it at terminated.
   template <class ode_type, class vec_type, class mv_type, class scalar_type>
-  KOKKOS_FUNCTION static ode_solver_status Solve(
-      const ode_type& ode, const KokkosODE::Experimental::ODE_params& params,
-      const scalar_type t_start, const scalar_type t_end, const vec_type& y0,
-      const vec_type& y, const vec_type& temp, const mv_type& k_vecs,
-      int* const count) {
+  KOKKOS_FUNCTION static ode_solver_status Solve(const ode_type& ode, const KokkosODE::Experimental::ODE_params& params,
+                                                 const scalar_type t_start, const scalar_type t_end, const vec_type& y0,
+                                                 const vec_type& y, const vec_type& temp, const mv_type& k_vecs,
+                                                 int* const count) {
     table_type table;
-    return KokkosODE::Impl::RKSolve(ode, table, params, t_start, t_end, y0, y,
-                                    temp, k_vecs, count);
+    return KokkosODE::Impl::RKSolve(ode, table, params, t_start, t_end, y0, y, temp, k_vecs, count);
   }
 };
 

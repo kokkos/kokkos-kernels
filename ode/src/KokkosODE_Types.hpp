@@ -28,8 +28,8 @@ struct ODE_params {
   double abs_tol, rel_tol, min_step_size;
 
   KOKKOS_FUNCTION
-  ODE_params() : adaptivity(true), num_steps(100), max_steps(10000),
-		 abs_tol(1e-12), rel_tol(1e-6), min_step_size(1e-9) {}
+  ODE_params()
+      : adaptivity(true), num_steps(100), max_steps(10000), abs_tol(1e-12), rel_tol(1e-6), min_step_size(1e-9) {}
 
   // Constructor that only specify the desired number of steps.
   // In this case no adaptivity is provided, the time step will

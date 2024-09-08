@@ -22,45 +22,27 @@
 
 namespace Test {
 
-  std::string RK_type_to_name(const KokkosODE::Experimental::RK_type RK) {
-    std::string name;
+std::string RK_type_to_name(const KokkosODE::Experimental::RK_type RK) {
+  std::string name;
 
-    switch (RK) {
-    case KokkosODE::Experimental::RK_type::RKFE:
-      name = "Forward-Euler";
-      break;
-    case KokkosODE::Experimental::RK_type::RKEH:
-      name = "Euler-Heun";
-      break;
-    case KokkosODE::Experimental::RK_type::RKF12:
-      name = "Fehlberg 1-2";
-      break;
-    case KokkosODE::Experimental::RK_type::RKBS:
-      name = "Bogacki-Shampine";
-      break;
-    case KokkosODE::Experimental::RK_type::RK4:
-      name = "Classic RK order 4";
-      break;
-    case KokkosODE::Experimental::RK_type::RKF45:
-      name = "Fehlberg 4-5";
-      break;
-    case KokkosODE::Experimental::RK_type::RKCK:
-      name = "Cash-Karp";
-      break;
-    case KokkosODE::Experimental::RK_type::RKDP:
-      name = "Dormand-Prince";
-      break;
-    default:
-      name = "Unknown Runge-Kutta method";
-    }
-
-    return name;
+  switch (RK) {
+    case KokkosODE::Experimental::RK_type::RKFE: name = "Forward-Euler"; break;
+    case KokkosODE::Experimental::RK_type::RKEH: name = "Euler-Heun"; break;
+    case KokkosODE::Experimental::RK_type::RKF12: name = "Fehlberg 1-2"; break;
+    case KokkosODE::Experimental::RK_type::RKBS: name = "Bogacki-Shampine"; break;
+    case KokkosODE::Experimental::RK_type::RK4: name = "Classic RK order 4"; break;
+    case KokkosODE::Experimental::RK_type::RKF45: name = "Fehlberg 4-5"; break;
+    case KokkosODE::Experimental::RK_type::RKCK: name = "Cash-Karp"; break;
+    case KokkosODE::Experimental::RK_type::RKDP: name = "Dormand-Prince"; break;
+    default: name = "Unknown Runge-Kutta method";
   }
 
-  template <KokkosODE::Experimental::RK_type RK, class Device, class OdeType>
-  void RK_Count(const Device, const OdeType myODE,
-		const double relTol, const double absTol,
-		const int /*expected_count*/) {
+  return name;
+}
+
+template <KokkosODE::Experimental::RK_type RK, class Device, class OdeType>
+void RK_Count(const Device, const OdeType myODE, const double relTol, const double absTol,
+              const int /*expected_count*/) {
   using execution_space = typename Device::execution_space;
   using vec_type        = Kokkos::View<double*, Device>;
   using mv_type         = Kokkos::View<double**, Device>;
@@ -69,21 +51,20 @@ namespace Test {
   constexpr int neqs = myODE.neqs;
 
   constexpr double tstart = myODE.tstart(), tend = myODE.tend();
-  constexpr int num_steps = myODE.numsteps();
-  constexpr int maxSteps  = 1e6;
-  constexpr double minStepSize = (tend - tstart) / (100*maxSteps);
-  KokkosODE::Experimental::ODE_params params(num_steps, maxSteps, 1.0e-12,
-                                             (RK == KokkosODE::Experimental::RK_type::RKF12) ? 1.0e-8 : 1.0e-6,
-					     minStepSize);
+  constexpr int num_steps      = myODE.numsteps();
+  constexpr int maxSteps       = 1e6;
+  constexpr double minStepSize = (tend - tstart) / (100 * maxSteps);
+  KokkosODE::Experimental::ODE_params params(
+      num_steps, maxSteps, 1.0e-12, (RK == KokkosODE::Experimental::RK_type::RKF12) ? 1.0e-8 : 1.0e-6, minStepSize);
 
   vec_type y("solution", neqs), f("function", neqs);
   vec_type y_new("y new", neqs), y_old("y old", neqs);
   count_type count("time step count", 1);
 
-  auto y_h = Kokkos::create_mirror_view(y);
+  auto y_h                              = Kokkos::create_mirror_view(y);
   typename vec_type::HostMirror y_old_h = Kokkos::create_mirror(y_old);
-  auto y_ref_h = Kokkos::create_mirror(y);
-  for(int dofIdx = 0; dofIdx < neqs; ++dofIdx) {
+  auto y_ref_h                          = Kokkos::create_mirror(y);
+  for (int dofIdx = 0; dofIdx < neqs; ++dofIdx) {
     y_h(dofIdx)     = myODE.expected_val(tstart, dofIdx);
     y_old_h(dofIdx) = y_h(dofIdx);
     y_ref_h(dofIdx) = myODE.expected_val(tend, dofIdx);
@@ -91,17 +72,13 @@ namespace Test {
   Kokkos::deep_copy(y, y_h);
 
   vec_type tmp("tmp vector", neqs);
-  mv_type kstack(
-      "k stack",
-      KokkosODE::Experimental::RungeKutta<RK>::num_stages(), neqs);
+  mv_type kstack("k stack", KokkosODE::Experimental::RungeKutta<RK>::num_stages(), neqs);
 
   Kokkos::RangePolicy<execution_space> my_policy(0, 1);
   Kokkos::deep_copy(y_old, y_old_h);
   Kokkos::deep_copy(y_new, y_old_h);
-  RKSolve_wrapper<OdeType, RK, vec_type, mv_type,
-                  double, count_type>
-      solve_wrapper(myODE, params, tstart, tend, y_old, y_new, tmp, kstack,
-                    count);
+  RKSolve_wrapper<OdeType, RK, vec_type, mv_type, double, count_type> solve_wrapper(myODE, params, tstart, tend, y_old,
+                                                                                    y_new, tmp, kstack, count);
   Kokkos::parallel_for(my_policy, solve_wrapper);
 
   auto y_new_h = Kokkos::create_mirror(y_new);
@@ -111,8 +88,9 @@ namespace Test {
   Kokkos::deep_copy(count_h, count);
 
   double error = 0.0;
-  for(int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
-    error += Kokkos::pow(y_ref_h(eqIdx) - y_new_h(eqIdx), 2.0) / Kokkos::pow(absTol + relTol*Kokkos::abs(y_new_h(eqIdx)), 2.0);
+  for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
+    error += Kokkos::pow(y_ref_h(eqIdx) - y_new_h(eqIdx), 2.0) /
+             Kokkos::pow(absTol + relTol * Kokkos::abs(y_new_h(eqIdx)), 2.0);
   }
   error = Kokkos::sqrt(error / neqs);
 
@@ -122,9 +100,8 @@ namespace Test {
 
 }  // namespace Test
 
-template<KokkosODE::Experimental::RK_type RK>
+template <KokkosODE::Experimental::RK_type RK>
 void test_RK_count() {
-
   //    RK_Count    (Device,       OdeType,                      relTol, absTol, /*expected_count*/)
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeOnePoly(), 1.0e-6, 1e-12, 2);
   Test::RK_Count<RK>(TestDevice(), TestProblem::DegreeTwoPoly(), 1.0e-6, 1e-12, 2);

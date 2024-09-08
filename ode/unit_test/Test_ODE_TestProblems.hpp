@@ -21,16 +21,14 @@ namespace TestProblem {
 
 struct DegreeOnePoly {
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/,
-                                         View1& /*y*/, View2& dydt) const {
+  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1& /*y*/, View2& dydt) const {
     for (int dofIdx = 0; dofIdx < neqs; ++dofIdx) {
       dydt(dofIdx) = 1;
     }
   }
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/,
-                                         View1& /*y*/, View2& jac) const {
+  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& /*y*/, View2& jac) const {
     for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
       for (int colIdx = 0; colIdx < neqs; ++colIdx) {
         jac(rowIdx, colIdx) = 0;
@@ -41,26 +39,22 @@ struct DegreeOnePoly {
   KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
   KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
   KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
-    return t + 1.0;
-  }
+  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const { return t + 1.0; }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
-  static constexpr int neqs = 1;
+  static constexpr int neqs    = 1;
   static constexpr char name[] = "DegreeOnePoly";
 };
 
 struct DegreeTwoPoly {
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_function(double t, double /*dt*/, View1& /*y*/,
-                                         View2& dydt) const {
+  KOKKOS_FUNCTION void evaluate_function(double t, double /*dt*/, View1& /*y*/, View2& dydt) const {
     for (int dofIdx = 0; dofIdx < neqs; ++dofIdx) {
       dydt(dofIdx) = t + 1;
     }
   }
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/,
-                                         View1& /*y*/, View2& jac) const {
+  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& /*y*/, View2& jac) const {
     for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
       for (int colIdx = 0; colIdx < neqs; ++colIdx) {
         jac(rowIdx, colIdx) = 0;
@@ -71,26 +65,22 @@ struct DegreeTwoPoly {
   KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
   KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
   KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
-    return 0.5 * t * t + t + 1.0;
-  }
+  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const { return 0.5 * t * t + t + 1.0; }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
-  static constexpr int neqs = 1;
+  static constexpr int neqs    = 1;
   static constexpr char name[] = "DegreeTwoPoly";
 };
 
 struct DegreeThreePoly {
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_function(double t, double /*dt*/, View1& /*y*/,
-                                         View2& dydt) const {
+  KOKKOS_FUNCTION void evaluate_function(double t, double /*dt*/, View1& /*y*/, View2& dydt) const {
     for (int dofIdx = 0; dofIdx < neqs; ++dofIdx) {
       dydt(dofIdx) = (t * t) + t + 1;
     }
   }
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/,
-                                         View1& /*y*/, View2& jac) const {
+  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& /*y*/, View2& jac) const {
     for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
       for (int colIdx = 0; colIdx < neqs; ++colIdx) {
         jac(rowIdx, colIdx) = 0;
@@ -105,22 +95,20 @@ struct DegreeThreePoly {
     return (1. / 3) * (t * t * t) + (1. / 2) * (t * t) + t + 1;
   }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
-  static constexpr int neqs = 1;
+  static constexpr int neqs    = 1;
   static constexpr char name[] = "DegreeThreePoly";
 };
 
 struct DegreeFivePoly {
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_function(double t, double /*dt*/, View1& /*y*/,
-                                         View2& dydt) const {
+  KOKKOS_FUNCTION void evaluate_function(double t, double /*dt*/, View1& /*y*/, View2& dydt) const {
     for (int dofIdx = 0; dofIdx < neqs; ++dofIdx) {
       dydt(dofIdx) = (t * t * t * t) + (t * t * t) + (t * t) + t + 1;
     }
   }
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/,
-                                         View1& /*y*/, View2& jac) const {
+  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& /*y*/, View2& jac) const {
     for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
       for (int colIdx = 0; colIdx < neqs; ++colIdx) {
         jac(rowIdx, colIdx) = 0;
@@ -132,11 +120,11 @@ struct DegreeFivePoly {
   KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
   KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
-    return (1. / 5) * (t * t * t * t * t) + (1. / 4) * (t * t * t * t) +
-           (1. / 3) * (t * t * t) + (1. / 2) * (t * t) + t + 1;
+    return (1. / 5) * (t * t * t * t * t) + (1. / 4) * (t * t * t * t) + (1. / 3) * (t * t * t) + (1. / 2) * (t * t) +
+           t + 1;
   }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
-  static constexpr int neqs = 1;
+  static constexpr int neqs    = 1;
   static constexpr char name[] = "DegreeFivePoly";
 };
 
@@ -144,16 +132,14 @@ struct Exponential {
   Exponential(double rate_) : rate(rate_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1& y,
-                                         View2& dydt) const {
+  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1& y, View2& dydt) const {
     for (int dofIdx = 0; dofIdx < neqs; ++dofIdx) {
       dydt(dofIdx) = rate * y(dofIdx);
     }
   }
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/,
-                                         View1& /*y*/, View2& jac) const {
+  KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& /*y*/, View2& jac) const {
     for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
       for (int colIdx = 0; colIdx < neqs; ++colIdx) {
         jac(rowIdx, colIdx) = 0;
@@ -168,9 +154,7 @@ struct Exponential {
   KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
   KOKKOS_FUNCTION constexpr double tend() const { return 1.0; }
   KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
-    return Kokkos::exp(rate * t);
-  }
+  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const { return Kokkos::exp(rate * t); }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
   static constexpr int neqs = 1;
   const double rate;
@@ -178,12 +162,14 @@ struct Exponential {
 };
 
 struct SpringMassDamper {
-  SpringMassDamper(double c_, double k_) : c(c_), k(k_),
+  SpringMassDamper(double c_, double k_)
+      : c(c_),
+        k(k_),
         lambda1((-c + Kokkos::pow(c * c - 4. * k, 0.5)) / 2.),
-        lambda2((-c - Kokkos::pow(c * c - 4. * k, 0.5)) / 2.) { }
+        lambda2((-c - Kokkos::pow(c * c - 4. * k, 0.5)) / 2.) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1 & y, View2 & dydt) const {
+  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1& y, View2& dydt) const {
     dydt[0] = y[1];
     dydt[1] = -k * y[0] - c * y[1];
   }
@@ -203,13 +189,12 @@ struct SpringMassDamper {
     using Kokkos::exp;
 
     const double det = lambda1 - lambda2;
-    double val = 0;
+    double val       = 0;
 
     if (n == 0) {
       val = -(lambda2 / det) * exp(lambda1 * t) + (lambda1 / det) * exp(lambda2 * t);
     } else {
-      val = -(lambda2 * lambda1 / det) * exp(lambda1 * t) +
-          (lambda1 * lambda2 / det) * exp(lambda2 * t);
+      val = -(lambda2 * lambda1 / det) * exp(lambda1 * t) + (lambda1 * lambda2 / det) * exp(lambda2 * t);
     }
 
     return val;
@@ -228,11 +213,10 @@ struct SpringMassDamper {
 // Example 8.1 from Leveque
 
 struct CosExp {
-  CosExp(double lambda_, double t0_, double eta_)
-      : lambda(lambda_), t0(t0_), eta(eta_) { }
+  CosExp(double lambda_, double t0_, double eta_) : lambda(lambda_), t0(t0_), eta(eta_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_function(double t, double /*dt*/, View1 & y, View2 & dydt) const {
+  KOKKOS_FUNCTION void evaluate_function(double t, double /*dt*/, View1& y, View2& dydt) const {
     for (int i = 0; i < neqs; i++) {
       dydt(i) = lambda * (y(i) - Kokkos::cos(t)) - Kokkos::sin(t);
     }
@@ -317,9 +301,9 @@ struct StiffChemicalDecayProcess {
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
 
   static constexpr int neqs = 3;
-  const double y1_init = 3.0;
-  const double y2_init = 4.0;
-  const double y3_init = 2.0;
+  const double y1_init      = 3.0;
+  const double y2_init      = 4.0;
+  const double y3_init      = 2.0;
   const double K1;
   const double K2;
   static constexpr char name[] = "StiffChemicalDecay";
@@ -329,12 +313,12 @@ struct Tracer {
   Tracer(double rate_) : rate(rate_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1 & y, View2 & dydt) const {
+  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1& y, View2& dydt) const {
     for (int i = 0; i < neqs; i += 2) {
       // const double R = Kokkos::sqrt(y[i] * y[i] + y[i + 1] * y[i + 1]);
       // dydt[i] = -rate * y[i + 1] / R;
       // dydt[i + 1] = rate * y[i] / R;
-      dydt[i] = -rate * y[i + 1];
+      dydt[i]     = -rate * y[i + 1];
       dydt[i + 1] = rate * y[i];
     }
   }
@@ -344,7 +328,7 @@ struct Tracer {
   KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     const double theta = rate * t;
-    double val = 0.0;
+    double val         = 0.0;
 
     if (n % 2 == 0) {
       val = Kokkos::cos(theta);
@@ -355,16 +339,15 @@ struct Tracer {
   }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
 
-  static constexpr int neqs = 2;
+  static constexpr int neqs  = 2;
   static constexpr double pi = 3.14159265358979323846;
   const double rate;
   static constexpr char name[] = "Tracer";
 };
 
-
 struct EnrightB5 {
   EnrightB5(double alpha_ = 100.0) : alpha(alpha_) {}
- 
+
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1& y, View2& dydt) const {
     dydt[0] = -10. * y[0] + alpha * y[1];
@@ -374,16 +357,15 @@ struct EnrightB5 {
     dydt[4] = -0.5 * y[4];
     dydt[5] = -0.1 * y[5];
   }
- 
+
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& /*y*/, View2& jac) const {
-
-    for(int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
-      for(int colIdx = 0; colIdx < neqs; ++colIdx) {
-	jac(rowIdx, colIdx) = 0.0;
+    for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
+      for (int colIdx = 0; colIdx < neqs; ++colIdx) {
+        jac(rowIdx, colIdx) = 0.0;
       }
     }
- 
+
     jac(0, 0) = -10.;
     jac(0, 1) = alpha;
     jac(1, 0) = -alpha;
@@ -393,7 +375,7 @@ struct EnrightB5 {
     jac(4, 4) = -0.5;
     jac(5, 5) = -0.1;
   }
- 
+
   KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
   KOKKOS_FUNCTION constexpr double tend() const { return 0.2; }
   KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
@@ -411,9 +393,8 @@ struct EnrightB5 {
     const double b[2] = {-1, 0};
 
     if (n < 2) {
-      val = exp(-10. * t) *
-	(c1 * (a[n] * cos(alpha * t) - b[n] * sin(alpha * t)) +
-	 c2 * (a[n] * sin(alpha * t) + b[n] * cos(alpha * t)));
+      val = exp(-10. * t) * (c1 * (a[n] * cos(alpha * t) - b[n] * sin(alpha * t)) +
+                             c2 * (a[n] * sin(alpha * t) + b[n] * cos(alpha * t)));
     } else if (n == 2) {
       val = exp(-4. * t);
     } else if (n == 3) {
@@ -431,11 +412,11 @@ struct EnrightB5 {
   static constexpr int neqs = 6;
   const double alpha;
   static constexpr char name[] = "EnrightB5";
-}; // EnrightB5
+};  // EnrightB5
 
 struct EnrightC1 {
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1& y, View2& dydt) const  {
+  KOKKOS_FUNCTION void evaluate_function(double /*t*/, double /*dt*/, View1& y, View2& dydt) const {
     dydt[0] = -y[0] + y[1] * y[1] + y[2] * y[2] + y[3] * y[3];
     dydt[1] = -10. * y[1] + 10. * (y[2] * y[2] + y[3] * y[3]);
     dydt[2] = -40. * y[2] + 40. * y[3] * y[3];
@@ -444,10 +425,9 @@ struct EnrightC1 {
 
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& y, View2& jac) const {
-
-    for(int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
-      for(int colIdx = 0; colIdx < neqs; ++colIdx) {
-	jac(rowIdx, colIdx) = 0.0;
+    for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
+      for (int colIdx = 0; colIdx < neqs; ++colIdx) {
+        jac(rowIdx, colIdx) = 0.0;
       }
     }
 
@@ -469,19 +449,17 @@ struct EnrightC1 {
   KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
   KOKKOS_FUNCTION constexpr double tend() const { return 20.0; }
   KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const
-  {
+  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     if (t == 0) {
       return 1.;
     } else {
       // cvode sol
-      constexpr Kokkos::Array<double, neqs> y = {
-	4.003235e-04, 4.001600e-04, 4.000000e-04, 2.000000e-02};
+      constexpr Kokkos::Array<double, neqs> y = {4.003235e-04, 4.001600e-04, 4.000000e-04, 2.000000e-02};
       return y[n];
     }
   }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
-  static constexpr int neqs = 4;
+  static constexpr int neqs    = 4;
   static constexpr char name[] = "EnrightC1";
 };
 
@@ -498,10 +476,9 @@ struct EnrightC5 {
 
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& y, View2& jac) const {
-
-    for(int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
-      for(int colIdx = 0; colIdx < neqs; ++colIdx) {
-	jac(rowIdx, colIdx) = 0.0;
+    for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
+      for (int colIdx = 0; colIdx < neqs; ++colIdx) {
+        jac(rowIdx, colIdx) = 0.0;
       }
     }
 
@@ -523,14 +500,12 @@ struct EnrightC5 {
   KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
   KOKKOS_FUNCTION constexpr double tend() const { return 20.0; }
   KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const
-  {
+  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     if (t == 0) {
       return 1.;
     } else {
       // cvode sol
-      constexpr Kokkos::Array<double, neqs> y = {
-	2.000000e+00, 8.000000e+00, 1.360000e+02, 3.712800e+04};
+      constexpr Kokkos::Array<double, neqs> y = {2.000000e+00, 8.000000e+00, 1.360000e+02, 3.712800e+04};
       return y[n];
     }
   }
@@ -550,10 +525,9 @@ struct EnrightD2 {
 
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& y, View2& jac) const {
-
-    for(int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
-      for(int colIdx = 0; colIdx < neqs; ++colIdx) {
-	jac(rowIdx, colIdx) = 0.0;
+    for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
+      for (int colIdx = 0; colIdx < neqs; ++colIdx) {
+        jac(rowIdx, colIdx) = 0.0;
       }
     }
 
@@ -571,20 +545,18 @@ struct EnrightD2 {
   KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
   KOKKOS_FUNCTION constexpr double tend() const { return 40.0; }
   KOKKOS_FUNCTION constexpr int numsteps() const { return 100; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const
-  {
-    if (t == 0.)
-      {
-	constexpr Kokkos::Array<double, neqs> y = {1., 0., 0.};
-	return y[n];
-      } else {
+  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+    if (t == 0.) {
+      constexpr Kokkos::Array<double, neqs> y = {1., 0., 0.};
+      return y[n];
+    } else {
       // cvode solution
       constexpr Kokkos::Array<double, neqs> y = {7.158278e-01, 9.185559e-02, 2.841630e+01};
       return y[n];
     }
   }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
-  static constexpr int neqs = 3;
+  static constexpr int neqs    = 3;
   static constexpr char name[] = "EnrightD2";
 };
 
@@ -598,10 +570,9 @@ struct EnrightD4 {
 
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void evaluate_jacobian(double /*t*/, double /*dt*/, View1& y, View2& jac) const {
-
-    for(int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
-      for(int colIdx = 0; colIdx < neqs; ++colIdx) {
-	jac(rowIdx, colIdx) = 0.0;
+    for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
+      for (int colIdx = 0; colIdx < neqs; ++colIdx) {
+        jac(rowIdx, colIdx) = 0.0;
       }
     }
 
@@ -617,7 +588,7 @@ struct EnrightD4 {
   }
 
   KOKKOS_FUNCTION constexpr double tstart() const { return 0.0; }
-  KOKKOS_FUNCTION constexpr double tend() const { return 50.0; } //50.0; }
+  KOKKOS_FUNCTION constexpr double tend() const { return 50.0; }  // 50.0; }
   KOKKOS_FUNCTION constexpr int numsteps() const { return 10; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
     if (t == 0.) {
@@ -630,7 +601,7 @@ struct EnrightD4 {
     }
   }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
-  static constexpr int neqs = 3;
+  static constexpr int neqs    = 3;
   static constexpr char name[] = "EnrightD4";
 };
 
@@ -669,7 +640,7 @@ struct KKStiffChemistry {
     }
   }
   KOKKOS_FUNCTION static constexpr int num_equations() { return neqs; }
-  static constexpr int neqs = 3;
+  static constexpr int neqs    = 3;
   static constexpr char name[] = "Robertson Autocatalytic";
 };
 

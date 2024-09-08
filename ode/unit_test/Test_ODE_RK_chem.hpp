@@ -114,10 +114,8 @@ void test_chem() {
     Kokkos::deep_copy(y_new, y_old_h);
 
     Kokkos::RangePolicy<execution_space> my_policy(0, 1);
-    RKSolve_wrapper<chem_model_1, RK_type::RKCK, vec_type, mv_type, double,
-                    count_type>
-        solve_wrapper(chem_model, params, chem_model.tstart, chem_model.tend,
-                      y_old, y_new, tmp, kstack, count);
+    RKSolve_wrapper<chem_model_1, RK_type::RKCK, vec_type, mv_type, double, count_type> solve_wrapper(
+        chem_model, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp, kstack, count);
     Kokkos::parallel_for(my_policy, solve_wrapper);
 
     auto y_new_h = Kokkos::create_mirror(y_new);
@@ -158,10 +156,8 @@ void test_chem() {
     Kokkos::deep_copy(y_new, y_old_h);
 
     Kokkos::RangePolicy<execution_space> my_policy(0, 1);
-    RKSolve_wrapper<chem_model_2, RK_type::RKCK, vec_type, mv_type, double,
-                    count_type>
-        solve_wrapper(chem_model, params, chem_model.tstart, chem_model.tend,
-                      y_old, y_new, tmp, kstack, count);
+    RKSolve_wrapper<chem_model_2, RK_type::RKCK, vec_type, mv_type, double, count_type> solve_wrapper(
+        chem_model, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp, kstack, count);
     Kokkos::parallel_for(my_policy, solve_wrapper);
 
     auto y_new_h = Kokkos::create_mirror(y_new);

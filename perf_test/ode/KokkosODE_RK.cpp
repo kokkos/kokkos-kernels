@@ -92,8 +92,7 @@ struct chem_model_2 {
   }
 };
 
-template <class ode_type, class table_type, class vec_type, class mv_type,
-          class scalar_type, class count_type>
+template <class ode_type, class table_type, class vec_type, class mv_type, class scalar_type, class count_type>
 struct RKSolve_wrapper {
   using ode_params = KokkosODE::Experimental::ODE_params;
 
@@ -106,11 +105,9 @@ struct RKSolve_wrapper {
   mv_type kstack;
   count_type count;
 
-  RKSolve_wrapper(const ode_type& my_ode_, const table_type& table_,
-                  const ode_params& params_, const scalar_type tstart_,
-                  const scalar_type tend_, const vec_type& y_old_,
-                  const vec_type& y_new_, const vec_type& tmp_,
-                  const mv_type& kstack_, const count_type& count_)
+  RKSolve_wrapper(const ode_type& my_ode_, const table_type& table_, const ode_params& params_,
+                  const scalar_type tstart_, const scalar_type tend_, const vec_type& y_old_, const vec_type& y_new_,
+                  const vec_type& tmp_, const mv_type& kstack_, const count_type& count_)
       : my_ode(my_ode_),
         table(table_),
         params(params_),
@@ -125,19 +122,15 @@ struct RKSolve_wrapper {
   KOKKOS_FUNCTION
   void operator()(const int idx) const {
     // Take subviews to create the local problem
-    auto local_y_old =
-        Kokkos::subview(y_old, Kokkos::pair(2 * idx, 2 * idx + 1));
-    auto local_y_new =
-        Kokkos::subview(y_new, Kokkos::pair(2 * idx, 2 * idx + 1));
-    auto local_tmp = Kokkos::subview(tmp, Kokkos::pair(2 * idx, 2 * idx + 1));
-    auto local_kstack = Kokkos::subview(kstack, Kokkos::ALL(),
-                                        Kokkos::pair(2 * idx, 2 * idx + 1));
+    auto local_y_old  = Kokkos::subview(y_old, Kokkos::pair(2 * idx, 2 * idx + 1));
+    auto local_y_new  = Kokkos::subview(y_new, Kokkos::pair(2 * idx, 2 * idx + 1));
+    auto local_tmp    = Kokkos::subview(tmp, Kokkos::pair(2 * idx, 2 * idx + 1));
+    auto local_kstack = Kokkos::subview(kstack, Kokkos::ALL(), Kokkos::pair(2 * idx, 2 * idx + 1));
     auto local_count  = Kokkos::subview(count, idx, Kokkos::ALL());
 
     // Run Runge-Kutta time integrator
     // This should be replaced by a call to the public interface!
-    KokkosODE::Impl::RKSolve(my_ode, table, params, tstart, tend, local_y_old,
-                             local_y_new, local_tmp, local_kstack,
+    KokkosODE::Impl::RKSolve(my_ode, table, params, tstart, tend, local_y_old, local_y_new, local_tmp, local_kstack,
                              local_count.data());
   }
 };
@@ -188,9 +181,8 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
       Kokkos::deep_copy(y_new, y_old_h);
 
       Kokkos::RangePolicy<execution_space> my_policy(0, num_odes);
-      RKSolve_wrapper solve_wrapper(chem_model, table, params,
-                                    chem_model.tstart, chem_model.tend, y_old,
-                                    y_new, tmp, kstack, count);
+      RKSolve_wrapper solve_wrapper(chem_model, table, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp,
+                                    kstack, count);
 
       Kokkos::Timer time;
       time.reset();
@@ -242,9 +234,8 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
       Kokkos::deep_copy(y_new, y_old_h);
 
       Kokkos::RangePolicy<execution_space> my_policy(0, num_odes);
-      RKSolve_wrapper solve_wrapper(chem_model, table, params,
-                                    chem_model.tstart, chem_model.tend, y_old,
-                                    y_new, tmp, kstack, count);
+      RKSolve_wrapper solve_wrapper(chem_model, table, params, chem_model.tstart, chem_model.tend, y_old, y_new, tmp,
+                                    kstack, count);
 
       Kokkos::Timer time;
       time.reset();
