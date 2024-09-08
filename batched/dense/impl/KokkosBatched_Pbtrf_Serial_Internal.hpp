@@ -105,10 +105,12 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrfInternalLower<Algo::Pbtrf::Unblocked>::inv
     auto a_jj = AB[0 * as0 + j * as1].real();
 
     // Check if L (j, j) is positive definite
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     if (a_jj <= 0) {
       AB[0 * as0 + j * as1] = a_jj;
       return j + 1;
     }
+#endif
 
     a_jj                  = Kokkos::sqrt(a_jj);
     AB[0 * as0 + j * as1] = a_jj;
@@ -219,10 +221,12 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrfInternalUpper<Algo::Pbtrf::Unblocked>::inv
     auto a_jj = AB[kd * as0 + j * as1].real();
 
     // Check if U (j,j) is positive definite
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     if (a_jj <= 0) {
       AB[kd * as0 + j * as1] = a_jj;
       return j + 1;
     }
+#endif
 
     a_jj                   = Kokkos::sqrt(a_jj);
     AB[kd * as0 + j * as1] = a_jj;
