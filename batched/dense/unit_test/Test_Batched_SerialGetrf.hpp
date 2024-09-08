@@ -188,9 +188,7 @@ void impl_test_batched_getrf_analytical(const int N) {
     // Permute A by pivot vector
     for (int i = 0; i < BlkSize; i++) {
       for (int j = 0; j < BlkSize; j++) {
-        auto temp                 = h_A(ib, i, j);
-        h_A(ib, i, j)             = h_A(ib, h_ipiv(ib, i), j);
-        h_A(ib, h_ipiv(ib, i), j) = temp;
+        Kokkos::kokkos_swap(h_A(ib, h_ipiv(ib, i), j), h_A(ib, i, j));
       }
     }
   }
@@ -295,14 +293,12 @@ void impl_test_batched_getrf(const int N, const int BlkSize) {
 
   // permute A by ipiv
   auto h_ipiv = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ipiv);
-  auto h_A    = Kokkos::create_mirror_view(A);
+  auto h_A    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
   for (int ib = 0; ib < N; ib++) {
     // Permute A by pivot vector
     for (int i = 0; i < BlkSize; i++) {
       for (int j = 0; j < BlkSize; j++) {
-        auto temp                 = h_A(ib, i, j);
-        h_A(ib, i, j)             = h_A(ib, h_ipiv(ib, i), j);
-        h_A(ib, h_ipiv(ib, i), j) = temp;
+        Kokkos::kokkos_swap(h_A(ib, h_ipiv(ib, i), j), h_A(ib, i, j));
       }
     }
   }
@@ -311,7 +307,6 @@ void impl_test_batched_getrf(const int N, const int BlkSize) {
   RealType eps = 1.0e3 * ats::epsilon();
 
   auto h_LU = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), LU);
-
   // Check if LU = A (permuted)
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize; i++) {
