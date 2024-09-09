@@ -35,7 +35,7 @@ KOKKOS_FUNCTION void first_step_size(const ode_type ode, const int order, const 
   using KAT = Kokkos::ArithTraits<scalar_type>;
 
   // Extract subviews to store intermediate data
-  auto f1 = Kokkos::subview(temp, Kokkos::ALL(), 1);
+  auto f1 = Kokkos::subview(temp, 1, Kokkos::ALL());
 
   // Compute norms for y0 and f0
   double n0 = KAT::zero(), n1 = KAT::zero(), dt0, scale;
