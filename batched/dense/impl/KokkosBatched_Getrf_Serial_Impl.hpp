@@ -208,10 +208,10 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
     auto info        = checkGetrfInput(A, ipiv);
     if (info) return info;
 
-    const int m = A.extent(0), n = A.extent(1), piv_size = ipiv.extent(0);
+    const int m = A.extent(0), n = A.extent(1), init_piv_size = ipiv.extent(0);
 
     Stack stack;
-    int initial[7] = {0, 0, 0, 0, m, n, piv_size};
+    int initial[7] = {0, 0, 0, 0, m, n, init_piv_size};
     stack.push(initial);
 
     // Quick return if possible
