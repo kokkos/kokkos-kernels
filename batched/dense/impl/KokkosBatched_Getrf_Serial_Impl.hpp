@@ -281,12 +281,12 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
         // in the recursive version
         int after_second[7] = {2, m_start, n_start, piv_start, m_size, n_size, piv_size};
         int second[7]       = {0,
-                         m_start + n1,
-                         n_start + n1,
-                         piv_start + n1,
-                         m_size - n1,
-                         n_size - n1,
-                         static_cast<int>(Kokkos::min(m_size, n_size)) - n1};
+                               m_start + n1,
+                               n_start + n1,
+                               piv_start + n1,
+                               m_size - n1,
+                               n_size - n1,
+                               static_cast<int>(Kokkos::min(m_size, n_size)) - n1};
         int after_first[7]  = {1, m_start, n_start, piv_start, m_size, n_size, piv_size};
         int first[7]        = {0, m_start, n_start, piv_start, m_size, n1, n1};
 
