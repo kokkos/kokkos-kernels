@@ -55,6 +55,9 @@
 #include "Test_Batched_SerialPttrs.hpp"
 #include "Test_Batched_SerialPttrs_Real.hpp"
 #include "Test_Batched_SerialPttrs_Complex.hpp"
+#include "Test_Batched_SerialPbtrf.hpp"
+#include "Test_Batched_SerialPbtrf_Real.hpp"
+#include "Test_Batched_SerialPbtrf_Complex.hpp"
 
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"
