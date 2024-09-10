@@ -23,18 +23,19 @@
 namespace KokkosBatched {
 
 /// \brief Serial Batched Pbtrs:
-/// Compute the Cholesky factorization U**H * U (or L * L**H) of a real
-/// symmetric (or complex Hermitian) positive definite banded matrix A_l
-/// for all l = 0, ...,
-/// The factorization has the form
-///    A = U**T * U ,  if ArgUplo = KokkosBatched::Uplo::Upper, or
-///    A = L  * L**T,  if ArgUplo = KokkosBatched::Uplo::Lower,
-/// where U is an upper triangular matrix, U**T is the transpose of U, and
-/// L is lower triangular.
-/// This is the unblocked version of the algorithm, calling Level 2 BLAS.
+/// Solve Ab_l x_l = b_l for all l = 0, ..., N
+///   using the Cholesky factorization A = U**H * U or A = L * L**H computed by
+///   Pbtrf.
+/// The matrix has the form
+///    A = U**H * U ,  if ArgUplo = KokkosBatched::Uplo::Upper, or
+///    A = L  * L**H,  if ArgUplo = KokkosBatched::Uplo::Lower,
+/// where U is an upper triangular matrix, U**H is the transpose of U, and
+/// L is lower triangular matrix, L**H is the transpose of L.
 ///
 /// \tparam ABViewType: Input type for a banded matrix, needs to be a 2D
 /// view
+/// \tparam BViewType: Input type for a right-hand side and the solution,
+/// needs to be a 1D view
 ///
 /// \param ab [in]: ab is a ldab by n banded matrix, with ( kd + 1 ) diagonals
 /// \param b  [inout]: right-hand side and the solution, a rank 1 view
