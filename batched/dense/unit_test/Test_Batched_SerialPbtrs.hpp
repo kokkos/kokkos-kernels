@@ -58,24 +58,21 @@ struct Functor_BatchedSerialPbtrf {
   }
 };
 
-template <typename DeviceType, typename ABViewType, typename BViewType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ABViewType, typename BViewType, typename ParamTagType, typename AlgoTagType>
 struct Functor_BatchedSerialPbtrs {
   using execution_space = typename DeviceType::execution_space;
   ABViewType _ab;
   BViewType _b;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialPbtrs(const ABViewType &ab, const BViewType &b)
-      : _ab(ab), _b(b) {}
+  Functor_BatchedSerialPbtrs(const ABViewType &ab, const BViewType &b) : _ab(ab), _b(b) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ParamTagType &, const int k, int &info) const {
     auto sub_ab = Kokkos::subview(_ab, k, Kokkos::ALL(), Kokkos::ALL());
-    auto bb = Kokkos::subview(_b, k, Kokkos::ALL());
+    auto bb     = Kokkos::subview(_b, k, Kokkos::ALL());
 
-    info += KokkosBatched::SerialPbtrs<typename ParamTagType::uplo,
-                                 AlgoTagType>::invoke(sub_ab, bb);
+    info += KokkosBatched::SerialPbtrs<typename ParamTagType::uplo, AlgoTagType>::invoke(sub_ab, bb);
   }
 
   inline int run() {
@@ -125,8 +122,7 @@ struct Functor_BatchedSerialGemm {
   }
 };
 
-template <typename DeviceType, typename ScalarType, typename LayoutType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 /// \brief Implementation details of batched pbtrs test
 ///        Confirm A * x = b, where
 ///        A: [[4, 1, 0],
@@ -149,11 +145,9 @@ void impl_test_batched_pbtrs_analytical(const int N) {
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
 
   constexpr int BlkSize = 3, k = 1;
-  View3DType A("A", N, BlkSize, BlkSize),
-      A_reconst("A_reconst", N, BlkSize, BlkSize);
-  View3DType Ab("Ab", N, k + 1, BlkSize);  // Banded matrix
-  View2DType x0("x0", N, BlkSize), x_ref("x_ref", N, BlkSize),
-      y0("y0", N, BlkSize);  // Solutions
+  View3DType A("A", N, BlkSize, BlkSize), A_reconst("A_reconst", N, BlkSize, BlkSize);
+  View3DType Ab("Ab", N, k + 1, BlkSize);                                             // Banded matrix
+  View2DType x0("x0", N, BlkSize), x_ref("x_ref", N, BlkSize), y0("y0", N, BlkSize);  // Solutions
 
   auto h_A_reconst = Kokkos::create_mirror_view(A_reconst);
   auto h_x_ref     = Kokkos::create_mirror_view(x_ref);
@@ -177,20 +171,14 @@ void impl_test_batched_pbtrs_analytical(const int N) {
 
   // Create banded triangluar matrix in normal and banded storage
   using ArgUplo = typename ParamTagType::uplo;
-  create_banded_pds_matrix<View3DType, View3DType, ArgUplo>(A_reconst, A, k,
-                                                            false);
-  create_banded_triangular_matrix<View3DType, View3DType, ArgUplo>(A_reconst,
-                                                                   Ab, k, true);
+  create_banded_pds_matrix<View3DType, View3DType, ArgUplo>(A_reconst, A, k, false);
+  create_banded_triangular_matrix<View3DType, View3DType, ArgUplo>(A_reconst, Ab, k, true);
 
   // Factorize with Pbtrf: A = U**H * U or A = L * L**H
-  Functor_BatchedSerialPbtrf<DeviceType, View3DType, ParamTagType, AlgoTagType>(
-      Ab)
-      .run();
+  Functor_BatchedSerialPbtrf<DeviceType, View3DType, ParamTagType, AlgoTagType>(Ab).run();
 
   // pbtrs (Note, Ab is a factorized matrix of A)
-  auto info = Functor_BatchedSerialPbtrs<DeviceType, View3DType, View2DType, ParamTagType,
-                             AlgoTagType>(Ab, x0)
-      .run();
+  auto info = Functor_BatchedSerialPbtrs<DeviceType, View3DType, View2DType, ParamTagType, AlgoTagType>(Ab, x0).run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
@@ -209,8 +197,7 @@ void impl_test_batched_pbtrs_analytical(const int N) {
   }
 }
 
-template <typename DeviceType, typename ScalarType, typename LayoutType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 /// \brief Implementation details of batched pbtrs test
 ///        Confirm A * x = b, where
 ///
@@ -223,11 +210,9 @@ void impl_test_batched_pbtrs(const int N, const int k, const int BlkSize) {
   using View2DType = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
 
-  View3DType A("A", N, BlkSize, BlkSize),
-      A_reconst("A_reconst", N, BlkSize, BlkSize);
-  View3DType Ab("Ab", N, k + 1, BlkSize);  // Banded matrix
-  View2DType x0("x0", N, BlkSize), x_ref("x_ref", N, BlkSize),
-      y0("y0", N, BlkSize);  // Solutions
+  View3DType A("A", N, BlkSize, BlkSize), A_reconst("A_reconst", N, BlkSize, BlkSize);
+  View3DType Ab("Ab", N, k + 1, BlkSize);                                             // Banded matrix
+  View2DType x0("x0", N, BlkSize), x_ref("x_ref", N, BlkSize), y0("y0", N, BlkSize);  // Solutions
 
   using execution_space = typename DeviceType::execution_space;
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
@@ -245,31 +230,23 @@ void impl_test_batched_pbtrs(const int N, const int k, const int BlkSize) {
 
   // Create banded triangluar matrix in normal and banded storage
   using ArgUplo = typename ParamTagType::uplo;
-  create_banded_pds_matrix<View3DType, View3DType, ArgUplo>(A_reconst, A, k,
-                                                            false);
+  create_banded_pds_matrix<View3DType, View3DType, ArgUplo>(A_reconst, A, k, false);
 
-  create_banded_triangular_matrix<View3DType, View3DType, ArgUplo>(A_reconst,
-                                                                   Ab, k, true);
+  create_banded_triangular_matrix<View3DType, View3DType, ArgUplo>(A_reconst, Ab, k, true);
 
   Kokkos::fence();
 
   // Factorize with Pbtrf: A = U**H * U or A = L * L**H
-  Functor_BatchedSerialPbtrf<DeviceType, View3DType, ParamTagType, AlgoTagType>(
-      Ab)
-      .run();
+  Functor_BatchedSerialPbtrf<DeviceType, View3DType, ParamTagType, AlgoTagType>(Ab).run();
 
   // pbtrs (Note, Ab is a factorized matrix of A)
-  auto info = Functor_BatchedSerialPbtrs<DeviceType, View3DType, View2DType, ParamTagType,
-                             AlgoTagType>(Ab, x0)
-      .run();
+  auto info = Functor_BatchedSerialPbtrs<DeviceType, View3DType, View2DType, ParamTagType, AlgoTagType>(Ab, x0).run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
   // Gemv to compute A*x0, this should be identical to x_ref
-  Functor_BatchedSerialGemv<DeviceType, ScalarType, View3DType, View2DType,
-                            View2DType>(1.0, A, x0, 0.0, y0)
-      .run();
+  Functor_BatchedSerialGemv<DeviceType, ScalarType, View3DType, View2DType, View2DType>(1.0, A, x0, 0.0, y0).run();
 
   Kokkos::fence();
 
