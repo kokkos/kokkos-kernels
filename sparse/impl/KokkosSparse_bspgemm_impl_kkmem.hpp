@@ -376,7 +376,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
           nnz_lno_t *globally_used_hash_indices = NULL;
 
           if (global_memory_hash_size > thread_shmem_key_size) {
-            volatile nnz_lno_t *tmp = NULL;
+            nnz_lno_t *tmp = NULL;
             // size_t tid = get_thread_id(row_index);
             // the code gets internal compiler error on gcc 4.7.2
             // assuming that this part only runs on GPUs for now, below fix
@@ -386,10 +386,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
             while (tmp == NULL) {
               Kokkos::single(
                   Kokkos::PerThread(teamMember),
-                  [&](volatile nnz_lno_t *&memptr) {
-                    memptr = (volatile nnz_lno_t *)(memory_space.allocate_chunk(tid));
-                  },
-                  tmp);
+                  [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(memory_space.allocate_chunk(tid)); }, tmp);
             }
 
             is_global_alloced          = true;
@@ -507,17 +504,14 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
       scalar_t *c_row_vals           = valuesC.data() + c_row_begin * block_size;
       nnz_lno_t *global_acc_row_keys = c_row;
       scalar_t *global_acc_row_vals  = c_row_vals;
-      volatile nnz_lno_t *tmp        = NULL;
+      nnz_lno_t *tmp                 = NULL;
 
       if (c_row_size > max_first_level_hash_size) {
         {
           while (tmp == NULL) {
             Kokkos::single(
                 Kokkos::PerTeam(teamMember),
-                [&](volatile nnz_lno_t *&memptr) {
-                  memptr = (volatile nnz_lno_t *)(memory_space.allocate_chunk(row_index));
-                },
-                tmp);
+                [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(memory_space.allocate_chunk(row_index)); }, tmp);
           }
           global_acc_row_keys = (nnz_lno_t *)(tmp);
           global_acc_row_vals = KokkosKernels::Impl::alignPtrTo<scalar_t>(tmp + pow2_hash_size);
