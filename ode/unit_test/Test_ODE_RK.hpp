@@ -317,8 +317,8 @@ void test_rate(ode_type& my_ode, const scalar_type& tstart, const scalar_type& t
 
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
     scalar_type dt = (tend - tstart) / num_steps(idx);
-    std::cout << "count=" << count(0) << ", dt=" << dt << ", error=" << error(idx) << ", solution: {" << y_new_h(0) << ", " << y_new_h(1) << "}"
-              << std::endl;
+    std::cout << "count=" << count(0) << ", dt=" << dt << ", error=" << error(idx) << ", solution: {" << y_new_h(0)
+              << ", " << y_new_h(1) << "}" << std::endl;
 #endif
   }
 
