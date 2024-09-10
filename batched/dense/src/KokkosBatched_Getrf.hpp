@@ -23,22 +23,18 @@
 namespace KokkosBatched {
 
 /// \brief Serial Batched Getrf:
-///
-/// Solve Ab_l x_l = b_l for all l = 0, ..., N
-///   using the triangular solve algorithm Tbsv. Ab is an n by n unit, or
-///   non-unit, upper or lower triangular band matrix, with ( k + 1 )
-///   diagonals.
-///
+/// Compute a LU factorization of a general m-by-n matrix A using partial
+///   pivoting with row interchanges.
+///   The factorization has the form
+///     A = P * L * U
+///   where P is a permutation matrix, L is lower triangular with unit
+///   diagonal elements (lower trapezoidal if m > n), and U is upper
+///   triangular (upper trapezoidal if m < n).
 /// \tparam AViewType: Input type for the matrix, needs to be a 2D view
-/// \tparam XViewType: Input type for the right-hand side and the solution,
-/// needs to be a 1D view
+/// \tparam PivViewType: Input type for the pivot indices, needs to be a 1D view
 ///
-/// \param A [in]: A is a lda by n banded matrix, with ( k + 1 ) diagonals
-/// \param X [inout]: right-hand side and the solution, a rank 1 view
-/// \param k [in]: k specifies the number of superdiagonals or subdiagonals of
-/// matrix A. k >= 0
-/// \param incx [in]: incx specifies the increment for the elements of x.
-/// incx != 0
+/// \param A [inout]: A is a m by n general matrix, a rank 2 view
+/// \param piv [out]: On exit, the pivot indices, a rank 1 view
 ///
 /// No nested parallel_for is used inside of the function.
 ///
@@ -46,8 +42,7 @@ namespace KokkosBatched {
 template <typename ArgAlgo>
 struct SerialGetrf {
   template <typename AViewType, typename PivViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const PivViewType &piv);
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const PivViewType &piv);
 };
 }  // namespace KokkosBatched
 
