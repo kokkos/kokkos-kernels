@@ -148,10 +148,14 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(const ode_type& ode, con
 
   // Set current time and initial time step
   scalar_type t_now = t_start, dt = 0.0;
-  ode.evaluate_function(t_start, 0, y0, temp);
-  first_step_size(ode, table_type::order, t_start, params.abs_tol, params.rel_tol, y0, temp, y, k_vecs, dt);
-  if (dt < params.min_step_size) {
-    dt = params.min_step_size;
+  if(adapt == true) {
+    ode.evaluate_function(t_start, 0, y0, temp);
+    first_step_size(ode, table_type::order, t_start, params.abs_tol, params.rel_tol, y0, temp, y, k_vecs, dt);
+    if (dt < params.min_step_size) {
+      dt = params.min_step_size;
+    }
+  } else {
+    dt = (t_end - t_start) / params.num_steps;
   }
 
   *step_count = 0;

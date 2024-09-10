@@ -23,10 +23,12 @@ namespace Test {
 
 // damped undriven harmonic oscillator
 // m y'' + c y' + k y = 0
-// solution: y=A * exp(-xi * omega_0 * t) * sin(sqrt(1-xi^2) * omega_0 * t +
-// phi) omega_0 = sqrt(k/m); xi = c / sqrt(4*m*k) A and phi depend on y(0) and
-// y'(0); Change of variables: x(t) = y(t)*exp(-c/(2m)*t) = y(t)*exp(-xi *
-// omega_0 * t) Change of variables: X = [x ]
+// solution: y=A * exp(-xi * omega_0 * t) * sin(sqrt(1-xi^2) * omega_0 * t + phi)
+// omega_0 = sqrt(k/m)
+// xi = c / sqrt(4*m*k)
+// A and phi depend on y(0) and y'(0);
+// Change of variables: x(t) = y(t)*exp(-c/(2m)*t) = y(t)*exp(-xi * omega_0 * t)
+// Change of variables: X = [x ]
 //                          [x']
 // Leads to X' = A*X  with A = [ 0  1]
 //                             [-d  0]
@@ -303,6 +305,7 @@ void test_rate(ode_type& my_ode, const scalar_type& tstart, const scalar_type& t
   Kokkos::RangePolicy<execution_space> my_policy(0, 1);
   for (int idx = 0; idx < num_steps.extent_int(0); ++idx) {
     KokkosODE::Experimental::ODE_params params(num_steps(idx));
+    params.adaptivity = false;
     Kokkos::deep_copy(y_old, y_old_h);
     Kokkos::deep_copy(y_new, y_old_h);
     RKSolve_wrapper<ode_type, rk_type, vec_type, mv_type, scalar_type, count_type> solve_wrapper(
@@ -314,7 +317,7 @@ void test_rate(ode_type& my_ode, const scalar_type& tstart, const scalar_type& t
 
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
     scalar_type dt = (tend - tstart) / num_steps(idx);
-    std::cout << "dt=" << dt << ", error=" << error(idx) << ", solution: {" << y_new_h(0) << ", " << y_new_h(1) << "}"
+    std::cout << "count=" << count(0) << ", dt=" << dt << ", error=" << error(idx) << ", solution: {" << y_new_h(0) << ", " << y_new_h(1) << "}"
               << std::endl;
 #endif
   }
