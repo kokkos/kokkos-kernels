@@ -26,12 +26,12 @@ jobs:
           mkdir -p kokkos/{build,install}
           cd kokkos/build
           HIPCC=$(which hipcc)
-          cmake -S "/kokkos" \
-            -B "/kokkos/build" \
+          cmake -S "kokkos" \
+            -B "kokkos/build" \
             -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS="-O3" \
             -D CMAKE_EXE_LINKER_FLAGS= \
-            -D CMAKE_INSTALL_PREFIX="/kokkos/install" \
+            -D CMAKE_INSTALL_PREFIX="kokkos/install" \
             -D CMAKE_VERBOSE_MAKEFILE=ON \
             -D CMAKE_CXX_EXTENSIONS=OFF \
             -D CMAKE_CXX_STANDARD=17 \
@@ -54,15 +54,15 @@ jobs:
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           HIPCC=$(which hipcc)
-          cmake -S "/kokkos-kernels" \
-            -B "/kokkos-kernels/build" \
+          cmake -S "kokkos-kernels" \
+            -B "kokkos-kernels/build" \
             -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS="-O3 " \
             -D CMAKE_INSTALL_PREFIX= \
             -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
             -D CMAKE_EXE_LINKER_FLAGS="" \
             -D BUILD_SHARED_LIBS=OFF \
-            -D Kokkos_ROOT="/kokkos/install" \
+            -D Kokkos_ROOT="kokkos/install" \
             -D KokkosKernels_ENABLE_TESTS=ON \
             -D KokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
             -D KokkosKernels_ENABLE_PERFTESTS=ON \
@@ -105,11 +105,11 @@ jobs:
           cd kokkos/build
           HIPCC=$(which hipcc)
           cmake -S /kokkos \
-            -B /kokkos/build \
+            -B kokkos/build \
             -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS=-O3 \
             -D CMAKE_EXE_LINKER_FLAGS= \
-            -D CMAKE_INSTALL_PREFIX=/kokkos/install \
+            -D CMAKE_INSTALL_PREFIX=kokkos/install \
             -D CMAKE_VERBOSE_MAKEFILE=ON \
             -D CMAKE_CXX_EXTENSIONS=OFF \
             -D CMAKE_CXX_STANDARD=17 \
@@ -132,15 +132,15 @@ jobs:
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           HIPCC=$(which hipcc)
-          cmake -S /kokkos-kernels \
-            -B /kokkos-kernels/build \
+          cmake -S kokkos-kernels \
+            -B kokkos-kernels/build \
             -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS="-O3 -I$ROCM_CORE_ROOT/include" \
-            -D CMAKE_INSTALL_PREFIX="/kokkos-kernels/install" \
+            -D CMAKE_INSTALL_PREFIX="kokkos-kernels/install" \
             -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
             -D CMAKE_EXE_LINKER_FLAGS="" \
             -D BUILD_SHARED_LIBS=OFF \
-            -D Kokkos_ROOT="/kokkos/install" \
+            -D Kokkos_ROOT="kokkos/install" \
             -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
             -D KokkosKernels_INST_DOUBLE=ON \
             -D KokkosKernels_INST_ORDINAL_INT=ON \
