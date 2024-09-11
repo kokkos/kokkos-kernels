@@ -6,7 +6,7 @@ on:
 jobs:
   PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT:
     name: PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT
-    runs-on: [kk-env-hip-5.6.1-latest]
+    runs-on: [kk-env-openblas-0.3.23-hip-5.6.1-latest]
     
     steps:
       - name: checkout_kokkos_kernels
