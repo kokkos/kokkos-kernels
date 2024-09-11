@@ -28,7 +28,7 @@ jobs:
           HIPCC=$(which hipcc)
           cmake -S "/kokkos" \
             -B "/kokkos/build" \
-	    -D CMAKE_CXX_COMPILER=$HIPCC \
+            -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS="-O3" \
             -D CMAKE_EXE_LINKER_FLAGS= \
             -D CMAKE_INSTALL_PREFIX="/kokkos/install" \
@@ -55,7 +55,7 @@ jobs:
           cd kokkos-kernels/build
           HIPCC=$(which hipcc)
           cmake -S "/kokkos-kernels" \
-	    -B "/kokkos-kernels/build" \
+            -B "/kokkos-kernels/build" \
             -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS="-O3 " \
             -D CMAKE_INSTALL_PREFIX= \
