@@ -1,25 +1,7 @@
-name: github-BDW
+name: Reusable BDW workflow
 
 on:
-  pull_request:
-    paths-ignore:
-    - '**/*.rst'
-    - '**/*.md'
-    - '**/requirements.txt'
-    - '**/*.py'
-    - 'docs/**'
-    types: [ opened, reopened, synchronize ]
-  pull_request_review:
-    types:
-      - submitted
-
-permissions:
-  contents: none
-
-# Cancels any in progress 'workflow' associated with this PR
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call
 
 jobs:
 #  PR_BDW_GNU1020_OPENMP_LEFT_REL_NOETI:

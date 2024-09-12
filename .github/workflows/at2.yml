@@ -1,0 +1,29 @@
+name: github-AT2
+
+on: 
+  pull_request:
+    paths-ignore:
+    - '**/*.rst'
+    - '**/*.md'
+    - '**/requirements.txt'
+    - '**/*.py'
+    - 'docs/**'
+    types: [ opened, reopened, synchronize ]
+
+permissions:
+  contents: none
+
+# Cancels any in progress 'workflow' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mi210:
+    uses: ./.github/workflows/mi210.yml
+  h100:
+    uses: ./.github/workflows/h100.yml
+  bdw:
+    uses: ./.github/workflows/bdw.yml
+  #spr:
+    #uses: ./.github/workflows/spr.yml

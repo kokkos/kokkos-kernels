@@ -1,26 +1,7 @@
-name: github-SPR
+name: Reusable SPR workflow
 
-# Only allow manual runs until at2 runners are available.
-on: workflow_dispatch
-  #pull_request:
-  #  paths-ignore:
-  #  - '**/*.rst'
-  #  - '**/*.md'
-  #  - '**/requirements.txt'
-  #  - '**/*.py'
-  #  - 'docs/**'
-  #  types: [ opened, reopened, synchronize ]
-  #pull_request_review:
-  #  types:
-  #    - submitted
-
-permissions:
-  contents: none
-
-# Cancels any in progress 'workflow' associated with this PR
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+on:
+  workflow_call
 
 jobs:
   PR_SPR_ONEAPI202310_OPENMP_LEFT_MKLBLAS_MKLLAPACK_REL:
