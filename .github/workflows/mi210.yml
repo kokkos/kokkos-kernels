@@ -23,11 +23,12 @@ jobs:
 
       - name: configure_kokkos
         run: |
-          mkdir -p kokkos/{build,install}
-          cd kokkos/build
+	  echo "GITHUB_WORKSPACE = $GITHUB_WORKSPACE"
+          mkdir -p "$GITHUB_WORKSPACE/kokkos/{build,install}"
+          cd "$GITHUB_WORKSPACE/kokkos/build"
           HIPCC=$(which hipcc)
-          cmake -S "kokkos" \
-            -B "kokkos/build" \
+          cmake -S "$GITHUB_WORKSPACE/kokkos" \
+            -B "$GITHUB_WORKSPACE/kokkos/build" \
             -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS="-O3" \
             -D CMAKE_EXE_LINKER_FLAGS= \
@@ -46,23 +47,23 @@ jobs:
             -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
       - name: build_and_install_kokkos
-        working-directory: kokkos/build
+        working-directory: "$GITHUB_WORKSPACEkokkos/build"
         run: make -j16 install
 
       - name: configure_kokkos_kernels
         run: |
-          mkdir -p kokkos-kernels/{build,install}
-          cd kokkos-kernels/build
+          mkdir -p "$GITHUB_WORKSPACE/kokkos-kernels/{build,install}"
+          cd "$GITHUB_WORKSPACE/kokkos-kernels/build"
           HIPCC=$(which hipcc)
-          cmake -S "kokkos-kernels" \
-            -B "kokkos-kernels/build" \
+          cmake -S "$GITHUB_WORKSPACE/kokkos-kernels" \
+            -B "$GITHUB_WORKSPACE/kokkos-kernels/build" \
             -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS="-O3 " \
             -D CMAKE_INSTALL_PREFIX= \
             -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
             -D CMAKE_EXE_LINKER_FLAGS="" \
             -D BUILD_SHARED_LIBS=OFF \
-            -D Kokkos_ROOT="kokkos/install" \
+            -D Kokkos_ROOT="$GITHUB_WORKSPACE/kokkos/install" \
             -D KokkosKernels_ENABLE_TESTS=ON \
             -D KokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
             -D KokkosKernels_ENABLE_PERFTESTS=ON \
@@ -75,11 +76,11 @@ jobs:
             -D KokkosKernels_ENABLE_DOCS=OFF
 
       - name: build
-        working-directory: kokkos-kernels/build
+        working-directory: "$GITHUB_WORKSPACE/kokkos-kernels/build"
         run: make -j12 all
 
       - name: test
-        working-directory: kokkos-kernels/build
+        working-directory: "$GITHUB_WORKSPACE/kokkos-kernels/build"
         run: ctest --output-on-failure -V --timeout 3600
 
   PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT_TPLS:
