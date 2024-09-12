@@ -48,7 +48,7 @@ jobs:
             -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
       - name: build_and_install_kokkos
-        working-directory: $GITHUB_WORKSPACE/kokkos/build
+        working-directory: kokkos/build
         run: make -j16 install
 
       - name: configure_kokkos_kernels
