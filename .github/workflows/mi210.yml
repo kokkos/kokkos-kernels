@@ -28,7 +28,7 @@ jobs:
           mkdir "$GITHUB_WORKSPACE/kokkos/install"
           cd "$GITHUB_WORKSPACE/kokkos/build"
           HIPCC=$(which hipcc)
-          cmake -S $GITHUB_WORKSPACE/kokkos" \
+          cmake -S "$GITHUB_WORKSPACE/kokkos" \
             -B "$GITHUB_WORKSPACE/kokkos/build" \
             -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS="-O3" \
