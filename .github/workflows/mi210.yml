@@ -4,90 +4,89 @@ on:
   workflow_call
 
 jobs:
-#  PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT_REL:
-#    name: PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT_REL
-#    runs-on: [kk-env-hip-5.6.1-latest]
-#    
-#    steps:
-#      - name: checkout_kokkos_kernels
-#        uses: actions/checkout@v4
-#        with:
-#          path: kokkos-kernels
-#
-#      - name: checkout_kokkos
-#        uses: actions/checkout@v4
-#        with:
-#          repository: kokkos/kokkos
-#          ref: ${{ github.base_ref }}
-#          path: kokkos
-#
-#      - name: configure_kokkos
-#        run: |
-#          mkdir -p kokkos/{build,install}
-#          cd kokkos/build
-#          HIPCC=$(which hipcc)
-#          cmake -DCMAKE_CXX_COMPILER=$HIPCC \
-#            -DCMAKE_CXX_FLAGS=-O3 \
-#            -DCMAKE_EXE_LINKER_FLAGS= \
-#            -DCMAKE_INSTALL_PREFIX=$PWD/../install \
-#            -DKokkos_ENABLE_SERIAL=ON \
-#            -DKokkos_ENABLE_HIP=ON \
-#            -DKokkos_ARCH_VEGA90A=ON \
-#            -DKokkos_ENABLE_TESTS=OFF \
-#            -DKokkos_ENABLE_EXAMPLES=OFF \
-#            -DCMAKE_VERBOSE_MAKEFILE=ON \
-#            -DCMAKE_CXX_EXTENSIONS=OFF \
-#            -DCMAKE_CXX_STANDARD=17 \
-#            -DBUILD_SHARED_LIBS=OFF \
-#            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-#            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
-#            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-#            ..
-#
-#      - name: build_and_install_kokkos
-#        working-directory: kokkos/build
-#        run: make -j16 install
-#
-#      - name: configure_kokkos_kernels
-#        run: |
-#          mkdir -p kokkos-kernels/{build,install}
-#          cd kokkos-kernels/build
-#          HIPCC=$(which hipcc)
-#          cmake -DCMAKE_CXX_COMPILER=$HIPCC \
-#            -DKokkos_DIR=$PWD/../../kokkos/install/lib64/cmake/Kokkos \
-#            -DCMAKE_CXX_FLAGS="-O3 " \
-#            -DCMAKE_INSTALL_PREFIX= \
-#            -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
-#            -DKokkosKernels_ENABLE_TESTS=ON \
-#            -DKokkosKernels_ENABLE_PERFTESTS=ON \
-#            -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
-#            -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
-#            -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
-#            -DKokkosKernels_INST_DOUBLE=ON \
-#            -DKokkosKernels_INST_ORDINAL_INT=ON \
-#            -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
-#            -DKokkosKernels_INST_OFFSET_INT=ON \
-#            -DKokkosKernels_INST_LAYOUTLEFT=ON \
-#            -DKokkosKernels_ENABLE_TPL_ROCSPARSE=OFF \
-#            -DKokkosKernels_ENABLE_TPL_ROCBLAS=OFF \
-#            -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
-#            -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
-#            -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
-#            -DCMAKE_EXE_LINKER_FLAGS="" \
-#            -DBUILD_SHARED_LIBS=OFF \
-#            -DKokkosKernels_ENABLE_DOCS=OFF \
-#            ..
-#
-#      - name: build
-#        working-directory: kokkos-kernels/build
-#        run: make -j12 all
-#
-#      - name: test
-#        working-directory: kokkos-kernels/build
-#        run: ctest --output-on-failure -V --timeout 3600
+  PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT:
+    name: PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT
+    runs-on: [kk-env-openblas-0.3.23-hip-5.6.1-latest]
+    
+    steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@v4
+        with:
+          path: kokkos-kernels
 
-  PR_VEGA908_ROCM561_HIP_SERIAL_LEFT_OPENBLAS_REL:
-    name: PR_VEGA908_ROCM561_HIP_SERIAL_LEFT_OPENBLAS_REL
+      - name: checkout_kokkos
+        uses: actions/checkout@v4
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ github.base_ref }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          echo "GITHUB_WORKSPACE = $GITHUB_WORKSPACE"
+          mkdir "$GITHUB_WORKSPACE/kokkos/build"
+          mkdir "$GITHUB_WORKSPACE/kokkos/install"
+          cd "$GITHUB_WORKSPACE/kokkos/build"
+          HIPCC=$(which hipcc)
+          cmake -S "$GITHUB_WORKSPACE/kokkos" \
+            -B "$GITHUB_WORKSPACE/kokkos/build" \
+            -D CMAKE_CXX_COMPILER=$HIPCC \
+            -D CMAKE_CXX_FLAGS="-O3" \
+            -D CMAKE_EXE_LINKER_FLAGS= \
+            -D CMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/kokkos/install" \
+            -D CMAKE_VERBOSE_MAKEFILE=ON \
+            -D CMAKE_CXX_EXTENSIONS=OFF \
+            -D CMAKE_CXX_STANDARD=17 \
+            -D BUILD_SHARED_LIBS=OFF \
+            -D Kokkos_ENABLE_SERIAL=ON \
+            -D Kokkos_ENABLE_HIP=ON \
+            -D Kokkos_ARCH_VEGA90A=ON \
+            -D Kokkos_ENABLE_TESTS=OFF \
+            -D Kokkos_ENABLE_EXAMPLES=OFF \
+            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j16 install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir "$GITHUB_WORKSPACE/kokkos-kernels/build"
+          mkdir "$GITHUB_WORKSPACE/kokkos-kernels/install"
+          cd "$GITHUB_WORKSPACE/kokkos-kernels/build"
+          HIPCC=$(which hipcc)
+          cmake -S "$GITHUB_WORKSPACE/kokkos-kernels" \
+            -B "$GITHUB_WORKSPACE/kokkos-kernels/build" \
+            -D CMAKE_CXX_COMPILER=$HIPCC \
+            -D CMAKE_CXX_FLAGS="-O3 " \
+            -D CMAKE_INSTALL_PREFIX= \
+            -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
+            -D CMAKE_EXE_LINKER_FLAGS="" \
+            -D BUILD_SHARED_LIBS=OFF \
+            -D Kokkos_ROOT="$GITHUB_WORKSPACE/kokkos/install" \
+            -D KokkosKernels_ENABLE_TESTS=ON \
+            -D KokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+            -D KokkosKernels_ENABLE_PERFTESTS=ON \
+            -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
+            -D KokkosKernels_INST_DOUBLE=ON \
+            -D KokkosKernels_INST_ORDINAL_INT=ON \
+            -D KokkosKernels_INST_OFFSET_SIZE_T=ON \
+            -D KokkosKernels_INST_OFFSET_INT=ON \
+            -D KokkosKernels_INST_LAYOUTLEFT=ON \
+            -D KokkosKernels_ENABLE_DOCS=OFF
+
+      - name: build
+        working-directory: kokkos-kernels/build
+        run: make -j12 all
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest --output-on-failure -V --timeout 3600
+
+  PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT_TPLS:
+    name: PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT_TPLS
     runs-on: [kk-env-openblas-0.3.23-hip-5.6.1-latest]
     
     steps:
@@ -108,23 +107,24 @@ jobs:
           mkdir -p kokkos/{build,install}
           cd kokkos/build
           HIPCC=$(which hipcc)
-          cmake -DCMAKE_CXX_COMPILER=$HIPCC \
-            -DCMAKE_CXX_FLAGS=-O3 \
-            -DCMAKE_EXE_LINKER_FLAGS= \
-            -DCMAKE_INSTALL_PREFIX=$PWD/../install \
-            -DKokkos_ENABLE_SERIAL=ON \
-            -DKokkos_ENABLE_HIP=ON \
-            -DKokkos_ARCH_VEGA90A=ON \
-            -DKokkos_ENABLE_TESTS=OFF \
-            -DKokkos_ENABLE_EXAMPLES=OFF \
-            -DCMAKE_VERBOSE_MAKEFILE=ON \
-            -DCMAKE_CXX_EXTENSIONS=OFF \
-            -DCMAKE_CXX_STANDARD=17 \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
-            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            ..
+          cmake -S "$GITHUB_WORKSPACE/kokkos" \
+            -B "$GITHUB_WORKSPACE/kokkos/build" \
+            -D CMAKE_CXX_COMPILER=$HIPCC \
+            -D CMAKE_CXX_FLAGS=-O3 \
+            -D CMAKE_EXE_LINKER_FLAGS= \
+            -D CMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/kokkos/install" \
+            -D CMAKE_VERBOSE_MAKEFILE=ON \
+            -D CMAKE_CXX_EXTENSIONS=OFF \
+            -D CMAKE_CXX_STANDARD=17 \
+            -D BUILD_SHARED_LIBS=OFF \
+            -D Kokkos_ENABLE_SERIAL=ON \
+            -D Kokkos_ENABLE_HIP=ON \
+            -D Kokkos_ARCH_VEGA90A=ON \
+            -D Kokkos_ENABLE_TESTS=OFF \
+            -D Kokkos_ENABLE_EXAMPLES=OFF \
+            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
@@ -135,32 +135,30 @@ jobs:
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           HIPCC=$(which hipcc)
-          cmake -DCMAKE_CXX_COMPILER=$HIPCC \
-            -DKokkos_DIR=$PWD/../../kokkos/install/lib64/cmake/Kokkos \
-            -DCMAKE_CXX_FLAGS="-O3 -I$ROCM_CORE_ROOT/include" \
-            -DCMAKE_INSTALL_PREFIX= \
-            -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
-            -DKokkosKernels_ENABLE_TESTS=ON \
-            -DKokkosKernels_ENABLE_PERFTESTS=ON \
-            -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
-            -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
-            -DKokkosKernels_INST_DOUBLE=ON \
-            -DKokkosKernels_INST_ORDINAL_INT=ON \
-            -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
-            -DKokkosKernels_INST_OFFSET_INT=ON \
-            -DKokkosKernels_INST_LAYOUTLEFT=ON \
-            -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
-            -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
-            -DKokkosKernels_ENABLE_TPL_ROCSOLVER=ON \
-            -DKokkosKernels_ENABLE_TPL_ROCSPARSE=ON \
-            -DKokkosKernels_ENABLE_TPL_ROCBLAS=ON \
-            -DKokkosKernels_ENABLE_TPL_BLAS=ON \
-            -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
-            -DCMAKE_EXE_LINKER_FLAGS="" \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DKokkosKernels_ENABLE_DOCS=OFF \
-            ..
+          cmake -S "$GITHUB_WORKSPACE/kokkos-kernels" \
+            -B "$GITHUB_WORKSPACE/kokkos-kernels/build" \
+            -D CMAKE_CXX_COMPILER=$HIPCC \
+            -D CMAKE_CXX_FLAGS="-O3 -I$ROCM_CORE_ROOT/include" \
+            -D CMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/kokkos-kernels/install" \
+            -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
+            -D CMAKE_EXE_LINKER_FLAGS="" \
+            -D BUILD_SHARED_LIBS=OFF \
+            -D Kokkos_ROOT="$GITHUB_WORKSPACE/kokkos/install" \
+            -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
+            -D KokkosKernels_INST_DOUBLE=ON \
+            -D KokkosKernels_INST_ORDINAL_INT=ON \
+            -D KokkosKernels_INST_OFFSET_SIZE_T=ON \
+            -D KokkosKernels_INST_OFFSET_INT=ON \
+            -D KokkosKernels_INST_LAYOUTLEFT=ON \
+            -D KokkosKernels_ENABLE_TPL_ROCSOLVER=ON \
+            -D KokkosKernels_ENABLE_TPL_ROCSPARSE=ON \
+            -D KokkosKernels_ENABLE_TPL_ROCBLAS=ON \
+            -D KokkosKernels_ENABLE_TPL_BLAS=ON \
+            -D KokkosKernels_ENABLE_TESTS=ON \
+            -D KokkosKernels_ENABLE_PERFTESTS=ON \
+            -D KokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+            -D KokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+            -D KokkosKernels_ENABLE_DOCS=OFF
 
       - name: build
         working-directory: kokkos-kernels/build
