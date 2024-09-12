@@ -28,7 +28,7 @@ jobs:
           mkdir "$GITHUB_WORKSPACE/kokkos/install"
           cd "$GITHUB_WORKSPACE/kokkos/build"
           HIPCC=$(which hipcc)
-          cmake -S "$GITHUB_WORKSPACE/kokkos" \
+          cmake -S $GITHUB_WORKSPACE/kokkos" \
             -B "$GITHUB_WORKSPACE/kokkos/build" \
             -D CMAKE_CXX_COMPILER=$HIPCC \
             -D CMAKE_CXX_FLAGS="-O3" \
@@ -48,7 +48,7 @@ jobs:
             -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
       - name: build_and_install_kokkos
-        working-directory: "$GITHUB_WORKSPACEkokkos/build"
+        working-directory: $GITHUB_WORKSPACE/kokkos/build
         run: make -j16 install
 
       - name: configure_kokkos_kernels
