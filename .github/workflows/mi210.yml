@@ -25,7 +25,7 @@ jobs:
         run: |
           echo "GITHUB_WORKSPACE = $GITHUB_WORKSPACE"
           mkdir "$GITHUB_WORKSPACE/kokkos/build"
-	  mkdir "$GITHUB_WORKSPACE/kokkos/install"
+          mkdir "$GITHUB_WORKSPACE/kokkos/install"
           cd "$GITHUB_WORKSPACE/kokkos/build"
           HIPCC=$(which hipcc)
           cmake -S "$GITHUB_WORKSPACE/kokkos" \
