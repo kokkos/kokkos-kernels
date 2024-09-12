@@ -23,7 +23,7 @@ jobs:
 
       - name: configure_kokkos
         run: |
-	  echo "GITHUB_WORKSPACE = $GITHUB_WORKSPACE"
+          echo "GITHUB_WORKSPACE = $GITHUB_WORKSPACE"
           mkdir -p "$GITHUB_WORKSPACE/kokkos/{build,install}"
           cd "$GITHUB_WORKSPACE/kokkos/build"
           HIPCC=$(which hipcc)
