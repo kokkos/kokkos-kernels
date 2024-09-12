@@ -1,25 +1,7 @@
-name: github-MI210
+name: Reusable MI210 workflow
 
-on: 
-  pull_request:
-    paths-ignore:
-    - '**/*.rst'
-    - '**/*.md'
-    - '**/requirements.txt'
-    - '**/*.py'
-    - 'docs/**'
-    types: [ opened, reopened, synchronize ]
-  pull_request_review:
-    types:
-      - submitted
-
-permissions:
-  contents: none
-
-# Cancels any in progress 'workflow' associated with this PR
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+on:
+  workflow_call
 
 jobs:
 #  PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT_REL:
