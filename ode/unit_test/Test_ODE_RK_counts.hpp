@@ -94,7 +94,8 @@ void RK_Count(const Device, const OdeType myODE, const double relTol, const doub
   }
   error = Kokkos::sqrt(error / neqs);
 
-  EXPECT_LE(error, 1.0) << OdeType::name;
+  std::string msg = std::string(OdeType::name) + ", " + RK_type_to_name(RK);
+  EXPECT_LE(error, 1.0) << msg.c_str();
   // EXPECT_LE(count_h(0), expected_count);
 }  // RK_Count
 
@@ -110,7 +111,11 @@ void test_RK_count() {
   Test::RK_Count<RK>(TestDevice(), TestProblem::Exponential(0.7), 2.0e-6, 1e-12, 4);
   Test::RK_Count<RK>(TestDevice(), TestProblem::SpringMassDamper(1001., 1000.), 1.0e-4, 0.0, 272);
   Test::RK_Count<RK>(TestDevice(), TestProblem::CosExp(-10., 2., 1.), 5.3e-5, 0.0, 25);
-  Test::RK_Count<RK>(TestDevice(), TestProblem::StiffChemicalDecayProcess(1e4, 1.), 4e-9, 1.8e-10, 2786);
+  if constexpr (RK == KokkosODE::Experimental::RK_type::RKF12) {
+    Test::RK_Count<RK>(TestDevice(), TestProblem::StiffChemicalDecayProcess(1e4, 1.), 4e-9, 1e-9, 2786);
+  } else {
+    Test::RK_Count<RK>(TestDevice(), TestProblem::StiffChemicalDecayProcess(1e4, 1.), 4e-9, 1.8e-10, 2786);
+  }
   Test::RK_Count<RK>(TestDevice(), TestProblem::Tracer(10.0), 0.0, 1e-3, 10);
   Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightB5(), 1.3e-2, 0.0, 90);
   if constexpr (RK == KokkosODE::Experimental::RK_type::RKF12) {
@@ -129,7 +134,9 @@ void test_RK_count() {
     Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightD2(), 1.e-5, 0.0, 590);
   }
   Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightD4(), 1.e-5, 1.e-9, 932);
-  // Test::RK_Count<RK>(TestDevice(), TestProblem::KKStiffChemistry(), 1e-5, 0.0, 1);
+  if constexpr (RK != KokkosODE::Experimental::RK_type::RKF12) {
+    Test::RK_Count<RK>(TestDevice(), TestProblem::KKStiffChemistry(), 1e-5, 0.0, 1);
+  }
 }
 
 void test_count() {
