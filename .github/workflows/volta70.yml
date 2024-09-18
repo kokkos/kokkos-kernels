@@ -158,4 +158,4 @@ jobs:
 
       - name: test EXCLUDE serial\."asum|nrm1"_complex_double
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600 -R serial\.asum_complex_double
+        run: ctest --output-on-failure -V --timeout 3600 -E "serial\.asum_complex_double|serial\.nrm1_complex_double"
