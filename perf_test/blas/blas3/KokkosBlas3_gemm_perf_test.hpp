@@ -107,19 +107,24 @@ void (*do_gemm_invoke[LOOP_N][TEST_N])(options_t) = {
 #define DEFAULT_GEMM_ALPHA 1.0
 #define DEFAULT_GEMM_BETA 1.0
 
-using view_type_3d = Kokkos::View<default_scalar ***, default_layout, default_device>;
-using view_type_4d = Kokkos::View<default_scalar ****, default_layout, default_device>;
-using view_type_5d = Kokkos::View<default_scalar *****, default_layout, default_device>;
+using view_type_3d =
+    Kokkos::View<KokkosKernels::default_scalar ***, KokkosKernels::default_layout, KokkosKernels::default_device>;
+using view_type_4d =
+    Kokkos::View<KokkosKernels::default_scalar ****, KokkosKernels::default_layout, KokkosKernels::default_device>;
+using view_type_5d =
+    Kokkos::View<KokkosKernels::default_scalar *****, KokkosKernels::default_layout, KokkosKernels::default_device>;
 
 // Construct the vector type
-using memory_space             = typename default_device::execution_space::memory_space;
-constexpr int simd_vector_size = KokkosBatched::DefaultVectorLength<default_scalar, memory_space>::value;
+using memory_space             = typename KokkosKernels::default_device::execution_space::memory_space;
+constexpr int simd_vector_size = KokkosBatched::DefaultVectorLength<KokkosKernels::default_scalar, memory_space>::value;
 constexpr int simd_internal_vector_size =
-    KokkosBatched::DefaultInternalVectorLength<default_scalar, memory_space>::value;
-using vector_type          = KokkosBatched::Vector<KokkosBatched::SIMD<default_scalar>, simd_vector_size>;
-using internal_vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<default_scalar>, simd_internal_vector_size>;
-using vector_view_type_3d  = Kokkos::View<vector_type ***, default_layout, default_device>;
-using internal_vector_view_type_4d = Kokkos::View<internal_vector_type ****, default_layout, default_device>;
+    KokkosBatched::DefaultInternalVectorLength<KokkosKernels::default_scalar, memory_space>::value;
+using vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<KokkosKernels::default_scalar>, simd_vector_size>;
+using internal_vector_type =
+    KokkosBatched::Vector<KokkosBatched::SIMD<KokkosKernels::default_scalar>, simd_internal_vector_size>;
+using vector_view_type_3d = Kokkos::View<vector_type ***, KokkosKernels::default_layout, KokkosKernels::default_device>;
+using internal_vector_view_type_4d =
+    Kokkos::View<internal_vector_type ****, KokkosKernels::default_layout, KokkosKernels::default_device>;
 
 struct batched_params {
   int team_size;
@@ -163,7 +168,7 @@ typedef struct gemm_simd_args gemm_simd_args_t;
  * https://developer.arm.com/documentation/101004/2100/Interleave-batch-functions/armpl-dgemm-interleave-batch.
  */
 struct gemm_armpl_args {
-  default_scalar *mat;
+  KokkosKernels::default_scalar *mat;
   armpl_int_t jstrd, istrd, bstrd;
 };
 typedef struct gemm_armpl_args gemm_armpl_args_t;
@@ -199,8 +204,8 @@ typedef struct gemm_armpl_args gemm_armpl_args_t;
  */
 struct gemm_args {
   char transA, transB;
-  default_scalar alpha;
-  default_scalar beta;
+  KokkosKernels::default_scalar alpha;
+  KokkosKernels::default_scalar beta;
   view_type_3d A, B, C;
   batched_params_t bp;
   // Below are matrices for simd tests
@@ -224,9 +229,10 @@ static std::string gemm_csv_header_str =
 // http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
 static inline double __gemm_flop_count(double a_m, double a_n, double b_n) {
   // TODO: if not Kokkos::complex.
-  if (std::is_same<double, default_scalar>::value || std::is_same<float, default_scalar>::value ||
-      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value ||
-      std::is_same<Kokkos::Experimental::bhalf_t, default_scalar>::value)
+  if (std::is_same<double, KokkosKernels::default_scalar>::value ||
+      std::is_same<float, KokkosKernels::default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::half_t, KokkosKernels::default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::bhalf_t, KokkosKernels::default_scalar>::value)
     return 2 * a_m * b_n * a_n;
   else
     // For complex, we need to count 2 flops for each add and 6 flops for each
@@ -285,9 +291,9 @@ static void __print_gemm_perf_test_options(options_t options) {
   printf("options.n         = %d\n", options.n);
   printf("options.blas_args.gemm.gemm_args = %s\n", options.blas_args.gemm.gemm_args.c_str());
   printf("options.out_file  = %s\n", options.out_file.c_str());
-  if (std::is_same<double, default_scalar>::value)
+  if (std::is_same<double, KokkosKernels::default_scalar>::value)
     printf("options.alpha     = %lf\n", options.blas_args.gemm.alpha);
-  else if (std::is_same<float, default_scalar>::value)
+  else if (std::is_same<float, KokkosKernels::default_scalar>::value)
     printf("options.alpha     = %f\n", options.blas_args.gemm.alpha);
   return;
 }
@@ -1301,7 +1307,7 @@ void __do_gemm_armpl(options_t options, gemm_args_t gemm_args) {
   char transa = std::is_same<TransAType, KokkosBatched::Trans::NoTranspose>::value ? 'N' : 'T';
   char transb = std::is_same<TransBType, KokkosBatched::Trans::NoTranspose>::value ? 'N' : 'T';
 
-  if (!std::is_same<default_scalar, double>::value) FATAL_ERROR("only double scalars are supported!");
+  if (!std::is_same<KokkosKernels::default_scalar, double>::value) FATAL_ERROR("only double scalars are supported!");
 
   STATUS;
 
@@ -1448,7 +1454,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
   remainder += simd_internal_vector_size;
 
   // Views needed for slow manual copy
-  using h_view_type_5d    = Kokkos::View<src_scalar_type *****, default_layout, Kokkos::HostSpace>;
+  using h_view_type_5d    = Kokkos::View<src_scalar_type *****, KokkosKernels::default_layout, Kokkos::HostSpace>;
   using h_subview_type_2d = Kokkos::View<src_scalar_type **, Kokkos::LayoutStride, Kokkos::HostSpace>;
   using h_subview_type_3d = Kokkos::View<src_scalar_type ***, Kokkos::LayoutStride, Kokkos::HostSpace>;
   using h_subview_type_4d = Kokkos::View<src_scalar_type ****, Kokkos::LayoutStride, Kokkos::HostSpace>;
@@ -1458,7 +1464,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
   h_subview_type_2d h_sv2;
 
   // TODO: Clean everything below this point up...
-  if (std::is_same<default_layout, Kokkos::LayoutRight>::value)
+  if (std::is_same<KokkosKernels::default_layout, Kokkos::LayoutRight>::value)
     h_src_raw = h_view_type_5d((src_scalar_type *)h_src.data(), src.ivec_4d.extent(0), src.ivec_4d.extent(1),
                                src.ivec_4d.extent(2), src.ivec_4d.extent(3), simd_internal_vector_size);
   else
@@ -1599,7 +1605,7 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, vo
   if (gemm_args.C.data() != nullptr) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
     if (options.test == EXPERIMENT) {
-      using view_type_2d = Kokkos::View<default_scalar **, Kokkos::LayoutStride, default_device>;
+      using view_type_2d = Kokkos::View<KokkosKernels::default_scalar **, Kokkos::LayoutStride, default_device>;
       view_type_2d C;
       for (int ib = 0; ib < gemm_args.nbatch; ++ib) {
         for (int i = 0; i < gemm_args.ninter; ++i) {
@@ -1776,11 +1782,14 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
     gemm_args.B_pl.bstrd = bstrd_B;
     gemm_args.C_pl.bstrd = bstrd_C;
 
-    default_scalar *A_p = (default_scalar *)malloc(sizeof(default_scalar) * bstrd_A * nbatch);
-    default_scalar *B_p = (default_scalar *)malloc(sizeof(default_scalar) * bstrd_B * nbatch);
-    default_scalar *C_p = (default_scalar *)malloc(sizeof(default_scalar) * bstrd_C * nbatch);
+    KokkosKernels::default_scalar *A_p =
+        (KokkosKernels::default_scalar *)malloc(sizeof(KokkosKernels::default_scalar) * bstrd_A * nbatch);
+    KokkosKernels::default_scalar *B_p =
+        (KokkosKernels::default_scalar *)malloc(sizeof(KokkosKernels::default_scalar) * bstrd_B * nbatch);
+    KokkosKernels::default_scalar *C_p =
+        (KokkosKernels::default_scalar *)malloc(sizeof(KokkosKernels::default_scalar) * bstrd_C * nbatch);
 
-    using view_type_2d = Kokkos::View<default_scalar **, Kokkos::LayoutStride, default_device>;
+    using view_type_2d = Kokkos::View<KokkosKernels::default_scalar **, Kokkos::LayoutStride, default_device>;
     view_type_2d A, B, C;
 
     // Populate interleave-batch matrices
@@ -1837,8 +1846,10 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, gemm_args_t))
   STATUS;
 
   __print_gemm_perf_test_options(options);
-  std::cout << "SCALAR:" << typeid(default_scalar).name() << ", LAYOUT:" << typeid(default_layout).name()
-            << ", DEVICE:" << typeid(default_device).name() << ", SPACE:" << typeid(memory_space).name() << std::endl;
+  std::cout << "SCALAR:" << typeid(KokkosKernels::default_scalar).name()
+            << ", LAYOUT:" << typeid(KokkosKernels::default_layout).name()
+            << ", DEVICE:" << typeid(KokkosKernels::default_device).name() << ", SPACE:" << typeid(memory_space).name()
+            << std::endl;
 
   options.out[0] << gemm_csv_header_str << std::endl;
 
@@ -1847,10 +1858,11 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, gemm_args_t))
        cur_dims.b.n <= options.stop.b.n && cur_dims.c.m <= options.stop.c.m && cur_dims.c.n <= options.stop.c.n;
        cur_dims.a.m += options.step, cur_dims.a.n += options.step, cur_dims.b.m += options.step,
       cur_dims.b.n += options.step, cur_dims.c.m += options.step, cur_dims.c.n += options.step) {
-    gemm_args = __do_setup<default_scalar, view_type_3d, view_type_3d, view_type_3d, default_device>(options, cur_dims);
+    gemm_args = __do_setup<KokkosKernels::default_scalar, view_type_3d, view_type_3d, view_type_3d, default_device>(
+        options, cur_dims);
 
     if (options.verify) {
-      __gemm_do_verify<default_scalar, default_layout, default_device>(options, gemm_args, fn);
+      __gemm_do_verify<KokkosKernels::default_scalar, default_layout, default_device>(options, gemm_args, fn);
     } else {
       fn(options, gemm_args);
     }
@@ -1867,21 +1879,24 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, gemm_args_t))
 /*************************** External fns **************************/
 void do_gemm_serial_blas(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_gemm_serial_blas<default_scalar, view_type_3d, view_type_3d, default_device>);
+  __do_loop_and_invoke(
+      options, __do_gemm_serial_blas<KokkosKernels::default_scalar, view_type_3d, view_type_3d, default_device>);
   return;
 }
 
 void do_gemm_serial_batched(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_gemm_serial_batched<default_scalar, view_type_3d, view_type_3d, view_type_3d,
-                                                         default_device, KokkosBatched::Algo::Gemm::Unblocked>);
+  __do_loop_and_invoke(options,
+                       __do_gemm_serial_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d, view_type_3d,
+                                                default_device, KokkosBatched::Algo::Gemm::Unblocked>);
   return;
 }
 
 void do_gemm_serial_batched_blocked(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_gemm_serial_batched<default_scalar, view_type_3d, view_type_3d, view_type_3d,
-                                                         default_device, KokkosBatched::Algo::Gemm::Blocked>);
+  __do_loop_and_invoke(options,
+                       __do_gemm_serial_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d, view_type_3d,
+                                                default_device, KokkosBatched::Algo::Gemm::Blocked>);
   return;
 }
 

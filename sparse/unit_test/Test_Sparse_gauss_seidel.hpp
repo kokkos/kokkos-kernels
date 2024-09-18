@@ -248,8 +248,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   using namespace Test;
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  typedef Kokkos::View<scalar_t **, default_layout, device> scalar_view2d_t;
-  typedef Kokkos::View<scalar_t **, default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
+  typedef Kokkos::View<scalar_t **, KokkosKernels::default_layout, device> scalar_view2d_t;
+  typedef Kokkos::View<scalar_t **, KokkosKernels::default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
   typedef typename Kokkos::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols      = numRows;

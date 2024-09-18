@@ -253,9 +253,9 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
   using namespace KokkosSparse::Experimental;
 
   using MemSpace  = typename ExecSpace::memory_space;
-  using size_type = default_size_type;
-  using lno_t     = default_lno_t;
-  using scalar_t  = default_scalar;
+  using size_type = KokkosKernels::default_size_type;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using scalar_t  = KokkosKernels::default_scalar;
   using device_t  = Kokkos::Device<ExecSpace, MemSpace>;
   using crsMat_t  = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
   using KernelHandle =
