@@ -54,9 +54,9 @@ using KokkosSparse::Experimental::spiluk_symbolic;
 using KokkosSparse::Experimental::SPILUKAlgorithm;
 
 // Build up useful types
-using scalar_t  = default_scalar;
-using lno_t     = default_lno_t;
-using size_type = default_size_type;
+using scalar_t  = KokkosKernels::default_scalar;
+using lno_t     = KokkosKernels::default_lno_t;
+using size_type = KokkosKernels::default_size_type;
 using exe_space = Kokkos::DefaultExecutionSpace;
 using mem_space = typename exe_space::memory_space;
 using device    = Kokkos::Device<exe_space, mem_space>;

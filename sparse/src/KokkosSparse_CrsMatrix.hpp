@@ -315,7 +315,7 @@ struct SparseRowViewConst {
 /// storage for sparse matrices, as described, for example, in Saad
 /// (2nd ed.).
 template <class ScalarType, class OrdinalType, class Device, class MemoryTraits = void,
-          class SizeType = default_size_type>
+          class SizeType = KokkosKernels::default_size_type>
 class CrsMatrix {
   static_assert(std::is_signed<OrdinalType>::value, "CrsMatrix requires that OrdinalType is a signed integer type.");
 
@@ -344,10 +344,10 @@ class CrsMatrix {
   //! Type of a host-memory mirror of the sparse matrix.
   typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> HostMirror;
   //! Type of the graph structure of the sparse matrix.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, default_layout, device_type, memory_traits, size_type>
+  typedef Kokkos::StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
       StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, default_layout, device_type, memory_traits, size_type>
+  typedef Kokkos::StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
       staticcrsgraph_type;
   //! Type of column indices in the sparse matrix.
   typedef typename staticcrsgraph_type::entries_type index_type;

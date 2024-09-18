@@ -20,6 +20,15 @@
 #include "Kokkos_Core.hpp"         //for LayoutLeft/LayoutRight
 #include <KokkosKernels_config.h>  //for all the ETI #cmakedefine macros
 
+// define a deprecated symbol = type in the global namespace
+// and a non-deprecated version in Kokkos Kernels
+// these deprecations were done in 4.4.
+#define KK_IMPL_MAKE_TYPE_ALIAS(symbol, type)                            \
+  using symbol [[deprecated("use KokkosKernels::" #symbol ".")]] = type; \
+  namespace KokkosKernels {                                              \
+  using symbol = type;                                                   \
+  }
+
 #if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
 using default_lno_t = int;
 #elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
@@ -72,5 +81,7 @@ using default_device = Kokkos::Threads;
 #else
 using default_device = Kokkos::Serial;
 #endif
+
+}  // namespace KokkosKernels
 
 #endif  // KOKKOSKERNELS_DEFAULT_TYPES_H
