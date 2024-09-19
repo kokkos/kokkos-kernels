@@ -49,12 +49,16 @@ struct SerialQR_FormQ_Internal {
     ///   B is m x m
 
     // set identity
-    if (is_Q_zero)
-      SerialSetInternal::invoke(m, value_type(1), Q, qs0 + qs1);
-    else
-      SerialSetIdentityInternal::invoke(m, Q, qs0, qs1);
+    if (is_Q_zero) {
+      for (int idx = 0; idx < m; ++idx) {
+        Q[(qs0 + qs1) * idx] = value_type(1);
+        // SerialSetInternal::invoke(m, value_type(1), Q, qs0 + qs1);
+      }
+    } else {
+      SerialSetIdentityInternal::invoke(m, m, Q, qs0, qs1);
+    }
 
-    return SerialApplyQ_LeftNoTransForwardInternal ::invoke(m, m, k, A, as0, as1, t, ts, Q, qs0, qs1, w);
+    return SerialApplyQ_LeftForwardInternal::invoke(m, m, k, A, as0, as1, t, ts, Q, qs0, qs1, w);
   }
 };
 
