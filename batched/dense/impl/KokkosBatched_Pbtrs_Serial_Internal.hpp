@@ -21,6 +21,7 @@
 #include "KokkosBatched_Tbsv_Serial_Internal.hpp"
 
 namespace KokkosBatched {
+namespace Impl {
 
 ///
 /// Serial Internal Impl
@@ -84,6 +85,7 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrsInternalUpper<Algo::Pbtrs::Unblocked>::inv
   return 0;
 }
 
+}  // namespace Impl
 }  // namespace KokkosBatched
 
 #endif  // KOKKOSBATCHED_PBTRS_SERIAL_INTERNAL_HPP_

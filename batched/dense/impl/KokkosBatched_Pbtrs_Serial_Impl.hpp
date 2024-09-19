@@ -22,6 +22,7 @@
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 namespace KokkosBatched {
+namespace Impl {
 
 template <typename AViewType, typename XViewType>
 KOKKOS_INLINE_FUNCTION static int checkPbtrsInput([[maybe_unused]] const AViewType &A,
@@ -46,6 +47,7 @@ KOKKOS_INLINE_FUNCTION static int checkPbtrsInput([[maybe_unused]] const AViewTy
 #endif
   return 0;
 }
+}  // namespace Impl
 
 //// Lower ////
 template <>
@@ -54,12 +56,12 @@ struct SerialPbtrs<Uplo::Lower, Algo::Pbtrs::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const XViewType &x) {
     // Quick return if possible
     if (A.extent(1) == 0) return 0;
-    auto info = checkPbtrsInput(A, x);
+    auto info = KokkosBatched::Impl::checkPbtrsInput(A, x);
     if (info) return info;
 
     const int kd = A.extent(0) - 1;
-    return SerialPbtrsInternalLower<Algo::Pbtrs::Unblocked>::invoke(A.extent(1), x.extent(0), A.data(), A.stride_0(),
-                                                                    A.stride_1(), x.data(), x.stride_0(), kd);
+    return KokkosBatched::Impl::SerialPbtrsInternalLower<Algo::Pbtrs::Unblocked>::invoke(
+        A.extent(1), x.extent(0), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), kd);
   }
 };
 
@@ -70,12 +72,12 @@ struct SerialPbtrs<Uplo::Upper, Algo::Pbtrs::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const XViewType &x) {
     // Quick return if possible
     if (A.extent(1) == 0) return 0;
-    auto info = checkPbtrsInput(A, x);
+    auto info = KokkosBatched::Impl::checkPbtrsInput(A, x);
     if (info) return info;
 
     const int kd = A.extent(0) - 1;
-    return SerialPbtrsInternalUpper<Algo::Pbtrs::Unblocked>::invoke(A.extent(1), x.extent(0), A.data(), A.stride_0(),
-                                                                    A.stride_1(), x.data(), x.stride_0(), kd);
+    return KokkosBatched::Impl::SerialPbtrsInternalUpper<Algo::Pbtrs::Unblocked>::invoke(
+        A.extent(1), x.extent(0), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), kd);
   }
 };
 
