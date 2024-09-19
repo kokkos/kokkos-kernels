@@ -64,11 +64,11 @@ struct ApplyQ {
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const tViewType &t,
                                                 const BViewType &B, const wViewType &w) {
     int r_val = 0;
-    if (std::is_same<ArgMode, Mode::Serial>::value) {
+    if constexpr (std::is_same_v<ArgMode, Mode::Serial>) {
       r_val = SerialApplyQ<ArgSide, ArgTrans, ArgAlgo>::invoke(A, t, B, w);
-    } else if (std::is_same<ArgMode, Mode::Team>::value) {
+    } else if constexpr (std::is_same_v<ArgMode, Mode::Team>) {
       r_val = TeamApplyQ<MemberType, ArgSide, ArgTrans, ArgAlgo>::invoke(member, A, t, B, w);
-    } else if (std::is_same<ArgMode, Mode::Team>::value) {
+    } else if constexpr (std::is_same_v<ArgMode, Mode::TeamVector>) {
       r_val = TeamVectorApplyQ<MemberType, ArgSide, ArgTrans, ArgAlgo>::invoke(member, A, t, B, w);
     }
     return r_val;
