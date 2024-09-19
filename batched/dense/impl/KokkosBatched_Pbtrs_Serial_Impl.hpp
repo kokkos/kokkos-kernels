@@ -35,6 +35,15 @@ KOKKOS_INLINE_FUNCTION static int checkPbtrsInput([[maybe_unused]] const AViewTy
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   const int ldb = x.extent(0);
   const int lda = A.extent(0), n = A.extent(1);
+  const int kd = lda - 1;
+  if (kd < 0) {
+    Kokkos::printf(
+        "KokkosBatched::pbtrs: leading dimension of A must not be less than 1: %d, A: "
+        "%d "
+        "x %d \n",
+        lda, n);
+    return 1;
+  }
   if (ldb < Kokkos::max(1, n)) {
     Kokkos::printf(
         "KokkosBatched::pbtrs: Dimensions of x and A do not match: x: %d, A: "
