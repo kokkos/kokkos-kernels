@@ -1,68 +1,78 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 #include "Kokkos_Core.hpp"
-#include "KokkosBatched_SVD_Decl.hpp"
 
-template <typename ExecSpace>
-void call_svd_in_parallel_for() {
-  Kokkos::TeamPolicy<ExecSpace> team_pol(1, Kokkos::AUTO);
-  using ScratchMatrix = Kokkos::View<double[3][3], typename ExecSpace::scratch_memory_space>;
-  using ScratchVector = Kokkos::View<double[3], typename ExecSpace::scratch_memory_space>;
-  team_pol.set_scratch_size(0, Kokkos::PerThread(3 * ScratchMatrix::shmem_size() + 3 * ScratchVector::shmem_size()));
-  Kokkos::parallel_for(
-      team_pol, KOKKOS_LAMBDA(const typename Kokkos::TeamPolicy<ExecSpace>::member_type &team) {
-        ScratchMatrix A(team.thread_scratch(0));
-        ScratchMatrix U(team.thread_scratch(0));
-        ScratchMatrix V(team.thread_scratch(0));
-        ScratchVector S(team.thread_scratch(0));
-        ScratchVector work(team.thread_scratch(0));
+#include "KokkosKernels_default_types.hpp"
+#include "KokkosSparse_spadd.hpp"
 
-        Kokkos::single(Kokkos::PerTeam(team), [&]() {
-          printf("A = %p\n", A.data());
-          printf("U = %p\n", U.data());
-          printf("V = %p\n", V.data());
-          printf("S = %p\n", S.data());
-          printf("work = %p\n", work.data());
+#include "KokkosKernels_Test_Structured_Matrix.hpp"
 
-          A(0, 0) = 0.000000;
-          A(1, 0) = 3.58442287931538747e-02;
-          A(2, 0) = 0.000000;
-          A(0, 1) = 0.000000;
-          A(1, 1) = 3.81743062695684907e-02;
-          A(2, 1) = 0.000000;
-          A(0, 2) = 0.000000;
-          A(1, 2) = 0.000000;
-          A(2, 2) = -5.55555555555555733e-02;
+using Scalar  = default_scalar;
+using Ordinal = default_lno_t;
+using Offset  = default_size_type;
+using Layout  = default_layout;
 
-          KokkosBatched::SerialSVD::invoke(KokkosBatched::SVD_USV_Tag{}, A, U, S, V, work);
+int main() {
+  Kokkos::initialize();
 
-          printf("S = {%.16f %.16f %.16f}\n", S(0), S(1), S(2));
-          printf("A(0) = {%.16f %.16f %.16f}\n", A(0, 0), A(0, 1), A(0, 2));
-          printf("A(1) = {%.16f %.16f %.16f}\n", A(1, 0), A(1, 1), A(1, 2));
-          printf("A(2) = {%.16f %.16f %.16f}\n", A(2, 0), A(2, 1), A(2, 2));
-          printf("U(0) = {%.16f %.16f %.16f}\n", U(0, 0), U(0, 1), U(0, 2));
-          printf("U(1) = {%.16f %.16f %.16f}\n", U(1, 0), U(1, 1), U(1, 2));
-          printf("U(2) = {%.16f %.16f %.16f}\n", U(2, 0), U(2, 1), U(2, 2));
-          printf("V(0) = {%.16f %.16f %.16f}\n", V(0, 0), V(0, 1), V(0, 2));
-          printf("V(1) = {%.16f %.16f %.16f}\n", V(1, 0), V(1, 1), V(1, 2));
-          printf("V(2) = {%.16f %.16f %.16f}\n", V(2, 0), V(2, 1), V(2, 2));
-        });
-      });
-}
+  using device_type =
+      typename Kokkos::Device<Kokkos::DefaultExecutionSpace, typename Kokkos::DefaultExecutionSpace::memory_space>;
+  using execution_space = typename device_type::execution_space;
+  using memory_space    = typename device_type::memory_space;
+  using matrix_type     = typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void, Offset>;
 
-int main(int argc, char **argv) {
-  Kokkos::initialize(argc, argv);
+  int return_value = 0;
 
   {
-    printf("Running on host\n");
-    call_svd_in_parallel_for<Kokkos::DefaultHostExecutionSpace>();
-    Kokkos::fence();
-    printf("Done\n");
+    // The mat_structure view is used to generate a matrix using
+    // finite difference (FD) or finite element (FE) discretization
+    // on a cartesian grid.
+    // Each row corresponds to an axis (x, y and z)
+    // In each row the first entry is the number of grid point in
+    // that direction, the second and third entries are used to apply
+    // BCs in that direction.
+    Kokkos::View<Ordinal* [3], Kokkos::HostSpace> mat_structure("Matrix Structure", 2);
+    mat_structure(0, 0) = 10;  // Request 10 grid point in 'x' direction
+    mat_structure(0, 1) = 1;   // Add BC to the left
+    mat_structure(0, 2) = 1;   // Add BC to the right
+    mat_structure(1, 0) = 10;  // Request 10 grid point in 'y' direction
+    mat_structure(1, 1) = 1;   // Add BC to the bottom
+    mat_structure(1, 2) = 1;   // Add BC to the top
 
-    printf("Running on device\n");
-    call_svd_in_parallel_for<Kokkos::DefaultExecutionSpace>();
-    Kokkos::fence();
-    printf("Done\n");
+    matrix_type A = Test::generate_structured_matrix2D<matrix_type>("FD", mat_structure);
+    matrix_type B = Test::generate_structured_matrix2D<matrix_type>("FE", mat_structure);
+    matrix_type C;
+
+    // Create KokkosKernelHandle
+    using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<Offset, Ordinal, Scalar, execution_space,
+                                                                          memory_space, memory_space>;
+    KernelHandle kh;
+    kh.create_spadd_handle(false);
+
+    const Scalar alpha = 2.5;
+    const Scalar beta  = 1.2;
+
+    KokkosSparse::spadd_symbolic(&kh, A, B, C);
+    KokkosSparse::spadd_numeric(&kh, alpha, A, beta, B, C);
+    kh.destroy_spadd_handle();
+
+    std::cout << "spadd was performed correctly!" << std::endl;
   }
 
   Kokkos::finalize();
-  return 0;
+
+  return return_value;
 }
