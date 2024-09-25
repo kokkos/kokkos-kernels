@@ -509,9 +509,6 @@ void testSpecialCases() {
     auto Vthost    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Vt);
     auto sigmaHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sigma);
 
-    std::cout << "Ran svd on test case " << i << ", singular values:\n";
-    KokkosKernels::Impl::print_1Dview(std::cout, sigmaHost);
-
     // Verify the SVD is correct
     verifySVD(Acopy, Uhost, Vthost, sigmaHost);
   }
