@@ -427,51 +427,94 @@ void testIssue1786() {
   }
 }
 
+// Generate specific test cases
 template <typename Scalar, typename Layout, typename Device>
-void testIssue2344() {
+Kokkos::View<Scalar**, Layout, Device> getTestCase(int i) {
+  using MatrixHost = Kokkos::View<Scalar**, Layout, Kokkos::HostSpace>;
+  MatrixHost Ahost;
+  int m, n;
+  switch (i) {
+    case 0:
+      // Issue #2344 case: 3x3 matrix with rank 2
+      m           = 3;
+      n           = 3;
+      Ahost       = MatrixHost("A0", m, n);
+      Ahost(1, 0) = 3.58442287931538747e-02;
+      Ahost(1, 1) = 3.81743062695684907e-02;
+      Ahost(2, 2) = -5.55555555555555733e-02;
+      break;
+    case 1:
+      // Test a matrix that is strictly lower triangular (so the diagonal
+      // is zero)
+      m     = 8;
+      n     = 8;
+      Ahost = MatrixHost("A1", m, n);
+      for (int i = 0; i < m; i++) {
+        for (int j = 0; j < i; j++) {
+          Ahost(i, j) = 1;
+        }
+      }
+      break;
+    case 2:
+      // Test a matrix that's already diagonal, except for one superdiagonal in the middle
+      m     = 10;
+      n     = 5;
+      Ahost = MatrixHost("A2", m, n);
+      for (int i = 0; i < n; i++) Ahost(i, i) = 1.0;
+      Ahost(2, 3) = 2.2;
+      break;
+    case 3:
+      // Test a matrix that is already bidiagonal, and has a zero diagonal in the middle
+      m     = 10;
+      n     = 7;
+      Ahost = MatrixHost("A3", m, n);
+      for (int i = 0; i < n; i++) Ahost(i, i) = 1.0;
+      for (int i = 0; i < n - 1; i++) Ahost(i, i + 1) = 0.7;
+      Ahost(4, 4) = 0;
+      break;
+    default: throw std::runtime_error("Test case out of bounds.");
+  }
+  Kokkos::View<Scalar**, Layout, Device> A(Ahost.label(), m, n);
+  Kokkos::deep_copy(A, Ahost);
+  return A;
+}
+
+template <typename Scalar, typename Layout, typename Device>
+void testSpecialCases() {
   using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
   using Vector    = Kokkos::View<Scalar*, Device>;
   using ExecSpace = typename Device::execution_space;
-  const int m     = 3;
-  const int n     = 3;
-  Matrix A("A_Issue2344", m, n);
-  auto Ahost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
-  // This matrix is 3x3 but only has rank 2.
-  Ahost(0, 0) = 0.000000;
-  Ahost(1, 0) = 3.58442287931538747e-02;
-  Ahost(2, 0) = 0.000000;
-  Ahost(0, 1) = 0.000000;
-  Ahost(1, 1) = 3.81743062695684907e-02;
-  Ahost(2, 1) = 0.000000;
-  Ahost(0, 2) = 0.000000;
-  Ahost(1, 2) = 0.000000;
-  Ahost(2, 2) = -5.55555555555555733e-02;
-  Kokkos::deep_copy(A, Ahost);
-  // Fill U, Vt, sigma with nonzeros as well to make sure they are properly
-  // overwritten
-  Matrix U("U", m, m);
-  Matrix Vt("Vt", n, n);
-  int maxrank = std::min(m, n);
-  Vector sigma("sigma", maxrank);
-  Vector work("work", std::max(m, n));
-  Kokkos::deep_copy(U, -5.0);
-  Kokkos::deep_copy(Vt, -5.0);
-  Kokkos::deep_copy(sigma, -5.0);
-  Kokkos::deep_copy(work, -5.0);
-  // Make a copy of A (before SVD) for verification, since the original will be
-  // overwritten
-  typename Matrix::HostMirror Acopy("Acopy", m, n);
-  Kokkos::deep_copy(Acopy, A);
-  // Run the SVD
-  Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1),
-                       SerialSVDFunctor_Full<Matrix, Vector>(A, U, Vt, sigma, work));
-  // Get the results back
-  auto Uhost     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), U);
-  auto Vthost    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Vt);
-  auto sigmaHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sigma);
+  for (int i = 0; i < 4; i++) {
+    Matrix A = getTestCase<Scalar, Layout, Device>(i);
+    int m    = A.extent(0);
+    int n    = A.extent(1);
+    Matrix U("U", m, m);
+    Matrix Vt("Vt", n, n);
+    int maxrank = std::min(m, n);
+    Vector sigma("sigma", maxrank);
+    Vector work("work", std::max(m, n));
+    Kokkos::deep_copy(U, -5.0);
+    Kokkos::deep_copy(Vt, -5.0);
+    Kokkos::deep_copy(sigma, -5.0);
+    Kokkos::deep_copy(work, -5.0);
+    // Make a copy of A (before SVD) for verification, since the original will be
+    // overwritten
+    typename Matrix::HostMirror Acopy("Acopy", m, n);
+    Kokkos::deep_copy(Acopy, A);
+    // Run the SVD
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1),
+                         SerialSVDFunctor_Full<Matrix, Vector>(A, U, Vt, sigma, work));
+    // Get the results back
+    auto Uhost     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), U);
+    auto Vthost    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Vt);
+    auto sigmaHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sigma);
 
-  // Verify the SVD is correct
-  verifySVD(Acopy, Uhost, Vthost, sigmaHost);
+    std::cout << "Ran svd on test case " << i << ", singular values:\n";
+    KokkosKernels::Impl::print_1Dview(std::cout, sigmaHost);
+
+    // Verify the SVD is correct
+    verifySVD(Acopy, Uhost, Vthost, sigmaHost);
+  }
 }
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
@@ -481,8 +524,8 @@ TEST_F(TestCategory, batched_scalar_serial_svd_double) {
   testSVD<double, Kokkos::LayoutRight, TestDevice>();
   testIssue1786<double, Kokkos::LayoutLeft, TestDevice>();
   testIssue1786<double, Kokkos::LayoutRight, TestDevice>();
-  testIssue2344<double, Kokkos::LayoutLeft, TestDevice>();
-  testIssue2344<double, Kokkos::LayoutRight, TestDevice>();
+  testSpecialCases<double, Kokkos::LayoutLeft, TestDevice>();
+  testSpecialCases<double, Kokkos::LayoutRight, TestDevice>();
 }
 #endif
 
@@ -493,7 +536,7 @@ TEST_F(TestCategory, batched_scalar_serial_svd_float) {
   testSVD<float, Kokkos::LayoutRight, TestDevice>();
   testIssue1786<float, Kokkos::LayoutLeft, TestDevice>();
   testIssue1786<float, Kokkos::LayoutRight, TestDevice>();
-  testIssue2344<float, Kokkos::LayoutLeft, TestDevice>();
-  testIssue2344<float, Kokkos::LayoutRight, TestDevice>();
+  testSpecialCases<float, Kokkos::LayoutLeft, TestDevice>();
+  testSpecialCases<float, Kokkos::LayoutRight, TestDevice>();
 }
 #endif
