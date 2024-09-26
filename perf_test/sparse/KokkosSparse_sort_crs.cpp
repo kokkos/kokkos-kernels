@@ -82,7 +82,9 @@ void run_experiment(int argc, char** argv, const CommonInputParams& common_param
   std::random_device rd;
   std::mt19937 g(rd());
   for (lno_t i = 0; i < m; i++) {
-    std::shuffle(entriesHost.data() + i, entriesHost.data() + i + 1, g);
+    const size_type rowBegin = rowmapHost(i);
+    const size_type rowEnd   = rowmapHost(i + 1);
+    std::shuffle(entriesHost.data() + rowBegin, entriesHost.data() + rowEnd, g);
   }
   Kokkos::deep_copy(shuffledEntries, entriesHost);
   exec_space exec;
