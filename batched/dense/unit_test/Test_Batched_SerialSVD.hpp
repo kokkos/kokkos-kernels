@@ -429,11 +429,11 @@ void testIssue1786() {
 
 // Generate specific test cases
 template <typename Scalar, typename Layout, typename Device>
-Kokkos::View<Scalar**, Layout, Device> getTestCase(int i) {
+Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
   using MatrixHost = Kokkos::View<Scalar**, Layout, Kokkos::HostSpace>;
   MatrixHost Ahost;
   int m, n;
-  switch (i) {
+  switch (testCase) {
     case 0:
       // Issue #2344 case: 3x3 matrix with rank 2
       m           = 3;
