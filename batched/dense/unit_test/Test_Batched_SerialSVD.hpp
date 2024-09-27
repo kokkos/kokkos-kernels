@@ -427,6 +427,27 @@ void testIssue1786() {
   }
 }
 
+template <typename MatrixHost>
+void randomRankDeficient(MatrixHost A, int rank) {
+  using Scalar = typename MatrixHost::non_const_value_type;
+  int m        = A.extent(0);
+  int n        = A.extent(1);
+  Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> rand_pool(13318);
+  Kokkos::View<Scalar**, Kokkos::HostSpace> U("U", m, rank);
+  Kokkos::View<Scalar**, Kokkos::HostSpace> Vt("Vt", rank, n);
+  Kokkos::fill_random(U, rand_pool, -1.0, 1.0);
+  Kokkos::fill_random(Vt, rand_pool, -1.0, 1.0);
+  for (int i = 0; i < m; i++) {
+    for (int j = 0; j < n; j++) {
+      Scalar sum = 0;
+      for (int k = 0; k < rank; k++) {
+        sum += U(i, k) * Vt(k, j);
+      }
+      A(i, j) = sum;
+    }
+  }
+}
+
 // Generate specific test cases
 template <typename Scalar, typename Layout, typename Device>
 Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
@@ -472,6 +493,30 @@ Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
       for (int i = 0; i < n - 1; i++) Ahost(i, i + 1) = 0.7;
       Ahost(4, 4) = 0;
       break;
+    case 4: {
+      // Test a 12x20 matrix that's only rank 1
+      m     = 12;
+      n     = 20;
+      Ahost = MatrixHost("A3", m, n);
+      randomRankDeficient(Ahost, 1);
+      break;
+    }
+    case 5: {
+      // Test a 12x20 matrix that's rank 8
+      m     = 12;
+      n     = 20;
+      Ahost = MatrixHost("A3", m, n);
+      randomRankDeficient(Ahost, 8);
+      break;
+    }
+    case 6: {
+      // Test a 12x20 matrix that's rank 11
+      m     = 12;
+      n     = 20;
+      Ahost = MatrixHost("A3", m, n);
+      randomRankDeficient(Ahost, 11);
+      break;
+    }
     default: throw std::runtime_error("Test case out of bounds.");
   }
   Kokkos::View<Scalar**, Layout, Device> A(Ahost.label(), m, n);
@@ -484,7 +529,7 @@ void testSpecialCases() {
   using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
   using Vector    = Kokkos::View<Scalar*, Device>;
   using ExecSpace = typename Device::execution_space;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 7; i++) {
     Matrix A = getTestCase<Scalar, Layout, Device>(i);
     int m    = A.extent(0);
     int n    = A.extent(1);
