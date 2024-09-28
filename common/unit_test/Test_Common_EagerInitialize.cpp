@@ -25,7 +25,7 @@
 #ifdef KOKKOSKERNELS_ENABLE_COMPONENT_BLAS
 #include "KokkosBlas_tpl_spec.hpp"  //cuBLAS, rocBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include "KokkosBlas_Magma_tpl.hpp"
+#include "KokkosBlas_magma.hpp"
 #endif
 #endif
 
