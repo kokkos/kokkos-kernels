@@ -53,7 +53,6 @@ void eager_initialize() {
   (void)KokkosBlas::Impl::RocBlasSingleton::singleton();
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include "KokkosBlas_Magma_tpl.hpp"
   (void)KokkosBlas::Impl::MagmaSingleton::singleton();
 #endif
 #endif

@@ -29,7 +29,11 @@ struct CudaBlasSingleton {
 
   CudaBlasSingleton();
 
+  static bool is_initialized();
   static CudaBlasSingleton& singleton();
+
+ private:
+  static std::unique_ptr<CudaBlasSingleton>& get_instance();
 };
 
 inline void cublas_internal_error_throw(cublasStatus_t cublasState, const char* name, const char* file,
@@ -111,7 +115,12 @@ struct RocBlasSingleton {
 
   RocBlasSingleton();
 
+  static bool is_initialized();
+
   static RocBlasSingleton& singleton();
+
+ private:
+  static std::unique_ptr<RocBlasSingleton>& get_instance();
 };
 
 inline void rocblas_internal_error_throw(rocblas_status rocblasState, const char* name, const char* file,

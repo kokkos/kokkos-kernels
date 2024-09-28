@@ -32,6 +32,11 @@ struct CudaLapackSingleton {
   CudaLapackSingleton();
 
   static CudaLapackSingleton& singleton();
+
+  static bool is_initialized();
+
+ private:
+  static std::unique_ptr<CudaLapackSingleton>& get_instance();
 };
 
 inline void cusolver_internal_error_throw(cusolverStatus_t cusolverStatus, const char* name, const char* file,
