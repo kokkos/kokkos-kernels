@@ -432,7 +432,7 @@ Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
   int m, n;
   switch (testCase) {
     case 0:
-      // Issue #2344 case: 3x3 matrix with rank 2
+      // Issue #2344 case 1
       m           = 3;
       n           = 3;
       Ahost       = MatrixHost("A0", m, n);
@@ -470,6 +470,7 @@ Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
       Ahost(4, 4) = 0;
       break;
     case 4: {
+      // Issue #2344 case 2
       m           = 3;
       n           = 4;
       Ahost       = MatrixHost("A4", m, n);
