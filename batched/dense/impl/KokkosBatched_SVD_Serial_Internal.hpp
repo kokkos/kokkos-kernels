@@ -265,7 +265,7 @@ struct SerialSVDInternal {
             // new entry is introduced by the Givens.
             svdZeroLastColumn(Bsub, nsub, Bs0, Bs1, n, Vtsub, Vts0, Vts1);
           } else if (SVDIND(B, i, i + 1) != KAT::zero()) {
-            svdZeroRow(i - p, B, n, Bs0, Bs1, U, m, Us0, Us1);
+            svdZeroRow(i - p, Bsub, nsub, Bs0, Bs1, Usub, m, Us0, Us1);
           }
         }
       }

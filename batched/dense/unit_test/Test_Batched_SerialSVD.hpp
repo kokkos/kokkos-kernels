@@ -103,40 +103,6 @@ void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView
   }
 }
 
-template <typename Matrix>
-Matrix createRandomMatrix(int m, int n, int deficiency, double maxval = 1.0) {
-  using Scalar = typename Matrix::non_const_value_type;
-  Matrix mat("A", m, n);
-  auto mhost = Kokkos::create_mirror_view(mat);
-  // Fill mat with random values first
-  if (maxval != 0.0) {
-    Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> rand_pool(13718);
-    Scalar minrand, maxrand;
-    Test::getRandomBounds<Scalar>(maxval, minrand, maxrand);
-    Kokkos::fill_random(mhost, rand_pool, minrand, maxrand);
-  }
-  // Apply the rank deficiency.
-  // If m < n, make some rows a multiple of the first row.
-  // Otherwise, make some columns a multiple of the first column.
-  if (m < n) {
-    for (int i = 0; i < deficiency; i++) {
-      // make row i + 1 a multiple of row 0
-      for (int j = 0; j < n; j++) {
-        mhost(i + 1, j) = (double)(i + 2) * mhost(0, j);
-      }
-    }
-  } else {
-    for (int i = 0; i < deficiency; i++) {
-      // make col i + 1 a multiple of col 0
-      for (int j = 0; j < m; j++) {
-        mhost(j, i + 1) = (double)(i + 2) * mhost(j, 0);
-      }
-    }
-  }
-  Kokkos::deep_copy(mat, mhost);
-  return mat;
-}
-
 template <typename Matrix, typename Vector>
 struct SerialSVDFunctor_Full {
   SerialSVDFunctor_Full(const Matrix& A_, const Matrix& U_, const Matrix& Vt_, const Vector& sigma_,
@@ -172,12 +138,36 @@ struct SerialSVDFunctor_SingularValuesOnly {
   Vector work;
 };
 
+template <typename Matrix>
+Matrix randomMatrixWithRank(int m, int n, int rank) {
+  using Scalar = typename Matrix::non_const_value_type;
+  Matrix A("A", m, n);
+  Kokkos::Random_XorShift64_Pool<typename Matrix::device_type> rand_pool(13318);
+  if (rank == Kokkos::min(m, n)) {
+    // A is full-rank so as a shortcut, fill it with random values directly.
+    Kokkos::fill_random(A, rand_pool, -1.0, 1.0);
+  } else {
+    // A is rank-deficient, so compute it as a product of two random matrices
+    Matrix U("U", m, rank);
+    Matrix Vt("Vt", rank, n);
+    Kokkos::fill_random(U, rand_pool, -1.0, 1.0);
+    Kokkos::fill_random(Vt, rand_pool, -1.0, 1.0);
+    Test::vanillaGEMM(1.0, U, Vt, 0.0, A);
+  }
+  return A;
+}
+
+template <typename Matrix>
+Matrix randomMatrixWithRank(int m, int n) {
+  return randomMatrixWithRank<Matrix>(m, n, Kokkos::min(m, n));
+}
+
 template <typename Scalar, typename Layout, typename Device>
-void testSerialSVD(int m, int n, int deficiency, double maxval = 1.0) {
+void testSerialSVD(int m, int n, int rank) {
   using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
   using Vector    = Kokkos::View<Scalar*, Device>;
   using ExecSpace = typename Device::execution_space;
-  Matrix A        = createRandomMatrix<Matrix>(m, n, deficiency, maxval);
+  Matrix A        = randomMatrixWithRank<Matrix>(m, n, rank);
   // Fill U, Vt, sigma with nonzeros as well to make sure they are properly
   // overwritten
   Matrix U("U", m, m);
@@ -207,11 +197,16 @@ void testSerialSVD(int m, int n, int deficiency, double maxval = 1.0) {
 }
 
 template <typename Scalar, typename Layout, typename Device>
+void testSerialSVD(int m, int n) {
+  testSerialSVD<Scalar, Layout, Device>(m, n, Kokkos::min(m, n));
+}
+
+template <typename Scalar, typename Layout, typename Device>
 void testSerialSVDSingularValuesOnly(int m, int n) {
   using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
   using Vector    = Kokkos::View<Scalar*, Device>;
   using ExecSpace = typename Device::execution_space;
-  Matrix A        = createRandomMatrix<Matrix>(m, n, 0);
+  Matrix A        = randomMatrixWithRank<Matrix>(m, n);
   // Fill U, Vt, sigma with nonzeros as well to make sure they are properly
   // overwritten
   Matrix U("U", m, m);
@@ -250,7 +245,7 @@ void testSerialSVDZeroLastRow(int n) {
   // Generate a bidiagonal matrix
   using Matrix = Kokkos::View<Scalar**, Layout, Kokkos::HostSpace>;
   using KAT    = Kokkos::ArithTraits<Scalar>;
-  Matrix B     = createRandomMatrix<Matrix>(n, n, 0, 1.0);
+  Matrix B     = randomMatrixWithRank<Matrix>(n, n);
   // Zero out entries to make B bidiagonal
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
@@ -300,7 +295,7 @@ void testSerialSVDZeroDiagonal(int n, int row) {
   using KAT    = Kokkos::ArithTraits<Scalar>;
   int m        = n + 2;  // Make U somewhat bigger to make sure the Givens transforms
                          // are applied correctly
-  Matrix B = createRandomMatrix<Matrix>(m, n, 0, 1.0);
+  Matrix B = randomMatrixWithRank<Matrix>(m, n);
   // Zero out entries to make B bidiagonal
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
@@ -344,19 +339,18 @@ void testSerialSVDZeroDiagonal(int n, int row) {
 
 template <typename Scalar, typename Layout, typename Device>
 void testSVD() {
-  testSerialSVD<Scalar, Layout, Device>(0, 0, 0);
-  testSerialSVD<Scalar, Layout, Device>(1, 0, 0);
-  testSerialSVD<Scalar, Layout, Device>(0, 1, 0);
-  testSerialSVD<Scalar, Layout, Device>(2, 2, 0);
+  testSerialSVD<Scalar, Layout, Device>(0, 0);
+  testSerialSVD<Scalar, Layout, Device>(1, 0);
+  testSerialSVD<Scalar, Layout, Device>(0, 1);
+  testSerialSVD<Scalar, Layout, Device>(2, 2);
   testSerialSVD<Scalar, Layout, Device>(2, 2, 1);
-  testSerialSVD<Scalar, Layout, Device>(10, 8, 0);
-  testSerialSVD<Scalar, Layout, Device>(8, 10, 0);
-  testSerialSVD<Scalar, Layout, Device>(10, 1, 0);
+  testSerialSVD<Scalar, Layout, Device>(10, 8);
+  testSerialSVD<Scalar, Layout, Device>(8, 10);
+  testSerialSVD<Scalar, Layout, Device>(10, 1);
   testSerialSVD<Scalar, Layout, Device>(1, 10, 0);
   testSerialSVD<Scalar, Layout, Device>(10, 8, 3);
   testSerialSVD<Scalar, Layout, Device>(8, 10, 4);
-  // Test with all-zero matrix
-  testSerialSVD<Scalar, Layout, Device>(8, 10, 0, 0.0);
+  testSerialSVD<Scalar, Layout, Device>(8, 10, 7);
   // Test some important internal routines which are not called often
   testSerialSVDZeroLastRow<Scalar, Layout>(10);
   testSerialSVDZeroDiagonal<Scalar, Layout>(10, 3);
@@ -427,27 +421,6 @@ void testIssue1786() {
   }
 }
 
-template <typename MatrixHost>
-void randomRankDeficient(MatrixHost A, int rank) {
-  using Scalar = typename MatrixHost::non_const_value_type;
-  int m        = A.extent(0);
-  int n        = A.extent(1);
-  Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> rand_pool(13318);
-  Kokkos::View<Scalar**, Kokkos::HostSpace> U("U", m, rank);
-  Kokkos::View<Scalar**, Kokkos::HostSpace> Vt("Vt", rank, n);
-  Kokkos::fill_random(U, rand_pool, -1.0, 1.0);
-  Kokkos::fill_random(Vt, rand_pool, -1.0, 1.0);
-  for (int i = 0; i < m; i++) {
-    for (int j = 0; j < n; j++) {
-      Scalar sum = 0;
-      for (int k = 0; k < rank; k++) {
-        sum += U(i, k) * Vt(k, j);
-      }
-      A(i, j) = sum;
-    }
-  }
-}
-
 // Generate specific test cases
 template <typename Scalar, typename Layout, typename Device>
 Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
@@ -494,27 +467,28 @@ Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
       Ahost(4, 4) = 0;
       break;
     case 4: {
-      // Test a 12x20 matrix that's only rank 1
-      m     = 12;
-      n     = 20;
-      Ahost = MatrixHost("A3", m, n);
-      randomRankDeficient(Ahost, 1);
+      m           = 3;
+      n           = 4;
+      Ahost       = MatrixHost("A4", m, n);
+      Ahost(0, 0) = -2.0305040121856084e-02;
+      Ahost(1, 0) = 0.0000000000000000e+00;
+      Ahost(2, 0) = 0.0000000000000000e+00;
+      Ahost(0, 1) = -0.0000000000000000e+00;
+      Ahost(1, 1) = -0.0000000000000000e+00;
+      Ahost(2, 1) = 1.9506119814028472e-02;
+      Ahost(0, 2) = -2.0305040121856091e-02;
+      Ahost(1, 2) = 0.0000000000000000e+00;
+      Ahost(2, 2) = 0.0000000000000000e+00;
+      Ahost(0, 3) = -0.0000000000000000e+00;
+      Ahost(1, 3) = -0.0000000000000000e+00;
+      Ahost(2, 3) = 1.9506119814028472e-02;
       break;
     }
     case 5: {
-      // Test a 12x20 matrix that's rank 8
-      m     = 12;
-      n     = 20;
-      Ahost = MatrixHost("A3", m, n);
-      randomRankDeficient(Ahost, 8);
-      break;
-    }
-    case 6: {
-      // Test a 12x20 matrix that's rank 11
-      m     = 12;
-      n     = 20;
-      Ahost = MatrixHost("A3", m, n);
-      randomRankDeficient(Ahost, 11);
+      // Test with all-zero matrix
+      m     = 17;
+      n     = 19;
+      Ahost = MatrixHost("A5", m, n);
       break;
     }
     default: throw std::runtime_error("Test case out of bounds.");
@@ -529,7 +503,7 @@ void testSpecialCases() {
   using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
   using Vector    = Kokkos::View<Scalar*, Device>;
   using ExecSpace = typename Device::execution_space;
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < 6; i++) {
     Matrix A = getTestCase<Scalar, Layout, Device>(i);
     int m    = A.extent(0);
     int n    = A.extent(1);
