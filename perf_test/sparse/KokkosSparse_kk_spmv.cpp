@@ -200,7 +200,7 @@ void print_help() {
 int main(int argc, char** argv) {
   SPMVBenchmarking sb;
   char layout;
-  if (std::is_same<default_layout, Kokkos::LayoutLeft>::value)
+  if (std::is_same<KokkosKernels::default_layout, Kokkos::LayoutLeft>::value)
     layout = 'L';
   else
     layout = 'R';
