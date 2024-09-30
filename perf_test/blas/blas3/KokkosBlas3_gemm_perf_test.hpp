@@ -1146,7 +1146,7 @@ void __do_gemm_parallel_experiment5(options_t options, gemm_args_t gemm_args) {
   using scalar_type    = typename view_type_3d::value_type;
   constexpr int vl     = KokkosBatched::DefaultVectorLength<scalar_type, execution_space>::value;
   using simd_type      = KokkosBatched::Vector<KokkosBatched::SIMD<scalar_type>, simd_vector_size>;
-  using simd_view_type = Kokkos::View<simd_type ***, default_layout, default_device>;
+  using simd_view_type = Kokkos::View<simd_type ***, KokkosKernels::default_layout, KokkosKernels::default_device>;
   using functor_type   = parallel_batched_gemm_experiment5<simd_view_type, TransAType, TransBType, BlockingType>;
 
   uint32_t warm_up_n = options.warm_up_n;
@@ -1235,9 +1235,9 @@ void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
       KokkosBatched::DefaultVectorLength<scalar_type, execution_space>::value;
   constexpr int il =
       KokkosBatched::DefaultInternalVectorLength<scalar_type, execution_space>::value;
-  using view_type = Kokkos::View<scalar_type***[vl], default_layout, default_device>;
-  using vector_view_type = Kokkos::View<vector_type***, default_layout, default_device>;
-  using internal_vector_view_type = Kokkos::View<internal_vector_type***, default_layout, default_device>;
+  using view_type = Kokkos::View<scalar_type***[vl], KokkosKernels::default_layout, KokkosKernels::default_device>;
+  using vector_view_type = Kokkos::View<vector_type***, KokkosKernels::default_layout, KokkosKernels::default_device>;
+  using internal_vector_view_type = Kokkos::View<internal_vector_type***, KokkosKernels::default_layout, KokkosKernels::default_device>;
   using functor_type =
       parallel_batched_gemm_experiment6<member_type, internal_vector_view_type,
                                         TransAType, TransBType, BlockingType>;
@@ -1424,14 +1424,16 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
     vector_batch_size = src.ivec_4d.extent(0);
     simd_batch_size   = src.ivec_4d.extent(3);
     last_batch        = dst.extent(2);
-    if (std::is_same<default_layout, Kokkos::LayoutRight>::value && remainder == 0) data_layout_same_as_3d_view = true;
+    if (std::is_same<KokkosKernels::default_layout, Kokkos::LayoutRight>::value && remainder == 0)
+      data_layout_same_as_3d_view = true;
 
   } else {
     remainder         = dst.extent(0) % simd_internal_vector_size;
     vector_batch_size = src.ivec_4d.extent(3);
     simd_batch_size   = src.ivec_4d.extent(0);
     last_batch        = dst.extent(0);
-    if (std::is_same<default_layout, Kokkos::LayoutLeft>::value && remainder == 0) data_layout_same_as_3d_view = true;
+    if (std::is_same<KokkosKernels::default_layout, Kokkos::LayoutLeft>::value && remainder == 0)
+      data_layout_same_as_3d_view = true;
   }
 
   // When the batch_size is a multiple of the simd_vector_size and the
@@ -1474,7 +1476,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
   // The below loops copies each corresponding 2-rank matrix within the simd
   // view back to the 3-rank view.
   for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder; simd_internal_vec_idx++) {
-    if (std::is_same<default_layout, Kokkos::LayoutRight>::value)
+    if (std::is_same<KokkosKernels::default_layout, Kokkos::LayoutRight>::value)
       h_sv0 =
           Kokkos::subview(h_src_raw, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), simd_internal_vec_idx);
     else
@@ -1605,7 +1607,8 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, vo
   if (gemm_args.C.data() != nullptr) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
     if (options.test == EXPERIMENT) {
-      using view_type_2d = Kokkos::View<KokkosKernels::default_scalar **, Kokkos::LayoutStride, default_device>;
+      using view_type_2d =
+          Kokkos::View<KokkosKernels::default_scalar **, Kokkos::LayoutStride, KokkosKernels::default_device>;
       view_type_2d C;
       for (int ib = 0; ib < gemm_args.nbatch; ++ib) {
         for (int i = 0; i < gemm_args.ninter; ++i) {
@@ -1709,7 +1712,7 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
 
     // Use the non-simd 4-rank view type to randomly populate the gemm simd
     // arguments
-    using tmp_view_type_4d = Kokkos::View<double ****, default_layout, default_device>;
+    using tmp_view_type_4d = Kokkos::View<double ****, KokkosKernels::default_layout, KokkosKernels::default_device>;
     tmp_view_type_4d tmpA("tmpA", gemm_args.Av.mat_4d.extent(0), gemm_args.Av.mat_4d.extent(1),
                           gemm_args.Av.mat_4d.extent(2), gemm_args.Av.mat_4d.extent(3));
     Kokkos::fill_random(tmpA, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, double>::max());
@@ -1735,7 +1738,7 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
       gemm_args.C = vtc("gemm_args.C", dims.c.k, dims.c.m, dims.c.n);
     }
 
-    using tmp_view_type_3d = Kokkos::View<double ***, default_layout, default_device>;
+    using tmp_view_type_3d = Kokkos::View<double ***, KokkosKernels::default_layout, KokkosKernels::default_device>;
     tmp_view_type_3d tmpA("tmpA", gemm_args.A.extent(0), gemm_args.A.extent(1), gemm_args.A.extent(2));
     Kokkos::fill_random(tmpA, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, double>::max());
     tmp_view_type_3d tmpB("tmpB", gemm_args.B.extent(0), gemm_args.B.extent(1), gemm_args.B.extent(2));
@@ -1858,11 +1861,12 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, gemm_args_t))
        cur_dims.b.n <= options.stop.b.n && cur_dims.c.m <= options.stop.c.m && cur_dims.c.n <= options.stop.c.n;
        cur_dims.a.m += options.step, cur_dims.a.n += options.step, cur_dims.b.m += options.step,
       cur_dims.b.n += options.step, cur_dims.c.m += options.step, cur_dims.c.n += options.step) {
-    gemm_args = __do_setup<KokkosKernels::default_scalar, view_type_3d, view_type_3d, view_type_3d, default_device>(
-        options, cur_dims);
+    gemm_args = __do_setup<KokkosKernels::default_scalar, view_type_3d, view_type_3d, view_type_3d,
+                           KokkosKernels::default_device>(options, cur_dims);
 
     if (options.verify) {
-      __gemm_do_verify<KokkosKernels::default_scalar, default_layout, default_device>(options, gemm_args, fn);
+      __gemm_do_verify<KokkosKernels::default_scalar, KokkosKernels::default_layout, KokkosKernels::default_device>(
+          options, gemm_args, fn);
     } else {
       fn(options, gemm_args);
     }
@@ -1880,7 +1884,8 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, gemm_args_t))
 void do_gemm_serial_blas(options_t options) {
   STATUS;
   __do_loop_and_invoke(
-      options, __do_gemm_serial_blas<KokkosKernels::default_scalar, view_type_3d, view_type_3d, default_device>);
+      options,
+      __do_gemm_serial_blas<KokkosKernels::default_scalar, view_type_3d, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
@@ -1888,7 +1893,7 @@ void do_gemm_serial_batched(options_t options) {
   STATUS;
   __do_loop_and_invoke(options,
                        __do_gemm_serial_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d, view_type_3d,
-                                                default_device, KokkosBatched::Algo::Gemm::Unblocked>);
+                                                KokkosKernels::default_device, KokkosBatched::Algo::Gemm::Unblocked>);
   return;
 }
 
@@ -1896,7 +1901,7 @@ void do_gemm_serial_batched_blocked(options_t options) {
   STATUS;
   __do_loop_and_invoke(options,
                        __do_gemm_serial_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d, view_type_3d,
-                                                default_device, KokkosBatched::Algo::Gemm::Blocked>);
+                                                KokkosKernels::default_device, KokkosBatched::Algo::Gemm::Blocked>);
   return;
 }
 
@@ -1908,29 +1913,31 @@ void do_gemm_heuristic_batched_parallel(options_t options) {
     exit(-EINVAL);
   }
 
-  __do_loop_and_invoke(options, __do_gemm_parallel_batched_heuristic<void, void, default_device>);
+  __do_loop_and_invoke(options, __do_gemm_parallel_batched_heuristic<void, void, KokkosKernels::default_device>);
   return;
 }
 
 void do_gemm_serial_batched_parallel(options_t options) {
   STATUS;
   if (options.blas_args.batch_size_last_dim)
-    __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<SerialBatchDim3Tag, KokkosBatched::Algo::Gemm::Unblocked, default_device>);
+    __do_loop_and_invoke(options, __do_gemm_parallel_batched<SerialBatchDim3Tag, KokkosBatched::Algo::Gemm::Unblocked,
+                                                             KokkosKernels::default_device>);
   else
-    __do_loop_and_invoke(options,
-                         __do_gemm_parallel_batched<SerialTag, KokkosBatched::Algo::Gemm::Unblocked, default_device>);
+    __do_loop_and_invoke(
+        options,
+        __do_gemm_parallel_batched<SerialTag, KokkosBatched::Algo::Gemm::Unblocked, KokkosKernels::default_device>);
   return;
 }
 
 void do_gemm_serial_batched_blocked_parallel(options_t options) {
   STATUS;
   if (options.blas_args.batch_size_last_dim)
-    __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<SerialBatchDim3Tag, KokkosBatched::Algo::Gemm::Blocked, default_device>);
+    __do_loop_and_invoke(options, __do_gemm_parallel_batched<SerialBatchDim3Tag, KokkosBatched::Algo::Gemm::Blocked,
+                                                             KokkosKernels::default_device>);
   else
-    __do_loop_and_invoke(options,
-                         __do_gemm_parallel_batched<SerialTag, KokkosBatched::Algo::Gemm::Blocked, default_device>);
+    __do_loop_and_invoke(
+        options,
+        __do_gemm_parallel_batched<SerialTag, KokkosBatched::Algo::Gemm::Blocked, KokkosKernels::default_device>);
   return;
 }
 
@@ -1940,11 +1947,13 @@ void do_gemm_serial_simd_batched_parallel(options_t options) {
   // SerialSimdTag
   options.use_simd = true;
   if (options.blas_args.batch_size_last_dim)
-    __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, KokkosBatched::Algo::Gemm::Unblocked,
-                                                             default_device, KokkosBatched::Mode::Serial>);
+    __do_loop_and_invoke(options,
+                         __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, KokkosBatched::Algo::Gemm::Unblocked,
+                                                    KokkosKernels::default_device, KokkosBatched::Mode::Serial>);
   else
-    __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamSimdTag, KokkosBatched::Algo::Gemm::Unblocked,
-                                                             default_device, KokkosBatched::Mode::Serial>);
+    __do_loop_and_invoke(options,
+                         __do_gemm_parallel_batched<TeamSimdTag, KokkosBatched::Algo::Gemm::Unblocked,
+                                                    KokkosKernels::default_device, KokkosBatched::Mode::Serial>);
   return;
 }
 
@@ -1954,11 +1963,13 @@ void do_gemm_serial_simd_batched_blocked_parallel(options_t options) {
   // SerialSimdTag
   options.use_simd = true;
   if (options.blas_args.batch_size_last_dim)
-    __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, KokkosBatched::Algo::Gemm::Blocked,
-                                                             default_device, KokkosBatched::Mode::Serial>);
+    __do_loop_and_invoke(options,
+                         __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, KokkosBatched::Algo::Gemm::Blocked,
+                                                    KokkosKernels::default_device, KokkosBatched::Mode::Serial>);
   else
-    __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamSimdTag, KokkosBatched::Algo::Gemm::Blocked,
-                                                             default_device, KokkosBatched::Mode::Serial>);
+    __do_loop_and_invoke(options,
+                         __do_gemm_parallel_batched<TeamSimdTag, KokkosBatched::Algo::Gemm::Blocked,
+                                                    KokkosKernels::default_device, KokkosBatched::Mode::Serial>);
   return;
 }
 
@@ -1967,12 +1978,12 @@ void do_gemm_serial_simd_batched_blocked_parallel(options_t options) {
 void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
   STATUS;
   if (options.blas_args.batch_size_last_dim)
-    __do_loop_and_invoke(
-        options,
-        __do_gemm_parallel_batched<SerialSimdBatchDim3Tag, KokkosBatched::Algo::Gemm::CompactMKL, default_device>);
+    __do_loop_and_invoke(options,
+                         __do_gemm_parallel_batched<SerialSimdBatchDim3Tag, KokkosBatched::Algo::Gemm::CompactMKL,
+                                                    KokkosKernels::default_device>);
   else
-    __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<SerialSimdTag, KokkosBatched::Algo::Gemm::CompactMKL, default_device>);
+    __do_loop_and_invoke(options, __do_gemm_parallel_batched<SerialSimdTag, KokkosBatched::Algo::Gemm::CompactMKL,
+                                                             KokkosKernels::default_device>);
   return;
 }
 #else
@@ -1998,34 +2009,37 @@ void do_gemm_serial_batched_compact_mkl_parallel(options_t) {
 void do_gemm_team_batched_parallel(options_t options) {
   STATUS;
   if (options.blas_args.batch_size_last_dim)
-    __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<TeamBatchDim3Tag, KokkosBatched::Algo::Gemm::Unblocked, default_device>);
+    __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamBatchDim3Tag, KokkosBatched::Algo::Gemm::Unblocked,
+                                                             KokkosKernels::default_device>);
   else
-    __do_loop_and_invoke(options,
-                         __do_gemm_parallel_batched<TeamTag, KokkosBatched::Algo::Gemm::Unblocked, default_device>);
+    __do_loop_and_invoke(
+        options,
+        __do_gemm_parallel_batched<TeamTag, KokkosBatched::Algo::Gemm::Unblocked, KokkosKernels::default_device>);
   return;
 }
 
 void do_gemm_team_batched_blocked_parallel(options_t options) {
   STATUS;
   if (options.blas_args.batch_size_last_dim)
-    __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<TeamBatchDim3Tag, KokkosBatched::Algo::Gemm::Blocked, default_device>);
+    __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamBatchDim3Tag, KokkosBatched::Algo::Gemm::Blocked,
+                                                             KokkosKernels::default_device>);
   else
-    __do_loop_and_invoke(options,
-                         __do_gemm_parallel_batched<TeamTag, KokkosBatched::Algo::Gemm::Blocked, default_device>);
+    __do_loop_and_invoke(
+        options,
+        __do_gemm_parallel_batched<TeamTag, KokkosBatched::Algo::Gemm::Blocked, KokkosKernels::default_device>);
   return;
 }
 
 void do_gemm_team_vector_batched_parallel(options_t options) {
   STATUS;
   if (options.blas_args.batch_size_last_dim)
-    __do_loop_and_invoke(
-        options,
-        __do_gemm_parallel_batched<TeamVectorBatchDim3Tag, KokkosBatched::Algo::Gemm::Unblocked, default_device>);
+    __do_loop_and_invoke(options,
+                         __do_gemm_parallel_batched<TeamVectorBatchDim3Tag, KokkosBatched::Algo::Gemm::Unblocked,
+                                                    KokkosKernels::default_device>);
   else
     __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<TeamVectorTag, KokkosBatched::Algo::Gemm::Unblocked, default_device>);
+        options,
+        __do_gemm_parallel_batched<TeamVectorTag, KokkosBatched::Algo::Gemm::Unblocked, KokkosKernels::default_device>);
   return;
 }
 
@@ -2034,10 +2048,10 @@ void do_gemm_team_simd_batched_parallel(options_t options) {
   options.use_simd = true;
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, KokkosBatched::Algo::Gemm::Unblocked,
-                                                             default_device, KokkosBatched::Mode::Team>);
+                                                             KokkosKernels::default_device, KokkosBatched::Mode::Team>);
   else
     __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamSimdTag, KokkosBatched::Algo::Gemm::Unblocked,
-                                                             default_device, KokkosBatched::Mode::Team>);
+                                                             KokkosKernels::default_device, KokkosBatched::Mode::Team>);
   return;
 }
 
@@ -2046,10 +2060,10 @@ void do_gemm_team_simd_batched_blocked_parallel(options_t options) {
   options.use_simd = true;
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, KokkosBatched::Algo::Gemm::Blocked,
-                                                             default_device, KokkosBatched::Mode::Team>);
+                                                             KokkosKernels::default_device, KokkosBatched::Mode::Team>);
   else
     __do_loop_and_invoke(options, __do_gemm_parallel_batched<TeamSimdTag, KokkosBatched::Algo::Gemm::Blocked,
-                                                             default_device, KokkosBatched::Mode::Team>);
+                                                             KokkosKernels::default_device, KokkosBatched::Mode::Team>);
   return;
 }
 
@@ -2058,7 +2072,7 @@ void do_gemm_team_simd_batched_blocked_parallel(options_t options) {
   STATUS;
   __do_loop_and_invoke(
       options, __do_gemm_parallel_batched<TeamVectorTag,
-KokkosBatched::Algo::Gemm::Blocked, default_device>); return;
+KokkosBatched::Algo::Gemm::Blocked, KokkosKernels::default_device>); return;
 } */
 
 void do_gemm_experiment_parallel(options_t options) {
@@ -2069,23 +2083,23 @@ void do_gemm_experiment_parallel(options_t options) {
 
   // __do_loop_and_invoke(
   //     options, __do_gemm_parallel_experiment1<TransAType, TransBType,
-  //                                             BlockingType, default_device>);
+  //                                             BlockingType, KokkosKernels::default_device>);
   // __do_loop_and_invoke(
   //     options, __do_gemm_parallel_experiment2<TransAType, TransBType,
-  //                                             BlockingType, default_device>);
+  //                                             BlockingType, KokkosKernels::default_device>);
   // __do_loop_and_invoke(
   //     options, __do_gemm_parallel_experiment3<TransAType, TransBType,
-  //                                             BlockingType, default_device>);
+  //                                             BlockingType, KokkosKernels::default_device>);
   // __do_loop_and_invoke(
   //     options, __do_gemm_parallel_experiment4<TransAType, TransBType,
-  //                                             BlockingType, default_device>);
+  //                                             BlockingType, KokkosKernels::default_device>);
   // __do_loop_and_invoke(
   //     options, __do_gemm_parallel_experiment5<TransAType, TransBType,
-  //                                             BlockingType, default_device>);
+  //                                             BlockingType, KokkosKernels::default_device>);
   // __do_loop_and_invoke(
   //     options, __do_gemm_parallel_experiment6<TransAType, TransBType,
-  //                                             BlockingType, default_device>);
-  __do_loop_and_invoke(options, __do_gemm_armpl<TransAType, TransBType, BlockingType, default_device>);
+  //                                             BlockingType, KokkosKernels::default_device>);
+  __do_loop_and_invoke(options, __do_gemm_armpl<TransAType, TransBType, BlockingType, KokkosKernels::default_device>);
 }
 
 #endif  // KOKKOSBLAS3_GEMM_PERF_TEST_H_
