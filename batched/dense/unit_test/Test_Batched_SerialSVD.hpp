@@ -140,19 +140,22 @@ struct SerialSVDFunctor_SingularValuesOnly {
 
 template <typename Matrix>
 Matrix randomMatrixWithRank(int m, int n, int rank) {
-  using Scalar = typename Matrix::non_const_value_type;
   Matrix A("A", m, n);
-  Kokkos::Random_XorShift64_Pool<typename Matrix::device_type> rand_pool(13318);
   if (rank == Kokkos::min(m, n)) {
     // A is full-rank so as a shortcut, fill it with random values directly.
+    Kokkos::Random_XorShift64_Pool<typename Matrix::device_type> rand_pool(13318);
     Kokkos::fill_random(A, rand_pool, -1.0, 1.0);
   } else {
     // A is rank-deficient, so compute it as a product of two random matrices
-    Matrix U("U", m, rank);
-    Matrix Vt("Vt", rank, n);
+    using MatrixHost = typename Matrix::HostMirror;
+    auto Ahost       = Kokkos::create_mirror_view(A);
+    Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> rand_pool(13318);
+    MatrixHost U("U", m, rank);
+    MatrixHost Vt("Vt", rank, n);
     Kokkos::fill_random(U, rand_pool, -1.0, 1.0);
     Kokkos::fill_random(Vt, rand_pool, -1.0, 1.0);
-    Test::vanillaGEMM(1.0, U, Vt, 0.0, A);
+    Test::vanillaGEMM(1.0, U, Vt, 0.0, Ahost);
+    Kokkos::deep_copy(A, Ahost);
   }
   return A;
 }
