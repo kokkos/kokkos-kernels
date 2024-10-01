@@ -151,8 +151,8 @@ void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[], con
   if ((jobvt[0] == 'S') || (jobvt[0] == 's')) {
     if (Vt.extent_int(0) != std::min(m, n) || Vt.extent_int(1) != n) {
       is_extent_invalid = true;
-      os << "KokkosLapack::svd: V has extents (" << Vt.extent(0) << ", " << Vt.extent(1) << ") instead of (" << std::min(m, n)
-         << ", " << n << ").\n";
+      os << "KokkosLapack::svd: V has extents (" << Vt.extent(0) << ", " << Vt.extent(1) << ") instead of ("
+         << std::min(m, n) << ", " << n << ").\n";
     }
   }
   if (is_extent_invalid) {
