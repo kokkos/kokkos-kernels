@@ -134,7 +134,7 @@ struct SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, 
     }
 
     // use V42 if possible
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>() || handle->algo == SPMV_BSR_V42) {
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace> || handle->algo == SPMV_BSR_V42) {
       if (modeIsNoTrans) {
         ::KokkosSparse::Impl::apply_v42(space, alpha, A, X, beta, Y);
         return;
@@ -258,7 +258,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
     }
 
     // use V42 if possible
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>() || handle->algo == SPMV_BSR_V42) {
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace> || handle->algo == SPMV_BSR_V42) {
       if (modeIsNoTrans) {
         ::KokkosSparse::Impl::apply_v42(space, alpha, A, X, beta, Y);
         return;

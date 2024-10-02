@@ -236,7 +236,7 @@ void run_experiment(int argc, char **argv, perf_test::CommonInputParams) {
   using KernelHandle =
       KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, lno_t, exec_space, mem_space, mem_space>;
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<exec_space>) {
     std::cerr << "** Triangle counting is currently not supported on GPU backends.\n";
     return;
   }

@@ -983,7 +983,7 @@ struct LowerTriangularMatrix {
 
                            // TODO: Write GPU (vector-level) version here:
                            /*
-                           if(kk_is_gpu_exec_space<ExecutionSpace>())
+                           if(is_gpu_exec_space_v<ExecutionSpace>)
                            {
                              Kokkos::parallel_for(
                                  Kokkos::ThreadVectorRange(teamMember, read_left_work),

@@ -1169,7 +1169,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
 
   // choose parameters
   if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_LP == this->spgemm_algorithm) {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
       // then chose the best method and parameters.
       size_type average_row_nnz = 0;
       size_t average_row_flops  = 0;
@@ -1308,7 +1308,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   // END OF SHARED MEMORY SIZE CALCULATIONS
 
   // required memory for L2
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<typename HandleType::HandleExecSpace>) {
     if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM) {
       tmp_max_nnz = 1;
     } else if (algorithm_to_run == SPGEMM_KK_MEMORY_BIGSPREADTEAM) {
@@ -1358,7 +1358,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
 
   KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
@@ -1390,7 +1390,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   }
   timer1.reset();
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
     if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM) {
       if (thread_shmem_key_size <= 0) {
         std::cout << "KokkosSPGEMM_numeric_hash SPGEMM_KK_MEMORY_SPREADTEAM: "
@@ -1516,7 +1516,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   }
 
   KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<my_exec_space>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<my_exec_space>) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
@@ -1548,7 +1548,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   }
   timer1.reset();
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<my_exec_space>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<my_exec_space>) {
     Kokkos::parallel_for(
         "KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY2",
         gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1, suggested_team_size, suggested_vector_size), sc);

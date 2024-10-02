@@ -366,7 +366,7 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs, size_t ma
 
   // Tensor core algorithm temporarily disabled, fails on V100
   /*
-  if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+  if constexpr (KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
 #if defined(KOKKOS_ENABLE_CUDA)
     if constexpr (std::is_same_v<execution_space, Kokkos::Cuda>) {
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
@@ -607,7 +607,7 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs, size_t 
 
   // Tensor core algorithm temporarily disabled, fails on V100
   /*
-  if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+  if constexpr (KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
 #if defined(KOKKOS_ENABLE_CUDA)
     if constexpr (std::is_same_v<execution_space, Kokkos::Cuda>) {
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)

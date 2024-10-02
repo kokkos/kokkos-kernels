@@ -103,7 +103,7 @@ struct AxpbyUnificationAttemptTraits {
   // - type names begin with upper case letters
   // ********************************************************************
  public:
-  static constexpr bool onDevice = KokkosKernels::Impl::kk_is_gpu_exec_space<tExecSpace>();
+  static constexpr bool onDevice = KokkosKernels::Impl::is_gpu_exec_space_v<tExecSpace>;
 
  private:
   static constexpr bool onHost = !onDevice;

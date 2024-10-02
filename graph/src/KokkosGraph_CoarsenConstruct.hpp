@@ -96,7 +96,7 @@ typename entries_t::non_const_value_type sort_low_degree_rows_crs_matrix(
     const typename entries_t::non_const_value_type degreeLimit) {
   using lno_t    = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-  bool useRadix  = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
+  bool useRadix  = !KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>;
   Impl::SortLowDegreeCrsMatrixFunctor<execution_space, rowmap_t, entries_t, values_t> funct(useRadix, rowmap, entries,
                                                                                             values, degreeLimit);
   lno_t numRows   = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;

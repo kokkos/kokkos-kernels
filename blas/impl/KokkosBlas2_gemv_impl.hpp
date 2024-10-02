@@ -623,7 +623,7 @@ void twoLevelGemv(const ExecutionSpace& space, const char trans[], typename AVie
 // depending on whether execution space is CPU or GPU. enable_if makes sure
 // unused kernels are not instantiated.
 template <class ExecutionSpace, class AViewType, class XViewType, class YViewType, class IndexType,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<!KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>>::type* = nullptr>
 void generalGemvImpl(const ExecutionSpace& space, const char trans[], typename AViewType::const_value_type& alpha,
                      const AViewType& A, const XViewType& x, typename YViewType::const_value_type& beta,
                      const YViewType& y) {
@@ -631,7 +631,7 @@ void generalGemvImpl(const ExecutionSpace& space, const char trans[], typename A
 }
 
 template <class ExecutionSpace, class AViewType, class XViewType, class YViewType, class IndexType,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>>::type* = nullptr>
 void generalGemvImpl(const ExecutionSpace& space, const char trans[], typename AViewType::const_value_type& alpha,
                      const AViewType& A, const XViewType& x, typename YViewType::const_value_type& beta,
                      const YViewType& y) {

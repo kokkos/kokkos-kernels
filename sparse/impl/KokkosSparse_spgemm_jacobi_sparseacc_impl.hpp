@@ -1088,7 +1088,7 @@ void KokkosSPGEMM<
                                                          dinv_view_t dinv,
                                                          KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space) {
   using pool_memory_space = KokkosKernels::Impl::UniformMemoryPool<MyTempMemorySpace, nnz_lno_t>;
-  constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
+  constexpr bool exec_gpu = KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>;
   if (KOKKOSKERNELS_VERBOSE) {
     std::cout << "\tSPARSE ACC MODE" << std::endl;
   }
