@@ -192,7 +192,7 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::inv
 
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, iend * jend), [&](const int &ij) {
         int i, j;
-        if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename MemberType::execution_space>()) {
+        if (KokkosKernels::Impl::is_gpu_exec_space_v<typename MemberType::execution_space>) {
           i = ij % iend;
           j = ij / iend;
         } else {

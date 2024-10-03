@@ -128,7 +128,7 @@ int BatchedGemmImpl(BatchedGemmHandleType *const handle, const ScalarType alpha,
   using layout_type        = typename CViewType::array_layout;
   using exec_space         = typename CViewType::execution_space;
   constexpr bool is_vector = KokkosBatched::is_vector<view_scalar_type>::value;
-  constexpr bool on_gpu    = KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>();
+  constexpr bool on_gpu    = KokkosKernels::Impl::is_gpu_exec_space_v<exec_space>;
   constexpr bool on_x86_64 = KokkosKernels::Impl::kk_is_x86_64_mem_space<typename exec_space::memory_space>();
   constexpr bool on_a64fx  = KokkosKernels::Impl::kk_is_a64fx_mem_space<typename exec_space::memory_space>();
   bool out_of_range        = false;

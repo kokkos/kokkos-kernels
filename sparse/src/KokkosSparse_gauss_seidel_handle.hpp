@@ -283,7 +283,7 @@ class PointGaussSeidelHandle : public GaussSeidelHandle<size_type_, lno_t_, scal
   nnz_lno_t get_block_size() const { return this->block_size; }
 
   void choose_default_algorithm() {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>)
       this->algorithm_type = GS_TEAM;
     else
       this->algorithm_type = GS_PERMUTED;
@@ -492,7 +492,7 @@ class ClusterGaussSeidelHandle : public GaussSeidelHandle<size_type_, lno_t_, sc
     return inverse_diagonal;
   }
 
-  bool use_teams() const { return KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>(); }
+  bool use_teams() const { return KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>; }
 
   ~ClusterGaussSeidelHandle() = default;
 

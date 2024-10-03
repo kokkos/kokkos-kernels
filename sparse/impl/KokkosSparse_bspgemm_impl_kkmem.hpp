@@ -1063,7 +1063,7 @@ void KokkosBSPGEMM<
 
   // choose parameters
   if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_LP == this->spgemm_algorithm) {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
       // then chose the best method and parameters.
       size_type average_row_nnz = 0;
       size_t average_row_flops  = 0;
@@ -1201,7 +1201,7 @@ void KokkosBSPGEMM<
   // END OF SHARED MEMORY SIZE CALCULATIONS
 
   // required memory for L2
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<typename HandleType::HandleExecSpace>) {
     if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM) {
       tmp_max_nnz = 1;
     } else if (algorithm_to_run == SPGEMM_KK_MEMORY_BIGSPREADTEAM) {
@@ -1251,7 +1251,7 @@ void KokkosBSPGEMM<
 
   KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
@@ -1282,7 +1282,7 @@ void KokkosBSPGEMM<
   }
   timer1.reset();
 
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>) {
     if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM) {
       if (thread_shmem_key_size <= 0) {
         std::cout << "KokkosBSPGEMM_numeric_hash SPGEMM_KK_MEMORY_SPREADTEAM: "

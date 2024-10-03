@@ -671,7 +671,7 @@ class SPGEMMHandle {
     // them in the handle
     suggested_vector_size_ = KokkosKernels::Impl::kk_get_suggested_vector_size(
         nr, nnz, KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>());
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
+    if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace>)
       suggested_team_size_ = max_allowed_team_size / suggested_vector_size_;
     else
       suggested_team_size = max_allowed_team_size;

@@ -19,7 +19,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Sort.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"     //for kk_exclusive_parallel_prefix_sum
-#include "KokkosKernels_ExecSpaceUtils.hpp"  //for kk_is_gpu_exec_space
+#include "KokkosKernels_ExecSpaceUtils.hpp"  //for is_gpu_exec_space
 #include <type_traits>
 
 namespace KokkosKernels {

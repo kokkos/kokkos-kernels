@@ -317,7 +317,7 @@ struct D2_MIS_RandomPriority {
     KokkosKernels::Impl::sequential_fill(colWorklist);
     worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
     auto execSpaceEnum       = KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
-    bool useTeams    = KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>() && (entries.extent(0) / numVerts >= 16);
+    bool useTeams    = KokkosKernels::Impl::is_gpu_exec_space_v<exec_space> && (entries.extent(0) / numVerts >= 16);
     int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(numVerts, entries.extent(0), execSpaceEnum);
     int round        = 0;
     lno_t rowWorkLen = numVerts;
@@ -396,7 +396,7 @@ struct D2_MIS_RandomPriority {
     Kokkos::deep_copy(rowStatus, ~(status_t(0)));
     worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
     auto execSpaceEnum       = KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
-    bool useTeams    = KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>() && (entries.extent(0) / numVerts >= 16);
+    bool useTeams    = KokkosKernels::Impl::is_gpu_exec_space_v<exec_space> && (entries.extent(0) / numVerts >= 16);
     int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(numVerts, entries.extent(0), execSpaceEnum);
     int round        = 0;
     int refreshColTeamSize = 0;

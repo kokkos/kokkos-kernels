@@ -652,7 +652,7 @@ bool KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
                                                                            bool compress_in_single_step) {
   // get the execution space type.
   KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space = this->handle->get_handle_exec_space();
-  constexpr bool exec_gpu                              = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
+  constexpr bool exec_gpu                              = KokkosKernels::Impl::is_gpu_exec_space_v<MyExecSpace>;
   // get the suggested vectorlane size based on the execution space, and average
   // number of nnzs per row.
   int suggested_vector_size = this->handle->get_suggested_vector_size(n, nnz);
@@ -723,7 +723,7 @@ bool KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
 
   timer1.reset();
   // bool compression_applied = false;
-  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
+  if (KokkosKernels::Impl::is_gpu_exec_space_v<typename HandleType::HandleExecSpace>) {
 #ifndef KOKKOSKERNELSMOREMEM
     size_type max_row_nnz = 0;
     KokkosKernels::Impl::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);
