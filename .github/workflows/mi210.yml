@@ -3,6 +3,9 @@ name: Reusable MI210 workflow
 on:
   workflow_call
 
+permissions:
+  contents: none
+
 jobs:
   PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT:
     name: PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT
