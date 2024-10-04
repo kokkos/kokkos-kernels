@@ -3,6 +3,9 @@ name: Reusable H100 workflow
 on:
   workflow_call
 
+permissions:
+  contents: none
+
 jobs:
   PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL:
     name: PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL

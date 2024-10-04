@@ -3,6 +3,9 @@ name: Reusable BDW workflow
 on:
   workflow_call
 
+permissions:
+  contents: none
+
 jobs:
 #  PR_BDW_GNU1020_OPENMP_LEFT_REL_NOETI:
 #    name: PR_BDW_GNU1020_OPENMP_LEFT_REL_NOETI
