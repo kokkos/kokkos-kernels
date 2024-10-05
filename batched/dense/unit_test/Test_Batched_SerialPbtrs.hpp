@@ -189,7 +189,7 @@ void impl_test_batched_pbtrs_analytical(const int N) {
   // Check x0 = x1
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize; i++) {
-      EXPECT_NEAR_KK(h_x0(ib, i), h_x_ref(ib, i), eps);
+      Test::EXPECT_NEAR_KK_REL(h_x0(ib, i), h_x_ref(ib, i), eps);
     }
   }
 }
@@ -256,7 +256,7 @@ void impl_test_batched_pbtrs(const int N, const int k, const int BlkSize) {
   // Check A * x0 = x_ref
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize; i++) {
-      EXPECT_NEAR_KK(h_y0(ib, i), h_x_ref(ib, i), eps);
+      Test::EXPECT_NEAR_KK_REL(h_y0(ib, i), h_x_ref(ib, i), eps);
     }
   }
 }
