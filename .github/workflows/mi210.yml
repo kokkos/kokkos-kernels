@@ -13,12 +13,12 @@ jobs:
     
     steps:
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           repository: kokkos/kokkos
           ref: ${{ github.base_ref }}
