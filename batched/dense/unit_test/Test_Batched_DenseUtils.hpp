@@ -309,6 +309,47 @@ void banded_to_full(InViewType& in, OutViewType& out, int k = 1) {
   Kokkos::deep_copy(out, h_out);
 }
 
+/// \brief Create an upper or lower triangular matrix from an input matrix:
+/// Setting elements above or below a specified diagonal to zero based on the type of triangle.
+/// The triangular type (upper or lower) is specified by the `UploType` template parameter.
+/// Elements above or below the specified diagonal (determined by `k`) are set to zero.
+///
+/// \tparam InViewType: Input type for the matrix, needs to be a 3D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
+/// \tparam UploType: Specifies the triangular part to be created:
+///                   - `KokkosBatched::Uplo::Upper` for upper triangular
+///                   - `KokkosBatched::Uplo::Lower` for lower triangular
+///
+/// \param in [in]: Input batched matrix
+/// \param out [out]: Output batched matrix, where the resulting triangular matrix is stored
+/// \param k [in]: The diagonal offset to be filled (default is 0).
+///                - For upper triangular: elements below the k-th diagonal are set to zero.
+///                - For lower triangular: elements above the k-th diagonal are set to zero.
+///
+template <typename InViewType, typename OutViewType, typename UploType>
+void create_triangular_matrix(InViewType& in, OutViewType& out, int k = 0) {
+  auto h_in   = Kokkos::create_mirror_view(in);
+  auto h_out  = Kokkos::create_mirror_view(out);
+  const int N = in.extent(0), BlkSize = in.extent(1);
+
+  Kokkos::deep_copy(h_in, in);
+  Kokkos::deep_copy(h_out, 0.0);
+  for (int i0 = 0; i0 < N; i0++) {
+    for (int i1 = 0; i1 < BlkSize; i1++) {
+      for (int i2 = 0; i2 < BlkSize; i2++) {
+        if constexpr (std::is_same_v<UploType, KokkosBatched::Uplo::Upper>) {
+          // Upper: Zero out elements below the k-th diagonal
+          h_out(i0, i1, i2) = i2 < i1 + k ? 0.0 : h_in(i0, i1, i2);
+        } else {
+          // Lower: Zero out elements above the k-th diagonal
+          h_out(i0, i1, i2) = i2 > i1 + k ? 0.0 : h_in(i0, i1, i2);
+        }
+      }
+    }
+  }
+  Kokkos::deep_copy(out, h_out);
+}
+
 }  // namespace KokkosBatched
 
 #endif  // TEST_BATCHED_DENSE_HELPER_HPP
