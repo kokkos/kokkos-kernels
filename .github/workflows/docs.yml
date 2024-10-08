@@ -13,21 +13,19 @@ jobs:
   docs-check:
     runs-on: [macos-latest]
     steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        with:
+          path: kokkos-kernels
+
       - name: Install Dependencies
         run: |
           brew install doxygen
           python3 -m venv .venv
           . .venv/bin/activate
-          pip install sphinx -v "sphinx==6.2.1"
-          pip install breathe
-          pip install sphinx-rtd-theme
+          pip install -r kokkos-kernels/.github/workflows/requirements_docs.txt
           sphinx-build --version
           doxygen --version
-
-      - name: checkout_kokkos_kernels
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
-        with:
-          path: kokkos-kernels
 
       - name: checkout_kokkos
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
