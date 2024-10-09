@@ -78,3 +78,4 @@ ENDIF()
 # In this case, MKL can always be used as the host BLAS/LAPACK implementation
 # (whether MKL_INT is 32- or 64-bit).
 set (MKL_PROVIDES_BLAS_LAPACK ON INTERNAL)
+
