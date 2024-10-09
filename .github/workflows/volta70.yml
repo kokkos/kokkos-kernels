@@ -3,6 +3,9 @@ name: Reusable VOLTA70 workflow
 on:
   workflow_call
 
+permissions:
+  contents: none
+
 jobs:
   PR_VOLTA70_CUDA1122_CUDA_LEFT_RIGHT_REL:
     name: PR_VOLTA70_CUDA1122_CUDA_LEFT_RIGHT_REL
