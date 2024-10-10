@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_IMPL_HPP__
-#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_IMPL_HPP__
+#ifndef KOKKOSBATCHED_HOSTLEVEL_GEMM_IMPL_HPP
+#define KOKKOSBATCHED_HOSTLEVEL_GEMM_IMPL_HPP
 #include <Kokkos_Core.hpp>
 #include <KokkosBatched_Util.hpp>  // Trans, BatchLayout
 #include <KokkosKernels_ExecSpaceUtils.hpp>
@@ -277,4 +277,4 @@ int BatchedGemmImpl(BatchedGemmHandleType *const handle, const ScalarType alpha,
 }
 }  // namespace Impl
 }  // namespace KokkosBatched
-#endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_IMPL_HPP__
+#endif  // KOKKOSBATCHED_HOSTLEVEL_GEMM_IMPL_HPP
