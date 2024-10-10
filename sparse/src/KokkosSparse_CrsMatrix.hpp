@@ -21,8 +21,8 @@
 /// local (no MPI) sparse matrix stored in compressed row sparse
 /// ("Crs") format.
 
-#ifndef KOKKOS_SPARSE_CRSMATRIX_HPP_
-#define KOKKOS_SPARSE_CRSMATRIX_HPP_
+#ifndef KOKKOSSPARSE_CRSMATRIX_HPP_
+#define KOKKOSSPARSE_CRSMATRIX_HPP_
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
@@ -787,4 +787,4 @@ template <typename T>
 inline constexpr bool is_crs_matrix_v = is_crs_matrix<T>::value;
 
 }  // namespace KokkosSparse
-#endif
+#endif  // KOKKOSSPARSE_CRSMATRIX_HPP_

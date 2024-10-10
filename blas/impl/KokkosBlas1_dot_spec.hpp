@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOS_BLAS1_IMPL_DOT_SPEC_HPP_
-#define KOKKOS_BLAS1_IMPL_DOT_SPEC_HPP_
+#ifndef KOKKOSBLAS1_IMPL_DOT_SPEC_HPP_
+#define KOKKOSBLAS1_IMPL_DOT_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -512,4 +512,4 @@ struct Dot<execution_space, RV, XV, YV, X_Rank, Y_Rank, false, KOKKOSKERNELS_IMP
 
 #include <KokkosBlas1_dot_tpl_spec_decl.hpp>
 
-#endif  // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_
+#endif  // KOKKOSBLAS1_IMPL_DOT_SPEC_HPP_

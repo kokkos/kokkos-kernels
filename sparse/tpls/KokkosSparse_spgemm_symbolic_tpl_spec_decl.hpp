@@ -409,11 +409,11 @@ void spgemm_symbolic_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_
   const auto beta  = Kokkos::ArithTraits<scalar_type>::zero();
   rocsparse_pointer_mode oldPtrMode;
 
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_get_pointer_mode(h->rocsparseHandle, &oldPtrMode));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_pointer_mode(h->rocsparseHandle, rocsparse_pointer_mode_host));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_get_pointer_mode(h->rocsparseHandle, &oldPtrMode));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_pointer_mode(h->rocsparseHandle, rocsparse_pointer_mode_host));
 
   // C = alpha * OpA(A) * OpB(B) + beta * D
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_Xcsrgemm_buffer_size(
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_Xcsrgemm_buffer_size(
       h->rocsparseHandle, h->opA, h->opB, m, k, n, reinterpret_cast<const rocsparse_scalar_type *>(&alpha), h->descr_A,
       nnz_A, rowptrA.data(), colidxA.data(), h->descr_B, nnz_B, rowptrB.data(), colidxB.data(),
       reinterpret_cast<const rocsparse_scalar_type *>(&beta), h->descr_D, 0, nullptr, nullptr, h->info_C,
@@ -422,16 +422,16 @@ void spgemm_symbolic_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_
   KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&h->buffer, h->bufferSize));
 
   rocsparse_int nnz_C = 0;
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_csrgemm_nnz(h->rocsparseHandle, h->opA, h->opB, m, k, n, h->descr_A, nnz_A,
-                                                        rowptrA.data(), colidxA.data(), h->descr_B, nnz_B,
-                                                        rowptrB.data(), colidxB.data(), h->descr_D, 0, nullptr, nullptr,
-                                                        h->descr_C, rowptrC.data(), &nnz_C, h->info_C, h->buffer));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
+      rocsparse_csrgemm_nnz(h->rocsparseHandle, h->opA, h->opB, m, k, n, h->descr_A, nnz_A, rowptrA.data(),
+                            colidxA.data(), h->descr_B, nnz_B, rowptrB.data(), colidxB.data(), h->descr_D, 0, nullptr,
+                            nullptr, h->descr_C, rowptrC.data(), &nnz_C, h->info_C, h->buffer));
   // If C has zero rows, its rowptrs are not populated
   if (m == 0) {
     KOKKOS_IMPL_HIP_SAFE_CALL(hipMemset(rowptrC.data(), 0, rowptrC.extent(0) * sizeof(index_type)));
   }
   // Restore previous pointer mode
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_pointer_mode(h->rocsparseHandle, oldPtrMode));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_pointer_mode(h->rocsparseHandle, oldPtrMode));
 
   handle->set_c_nnz(nnz_C);
   handle->set_call_symbolic();
