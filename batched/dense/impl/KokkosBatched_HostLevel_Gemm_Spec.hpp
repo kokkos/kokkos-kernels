@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP__
-#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP__
+#ifndef KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP
+#define KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP
 
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
@@ -307,4 +307,4 @@ struct BatchedGemmSpec {
 #include <generated_specializations_hpp/KokkosBatched_Gemm_t_nt_blr_eti_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosBatched_Gemm_t_t_blr_eti_spec_avail.hpp>
 
-#endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP__
+#endif  // KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP
