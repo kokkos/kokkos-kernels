@@ -21,8 +21,8 @@
 /// local (no MPI) sparse matrix stored in compressed column sparse
 /// ("Ccs") format.
 
-#ifndef KOKKOS_SPARSE_CCSMATRIX_HPP_
-#define KOKKOS_SPARSE_CCSMATRIX_HPP_
+#ifndef KOKKOSSPARSE_CCSMATRIX_HPP_
+#define KOKKOSSPARSE_CCSMATRIX_HPP_
 
 #include "Kokkos_Core.hpp"
 #include <sstream>
@@ -236,4 +236,4 @@ template <typename... P>
 struct is_ccs_matrix<const CcsMatrix<P...>> : public std::true_type {};
 
 }  // namespace KokkosSparse
-#endif
+#endif  // KOKKOSSPARSE_CCSMATRIX_HPP_

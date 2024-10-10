@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_BLAS_UTIL_HPP
-#define KOKKOS_BLAS_UTIL_HPP
+#ifndef KOKKOSBLAS_UTIL_HPP
+#define KOKKOSBLAS_UTIL_HPP
 
 #include "Kokkos_ArithTraits.hpp"
 
@@ -176,4 +176,4 @@ struct TakeSqrtFunctor {
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif
+#endif  // KOKKOSBLAS_UTIL_HPP
