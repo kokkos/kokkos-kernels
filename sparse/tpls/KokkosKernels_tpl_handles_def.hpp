@@ -56,14 +56,16 @@ std::unique_ptr<CusparseSingleton>& CusparseSingleton::get_instance() {
 namespace KokkosKernels {
 namespace Impl {
 
-RocsparseSingleton::RocsparseSingleton() { KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_handle(&rocsparseHandle)); }
+RocsparseSingleton::RocsparseSingleton() {
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_handle(&rocsparseHandle));
+}
 
 RocsparseSingleton& RocsparseSingleton::singleton() {
   std::unique_ptr<RocsparseSingleton>& instance = get_instance();
   if (!instance) {
     instance = std::make_unique<RocsparseSingleton>();
     Kokkos::push_finalize_hook([&]() {
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_handle(instance->rocsparseHandle));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_handle(instance->rocsparseHandle));
       instance.reset();
     });
   }

@@ -21,8 +21,8 @@
 /// This implements a local (no MPI) sparse matrix stored in block-by-block
 /// compressed row sparse format.
 
-#ifndef KOKKOS_SPARSE_BSRMATRIX_HPP_
-#define KOKKOS_SPARSE_BSRMATRIX_HPP_
+#ifndef KOKKOSSPARSE_BSRMATRIX_HPP_
+#define KOKKOSSPARSE_BSRMATRIX_HPP_
 
 #include <set>
 #include <sstream>
@@ -1005,4 +1005,4 @@ inline constexpr bool is_bsr_matrix_v = is_bsr_matrix<T>::value;
 
 }  // namespace Experimental
 }  // namespace KokkosSparse
-#endif
+#endif  // KOKKOSSPARSE_BSRMATRIX_HPP_

@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_INNERPRODUCTSPACETRAITS_HPP
-#define KOKKOS_INNERPRODUCTSPACETRAITS_HPP
+#ifndef KOKKOSKERNELS_KOKKOS_INNERPRODUCTSPACETRAITS_HPP
+#define KOKKOSKERNELS_KOKKOS_INNERPRODUCTSPACETRAITS_HPP
 
 /// \file Kokkos_InnerProductSpaceTraits.hpp
 /// \brief Declaration and definition of
@@ -272,4 +272,4 @@ struct CastPossiblyComplex<Kokkos::complex<OutReal>, Kokkos::complex<InReal>> {
 }  // namespace Details
 }  // namespace Kokkos
 
-#endif  // KOKKOS_INNERPRODUCTSPACETRAITS_HPP
+#endif  // KOKKOSKERNELS_KOKKOS_INNERPRODUCTSPACETRAITS_HPP

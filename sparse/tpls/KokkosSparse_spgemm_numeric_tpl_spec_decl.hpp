@@ -301,18 +301,18 @@ void spgemm_numeric_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_l
   auto nnz_B = colidxB.extent(0);
   auto nnz_C = colidxC.extent(0);
 
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_get_pointer_mode(h->rocsparseHandle, &oldPtrMode));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_pointer_mode(h->rocsparseHandle, rocsparse_pointer_mode_host));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_get_pointer_mode(h->rocsparseHandle, &oldPtrMode));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_pointer_mode(h->rocsparseHandle, rocsparse_pointer_mode_host));
 
   if (!handle->are_entries_computed()) {
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_csrgemm_symbolic(
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_csrgemm_symbolic(
         h->rocsparseHandle, h->opA, h->opB, m, k, n, h->descr_A, nnz_A, rowptrA.data(), colidxA.data(), h->descr_B,
         nnz_B, rowptrB.data(), colidxB.data(), h->descr_D, 0, nullptr, nullptr, h->descr_C, nnz_C, rowptrC.data(),
         colidxC.data(), h->info_C, h->buffer));
     handle->set_computed_entries();
   }
 
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_Xcsrgemm_numeric(
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_Xcsrgemm_numeric(
       h->rocsparseHandle, h->opA, h->opB, m, k, n, reinterpret_cast<const rocsparse_scalar_type *>(&alpha), h->descr_A,
       nnz_A, reinterpret_cast<const rocsparse_scalar_type *>(valuesA.data()), rowptrA.data(), colidxA.data(),
       h->descr_B, nnz_B, reinterpret_cast<const rocsparse_scalar_type *>(valuesB.data()), rowptrB.data(),
@@ -320,7 +320,7 @@ void spgemm_numeric_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_l
       h->descr_C, nnz_C, reinterpret_cast<rocsparse_scalar_type *>(valuesC.data()), rowptrC.data(), colidxC.data(),
       h->info_C, h->buffer));
   // Restore old pointer mode
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_pointer_mode(h->rocsparseHandle, oldPtrMode));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_pointer_mode(h->rocsparseHandle, oldPtrMode));
   handle->set_call_numeric();
 }
 

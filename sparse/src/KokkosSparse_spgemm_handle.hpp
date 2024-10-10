@@ -135,11 +135,11 @@ class SPGEMMHandle {
 
       bufferSize = 0;
       buffer     = nullptr;
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_A));
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_B));
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_C));
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_D));
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_info(&info_C));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_A));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_B));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_C));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_D));
+      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_info(&info_C));
       rocsparseHandle = kkControls.getRocsparseHandle();
     }
 

@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOS_BLAS1_AXPBY_SPEC_HPP_
-#define KOKKOS_BLAS1_AXPBY_SPEC_HPP_
+#ifndef KOKKOSBLAS1_AXPBY_SPEC_HPP_
+#define KOKKOSBLAS1_AXPBY_SPEC_HPP_
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
@@ -584,4 +584,4 @@ struct Axpby<execution_space, typename XV::non_const_value_type, XV, typename YV
 
 #include <KokkosBlas1_axpby_tpl_spec_decl.hpp>
 
-#endif  // KOKKOS_BLAS1_MV_IMPL_AXPBY_HPP_
+#endif  // KOKKOSBLAS1_AXPBY_SPEC_HPP_
