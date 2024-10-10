@@ -561,7 +561,7 @@ class RandCooMat {
 /// \tparam LayoutType
 /// \tparam Device
 template <class ScalarType, class LayoutType, class Device, typename Ordinal = int64_t,
-          typename Size = default_size_type>
+          typename Size = KokkosKernels::default_size_type>
 class RandCsMatrix {
  public:
   using value_type   = ScalarType;
