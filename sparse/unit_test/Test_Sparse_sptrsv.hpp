@@ -180,10 +180,11 @@ struct SptrsvTest {
 
     for (auto alg : algs) {
       // FIXME CUDA+Clang+Complex seems to expose a compiler bug
-#ifdef __clang__
+#if defined(__clang__) && defined(KOKKOS_ENABLE_CUDA)
       if (alg == SPTRSVAlgorithm::SEQLVLSCHD_TP1 &&
           Kokkos::ArithTraits<scalar_t>::isComplex &&
-          std::is_same_v<memory_space, Kokkos::CudaSpace>)
+          std::is_same_v<execution_space, Kokkos::Cuda> &&
+          block_size != 0)
       {
         continue;
       }

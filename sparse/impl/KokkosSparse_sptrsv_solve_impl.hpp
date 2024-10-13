@@ -369,7 +369,8 @@ struct SptrsvWrap {
     KOKKOS_INLINE_FUNCTION
     static void multiply_subtract(const CBlock &A, const CVector &b, Vector &c) {
       // Use gemv. alpha is hardcoded to -1, beta hardcoded to 1
-      KokkosBlas::SerialGemv<KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Blocked>::invoke(-1.0, A, b, 1.0, c);
+      KokkosBlas::SerialGemv<KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Blocked>::invoke(-1.0, A, b, 1.0,
+                                                                                                      c);
     }
 
     KOKKOS_INLINE_FUNCTION
