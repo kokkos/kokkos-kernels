@@ -967,7 +967,7 @@ class BsrMatrix {
             case BsrMatrix::valueOperation::ASSIGN: {
               for (ordinal_type lcol = 0; lcol < block_size; ++lcol) {
                 if (force_atomic) {
-                  Kokkos::atomic_assign(&(local_row_values[lcol]), vals[offset_into_vals + lrow * block_size + lcol]);
+                  Kokkos::atomic_store(&(local_row_values[lcol]), vals[offset_into_vals + lrow * block_size + lcol]);
                 } else {
                   local_row_values[lcol] = vals[offset_into_vals + lrow * block_size + lcol];
                 }
