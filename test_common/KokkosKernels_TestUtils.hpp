@@ -24,7 +24,7 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosBatched_Vector.hpp"
 // Make this include-able from all subdirectories
-#include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
+#include <gtest/gtest.h>  //for EXPECT_**
 
 // Simplify ETI macros
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
