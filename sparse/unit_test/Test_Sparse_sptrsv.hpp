@@ -183,6 +183,8 @@ struct SptrsvTest {
 #if defined(__clang__) && defined(KOKKOS_ENABLE_CUDA)
       if (alg == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && Kokkos::ArithTraits<scalar_t>::isComplex &&
           std::is_same_v<execution_space, Kokkos::Cuda> && block_size != 0) {
+        std::cerr << "Skipping TP1 alg test for blocked mtx. There's a compiler bug "
+                  << "for clang+CUDA+complex" << std::endl;
         continue;
       }
 #endif

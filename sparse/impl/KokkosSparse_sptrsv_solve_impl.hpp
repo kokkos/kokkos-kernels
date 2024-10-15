@@ -324,9 +324,9 @@ struct SptrsvWrap {
       team.team_barrier();
       KokkosBatched::TeamLU<member_type, KokkosBatched::Algo::LU::Blocked>::invoke(team, LU);
 
-      // A = LU
-      // A^-1 = U^-1 * L^-1
-      // b = (b * U^-1) * L^-1, so do U trsv first
+      // Ax = LUx = Lz = b, we use the change of variable z = U*x
+      // z = L^-1 * b, first we solve for z, storing the result back into b
+      // x = U^-1 * z, second we solve for x, again storing the result back into b
       team.team_barrier();
       KokkosBatched::TeamTrsv<member_type, KokkosBatched::Uplo::Lower, KokkosBatched::Trans::NoTranspose,
                               KokkosBatched::Diag::Unit, KokkosBatched::Algo::Trsv::Blocked>::invoke(team, 1.0, LU, b);
@@ -349,9 +349,9 @@ struct SptrsvWrap {
       assign(LU, A);
       KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Blocked>::invoke(LU);
 
-      // A = LU
-      // A^-1 = U^-1 * L^-1
-      // b = (b * U^-1) * L^-1, so do U trsv first
+      // Ax = LUx = Lz = b, we use the change of variable z = U*x
+      // z = L^-1 * b, first we solve for z, storing the result back into b
+      // x = U^-1 * z, second we solve for x, again storing the result back into b
       KokkosBatched::SerialTrsv<KokkosBatched::Uplo::Lower, KokkosBatched::Trans::NoTranspose,
                                 KokkosBatched::Diag::Unit, KokkosBatched::Algo::Trsv::Blocked>::invoke(1.0, LU, b);
 
