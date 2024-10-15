@@ -14,6 +14,8 @@
 //
 //@HEADER
 
+#include <iostream>
+
 #include "KokkosBlas2_gemv.hpp"
 #include <Kokkos_Random.hpp>
 #include "KokkosKernels_TestStringUtils.hpp"

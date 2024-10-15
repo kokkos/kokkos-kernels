@@ -406,19 +406,44 @@ ELSE()
     MESSAGE("The install test has been enabled, you will need to peform: make install before running the tests otherwise install_test will fail")
   ENDIF ()
   IF(KokkosKernels_ENABLE_TESTS OR KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
-    SET(GTEST_SOURCE_DIR ${KOKKOSKERNELS_TOP_SOURCE_DIR}/tpls/gtest)
+    FIND_PACKAGE(GTest 1.15.2)
+    if (GTest_FOUND)
+    else()
+      MESSAGE(STATUS "GTest compatible with 1.15.2 not found. Retrieving from github...")
+      INCLUDE(FetchContent)
+      SET(GTEST_VERSION 1.15.2)
 
-    KOKKOSKERNELS_ADD_TEST_LIBRARY(
-      kokkoskernels_gtest
-      HEADERS ${GTEST_SOURCE_DIR}/gtest/gtest.h
-      SOURCES ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc
-      )
-    # Disables pthreads, this is a problem for serial builds in Trilinos & Sierra if it's enabled.
-    TARGET_COMPILE_DEFINITIONS(kokkoskernels_gtest PUBLIC "-DGTEST_HAS_PTHREAD=0")
-    TARGET_INCLUDE_DIRECTORIES(kokkoskernels_gtest PUBLIC $<BUILD_INTERFACE:${GTEST_SOURCE_DIR}>)
+      # CMake 3.24 introduced DOWNLOAD_EXTRACT_TIMESTAMP, which controls whether
+      # extracting this file archive sets the file times to archive time (TRUE),
+      # or to extraction time (FALSE).
+      # In CMake 3.24+, the default is FALSE
+      # Prior, it did not exist, and was effectively TRUE
+      # Here, we okay the new default to silence CMP0135 warning
+      SET(gtest_build_tests OFF CACHE BOOL "" FORCE)
+      SET(gtest_build_samples OFF CACHE BOOL "" FORCE)
+      SET(gtest_disable_pthreads ON CACHE BOOL "" FORCE)
+      SET(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+      # For Windows: Prevent overriding the parent project's compiler/linker settings
+      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+      IF (${CMAKE_VERSION} VERSION_LESS "3.24.0")
+          FetchContent_Declare(
+              googletest
+              URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.tar.gz
+              URL_HASH MD5=7e11f6cfcf6498324ac82d567dcb891e
+          )
+      ELSE()
+          FetchContent_Declare(
+              googletest
+              URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.tar.gz
+              URL_HASH MD5=7e11f6cfcf6498324ac82d567dcb891e
+              DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+          )
+      ENDIF()
+      FetchContent_MakeAvailable(googletest)
 
-    #Gtest minimally requires C++11
-    TARGET_COMPILE_FEATURES(kokkoskernels_gtest PUBLIC cxx_std_11)
+      #Gtest 1.15.2 requires c++14
+      TARGET_COMPILE_FEATURES(gtest_main PUBLIC cxx_std_14)
+    endif()
   ENDIF()
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(common/unit_test)
   IF (KokkosKernels_ENABLE_COMPONENT_BATCHED)
