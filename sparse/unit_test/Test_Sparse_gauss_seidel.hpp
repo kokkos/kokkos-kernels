@@ -14,6 +14,13 @@
 //
 //@HEADER
 
+#include <cstdlib>
+#include <iostream>
+#include <complex>
+#include <map>
+#include <random>
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
@@ -25,17 +32,13 @@
 #include <KokkosBlas1_dot.hpp>
 #include <KokkosBlas1_axpby.hpp>
 #include <KokkosBlas1_nrm2.hpp>
-#include <cstdlib>
-#include <iostream>
-#include <complex>
-#include <map>
-#include <random>
-#include <vector>
+
 #include "KokkosSparse_gauss_seidel.hpp"
 #include "KokkosSparse_partitioning_impl.hpp"
 #include "KokkosSparse_sor_sequential_impl.hpp"
 #include "KokkosSparse_SortCrs.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestMatrixUtils.hpp"
 #include "Test_Sparse_Utils.hpp"
 
 // #ifndef kokkos_complex_double

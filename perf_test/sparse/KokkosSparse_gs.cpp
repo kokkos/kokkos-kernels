@@ -14,10 +14,17 @@
 //
 //@HEADER
 
+#include <iostream>
+#include <random>
+#include <vector>
+#include <string>
+#include <unordered_set>
+
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
+
 #include <KokkosKernels_Handle.hpp>
-#include <KokkosKernels_TestUtils.hpp>
+#include <KokkosKernels_TestStringUtils.hpp>
 #include <KokkosSparse_gauss_seidel.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosKernels_IOUtils.hpp>
@@ -25,11 +32,7 @@
 #include <KokkosKernels_config.h>
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosSparse_IOUtils.hpp"
-#include <iostream>
-#include <random>
-#include <vector>
-#include <string>
-#include <unordered_set>
+#include "KokkosKernels_TestMatrixUtils.hpp"
 
 using std::cout;
 using std::string;
