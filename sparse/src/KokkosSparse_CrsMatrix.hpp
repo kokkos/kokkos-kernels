@@ -611,7 +611,7 @@ class CrsMatrix {
       const ordinal_type offset = findRelOffset(&(row_view.colidx(0)), length, cols[i], hint, is_sorted);
       if (offset != length) {
         if (force_atomic) {
-          Kokkos::atomic_assign(&(row_view.value(offset)), vals[i]);
+          Kokkos::atomic_store(&(row_view.value(offset)), vals[i]);
         } else {
           row_view.value(offset) = vals[i];
         }
