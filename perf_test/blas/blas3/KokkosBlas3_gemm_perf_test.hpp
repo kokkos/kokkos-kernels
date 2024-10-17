@@ -28,7 +28,6 @@
 #include "KokkosBatched_HostLevel_Gemm.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Util.hpp"
-// #include "gtest/gtest.h"  // EXPECT_NEAR
 #include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_TestEpsilon.hpp"
 #include "KokkosKernels_TestVanilla.hpp"
