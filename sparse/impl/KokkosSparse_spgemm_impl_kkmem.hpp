@@ -694,7 +694,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
                 break;
               } else if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)) {
                 Kokkos::atomic_add(vals + trial, my_b_val);
-                Kokkos::atomic_increment(used_hash_sizes);
+                Kokkos::atomic_inc(used_hash_sizes);
                 if (used_hash_sizes[0] > max_first_level_hash_size) insert_is_on = false;
                 fail = 0;
                 break;
@@ -716,7 +716,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
                   break;
                 } else if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)) {
                   Kokkos::atomic_add(vals + trial, my_b_val);
-                  Kokkos::atomic_increment(used_hash_sizes);
+                  Kokkos::atomic_inc(used_hash_sizes);
                   if (used_hash_sizes[0] > max_first_level_hash_size) insert_is_on = false;
                   fail = 0;
                   break;
@@ -739,7 +739,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
                 } else if (global_acc_row_keys[trial] == init_value) {
                   if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial, init_value, my_b_col)) {
                     Kokkos::atomic_add(global_acc_row_vals + trial, my_b_val);
-                    // Kokkos::atomic_increment(used_hash_sizes + 1);
+                    // Kokkos::atomic_inc(used_hash_sizes + 1);
                     // c_row_vals[trial] = my_b_val;
                     fail = 0;
                     break;
@@ -757,7 +757,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
                     break;
                   } else if (global_acc_row_keys[trial] == init_value) {
                     if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial, init_value, my_b_col)) {
-                      // Kokkos::atomic_increment(used_hash_sizes + 1);
+                      // Kokkos::atomic_inc(used_hash_sizes + 1);
                       Kokkos::atomic_add(global_acc_row_vals + trial, my_b_val);
                       // c_row_vals[trial] = my_b_val;
                       break;

@@ -125,7 +125,7 @@ struct BalloonClustering {
         nnz_lno_t cluster = state.rand(numClusters);
         randPool.free_state(state);
         vertClusters(i) = cluster;
-        Kokkos::atomic_increment(&clusterCounts(cluster));
+        Kokkos::atomic_inc(&clusterCounts(cluster));
         distances(i) = numRows;
         pressure(i)  = 0.1;
       }
@@ -175,8 +175,8 @@ struct BalloonClustering {
         // this cluster will take over weakNei
         if (vertLocks.set(i)) {
           if (vertLocks.set(weakNei)) {
-            Kokkos::atomic_increment(&clusterCounts(cluster));
-            if (weakNeiCluster != numClusters) Kokkos::atomic_decrement(&clusterCounts(weakNeiCluster));
+            Kokkos::atomic_inc(&clusterCounts(cluster));
+            if (weakNeiCluster != numClusters) Kokkos::atomic_dec(&clusterCounts(weakNeiCluster));
             vertClusters(weakNei) = cluster;
             pressure(i) -= pressure(weakNei);
             pressure(weakNei)  = pressure(i);

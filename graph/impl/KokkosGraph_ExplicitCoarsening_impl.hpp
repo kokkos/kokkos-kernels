@@ -33,7 +33,7 @@ struct ExplicitGraphCoarsening {
   struct ClusterSizeFunctor {
     ClusterSizeFunctor(const ordinal_view_t& counts_, const labels_t& vertClusters_)
         : counts(counts_), vertClusters(vertClusters_) {}
-    KOKKOS_INLINE_FUNCTION void operator()(const lno_t i) const { Kokkos::atomic_increment(&counts(vertClusters(i))); }
+    KOKKOS_INLINE_FUNCTION void operator()(const lno_t i) const { Kokkos::atomic_inc(&counts(vertClusters(i))); }
     ordinal_view_t counts;
     labels_t vertClusters;
   };
