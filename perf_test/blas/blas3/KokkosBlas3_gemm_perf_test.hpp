@@ -25,11 +25,11 @@
 
 #include <KokkosBlas3_gemm.hpp>
 
+#include "Kokkos_ArithTraits.hpp"
 #include "KokkosBatched_HostLevel_Gemm.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_TestStringUtils.hpp"
-#include "KokkosKernels_TestEpsilon.hpp"
 #include "KokkosKernels_TestVanilla.hpp"
 
 #include <chrono>
@@ -1363,7 +1363,8 @@ static inline bool __gemm_print_compare_failure(ViewType h_expected, ViewType h_
  */
 template <class ScalarType, class LayoutType>
 static inline bool __gemm_do_compare(view_type_3d expected, view_type_3d actual) {
-  double epsilon = Test::epsilon<ScalarType>::value * 1e3;
+  double epsilon = Kokkos::ArithTraits<ScalarType>::eps() * 1e3;
+
   STATUS;
 
   typename view_type_3d::HostMirror h_expected = Kokkos::create_mirror_view(expected);
