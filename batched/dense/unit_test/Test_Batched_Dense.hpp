@@ -30,6 +30,7 @@
 #include "Test_Batched_SerialLU.hpp"
 #include "Test_Batched_SerialLU_Real.hpp"
 #include "Test_Batched_SerialLU_Complex.hpp"
+#include "Test_Batched_SerialQR.hpp"
 #include "Test_Batched_SerialSolveLU.hpp"
 #include "Test_Batched_SerialSolveLU_Real.hpp"
 #include "Test_Batched_SerialSolveLU_Complex.hpp"
