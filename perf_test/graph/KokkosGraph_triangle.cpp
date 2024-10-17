@@ -230,9 +230,9 @@ void run_experiment(int argc, char **argv, perf_test::CommonInputParams) {
   using namespace KokkosSparse;
   using mem_space = typename exec_space::memory_space;
   using device_t  = Kokkos::Device<exec_space, mem_space>;
-  using lno_t     = default_lno_t;
-  using size_type = default_size_type;
-  using graph_t   = Kokkos::StaticCrsGraph<lno_t, default_layout, device_t, void, size_type>;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using size_type = KokkosKernels::default_size_type;
+  using graph_t   = Kokkos::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device_t, void, size_type>;
   using KernelHandle =
       KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, lno_t, exec_space, mem_space, mem_space>;
 

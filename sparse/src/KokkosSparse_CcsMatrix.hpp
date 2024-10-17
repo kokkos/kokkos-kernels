@@ -142,7 +142,7 @@ class CcsMatrix {
   //! Type of each (column) index in the matrix.
   typedef OrdinalType ordinal_type;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCcsGraph<ordinal_type, default_layout, device_type, memory_traits, size_type>
+  typedef Kokkos::StaticCcsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
       staticccsgraph_type;
   //! Type of the "column map" (which contains the offset for each column's
   //! data).
