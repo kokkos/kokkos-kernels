@@ -24,7 +24,7 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosBatched_Vector.hpp"
 // Make this include-able from all subdirectories
-#include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
+#include <gtest/gtest.h>  //for EXPECT_**
 
 // Simplify ETI macros
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
@@ -485,17 +485,7 @@ std::string value_type_name<Kokkos::complex<double>>() {
   return "::ComplexDouble";
 }
 
-int string_compare_no_case(const char* str1, const char* str2) {
-  std::string str1_s(str1);
-  std::string str2_s(str2);
-  for (size_t i = 0; i < str1_s.size(); i++) str1_s[i] = std::tolower(str1_s[i]);
-  for (size_t i = 0; i < str2_s.size(); i++) str2_s[i] = std::tolower(str2_s[i]);
-  return strcmp(str1_s.c_str(), str2_s.c_str());
-}
 
-int string_compare_no_case(const std::string& str1, const std::string& str2) {
-  return string_compare_no_case(str1.c_str(), str2.c_str());
-}
 /// /brief Coo matrix class for testing purposes.
 /// \tparam ScalarType
 /// \tparam LayoutType
