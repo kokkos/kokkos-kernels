@@ -523,7 +523,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
             Kokkos::atomic_fetch_or(result_vals + new_hash, n_set);
             break;
           } else if (result_keys[new_hash] == r) {
-            if (Kokkos::atomic_compare_exchange_strong(result_keys + new_hash, r, n_set_index)) {
+            if (r == Kokkos::atomic_compare_exchange(result_keys + new_hash, r, n_set_index)) {
               // MD 4/4/18: on these architectures there can be divergence in
               // the warp. once the keys are set, some other vector lane might
               // be doing a fetch_or before we set with n_set. Therefore it is

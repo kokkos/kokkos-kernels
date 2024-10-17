@@ -113,7 +113,7 @@ struct BalloonClustering {
       auto state = randPool.get_state();
       do {
         root = state.rand(numRows);
-      } while (!Kokkos::atomic_compare_exchange_strong(&vertClusters(root), numClusters, i));
+      } while (numClusters != Kokkos::atomic_compare_exchange(&vertClusters(root), numClusters, i));
       randPool.free_state(state);
       distances(root) = 0;
       pressure(root)  = 1;
