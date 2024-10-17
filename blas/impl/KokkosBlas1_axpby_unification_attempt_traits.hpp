@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOS_BLAS1_AXPBY_UNIFICATION_ATTEMPT_TRAITS_HPP_
-#define KOKKOS_BLAS1_AXPBY_UNIFICATION_ATTEMPT_TRAITS_HPP_
+#ifndef KOKKOSBLAS1_AXPBY_UNIFICATION_ATTEMPT_TRAITS_HPP_
+#define KOKKOSBLAS1_AXPBY_UNIFICATION_ATTEMPT_TRAITS_HPP_
 
 #include <KokkosKernels_helpers.hpp>
 #include <KokkosKernels_ExecSpaceUtils.hpp>
@@ -816,4 +816,4 @@ static void populateRank1Stride1ViewWithScalarOrNonStrideView(T_in const& coeff_
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif  // KOKKOS_BLAS1_AXPBY_UNIFICATION_ATTEMPT_TRAITS_HPP_
+#endif  // KOKKOSBLAS1_AXPBY_UNIFICATION_ATTEMPT_TRAITS_HPP_
