@@ -963,7 +963,7 @@ struct D2_MIS_Aggregation {
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const {
       lno_t agg = labels_(i);
       if (agg != -1) {
-        Kokkos::atomic_increment(&aggSizes_(agg));
+        Kokkos::atomic_inc(&aggSizes_(agg));
         // compute connectivity of i
         size_type rowBegin = rowmap_(i);
         size_type rowEnd   = rowmap_(i + 1);
