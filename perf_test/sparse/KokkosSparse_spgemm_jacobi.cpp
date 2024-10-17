@@ -18,7 +18,7 @@
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_run_spgemm_jacobi.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 void print_options() {
   std::cerr << "Options\n" << std::endl;

@@ -36,7 +36,7 @@
 #include <KokkosKernels_TestParameters.hpp>
 #include <KokkosGraph_Distance2Color.hpp>
 #include "KokkosKernels_default_types.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosSparse_IOUtils.hpp"
 
 using namespace KokkosGraph;

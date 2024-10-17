@@ -14,12 +14,14 @@
 //
 //@HEADER
 
+#include <iostream>
+
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 
 // For RPS implementation
 #include "KokkosBlas_dot_perf_test.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 struct Params {
   int use_cuda    = 0;

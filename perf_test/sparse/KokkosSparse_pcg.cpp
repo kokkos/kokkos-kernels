@@ -20,7 +20,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_default_types.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosSparse_IOUtils.hpp"
 #include <iostream>
 
