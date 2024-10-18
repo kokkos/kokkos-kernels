@@ -380,7 +380,7 @@ struct TrsvWrap {
     for (lno_t c = numCols; c-- > 0;) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
-      for (offset_type k = end - 1; k >= beg; --k) {
+      for (offset_type k = end; k-- > beg;) {
         const lno_t r   = ind(k);
         const auto A_rc = val(k);
         /*(vqd 20 Jul 2020) This assumes that the diagonal entry
@@ -489,7 +489,7 @@ struct TrsvWrap {
     for (lno_t c = numCols; c-- > 0;) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
-      for (offset_type k = end - 1; k >= beg; --k) {
+      for (offset_type k = end; k-- > beg;) {
         const lno_t r       = ind(k);
         const scalar_t A_rc = STS::conj(val(k));
         /*(vqd 20 Jul 2020) This assumes that the diagonal entry
