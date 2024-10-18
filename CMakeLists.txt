@@ -406,12 +406,12 @@ ELSE()
     MESSAGE("The install test has been enabled, you will need to peform: make install before running the tests otherwise install_test will fail")
   ENDIF ()
   IF(KokkosKernels_ENABLE_TESTS OR KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
-    FIND_PACKAGE(GTest 1.15.2)
-    if (GTest_FOUND)
-    else()
-      MESSAGE(STATUS "GTest compatible with 1.15.2 not found. Retrieving from github...")
+    SET(KOKKOSKERNELS_GTEST_VERSION 1.15.2 CACHE STRING "" FORCE)
+    FIND_PACKAGE(GTest ${KOKKOSKERNELS_GTEST_VERSION})
+    if (NOT GTest_FOUND)
+      MESSAGE(STATUS "GTest compatible with ${KOKKOSKERNELS_GTEST_VERSION} not found. Retrieving from github...")
       INCLUDE(FetchContent)
-      SET(GTEST_VERSION 1.15.2)
+      
 
       # CMake 3.24 introduced DOWNLOAD_EXTRACT_TIMESTAMP, which controls whether
       # extracting this file archive sets the file times to archive time (TRUE),
@@ -428,21 +428,22 @@ ELSE()
       IF (${CMAKE_VERSION} VERSION_LESS "3.24.0")
           FetchContent_Declare(
               googletest
-              URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.tar.gz
+              URL https://github.com/google/googletest/archive/refs/tags/v${KOKKOSKERNELS_GTEST_VERSION}.tar.gz
               URL_HASH MD5=7e11f6cfcf6498324ac82d567dcb891e
           )
       ELSE()
           FetchContent_Declare(
               googletest
-              URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.tar.gz
+              URL https://github.com/google/googletest/archive/refs/tags/v${KOKKOSKERNELS_GTEST_VERSION}.tar.gz
               URL_HASH MD5=7e11f6cfcf6498324ac82d567dcb891e
               DOWNLOAD_EXTRACT_TIMESTAMP FALSE
           )
       ENDIF()
       FetchContent_MakeAvailable(googletest)
 
-      #Gtest 1.15.2 requires c++14
-      TARGET_COMPILE_FEATURES(gtest_main PUBLIC cxx_std_14)
+      ## make this consistent with what we'd have if find_package(GTest) had worked
+      add_library(GTest::GTest ALIAS gtest)
+      add_library(GTest::Main ALIAS gtest_main)
     endif()
   ENDIF()
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(common/unit_test)
