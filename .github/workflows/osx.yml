@@ -18,6 +18,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  kokkos_version: 4.4.01
+
 jobs:
   check-pr-labels:
     runs-on: [ubuntu-latest]
@@ -58,7 +61,7 @@ jobs:
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           repository: kokkos/kokkos
-          ref: 4.3.01
+          ref: ${{ env.kokkos_version }}
           path: kokkos
 
       - name: configure_kokkos

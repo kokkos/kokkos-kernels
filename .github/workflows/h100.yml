@@ -1,10 +1,16 @@
 name: Reusable H100 workflow
 
-on:
-  workflow_call
-
 permissions:
   contents: none
+
+on:
+  workflow_call:
+    inputs:
+      kokkos_version:
+        description: 'The Kokkos Core version to build'
+        default: ''
+        required: true
+        type: string
 
 jobs:
   PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL:
@@ -21,7 +27,7 @@ jobs:
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           repository: kokkos/kokkos
-          ref: ${{ github.base_ref }}
+          ref: ${{ inputs.kokkos_version }}
           path: kokkos
 
       - name: configure_kokkos

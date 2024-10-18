@@ -18,14 +18,27 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  KOKKOS_VERSION: 4.4.01
+
 jobs:
   mi210:
     uses: ./.github/workflows/mi210.yml
+    with:
+      kokkos_version: 4.4.01
   h100:
     uses: ./.github/workflows/h100.yml
+    with:
+      kokkos_version: 4.4.01
   bdw:
     uses: ./.github/workflows/bdw.yml
+    with:
+      kokkos_version: 4.4.01
   spr:
     uses: ./.github/workflows/spr.yml
+    with:
+      kokkos_version: 4.4.01
   volta70:
     uses: ./.github/workflows/volta70.yml
+    with:
+      kokkos_version: 4.4.01

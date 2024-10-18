@@ -1,10 +1,16 @@
 name: Reusable VOLTA70 workflow
 
-on:
-  workflow_call
-
 permissions:
   contents: none
+
+on:
+  workflow_call:
+    inputs:
+      kokkos_version:
+        description: 'The Kokkos Core version to build'
+        default: ''
+        required: true
+        type: string
 
 jobs:
   PR_VOLTA70_CUDA1122_CUDA_LEFT_RIGHT_REL:
@@ -21,7 +27,7 @@ jobs:
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           repository: kokkos/kokkos
-          ref: 4.4.00
+          ref: ${{ inputs.kokkos_version }}
           path: kokkos
 
       - name: configure_kokkos
@@ -87,7 +93,7 @@ jobs:
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           repository: kokkos/kokkos
-          ref: 4.4.00
+          ref: ${{ inputs.kokkos_version }}
           path: kokkos
 
       - name: configure_kokkos
