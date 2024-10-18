@@ -23,7 +23,7 @@
 #include "KokkosBlas1_nrminf.hpp"
 #include "KokkosBlas1_axpby.hpp"
 #include "KokkosKernels_TestParameters.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 
 #define TRANSPOSEFIRST false

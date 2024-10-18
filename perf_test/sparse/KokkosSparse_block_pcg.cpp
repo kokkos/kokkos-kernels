@@ -23,7 +23,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosSparse_IOUtils.hpp"
 
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 #define MAXVAL 1
 

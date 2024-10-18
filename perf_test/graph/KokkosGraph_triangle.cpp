@@ -18,7 +18,7 @@
 #include "KokkosGraph_Triangle.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_IOUtils.hpp"  //for read_kokkos_crst_graph
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 

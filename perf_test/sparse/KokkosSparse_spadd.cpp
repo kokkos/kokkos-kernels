@@ -20,7 +20,7 @@
 #include "KokkosSparse_IOUtils.hpp"
 #include "KokkosSparse_Utils_cusparse.hpp"
 #include "KokkosSparse_Utils_mkl.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
 
 #include "KokkosSparse_spadd.hpp"
