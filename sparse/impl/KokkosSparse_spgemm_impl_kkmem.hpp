@@ -687,6 +687,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
             if (keys[trial] == my_b_col) {
               Kokkos::atomic_add(vals + trial, my_b_val);
               fail = 0;
+              break;
             } else if (keys[trial] == init_value) {
               if (!insert_is_on) {
                 try_to_insert = false;
