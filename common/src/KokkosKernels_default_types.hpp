@@ -23,11 +23,20 @@
 // define a deprecated symbol = type in the global namespace
 // and a non-deprecated version in Kokkos Kernels
 // these deprecations were done in 4.4.
+// Intel 19 doesn't seem to like deprecating a type alias
+#if defined(KOKKOS_COMPILER_INTEL) && (KOKKOS_COMPILER_INTEL < 2000)
+#define KK_IMPL_MAKE_TYPE_ALIAS(symbol, type) \
+  using symbol = type;                        \
+  namespace KokkosKernels {                   \
+  using symbol = type;                        \
+  }
+#else
 #define KK_IMPL_MAKE_TYPE_ALIAS(symbol, type)                            \
   using symbol [[deprecated("use KokkosKernels::" #symbol ".")]] = type; \
   namespace KokkosKernels {                                              \
   using symbol = type;                                                   \
   }
+#endif
 
 #if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
 KK_IMPL_MAKE_TYPE_ALIAS(default_lno_t, int)
