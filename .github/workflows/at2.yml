@@ -25,20 +25,20 @@ jobs:
   mi210:
     uses: ./.github/workflows/mi210.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: ${{ env.KOKKOS_VERSION }}
   h100:
     uses: ./.github/workflows/h100.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: ${{ env.KOKKOS_VERSION }}
   bdw:
     uses: ./.github/workflows/bdw.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: ${{ env.KOKKOS_VERSION }}
   spr:
     uses: ./.github/workflows/spr.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: ${{ env.KOKKOS_VERSION }}
   volta70:
     uses: ./.github/workflows/volta70.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: ${{ env.KOKKOS_VERSION }}
