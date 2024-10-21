@@ -21,17 +21,17 @@
 // no experimental name space guard for trilinos
 
 #ifdef _MSC_VER
-#define __KOKKOSBATCHED_PROMOTION___DEPRECATED_MACRO \
+#define KOKKOSBATCHED_IMPL_PROMOTION \
   (__pragma(message("warning: __KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version")) 1)
 #else
-#define __KOKKOSBATCHED_PROMOTION___DEPRECATED_MACRO                                                              \
+#define KOKKOSBATCHED_IMPL_PROMOTION                                                                              \
   (__extension__({                                                                                                \
     _Pragma("GCC warning \"__KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version\""); \
     1;                                                                                                            \
   }))
 #endif
 
-#define __KOKKOSBATCHED_PROMOTION__ __KOKKOSBATCHED_PROMOTION___DEPRECATED_MACRO
+#define __KOKKOSBATCHED_PROMOTION__ KOKKOSBATCHED_IMPL_PROMOTION
 
 #include <iomanip>
 #include <random>
