@@ -19,7 +19,19 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 // no experimental name space guard for trilinos
-#define __KOKKOSBATCHED_PROMOTION__ 1
+
+#ifdef _MSC_VER
+#define __KOKKOSBATCHED_PROMOTION___DEPRECATED_MACRO \
+  (__pragma(message("warning: __KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version")) 1)
+#else
+#define __KOKKOSBATCHED_PROMOTION___DEPRECATED_MACRO                                                              \
+  (__extension__({                                                                                                \
+    _Pragma("GCC warning \"__KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version\""); \
+    1;                                                                                                            \
+  }))
+#endif
+
+#define __KOKKOSBATCHED_PROMOTION__ __KOKKOSBATCHED_PROMOTION___DEPRECATED_MACRO
 
 #include <iomanip>
 #include <random>
