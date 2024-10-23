@@ -99,7 +99,7 @@ void impl_test_batched_laswp_vector(const int N, const int BlkSize) {
   }
   auto rng = std::default_random_engine{};
   std::shuffle(ipiv_vec.begin(), ipiv_vec.end(), rng);
-  for (std::size_t ib = 0; ib < N; ib++) {
+  for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize; i++) {
       h_ipiv(ib, i) = ipiv_vec[i];
     }
@@ -179,7 +179,7 @@ void impl_test_batched_laswp_matrix(const int N, const int BlkSize) {
   }
   auto rng = std::default_random_engine{};
   std::shuffle(ipiv_vec.begin(), ipiv_vec.end(), rng);
-  for (std::size_t ib = 0; ib < N; ib++) {
+  for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize; i++) {
       h_ipiv(ib, i) = ipiv_vec[i];
     }
