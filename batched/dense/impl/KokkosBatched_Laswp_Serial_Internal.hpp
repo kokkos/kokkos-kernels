@@ -53,18 +53,35 @@ struct SerialLaswpMatrixForwardInternal {
   template <typename IntType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int n, const int plen, const IntType *KOKKOS_RESTRICT p, const int ps0,
                                            /* */ ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
-    for (int j = 0; j < n; j++) {
-      ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
+    if (as0 <= as1) {
+      // LayoutLeft like
+      for (int j = 0; j < n; j++) {
+        ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
+        for (int i = 0; i < plen; ++i) {
+          const int piv = p[i * ps0];
+          if (piv != i) {
+            const int idx_i = i * as0, idx_p = piv * as0;
+            const ValueType tmp = A_at_j[idx_i];
+            A_at_j[idx_i]       = A_at_j[idx_p];
+            A_at_j[idx_p]       = tmp;
+          }
+        }
+      }
+    } else {
+      // LayoutRight like
       for (int i = 0; i < plen; ++i) {
         const int piv = p[i * ps0];
         if (piv != i) {
           const int idx_i = i * as0, idx_p = piv * as0;
-          const ValueType tmp = A_at_j[idx_i];
-          A_at_j[idx_i]       = A_at_j[idx_p];
-          A_at_j[idx_p]       = tmp;
+          for (int j = 0; j < n; j++) {
+            ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
+            const ValueType tmp               = A_at_j[idx_i];
+            A_at_j[idx_i]                     = A_at_j[idx_p];
+            A_at_j[idx_p]                     = tmp;
+          }
         }
       }
-    };
+    }
     return 0;
   }
 };
@@ -94,18 +111,35 @@ struct SerialLaswpMatrixBackwardInternal {
   template <typename IntType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int n, const int plen, const IntType *KOKKOS_RESTRICT p, const int ps0,
                                            /* */ ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
-    for (int j = 0; j < n; j++) {
-      ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
+    if (as0 <= as1) {
+      // LayoutLeft like
+      for (int j = 0; j < n; j++) {
+        ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
+        for (int i = (plen - 1); i >= 0; --i) {
+          const int piv = p[i * ps0];
+          if (piv != i) {
+            const int idx_i = i * as0, idx_p = piv * as0;
+            const ValueType tmp = A_at_j[idx_i];
+            A_at_j[idx_i]       = A_at_j[idx_p];
+            A_at_j[idx_p]       = tmp;
+          }
+        }
+      }
+    } else {
+      // LayoutRight like
       for (int i = (plen - 1); i >= 0; --i) {
         const int piv = p[i * ps0];
         if (piv != i) {
           const int idx_i = i * as0, idx_p = piv * as0;
-          const ValueType tmp = A_at_j[idx_i];
-          A_at_j[idx_i]       = A_at_j[idx_p];
-          A_at_j[idx_p]       = tmp;
+          for (int j = 0; j < n; j++) {
+            ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
+            const ValueType tmp               = A_at_j[idx_i];
+            A_at_j[idx_i]                     = A_at_j[idx_p];
+            A_at_j[idx_p]                     = tmp;
+          }
         }
       }
-    };
+    }
     return 0;
   }
 };
