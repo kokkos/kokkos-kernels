@@ -529,7 +529,9 @@ class BsrMatrix {
       auto it = blocks.find(block);
       if (it == blocks.end()) {
         std::vector<Entry> entries = {entry};
-        entries.reserve(blockDim_ * blockDim_);
+        entries.reserve(
+            static_cast<typename std::common_type_t<typename std::vector<Entry>::size_type, ordinal_type>>(blockDim_) *
+            blockDim_);
         blocks[block] = std::move(entries);  // new block with entry
       } else {
         it->second.push_back(entry);  // add entry to block
@@ -724,9 +726,9 @@ class BsrMatrix {
     Kokkos::deep_copy(h_crs_values, crs_mtx.values);
 
     typename values_type::HostMirror h_values = Kokkos::create_mirror_view(values);
-    if (h_values.extent(0) < size_t(numBlocks * blockDim_ * blockDim_)) {
-      Kokkos::resize(h_values, numBlocks * blockDim_ * blockDim_);
-      Kokkos::resize(values, numBlocks * blockDim_ * blockDim_);
+    if (h_values.extent(0) < static_cast<size_t>(numBlocks) * blockDim_ * blockDim_) {
+      Kokkos::resize(h_values, static_cast<size_t>(numBlocks) * blockDim_ * blockDim_);
+      Kokkos::resize(values, static_cast<size_t>(numBlocks) * blockDim_ * blockDim_);
     }
     Kokkos::deep_copy(h_values, 0);
 

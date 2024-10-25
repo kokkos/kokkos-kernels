@@ -316,8 +316,8 @@ auto random_vecs_for_spmv(const char *mode, const Bsr &a, const bool nans = fals
   using execution_space = typename Bsr::execution_space;
   using policy_type     = Kokkos::RangePolicy<typename vector_type::execution_space>;
 
-  size_t nx = a.numCols() * a.blockDim();
-  size_t ny = a.numRows() * a.blockDim();
+  size_t nx = static_cast<size_t>(a.numCols()) * a.blockDim();
+  size_t ny = static_cast<size_t>(a.numRows()) * a.blockDim();
   if (mode_is_transpose(mode)) {
     std::swap(nx, ny);
   }
@@ -557,8 +557,8 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a, const size_t nu
   using execution_space = typename Bsr::execution_space;
   using policy_type     = Kokkos::RangePolicy<typename vector_type::execution_space>;
 
-  size_t nx = a.numCols() * a.blockDim();
-  size_t ny = a.numRows() * a.blockDim();
+  size_t nx = static_cast<size_t>(a.numCols()) * a.blockDim();
+  size_t ny = static_cast<size_t>(a.numRows()) * a.blockDim();
   if (mode_is_transpose(mode)) {
     std::swap(nx, ny);
   }

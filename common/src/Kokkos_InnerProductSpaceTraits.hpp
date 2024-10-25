@@ -238,13 +238,12 @@ KOKKOS_INLINE_FUNCTION void updateDot(ResultType& sum, const InputType1& x, cons
 
 KOKKOS_INLINE_FUNCTION void updateDot(double& sum, const double x, const double y) { sum += x * y; }
 
-KOKKOS_INLINE_FUNCTION void updateDot(double& sum, const float x, const float y) { sum += x * y; }
+KOKKOS_INLINE_FUNCTION void updateDot(double& sum, const float x, const float y) { sum += static_cast<double>(x) * y; }
 
 // This exists because complex<float> += complex<double> is not defined.
 KOKKOS_INLINE_FUNCTION void updateDot(Kokkos::complex<double>& sum, const Kokkos::complex<float> x,
                                       const Kokkos::complex<float> y) {
-  const auto tmp = Kokkos::conj(x) * y;
-  sum += Kokkos::complex<double>(tmp.real(), tmp.imag());
+  sum += Kokkos::conj(Kokkos::complex<double>(x)) * Kokkos::complex<double>(y);
 }
 
 // This exists in case people call the overload of KokkosBlas::dot
