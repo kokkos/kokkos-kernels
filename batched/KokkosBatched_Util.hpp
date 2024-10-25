@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_UTIL_HPP__
-#define __KOKKOSBATCHED_UTIL_HPP__
+#ifndef KOKKOSBATCHED_UTIL_HPP
+#define KOKKOSBATCHED_UTIL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -685,4 +685,4 @@ KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
 }
 
 }  // namespace KokkosBatched
-#endif  // __KOKKOSBATCHED_UTIL_HPP__
+#endif  // KOKKOSBATCHED_UTIL_HPP
