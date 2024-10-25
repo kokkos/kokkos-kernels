@@ -34,14 +34,14 @@ namespace Impl {
 template <typename AlgoType>
 struct SerialPbtrsInternalLower {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int an, const int xm, const ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int an, const ValueType *KOKKOS_RESTRICT A, const int as0,
+                                           const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int kd);
 };
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int SerialPbtrsInternalLower<Algo::Pbtrs::Unblocked>::invoke(const int an, const int xm,
+KOKKOS_INLINE_FUNCTION int SerialPbtrsInternalLower<Algo::Pbtrs::Unblocked>::invoke(const int an,
                                                                                     const ValueType *KOKKOS_RESTRICT A,
                                                                                     const int as0, const int as1,
                                                                                     /**/ ValueType *KOKKOS_RESTRICT x,
@@ -63,14 +63,14 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrsInternalLower<Algo::Pbtrs::Unblocked>::inv
 template <typename AlgoType>
 struct SerialPbtrsInternalUpper {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int an, const int xm, const ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int an, const ValueType *KOKKOS_RESTRICT A, const int as0,
+                                           const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int kd);
 };
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int SerialPbtrsInternalUpper<Algo::Pbtrs::Unblocked>::invoke(const int an, const int xm,
+KOKKOS_INLINE_FUNCTION int SerialPbtrsInternalUpper<Algo::Pbtrs::Unblocked>::invoke(const int an,
                                                                                     const ValueType *KOKKOS_RESTRICT A,
                                                                                     const int as0, const int as1,
                                                                                     /**/ ValueType *KOKKOS_RESTRICT x,
