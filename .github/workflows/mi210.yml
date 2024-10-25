@@ -58,7 +58,7 @@ jobs:
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
-        run: make -j16 install
+        run: make -j50 install
 
       - name: configure_kokkos_kernels
         run: |
@@ -88,7 +88,7 @@ jobs:
 
       - name: build
         working-directory: kokkos-kernels/build
-        run: make -j12 all
+        run: make -j50 all
 
       - name: test
         working-directory: kokkos-kernels/build
@@ -137,7 +137,7 @@ jobs:
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
-        run: make -j16 install
+        run: make -j50 install
 
       - name: configure_kokkos_kernels
         run: |
@@ -171,7 +171,7 @@ jobs:
 
       - name: build
         working-directory: kokkos-kernels/build
-        run: make -j12 all
+        run: make -j50 all
 
       - name: test
         working-directory: kokkos-kernels/build

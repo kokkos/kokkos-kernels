@@ -53,7 +53,7 @@ jobs:
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
-        run: make -j12 install
+        run: make -j40 install
 
       - name: configure_kokkos_kernels
         run: |
@@ -82,7 +82,7 @@ jobs:
 
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
-        run: make -j12 all
+        run: make -j40 all
 
       - name: test
         working-directory: kokkos-kernels/build
