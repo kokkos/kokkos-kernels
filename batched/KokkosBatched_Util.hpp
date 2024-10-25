@@ -20,15 +20,17 @@
 
 // no experimental name space guard for trilinos
 
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 #define KOKKOSBATCHED_IMPL_PROMOTION \
   (__pragma(message("warning: __KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version")) 1)
-#else
+#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
 #define KOKKOSBATCHED_IMPL_PROMOTION                                                                              \
   (__extension__({                                                                                                \
     _Pragma("GCC warning \"__KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version\""); \
     1;                                                                                                            \
   }))
+#else
+#define KOKKOSBATCHED_IMPL_PROMOTION 1  // no good way to deprecate?
 #endif
 
 #define __KOKKOSBATCHED_PROMOTION__ KOKKOSBATCHED_IMPL_PROMOTION
