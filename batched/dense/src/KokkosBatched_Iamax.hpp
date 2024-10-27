@@ -21,14 +21,14 @@
 namespace KokkosBatched {
 
 /// \brief Serial Batched Iamax:
-///
-/// IAMAX finds the index of the first element having maximum absolute value.
+/// Iamax finds the index of the first element having maximum absolute value.
 ///
 /// \tparam XViewType: Input view type, needs to be a 1D view
 ///
 /// \param X [in]: Input view type
 ///
 /// \return The index of the first element having maximum absolute value
+/// As well as Blas, this returns -1 (0 in Fortran) for an empty vector
 /// No nested parallel_for is used inside of the function.
 ///
 
