@@ -63,8 +63,6 @@ struct Functor_BatchedSerialIamax {
 /// \param N [in] Batch size of A
 template <typename DeviceType, typename ScalarType, typename LayoutType>
 void impl_test_batched_iamax_analytical(const std::size_t N) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
-  using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
   using MaxView1DType     = Kokkos::View<int *, LayoutType, DeviceType>;
@@ -164,8 +162,6 @@ void impl_test_batched_iamax_analytical(const std::size_t N) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType>
 void impl_test_batched_iamax(const std::size_t N, const std::size_t BlkSize) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
-  using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
   using MaxView1DType     = Kokkos::View<int *, LayoutType, DeviceType>;
@@ -179,7 +175,7 @@ void impl_test_batched_iamax(const std::size_t N, const std::size_t BlkSize) {
   StridedView2DType A_s("A_s", layout);
   MaxView1DType iamax_s("iamax_s", N);
 
-  // Initialize A_reconst with random matrix
+  // Initialize A with random values
   using execution_space = typename DeviceType::execution_space;
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
   ScalarType randStart, randEnd;
@@ -208,15 +204,15 @@ void impl_test_batched_iamax(const std::size_t N, const std::size_t BlkSize) {
     auto h_A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
     for (std::size_t k = 0; k < N; k++) {
       RealType amax = Kokkos::abs(h_A(k, 0));
-      int iamax     = 0;
+      int iamax_tmp = 0;
       for (std::size_t i = 1; i < BlkSize; i++) {
         const RealType abs_A_i = Kokkos::abs(h_A(k, i));
         if (abs_A_i > amax) {
-          amax  = abs_A_i;
-          iamax = static_cast<int>(i);
+          amax      = abs_A_i;
+          iamax_tmp = static_cast<int>(i);
         }
       }
-      h_iamax_ref(k) = iamax;
+      h_iamax_ref(k) = iamax_tmp;
     }
   }
 
