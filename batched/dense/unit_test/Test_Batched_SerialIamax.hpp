@@ -39,7 +39,7 @@ struct Functor_BatchedSerialIamax {
   void operator()(const int k) const {
     auto sub_x = Kokkos::subview(m_x, k, Kokkos::ALL());
     auto iamax = KokkosBatched::SerialIamax::invoke(sub_x);
-    m_r(k)     = iamax;
+    m_r(k)     = static_cast<int>(iamax);
   }
 
   inline void run() {
@@ -198,9 +198,9 @@ void impl_test_batched_iamax(const std::size_t N, const std::size_t BlkSize) {
   // Reference
   auto h_iamax_ref = Kokkos::create_mirror_view(iamax_ref);
   if (BlkSize == 0) {
-    // As well as blas, we store -1 (0 in Fortran) for empty matrix
+    // As well as blas, we store 0 (0 in Fortran) for empty matrix
     for (std::size_t k = 0; k < N; k++) {
-      h_iamax_ref(k) = -1;
+      h_iamax_ref(k) = 0;
     }
   } else {
     auto h_A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);

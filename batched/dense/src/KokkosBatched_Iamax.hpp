@@ -28,13 +28,13 @@ namespace KokkosBatched {
 /// \param X [in]: Input view type
 ///
 /// \return The index of the first element having maximum absolute value
-/// As well as Blas, this returns -1 (0 in Fortran) for an empty vector
+/// As well as Blas, this returns 0 (0 in Fortran) for an empty vector
 /// No nested parallel_for is used inside of the function.
 ///
 
 struct SerialIamax {
   template <typename XViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &x);
+  KOKKOS_INLINE_FUNCTION static typename XViewType::size_type invoke(const XViewType &x);
 };
 }  // namespace KokkosBatched
 

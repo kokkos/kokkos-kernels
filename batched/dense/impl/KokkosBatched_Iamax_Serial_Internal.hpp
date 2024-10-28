@@ -30,19 +30,20 @@ namespace Impl {
 /// ========================
 
 struct SerialIamaxInternal {
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int n, const ValueType *KOKKOS_RESTRICT x, const int xs0);
+  template <typename IndexType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static IndexType invoke(const int n, const ValueType *KOKKOS_RESTRICT x, const int xs0);
 };
 
-template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int SerialIamaxInternal::invoke(const int n, const ValueType *KOKKOS_RESTRICT x, const int xs0) {
+template <typename IndexType, typename ValueType>
+KOKKOS_INLINE_FUNCTION IndexType SerialIamaxInternal::invoke(const int n, const ValueType *KOKKOS_RESTRICT x,
+                                                             const int xs0) {
   using ats      = typename Kokkos::ArithTraits<ValueType>;
   using RealType = typename ats::mag_type;
 
-  RealType amax = Kokkos::abs(x[0 * xs0]);
-  int imax      = 0;
+  RealType amax  = Kokkos::abs(x[0 * xs0]);
+  IndexType imax = 0;
 
-  for (int i = 1; i < n; ++i) {
+  for (IndexType i = 1; i < static_cast<IndexType>(n); ++i) {
     const RealType abs_x_i = Kokkos::abs(x[i * xs0]);
     if (abs_x_i > amax) {
       amax = abs_x_i;
