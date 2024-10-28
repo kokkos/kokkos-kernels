@@ -1947,7 +1947,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   }
   // allocate for all the subgraphs
   row_map_view_t total_rowmap_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap_view"),
-                                   2 * nlevels * (nrows + 1));
+                                   static_cast<typename row_map_view_t::size_type>(2 * nlevels) * (nrows + 1));
   cols_view_t total_column_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "colmap_view"), newNnz);
   values_view_t total_values_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_view"), newNnz);
   // create host-mirrors
