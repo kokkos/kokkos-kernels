@@ -127,7 +127,7 @@ void impl_test_batched_laswp_analytical(const std::size_t N) {
   Kokkos::LayoutStride layout2{N, incx, 3, N * incx, 2, N * incx * 3};
   StridedView3DType A2_s("A2_s", layout2), A2_s_identity("A2_s_identity", layout2);
 
-  // Initialize A0, A1, and A2 with random matrices
+  // Initialize A0, A1, and A2 with random numbers
   auto h_A0   = Kokkos::create_mirror_view(A0);
   auto h_A1   = Kokkos::create_mirror_view(A1);
   auto h_A2   = Kokkos::create_mirror_view(A2);
@@ -348,7 +348,7 @@ void impl_test_batched_laswp_vector(const std::size_t N, const std::size_t BlkSi
   Kokkos::LayoutStride layout{N, incx, BlkSize, N * incx};
   StridedView2DType b_s("b_s", layout), b_s_identity("b_s_identity", layout);
 
-  // Initialize A_reconst with random matrix
+  // Initialize b with random numbers
   using execution_space = typename DeviceType::execution_space;
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
   ScalarType randStart, randEnd;
@@ -466,7 +466,7 @@ void impl_test_batched_laswp_matrix(const std::size_t N, const std::size_t BlkSi
   Kokkos::LayoutStride layout{N, incx, BlkSize, N * incx, M, N * incx * BlkSize};
   StridedView3DType A_s("A_s", layout), A_s_identity("A_s_identity", layout);
 
-  // Initialize A with random matrix
+  // Initialize A with random numbers
   using execution_space = typename DeviceType::execution_space;
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
   ScalarType randStart, randEnd;
