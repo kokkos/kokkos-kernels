@@ -32,7 +32,7 @@ namespace KokkosBatched {
 /// InverseLU no piv
 ///
 
-#if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) && defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
+#if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
 template <typename AViewType, typename WViewType>
