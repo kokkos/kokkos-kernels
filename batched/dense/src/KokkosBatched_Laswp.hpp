@@ -47,6 +47,6 @@ struct SerialLaswp {
 };
 }  // namespace KokkosBatched
 
-#include "../impl/KokkosBatched_Laswp_Serial_Impl.hpp"
+#include "KokkosBatched_Laswp_Serial_Impl.hpp"
 
 #endif  // KOKKOSBATCHED_LASWP_HPP_
