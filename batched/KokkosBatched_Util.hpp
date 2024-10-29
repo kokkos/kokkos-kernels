@@ -74,7 +74,23 @@
 
 #include "mkl_version.h"
 #if __INTEL_MKL__ >= 2018
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ 1
+
+#if defined(KOKKOS_COMPILER_MSVC)
+#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED \
+  (__pragma(message(                                \
+      "warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ is deprecated and will be removed in a future version")) 1)
+#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
+#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED                                                                   \
+  (__extension__({                                                                                                    \
+    _Pragma(                                                                                                          \
+        "warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ is deprecated and will be removed in a future version"); \
+    1;                                                                                                                \
+  }))
+#else
+#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED 1  // no good way to deprecate?
+#endif
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED
+
 #define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ 1
 #include "mkl.h"
 // #include "mkl_types.h"
