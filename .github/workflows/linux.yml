@@ -1,0 +1,110 @@
+name: github-Linux
+
+on:
+  pull_request:
+    paths-ignore:
+    - '**/*.rst'
+    - '**/*.md'
+    - '**/requirements.txt'
+    - '**/*.py'
+    - 'docs/**'
+    types: [ opened, reopened, synchronize ]
+
+permissions:
+  contents: none
+
+# Cancels any in progress 'workflow' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  kokkos_version: 4.4.01
+
+jobs:
+  check-pr-labels:
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: docker://agilepathway/pull-request-label-checker@sha256:ee57b0e1aedab22063ce6467a6e6358e254a9204693ca20d8a16b2d891db8d5f  # v1.6.32
+        with:
+          none_of: 'AT: WIP'
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+  sanitizers:
+    needs: check-pr-labels
+    # TODO: allow re-run via retest label if: ${{ github.event.label.name == 'AT: RETEST' }}
+    name: osx-ci
+    runs-on: [ubuntu-latest]
+
+    strategy:
+      matrix:
+        include:
+          - backend: "SERIAL"
+            cmake_build_type: "RelWithDebInfo"
+            debug_bounds_check: "OFF"
+
+    steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ env.kokkos_version }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cd kokkos/build
+          cmake \
+          -DKokkos_ENABLE_${{ matrix.backend }}=ON \
+          -DCMAKE_CXX_FLAGS="-Werror" \
+          -DCMAKE_CXX_STANDARD=17 \
+          -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
+          -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
+          -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
+          -DKokkos_ENABLE_TESTS=OFF \
+          -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+          -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+          -DCMAKE_CXX_FLAGS="-fsanitize=address -fsanitize=undefined -fno-sanitize=signed-integer-overflow -fno-sanitize=vptr -fno-sanitize-recover=all" \
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address -fsanitize=undefined -fno-sanitize=signed-integer-overflow -fno-sanitize=vptr -fno-sanitize-recover=all" \
+          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+          ..
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j$(nproc) install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cd kokkos-kernels/build
+          cmake \
+          -DKokkos_DIR=$PWD/../../kokkos/install/lib/cmake/Kokkos \
+          -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+          -DCMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
+          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+          -DKokkosKernels_ENABLE_TESTS=ON \
+          -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+          -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
+          -DKokkosKernels_INST_DOUBLE=ON \
+          -DKokkosKernels_INST_COMPLEX_FLOAT=ON \
+          -DKokkosKernels_INST_FLOAT=ON \
+          -DKokkosKernels_INST_LAYOUTLEFT:BOOL=ON \
+          -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON \
+          -DKokkosKernels_INST_OFFSET_INT=ON \
+          -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
+          -DCMAKE_CXX_FLAGS="-fsanitize=address -fsanitize=undefined -fno-sanitize=signed-integer-overflow -fno-sanitize=vptr -fno-sanitize-recover=all" \
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address -fsanitize=undefined -fno-sanitize=signed-integer-overflow -fno-sanitize=vptr -fno-sanitize-recover=all" \
+          ..
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        run: make -j$(nproc)
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest -j$(nproc) --output-on-failure --timeout 7200
