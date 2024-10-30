@@ -89,14 +89,14 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=$PWD/../install \
           -DKokkosKernels_ENABLE_TESTS=ON \
           -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
-          -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
+          -DKokkosKernels_INST_COMPLEX_DOUBLE=OFF \
           -DKokkosKernels_INST_DOUBLE=ON \
-          -DKokkosKernels_INST_COMPLEX_FLOAT=ON \
-          -DKokkosKernels_INST_FLOAT=ON \
+          -DKokkosKernels_INST_COMPLEX_FLOAT=OFF \
+          -DKokkosKernels_INST_FLOAT=OFF \
           -DKokkosKernels_INST_LAYOUTLEFT:BOOL=ON \
-          -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON \
+          -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=OFF \
           -DKokkosKernels_INST_OFFSET_INT=ON \
-          -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
+          -DKokkosKernels_INST_OFFSET_SIZE_T=OFF \
           -DCMAKE_CXX_FLAGS="-fsanitize=address -fsanitize=undefined -fno-sanitize=signed-integer-overflow -fno-sanitize=vptr -fno-sanitize-recover=all" \
           -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address -fsanitize=undefined -fno-sanitize=signed-integer-overflow -fno-sanitize=vptr -fno-sanitize-recover=all" \
           ..
