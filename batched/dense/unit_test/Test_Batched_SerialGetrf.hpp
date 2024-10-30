@@ -30,18 +30,18 @@ namespace Getrf {
 template <typename DeviceType, typename AViewType, typename PivViewType, typename AlgoTagType>
 struct Functor_BatchedSerialGetrf {
   using execution_space = typename DeviceType::execution_space;
-  AViewType _a;
-  PivViewType _ipiv;
+  AViewType m_a;
+  PivViewType m_ipiv;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialGetrf(const AViewType &a, const PivViewType &ipiv) : _a(a), _ipiv(ipiv) {}
+  Functor_BatchedSerialGetrf(const AViewType &a, const PivViewType &ipiv) : m_a(a), m_ipiv(ipiv) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int k, int &info) const {
-    auto aa   = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-    auto ipiv = Kokkos::subview(_ipiv, k, Kokkos::ALL());
+    auto sub_a    = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
+    auto sub_ipiv = Kokkos::subview(m_ipiv, k, Kokkos::ALL());
 
-    info += KokkosBatched::SerialGetrf<AlgoTagType>::invoke(aa, ipiv);
+    info += KokkosBatched::SerialGetrf<AlgoTagType>::invoke(sub_a, sub_ipiv);
   }
 
   inline int run() {
@@ -51,7 +51,7 @@ struct Functor_BatchedSerialGetrf {
     std::string name                  = name_region + name_value_type;
     int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<execution_space> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<execution_space> policy(0, m_a.extent(0));
     Kokkos::parallel_reduce(name.c_str(), policy, *this, info_sum);
     Kokkos::Profiling::popRegion();
     return info_sum;
@@ -61,24 +61,24 @@ struct Functor_BatchedSerialGetrf {
 template <typename DeviceType, typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 struct Functor_BatchedSerialGemm {
   using execution_space = typename DeviceType::execution_space;
-  AViewType _a;
-  BViewType _b;
-  CViewType _c;
-  ScalarType _alpha, _beta;
+  AViewType m_a;
+  BViewType m_b;
+  CViewType m_c;
+  ScalarType m_alpha, m_beta;
 
   KOKKOS_INLINE_FUNCTION
   Functor_BatchedSerialGemm(const ScalarType alpha, const AViewType &a, const BViewType &b, const ScalarType beta,
                             const CViewType &c)
-      : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
+      : m_a(a), m_b(b), m_c(c), m_alpha(alpha), m_beta(beta) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int k) const {
-    auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-    auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
-    auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
+    auto sub_a = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
+    auto sub_b = Kokkos::subview(m_b, k, Kokkos::ALL(), Kokkos::ALL());
+    auto sub_c = Kokkos::subview(m_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Unblocked>::invoke(_alpha, aa, bb,
-                                                                                                     _beta, cc);
+    KokkosBatched::SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Unblocked>::invoke(
+        m_alpha, sub_a, sub_b, m_beta, sub_c);
   }
 
   inline void run() {
@@ -86,12 +86,11 @@ struct Functor_BatchedSerialGemm {
     std::string name_region("KokkosBatched::Test::SerialGetrf");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
-    Kokkos::RangePolicy<execution_space> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<execution_space> policy(0, m_a.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
   }
 };
 
-template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 /// \brief Implementation details of batched getrf test
 ///        LU factorization with partial pivoting
 ///        4x4 matrix
@@ -125,12 +124,12 @@ template <typename DeviceType, typename ScalarType, typename LayoutType, typenam
 ///               [0. 0. 0.]]
 ///        piv2 = [0 1 2]
 /// \param Nb [in] Batch size of matrices
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_getrf_analytical(const int Nb) {
-  using ats            = typename Kokkos::ArithTraits<ScalarType>;
-  using RealType       = typename ats::mag_type;
-  using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
-  using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
-  using PivView2DType  = Kokkos::View<int **, LayoutType, DeviceType>;
+  using ats           = typename Kokkos::ArithTraits<ScalarType>;
+  using RealType      = typename ats::mag_type;
+  using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
+  using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
 
   constexpr int M = 4, N = 3;
   View3DType A0("A0", Nb, M, M), LU0("LU0", Nb, M, M);
