@@ -58,12 +58,11 @@ jobs:
       - name: configure_kokkos
         run: |
           mkdir -p kokkos/{build,install}
-          cmake -S kokkos -B kokkos/build\
+          cmake -S kokkos -B kokkos/build \
           -DKokkos_ENABLE_${{ matrix.backend }}=ON \
           -DCMAKE_CXX_STANDARD=17 \
           -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
           -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
-          -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
           -DKokkos_ENABLE_TESTS=OFF \
           -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
           -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
