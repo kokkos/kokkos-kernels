@@ -32,7 +32,7 @@ jobs:
   sanitizers:
     needs: check-pr-labels
     # TODO: allow re-run via retest label if: ${{ github.event.label.name == 'AT: RETEST' }}
-    name: osx-ci
+    name: ubuntu-asan-ubsan-ci
     runs-on: [ubuntu-latest]
 
     strategy:
