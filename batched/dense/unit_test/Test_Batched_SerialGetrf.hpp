@@ -94,6 +94,7 @@ struct Functor_BatchedSerialGemm {
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 /// \brief Implementation details of batched getrf test
 ///        LU factorization with partial pivoting
+///        4x4 matrix
 ///        A = [[1. 0. 0. 0.]
 ///             [0. 1. 0. 0.]
 ///             [0. 0. 1. 0.]
@@ -104,117 +105,134 @@ template <typename DeviceType, typename ScalarType, typename LayoutType, typenam
 ///              [0. 0. 0. 1.]]
 ///        piv = [0 1 2 3]
 ///
-/// \param N [in] Batch size of RHS (banded matrix can also be batched matrix)
-/// \param k [in] Number of superdiagonals or subdiagonals of matrix A
-/// \param BlkSize [in] Block size of matrix A
-void impl_test_batched_getrf_analytical(const int N) {
+///        3x4 matrix
+///        A1 = [[1. 0. 0. 0.]
+///              [0. 1. 0. 0.]
+///              [0. 0. 1. 0.]]
+///        LU1 = [[1. 0. 0. 0.]
+///               [0. 1. 0. 0.]
+///               [0. 0. 1. 0.]]
+///        piv1 = [0 1 2]
+///
+///        4x3 matrix
+///        A2 = [[1. 0. 0.]
+///              [0. 1. 0.]
+///              [0. 0. 1.]
+///              [0. 0. 0.]]
+///        LU2 = [[1. 0. 0.]
+///               [0. 1. 0.]
+///               [0. 0. 1.]
+///               [0. 0. 0.]]
+///        piv2 = [0 1 2]
+/// \param Nb [in] Batch size of matrices
+void impl_test_batched_getrf_analytical(const int Nb) {
   using ats            = typename Kokkos::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
+  using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
+  using PivView2DType  = Kokkos::View<int **, LayoutType, DeviceType>;
 
-  using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
-  using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
+  constexpr int M = 4, N = 3;
+  View3DType A0("A0", Nb, M, M), LU0("LU0", Nb, M, M);
+  PivView2DType ipiv0("ipiv0", Nb, M), ipiv0_ref("ipiv0_ref", Nb, M);
 
-  constexpr int BlkSize = 4;
-  View3DType A("A", N, BlkSize, BlkSize), A_reconst("A_reconst", N, BlkSize, BlkSize), NL("NL", N, BlkSize, BlkSize),
-      L("L", N, BlkSize, BlkSize), U("U", N, BlkSize, BlkSize), LU("LU", N, BlkSize, BlkSize),
-      I("I", N, BlkSize, BlkSize);
-  RealView2DType ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing), N, BlkSize);
-  PivView2DType ipiv("ipiv", N, BlkSize), ipiv_ref("ipiv_ref", N, BlkSize);
+  // Non-square matrix
+  View3DType A1("A1", Nb, N, M), LU1("LU1", Nb, N, M);
+  PivView2DType ipiv1("ipiv1", Nb, N), ipiv1_ref("ipiv1_ref", Nb, N);
 
-  auto h_A        = Kokkos::create_mirror_view(A);
-  auto h_ipiv_ref = Kokkos::create_mirror_view(ipiv_ref);
-  for (int ib = 0; ib < N; ib++) {
-    for (int i = 0; i < BlkSize; i++) {
-      h_ipiv_ref(ib, i) = i;
-      for (int j = 0; j < BlkSize; j++) {
-        h_A(ib, i, j) = i == j ? 1.0 : 0.0;
+  View3DType A2("A2", Nb, M, N), LU2("LU2", Nb, M, N);
+  PivView2DType ipiv2("ipiv2", Nb, N), ipiv2_ref("ipiv1_ref", Nb, N);
+
+  auto h_A0        = Kokkos::create_mirror_view(A0);
+  auto h_A1        = Kokkos::create_mirror_view(A1);
+  auto h_A2        = Kokkos::create_mirror_view(A2);
+  auto h_ipiv0_ref = Kokkos::create_mirror_view(ipiv0_ref);
+  auto h_ipiv1_ref = Kokkos::create_mirror_view(ipiv1_ref);
+  auto h_ipiv2_ref = Kokkos::create_mirror_view(ipiv2_ref);
+  for (int ib = 0; ib < Nb; ib++) {
+    for (int i = 0; i < M; i++) {
+      h_ipiv0_ref(ib, i) = i;
+      for (int j = 0; j < M; j++) {
+        h_A0(ib, i, j) = i == j ? 1.0 : 0.0;
+      }
+    }
+
+    for (int i = 0; i < N; i++) {
+      h_ipiv1_ref(ib, i) = i;
+      h_ipiv2_ref(ib, i) = i;
+      for (int j = 0; j < M; j++) {
+        h_A1(ib, i, j) = i == j ? 1.0 : 0.0;
+        h_A2(ib, j, i) = i == j ? 1.0 : 0.0;
       }
     }
   }
 
-  Kokkos::deep_copy(ipiv_ref, h_ipiv_ref);
-  Kokkos::deep_copy(LU, h_A);
-  Kokkos::deep_copy(ones, RealType(1.0));
-
-  create_diagonal_matrix(ones, I);
-  Kokkos::fence();
+  Kokkos::deep_copy(A0, h_A0);
+  Kokkos::deep_copy(A1, h_A1);
+  Kokkos::deep_copy(A2, h_A2);
+  Kokkos::deep_copy(LU0, A0);
+  Kokkos::deep_copy(LU1, A1);
+  Kokkos::deep_copy(LU2, A2);
 
   // getrf to factorize matrix A = P * L * U
-  auto info = Functor_BatchedSerialGetrf<DeviceType, View3DType, PivView2DType, AlgoTagType>(LU, ipiv).run();
+  auto info0 = Functor_BatchedSerialGetrf<DeviceType, View3DType, PivView2DType, AlgoTagType>(LU0, ipiv0).run();
+  auto info1 = Functor_BatchedSerialGetrf<DeviceType, View3DType, PivView2DType, AlgoTagType>(LU1, ipiv1).run();
+  auto info2 = Functor_BatchedSerialGetrf<DeviceType, View3DType, PivView2DType, AlgoTagType>(LU2, ipiv2).run();
 
   Kokkos::fence();
-  EXPECT_EQ(info, 0);
+  EXPECT_EQ(info0, 0);
+  EXPECT_EQ(info1, 0);
+  EXPECT_EQ(info2, 0);
 
-  // Reconstruct L and D from Factorized matrix A
-  // Copy non-diagonal lower triangular components to NL
-  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Lower>(LU, NL, -1);
+  auto h_ipiv0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ipiv0);
+  auto h_ipiv1 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ipiv1);
+  auto h_ipiv2 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ipiv2);
 
-  // Copy upper triangular components to U
-  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Upper>(LU, U);
-
-  // Copy I to L
-  Kokkos::deep_copy(L, I);
-
-  // Matrix matrix addition by Gemm
-  // NL + I by NL * I + L (==I) (result stored in L)
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType>(1.0, NL, I, 1.0, L).run();
-
-  // LU = L * U
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType>(1.0, L, U, 0.0, LU).run();
-
-  Kokkos::fence();
-
-  // permute A by ipiv
-  auto h_ipiv = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ipiv);
-  for (int ib = 0; ib < N; ib++) {
-    // Permute A by pivot vector
-    for (int i = 0; i < BlkSize; i++) {
-      for (int j = 0; j < BlkSize; j++) {
-        Kokkos::kokkos_swap(h_A(ib, h_ipiv(ib, i), j), h_A(ib, i, j));
-      }
+  for (int ib = 0; ib < Nb; ib++) {
+    // Check if piv0 = [0 1 2 3]
+    for (int i = 0; i < M; i++) {
+      EXPECT_EQ(h_ipiv0(ib, i), h_ipiv0_ref(ib, i));
+    }
+    // Check if piv1 = [0 1 2] and piv2 = [0 1 2]
+    for (int i = 0; i < N; i++) {
+      EXPECT_EQ(h_ipiv1(ib, i), h_ipiv1_ref(ib, i));
+      EXPECT_EQ(h_ipiv2(ib, i), h_ipiv2_ref(ib, i));
     }
   }
 
-  // A stores permuted A
-  Kokkos::deep_copy(A, h_A);
-
-  // Check if piv = [0 1 2 3]
-  for (int ib = 0; ib < N; ib++) {
-    for (int i = 0; i < BlkSize; i++) {
-      EXPECT_EQ(h_ipiv(ib, i), h_ipiv_ref(ib, i));
-    }
-  }
-
-  // this eps is about 10^-14
-  RealType eps = 1.0e3 * ats::epsilon();
-
-  auto h_LU = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), LU);
+  RealType eps = 1.0e1 * ats::epsilon();
+  auto h_LU0   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), LU0);
+  auto h_LU1   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), LU1);
+  auto h_LU2   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), LU2);
 
   // Check if LU = A (permuted)
-  for (int ib = 0; ib < N; ib++) {
-    for (int i = 0; i < BlkSize; i++) {
-      for (int j = 0; j < BlkSize; j++) {
-        EXPECT_NEAR_KK(h_LU(ib, i, j), h_A(ib, i, j), eps);
+  for (int ib = 0; ib < Nb; ib++) {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < M; j++) {
+        EXPECT_NEAR_KK(h_LU0(ib, i, j), h_A0(ib, i, j), eps);
+      }
+    }
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < M; j++) {
+        EXPECT_NEAR_KK(h_LU1(ib, i, j), h_A1(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_LU2(ib, j, i), h_A2(ib, j, i), eps);
       }
     }
   }
 }
 
-template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 /// \brief Implementation details of batched getrf test
 ///        LU factorization with partial pivoting
 ///
-/// \param N [in] Batch size of RHS (banded matrix can also be batched matrix)
-/// \param k [in] Number of superdiagonals or subdiagonals of matrix A
+/// \param N [in] Batch size of matrices
 /// \param BlkSize [in] Block size of matrix A
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_getrf(const int N, const int BlkSize) {
   using ats            = typename Kokkos::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
-
-  using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
-  using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
+  using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
+  using PivView2DType  = Kokkos::View<int **, LayoutType, DeviceType>;
 
   View3DType A("A", N, BlkSize, BlkSize), A_reconst("A_reconst", N, BlkSize, BlkSize), NL("NL", N, BlkSize, BlkSize),
       L("L", N, BlkSize, BlkSize), U("U", N, BlkSize, BlkSize), LU("LU", N, BlkSize, BlkSize),
@@ -274,8 +292,7 @@ void impl_test_batched_getrf(const int N, const int BlkSize) {
     }
   }
 
-  // this eps is about 10^-14
-  RealType eps = 1.0e3 * ats::epsilon();
+  RealType eps = 1.0e1 * ats::epsilon();
 
   auto h_LU = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), LU);
   // Check if LU = A (permuted)
