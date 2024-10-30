@@ -82,7 +82,7 @@ jobs:
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           cmake \
-          -DKokkos_DIR=$PWD/../../kokkos/install/lib/cmake/Kokkos \
+          -DKokkos_ROOT=$PWD/../../kokkos/install \
           -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -DCMAKE_INSTALL_PREFIX=$PWD/../install \
           -DKokkosKernels_ENABLE_TESTS=ON \
