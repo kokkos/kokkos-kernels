@@ -28,6 +28,13 @@
 namespace KokkosODE {
 namespace Impl {
 
+// This algorithm is mostly derived from
+// E. Hairer, S. P. Norsett G. Wanner,
+// "Solving Ordinary Differential Equations I:
+// Nonstiff Problems", Sec. II.4.
+// Note that all floating point values below
+// have been heuristically selected for
+// convergence performance.
 template <class ode_type, class mat_type, class vec_type, class res_type, class scalar_type>
 KOKKOS_FUNCTION void first_step_size(const ode_type ode, const int order, const scalar_type t0, const scalar_type atol,
                                      const scalar_type rtol, const vec_type& y0, const res_type& f0, const vec_type y1,
@@ -83,7 +90,7 @@ KOKKOS_FUNCTION void first_step_size(const ode_type ode, const int order, const 
     y1(eqIdx) = 0.0;
     f1(eqIdx) = 0.0;
   }
-}  // initial_step_size
+}  // first_step_size
 
 // y_new = y_old + dt*sum(b_i*k_i)    i in [1, nstages]
 // k_i = f(t+c_i*dt, y_old+sum(a_{ij}*k_i))  j in [1, i-1]
@@ -132,6 +139,13 @@ KOKKOS_FUNCTION void RKStep(ode_type& ode, const table_type& table, scalar_type 
   }
 }  // RKStep
 
+// Note that the control values for
+// time step increase/decrease are
+// heuristically chosen based on
+// L. F. Shampine and M. W. Reichelt
+// "The Matlab ODE suite" SIAM J. Sci.
+// Comput. Vol. 18, No. 1, pp. 1-22
+// Jan. 1997
 template <class ode_type, class table_type, class vec_type, class mv_type, class scalar_type>
 KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(const ode_type& ode, const table_type& table,
                                                         const KokkosODE::Experimental::ODE_params& params,
