@@ -218,6 +218,17 @@ struct SptrsvWrap {
         for (size_type i = 0; i < MAX_VEC_SIZE; ++i) m_data[i] = rhs_.m_data[i];
       }
 
+      // copy-assignment
+      KOKKOS_INLINE_FUNCTION
+      ArrayType& operator=(const ArrayType& rhs_) {
+          if (this != &rhs_) {
+              for (size_type i = 0; i < MAX_VEC_SIZE; ++i) {
+                  m_data[i] = rhs_.m_data[i];
+              }
+          }
+          return *this;
+      }
+
       KOKKOS_INLINE_FUNCTION
       ArrayType(const Vector &) { init(); }
 
