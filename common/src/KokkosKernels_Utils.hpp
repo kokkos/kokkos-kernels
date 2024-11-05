@@ -124,7 +124,6 @@ struct FillSymmetricEdgesHashMap {
   in_lno_nnz_view_t adj;
   hashmap_t umap;
   out_lno_row_view_t pre_pps;
-  bool lower_only;
 
   FillSymmetricEdgesHashMap(idx num_rows_, in_lno_row_view_t xadj_, in_lno_nnz_view_t adj_, hashmap_t hashmap_,
                             out_lno_row_view_t pre_pps_)
@@ -177,7 +176,7 @@ struct FillSymmetricLowerEdgesHashMap {
   out_lno_row_view_t pre_pps;
 
   FillSymmetricLowerEdgesHashMap(idx num_rows_, in_lno_row_view_t xadj_, in_lno_nnz_view_t adj_, hashmap_t hashmap_,
-                                 out_lno_row_view_t pre_pps_, bool /* lower_only_ */ = false)
+                                 out_lno_row_view_t pre_pps_)
       : num_rows(num_rows_), nnz(adj_.extent(0)), xadj(xadj_), adj(adj_), umap(hashmap_), pre_pps(pre_pps_) {}
 
   KOKKOS_INLINE_FUNCTION
