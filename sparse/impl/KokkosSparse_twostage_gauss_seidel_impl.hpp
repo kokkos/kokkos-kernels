@@ -116,9 +116,9 @@ class TwostageGaussSeidel {
   struct TwostageGaussSeidel_functor {
    public:
     // input
-    bool two_stage;
-    bool compact_form;
-    bool diagos_given;
+    bool two_stage    = false;
+    bool compact_form = false;
+    bool diagos_given = false;
     const_ordinal_t num_rows;
     input_row_map_view_t rowmap_view;
     input_entries_view_t column_view;
@@ -143,7 +143,7 @@ class TwostageGaussSeidel {
     output_entries_view_t entries_a2;
     output_values_view_t values_a2;
     // for computing residual norm with
-    bool forward_sweep;
+    bool forward_sweep = true;
     internal_vector_view_t localX;
     internal_vector_view_t localB;
 
