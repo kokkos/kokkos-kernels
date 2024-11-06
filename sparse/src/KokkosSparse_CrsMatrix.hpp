@@ -436,7 +436,7 @@ class CrsMatrix {
 
   /// \brief Construct with a graph that will be shared.
   ///
-  /// Allocate the values array for subsquent fill.
+  /// Allocate the values array for subsequent fill.
   template <typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
   [[deprecated(
       "Use the constructor that accepts ncols as input "
@@ -474,7 +474,7 @@ class CrsMatrix {
       : graph(graph_.entries, graph_.row_map), values(vals), numCols_(ncols) {}
 
   /// \brief Constructor that copies raw arrays of host data in
-  ///   3-array CRS (compresed row storage) format.
+  ///   3-array CRS (compressed row storage) format.
   ///
   /// On input, the entries must be sorted by row. \c rowmap determines where
   /// each row begins and ends. For each entry k (0 <= k < annz), \c cols[k]
