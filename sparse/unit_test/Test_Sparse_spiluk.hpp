@@ -327,7 +327,7 @@ struct SpilukTest {
     const size_type nnz        = values.extent(0);
     const lno_t fill_lev       = 2;
     const size_type block_size = nrows % 2 == 0 ? 2 : 3;
-    ASSERT_EQ(nrows % block_size, 0);
+    ASSERT_EQ(nrows % block_size, size_type(0));
 
     KernelHandle kh;
 
@@ -560,7 +560,7 @@ struct SpilukTest {
     const size_type nrows       = Afix.size();
     const size_type block_size  = nrows % 2 == 0 ? 2 : 3;
     const size_type block_items = block_size * block_size;
-    ASSERT_EQ(nrows % block_size, 0);
+    ASSERT_EQ(nrows % block_size, size_type(0));
 
     // Convert to BSR
     Crs crs("crs for block spiluk test", nrows, nrows, values.extent(0), values, row_map, entries);

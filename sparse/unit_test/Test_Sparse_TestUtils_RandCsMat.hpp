@@ -19,10 +19,11 @@
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  using RandCs        = RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
-  using size_type     = typename RandCs::size_type;
-  auto expected_min   = ScalarType(1.0);
-  size_t expected_nnz = 0;
+  using RandCs              = RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
+  using ordinal_type        = typename RandCs::ordinal_type;
+  using size_type           = typename RandCs::size_type;
+  auto expected_min         = ScalarType(1.0);
+  ordinal_type expected_nnz = 0;
   RandCs cm(m, n, min_val, max_val);
 
   for (size_type i = 0; i < cm.get_nnz(); ++i) ASSERT_GE(cm(i), expected_min) << cm.info;
@@ -44,13 +45,13 @@ void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
 
   // No need to check data here. Kokkos unit-tests deep_copy.
   auto vals = cm.get_vals();
-  ASSERT_EQ(vals.extent(0), cm.get_nnz() + 1) << cm.info;
+  ASSERT_EQ(vals.extent(0), size_t(cm.get_nnz()) + 1) << cm.info;
 
   auto row_ids = cm.get_ids();
-  ASSERT_EQ(row_ids.extent(0), cm.get_nnz()) << cm.info;
+  ASSERT_EQ(row_ids.extent(0), size_t(cm.get_nnz())) << cm.info;
 
   auto col_map = cm.get_map();
-  ASSERT_EQ(col_map.extent(0), cm.get_dim1() + 1);
+  ASSERT_EQ(col_map.extent(0), size_t(cm.get_dim1()) + 1);
 
   ASSERT_EQ(map(cm.get_dim1()), expected_nnz) << cm.info;
 }
