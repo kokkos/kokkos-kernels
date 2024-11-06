@@ -496,7 +496,8 @@ struct Reverse_Map_Scale_Init {
     forward_type fm = forward_map[ii];
     fm              = fm << multiply_shift_for_scale;
     // Avoid shift by a negative number of bits (division_shift_for_bucket may be positive or negative)
-    size_t adjust = (division_shift_for_bucket >= 0) ? (ii >> division_shift_for_bucket) : (ii << (-division_shift_for_bucket));
+    size_t adjust =
+        (division_shift_for_bucket >= 0) ? (ii >> division_shift_for_bucket) : (ii << (-division_shift_for_bucket));
     Kokkos::atomic_fetch_add(&(reverse_map_xadj(fm + adjust)), atomic_incr_type(1));
   }
 };
@@ -528,9 +529,11 @@ struct Fill_Reverse_Scale_Map {
 
     fm = fm << multiply_shift_for_scale;
     // Avoid shift by a negative number of bits (division_shift_for_bucket may be positive or negative)
-    size_t adjust = (division_shift_for_bucket >= 0) ? (ii >> division_shift_for_bucket) : (ii << (-division_shift_for_bucket));
-    const reverse_type future_index = Kokkos::atomic_fetch_add(&(reverse_map_xadj(fm + adjust - 1)), atomic_incr_type(1));
-    reverse_map_adj(future_index)   = ii;
+    size_t adjust =
+        (division_shift_for_bucket >= 0) ? (ii >> division_shift_for_bucket) : (ii << (-division_shift_for_bucket));
+    const reverse_type future_index =
+        Kokkos::atomic_fetch_add(&(reverse_map_xadj(fm + adjust - 1)), atomic_incr_type(1));
+    reverse_map_adj(future_index) = ii;
   }
 };
 
@@ -542,9 +545,7 @@ struct StridedCopy {
   StridedCopy(const from_view_t from_, to_view_t to_, size_t stride_) : from(from_), to(to_), stride(stride_) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t &ii) const {
-    to[ii] = from[(ii + 1) * stride - 1];
-  }
+  void operator()(const size_t &ii) const { to[ii] = from[(ii + 1) * stride - 1]; }
 };
 
 /**
@@ -587,11 +588,12 @@ void create_reverse_map(MyExecSpace my_exec_space,
                                        num_forward_elements);
 
   if (num_reverse_elements < MINIMUM_TO_ATOMIC) {
-    // Number of reverse elements (e.g. colors) is small, so counting and filling with atomics would cause high contention.
-    // So expand each bucket into many sub-buckets.
-    const lno_t scale_size                = 1024;
-    const lno_t multiply_shift_for_scale  = 10;
-    const lno_t division_shift_for_bucket = num_forward_elements ? Kokkos::ceil(Kokkos::log2(double(num_forward_elements) / scale_size)) : 0;
+    // Number of reverse elements (e.g. colors) is small, so counting and filling with atomics would cause high
+    // contention. So expand each bucket into many sub-buckets.
+    const lno_t scale_size               = 1024;
+    const lno_t multiply_shift_for_scale = 10;
+    const lno_t division_shift_for_bucket =
+        num_forward_elements ? Kokkos::ceil(Kokkos::log2(double(num_forward_elements) / scale_size)) : 0;
     // const lno_t bucket_range_size = pow(2, division_shift_for_bucket);
 
     // coloring indices are base-1. we end up using not using element 1.

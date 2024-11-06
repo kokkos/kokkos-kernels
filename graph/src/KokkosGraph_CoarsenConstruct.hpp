@@ -177,7 +177,7 @@ class coarse_builder {
     matrix_t mtx;
     vtx_view_t vtx_wgts;
     matrix_t interp_mtx;
-    int level = 0;
+    int level            = 0;
     bool uniform_weights = false;
   };
 
