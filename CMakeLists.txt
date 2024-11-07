@@ -417,8 +417,8 @@ ELSE()
     TARGET_COMPILE_DEFINITIONS(kokkoskernels_gtest PUBLIC "-DGTEST_HAS_PTHREAD=0")
     TARGET_INCLUDE_DIRECTORIES(kokkoskernels_gtest PUBLIC $<BUILD_INTERFACE:${GTEST_SOURCE_DIR}>)
 
-    #Gtest minimally requires C++11
-    TARGET_COMPILE_FEATURES(kokkoskernels_gtest PUBLIC cxx_std_11)
+    #Gtest 1.15.2 requires at least C++14
+    TARGET_COMPILE_FEATURES(kokkoskernels_gtest PUBLIC cxx_std_14)
   ENDIF()
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(common/unit_test)
   IF (KokkosKernels_ENABLE_COMPONENT_BATCHED)
