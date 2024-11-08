@@ -21,10 +21,6 @@
 
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
 
-#if defined(KOKKOS_ENABLE_DEPRECATION_WARNINGS) && defined(KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_PUSH)
-KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_PUSH()
-#endif
-
 #include <Kokkos_StaticCrsGraph.hpp>
 
 namespace KokkosSparse {
@@ -33,10 +29,6 @@ using Kokkos::GraphRowViewConst;
 using Kokkos::maximum_entry;
 using Kokkos::StaticCrsGraph;
 }  // namespace KokkosSparse
-
-#if defined(KOKKOS_ENABLE_DEPRECATION_WARNINGS) && defined(KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP)
-KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
-#endif
 
 #else
 

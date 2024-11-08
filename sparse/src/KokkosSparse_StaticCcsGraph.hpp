@@ -101,8 +101,7 @@ class StaticCcsGraph {
 namespace Kokkos {
 template <class DataType, class Arg1Type, class Arg2Type = void, class Arg3Type = void,
           typename SizeType = typename Kokkos::ViewTraits<DataType*, Arg1Type, Arg2Type, Arg3Type>::size_type>
-using StaticCcsGraph KOKKOS_DEPRECATED_WITH_COMMENT("Use KokkosSparse::StaticCcsGraph instead") =
-    KokkosSparse::StaticCcsGraph<DataType, Arg1Type, Arg2Type, Arg3Type, SizeType>;
+using StaticCcsGraph = KokkosSparse::StaticCcsGraph<DataType, Arg1Type, Arg2Type, Arg3Type, SizeType>;
 }
 #endif
 
