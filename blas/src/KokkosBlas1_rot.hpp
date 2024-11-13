@@ -40,6 +40,14 @@ void rot(execution_space const& space, VectorView const& X, VectorView const& Y,
   static_assert(std::is_same<typename VectorView::non_const_value_type, typename VectorView::value_type>::value,
                 "rot: VectorView template parameter needs to store non-const values");
 
+  // Check compatibility of dimensions at run time.
+  if (X.extent(0) != Y.extent(0)) {
+    std::ostringstream os;
+    os << "KokkosBlas::rot: Dimensions of X and Y do not match: "
+       << "X: " << X.extent(0) << ", Y: " << Y.extent(0);
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
   using VectorView_Internal = Kokkos::View<typename VectorView::non_const_value_type*,
                                            typename KokkosKernels::Impl::GetUnifiedLayout<VectorView>::array_layout,
                                            Kokkos::Device<execution_space, typename VectorView::memory_space>,
