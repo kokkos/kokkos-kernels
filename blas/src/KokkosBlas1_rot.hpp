@@ -27,6 +27,8 @@ void rot(execution_space const& space, VectorView const& X, VectorView const& Y,
   static_assert(Kokkos::is_execution_space<execution_space>::value,
                 "rot: execution_space template parameter is not a Kokkos "
                 "execution space.");
+  static_assert(Kokkos::is_view_v<VectorView>, "KokkosBlas::rot: VectorView is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<ScalarView>, "KokkosBlas::rot: ScalarView is not a Kokkos::View.");
   static_assert(VectorView::rank == 1, "rot: VectorView template parameter needs to be a rank 1 view");
   static_assert(ScalarView::rank == 0, "rot: ScalarView template parameter needs to be a rank 0 view");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename VectorView::memory_space>::accessible,
