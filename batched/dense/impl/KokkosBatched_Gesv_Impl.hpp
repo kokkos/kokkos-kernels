@@ -21,6 +21,7 @@
 #include "KokkosBatched_Util.hpp"
 #include <KokkosBatched_LU_Decl.hpp>
 #include "KokkosBatched_Trsm_Decl.hpp"
+#include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_Copy_Decl.hpp"
 
 namespace KokkosBatched {
@@ -393,12 +394,10 @@ struct SerialGesv<Gesv::StaticPivoting> {
     int r_val = SerialLU<Algo::Level3::Unblocked>::invoke(PDAD);
 
     if (r_val == 0)
-      r_val = SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Level3::Unblocked>::invoke(
-          1.0, PDAD, PDY);
+      r_val = SerialTrsv<Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Trsv::Unblocked>::invoke(1.0, PDAD, PDY);
 
     if (r_val == 0)
-      r_val = SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Level3::Unblocked>::invoke(
-          1.0, PDAD, PDY);
+      r_val = SerialTrsv<Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Trsv::Unblocked>::invoke(1.0, PDAD, PDY);
 
     if (r_val == 0) SerialHadamard1D(PDY, D2, X);
     return r_val;
@@ -434,12 +433,10 @@ struct SerialGesv<Gesv::NoPivoting> {
     if (r_val == 0) r_val = SerialCopy<Trans::NoTranspose, 1>::invoke(Y, X);
 
     if (r_val == 0)
-      r_val = SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Level3::Unblocked>::invoke(
-          1.0, A, X);
+      r_val = SerialTrsv<Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Trsv::Unblocked>::invoke(1.0, A, X);
 
     if (r_val == 0)
-      r_val = SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Level3::Unblocked>::invoke(
-          1.0, A, X);
+      r_val = SerialTrsv<Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Trsv::Unblocked>::invoke(1.0, A, X);
 
     return r_val;
   }

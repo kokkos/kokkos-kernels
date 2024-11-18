@@ -26,6 +26,7 @@
 #include "KokkosBatched_Spmv.hpp"
 #include "KokkosBatched_Xpay.hpp"
 #include "KokkosBatched_Givens_Serial_Internal.hpp"
+#include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Identity.hpp"
 #include "KokkosBlas2_serial_gemv_impl.hpp"
@@ -231,7 +232,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
     auto A_l = Kokkos::subview(H_view, l, first_indices, first_indices);
     auto B_l = Kokkos::subview(G, l, first_indices);
 
-    SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit, Algo::Trsm::Unblocked>::invoke(1, A_l, B_l);
+    SerialTrsv<Uplo::Lower, Trans::Transpose, Diag::NonUnit, Algo::Trsv::Unblocked>::invoke(1, A_l, B_l);
   }
 
   if (handle.get_ortho_strategy() == 0) {
