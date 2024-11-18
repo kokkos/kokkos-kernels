@@ -136,7 +136,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::inv
 
         // trsm update
         const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *KOKKOS_RESTRICT Bp    = BB + p * bs0;
+        /**/ ValueType *KOKKOS_RESTRICT Bp  = BB + p * bs0;
 
         if (use_unit_diag)
           trsm_u.serial_invoke(Ap, pb, jb, Bp);
@@ -265,7 +265,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::inv
 
         // trsm update
         const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *KOKKOS_RESTRICT Bp    = BB + p * bs0;
+        /**/ ValueType *KOKKOS_RESTRICT Bp  = BB + p * bs0;
 
         if (use_unit_diag)
           trsm_u.serial_invoke(Ap, pb, jb, Bp);
