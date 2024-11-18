@@ -82,7 +82,7 @@ struct Functor_BatchedSerialGemm {
   KOKKOS_INLINE_FUNCTION
   Functor_BatchedSerialGemm(const ScalarType alpha, const AViewType &a, const BViewType &b, const ScalarType beta,
                             const CViewType &c)
-      : m_alpha(alpha), m_a(a), m_b(b), m_beta(beta), m_c(c) {}
+      : m_a(a), m_b(b), m_c(c), m_alpha(alpha), m_beta(beta) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int k) const {
@@ -96,7 +96,8 @@ struct Functor_BatchedSerialGemm {
   inline void run() {
     using value_type = typename AViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialTrsm");
-    std::string name = name_region;
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
     Kokkos::RangePolicy<execution_space> policy(0, m_a.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
   }
