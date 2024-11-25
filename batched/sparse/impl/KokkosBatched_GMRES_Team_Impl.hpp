@@ -27,7 +27,6 @@
 #include "KokkosBatched_Xpay.hpp"
 #include "KokkosBatched_Givens_Serial_Internal.hpp"
 #include "KokkosBatched_Trsm_Decl.hpp"
-#include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_Identity.hpp"
 #include "KokkosBatched_Gemv_Decl.hpp"
 
@@ -246,7 +245,7 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(const MemberType& membe
     auto A_l = Kokkos::subview(H_view, l, first_indices, first_indices);
     auto B_l = Kokkos::subview(G, l, first_indices);
 
-    SerialTrsv<Uplo::Lower, Trans::Transpose, Diag::NonUnit, Algo::Trsv::Unblocked>::invoke(1, A_l, B_l);
+    SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit, Algo::Trsm::Unblocked>::invoke(1, A_l, B_l);
   });
 
   member.team_barrier();  // Finish writing to G
