@@ -38,7 +38,8 @@ jobs:
     uses: ./.github/workflows/spr.yml
     with:
       kokkos_version: 4.5.00
-  volta70:
-    uses: ./.github/workflows/volta70.yml
-    with:
-      kokkos_version: 4.5.00
+  # All these ran on sogpu01, which has been repurposed
+  # volta70:
+  #   uses: ./.github/workflows/volta70.yml
+  #   with:
+  #     kokkos_version: 4.5.00
