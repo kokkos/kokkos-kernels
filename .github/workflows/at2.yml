@@ -19,26 +19,26 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  KOKKOS_VERSION: 4.4.01
+  KOKKOS_VERSION: 4.5.00
 
 jobs:
   mi210:
     uses: ./.github/workflows/mi210.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: 4.5.00
   h100:
     uses: ./.github/workflows/h100.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: 4.5.00
   bdw:
     uses: ./.github/workflows/bdw.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: 4.5.00
   spr:
     uses: ./.github/workflows/spr.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: 4.5.00
   volta70:
     uses: ./.github/workflows/volta70.yml
     with:
-      kokkos_version: 4.4.01
+      kokkos_version: 4.5.00
