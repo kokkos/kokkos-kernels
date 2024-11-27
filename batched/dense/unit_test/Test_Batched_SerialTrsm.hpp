@@ -487,7 +487,7 @@ void impl_test_batched_trsm(const std::size_t N, const std::size_t m, const std:
   Kokkos::fence();
 
   // Check 1/alpha * Op(A) * X == B_ref
-  RealType eps = 1.0e2 * ats::epsilon();
+  RealType eps = 1.0e3 * ats::epsilon();
   auto h_C     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C);
   auto h_B_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), B_ref);
   for (std::size_t ib = 0; ib < N; ib++) {

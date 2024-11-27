@@ -745,7 +745,7 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trs
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <typename ArgDiag>
-struct SerialTrsm<Side::Right, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::CompactMKL> {
+struct SerialTrsm<Side::Right, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
     typedef typename BViewType::value_type vector_type;
