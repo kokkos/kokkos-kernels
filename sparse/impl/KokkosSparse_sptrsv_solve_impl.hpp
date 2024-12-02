@@ -2083,7 +2083,6 @@ struct SptrsvWrap {
                                 const std::vector<RowMapType> &row_map_v, const std::vector<EntriesType> &entries_v,
                                 const std::vector<ValuesType> &values_v, const std::vector<RHSType> &rhs_v,
                                 std::vector<LHSType> &lhs_v) {
-    // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
     using nodes_per_level_type        = typename TriSolveHandle::hostspace_nnz_lno_view_t;
     using nodes_grouped_by_level_type = typename TriSolveHandle::nnz_lno_view_t;
     using RPFunctor                   = FunctorTypeMacro(TriLvlSchedRPSolverFunctor, IsLower, BlockEnabled);
@@ -2131,6 +2130,10 @@ struct SptrsvWrap {
               const int scratch_size = TPFunctor::SBlock::shmem_size(block_size, block_size);
               tp                     = tp.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
               Kokkos::parallel_for("parfor_l_team", tp, tstf);
+            } else {
+              // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
+              auto alg_name = thandle_v[i]->return_algorithm_string();
+              KK_REQUIRE_MSG(false, "Algorithm " << alg_name << " does not support streams");
             }
             node_count_v[i] += lvl_nodes;
           }  // end if (lvl_nodes != 0)
