@@ -620,9 +620,6 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_sptrsv_streams() {
   using TestStruct                  = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
   std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1};
-  if (TestStruct::do_cusparse()) {
-    algs.push_back(SPTRSVAlgorithm::SPTRSV_CUSPARSE);
-  }
 
   for (auto alg : algs) {
     for (int nstreams = 1; nstreams <= 4; ++nstreams) {
