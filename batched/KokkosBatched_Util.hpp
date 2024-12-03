@@ -91,7 +91,25 @@
 #endif
 #define __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED
 
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ 1
+#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED 1
+#if defined(KOKKOS_COMPILER_MSVC)
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__                                                      \
+  (                                                                                                             \
+      __pragma(message("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ is deprecated and will be " \
+                       "removed in a future version")) KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
+#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__                                                    \
+  (__extension__({                                                                                            \
+    _Pragma(                                                                                                  \
+        "\"__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ is deprecated and will be removed in a future " \
+        "version\"");                                                                                         \
+    KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED;                                                      \
+  }))
+#else
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ \
+  KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED  // no good way to deprecate?
+#endif
+
 #include "mkl.h"
 // #include "mkl_types.h"
 #endif
