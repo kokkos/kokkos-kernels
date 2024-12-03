@@ -56,7 +56,7 @@ KOKKOS_INLINE_FUNCTION static int checkTrsmInput([[maybe_unused]] const AViewTyp
 /// A(m x m), B(m x n)
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
@@ -152,7 +152,7 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Tr
 /// B := inv(triu(A)) (alpha*B)
 /// A(m x m), B(m x n)
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
@@ -249,7 +249,7 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Tr
 /// A(m x m), B(m x n)
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
@@ -344,7 +344,7 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm
 /// B := inv(triu(AT)) (alpha*B)
 /// A(m x m), B(m x n)
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
