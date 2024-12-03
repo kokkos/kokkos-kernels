@@ -21,7 +21,9 @@
 
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
 
+#define KOKKOS_IMPL_DO_NOT_WARN_INCLUDE_STATIC_CRS_GRAPH
 #include <Kokkos_StaticCrsGraph.hpp>
+#undef KOKKOS_IMPL_DO_NOT_WARN_INCLUDE_STATIC_CRS_GRAPH
 
 namespace KokkosSparse {
 using Kokkos::create_staticcrsgraph;
