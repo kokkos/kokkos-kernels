@@ -19,11 +19,10 @@
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  using RandCs              = RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
-  using ordinal_type        = typename RandCs::ordinal_type;
-  using size_type           = typename RandCs::size_type;
-  auto expected_min         = ScalarType(1.0);
-  ordinal_type expected_nnz = 0;
+  using RandCs           = RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
+  using size_type        = typename RandCs::size_type;
+  auto expected_min      = ScalarType(1.0);
+  size_type expected_nnz = 0;
   RandCs cm(m, n, min_val, max_val);
 
   for (size_type i = 0; i < cm.get_nnz(); ++i) ASSERT_GE(cm(i), expected_min) << cm.info;
@@ -39,7 +38,7 @@ void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
       int64_t col_start = j < static_cast<int64_t>(m) ? map(j) : 0;
       ASSERT_FLOAT_EQ(cm(col_start + i), cm(expected_nnz + i)) << cm.info;
     }
-    expected_nnz += col_len;
+    expected_nnz += size_type(col_len);
   }
   ASSERT_EQ(cm.get_nnz(), expected_nnz) << cm.info;
 
