@@ -98,7 +98,24 @@
 #endif
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE)
-#define __KOKKOSBATCHED_ENABLE_LAPACKE__ 1
+#define KOKKOSBATCHED_IMPL_ENABLE_LAPACKE 1
+#if defined(KOKKOS_COMPILER_MSVC)
+#define __KOKKOSBATCHED_ENABLE_LAPACKE__                                                      \
+  (                                                                                           \
+      __pragma(message("warning: __KOKKOSBATCHED_ENABLE_LAPACKE__ is deprecated and will be " \
+                       "removed in a future version")) KOKKOSBATCHED_IMPL_ENABLE_LAPACKE)
+#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
+#define __KOKKOSBATCHED_ENABLE_LAPACKE__                                                    \
+  (__extension__({                                                                          \
+    _Pragma(                                                                                \
+        "\"__KOKKOSBATCHED_ENABLE_LAPACKE__ is deprecated and will be removed in a future " \
+        "version\"");                                                                       \
+    KOKKOSBATCHED_IMPL_ENABLE_LAPACKE;                                                      \
+  }))
+#else
+#define __KOKKOSBATCHED_ENABLE_LAPACKE__ KOKKOSBATCHED_IMPL_ENABLE_LAPACKE  // no good way to deprecate?
+#endif
+
 #include "lapacke.h"
 #endif
 
