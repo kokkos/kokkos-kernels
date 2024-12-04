@@ -37,7 +37,7 @@ namespace KokkosSparse {
 /// \tparam Arg2Type The third template parameter, which if provided
 ///   corresponds to the Device type.
 ///
-/// \tparam Arg3Type The third template parameter, which if provided
+/// \tparam Arg3Type The fourth template parameter, which if provided
 ///   corresponds to the MemoryTraits.
 ///
 /// \tparam SizeType The type of col offsets.  Usually the default
