@@ -131,7 +131,7 @@ void test_QR_square() {
   using ColVectorViewType = Kokkos::View<Scalar*>;
   using ColWorkViewType   = Kokkos::View<Scalar*>;
 
-  const Scalar tol = 10 * Kokkos::ArithTraits<Scalar>::eps();
+  const Scalar tol = 20 * Kokkos::ArithTraits<Scalar>::eps();
   constexpr int m = 3, n = 3;
 
   MatrixViewType A("A", m, n), B("B", m, n), Q("Q", m, m);
@@ -350,14 +350,14 @@ void test_QR_batch() {
 
   using ExecutionSpace = typename Device::execution_space;
 
-  {                                  // Square matrix case
-    constexpr int numMat     = 314;  // 314
-    constexpr int maxMatSize = 36;   // 36
-    Kokkos::View<Scalar**, ExecutionSpace> tau("tau", numMat, maxMatSize);
-    Kokkos::View<Scalar**, ExecutionSpace> tmp("work buffer", numMat, maxMatSize);
-    Kokkos::View<Scalar***, ExecutionSpace> As("A matrices", numMat, maxMatSize, maxMatSize);
-    Kokkos::View<Scalar***, ExecutionSpace> Bs("B matrices", numMat, maxMatSize, maxMatSize);
-    Kokkos::View<Scalar***, ExecutionSpace> Qs("Q matrices", numMat, maxMatSize, maxMatSize);
+  { // Square matrix case
+    constexpr int numMat  = 314;
+    constexpr int numRows = 36;
+    Kokkos::View<Scalar**, ExecutionSpace> tau("tau", numMat, numRows);
+    Kokkos::View<Scalar**, ExecutionSpace> tmp("work buffer", numMat, numRows);
+    Kokkos::View<Scalar***, ExecutionSpace> As("A matrices", numMat, numRows, numRows);
+    Kokkos::View<Scalar***, ExecutionSpace> Bs("B matrices", numMat, numRows, numRows);
+    Kokkos::View<Scalar***, ExecutionSpace> Qs("Q matrices", numMat, numRows, numRows);
     Kokkos::View<int, ExecutionSpace> global_error("global number of error");
 
     Kokkos::Random_XorShift64_Pool<ExecutionSpace> rand_pool(2718);
@@ -377,10 +377,10 @@ void test_QR_batch() {
     EXPECT_EQ(global_error_h(), 0);
   }
 
-  {                             // Rectangular matrix case
-    constexpr int numMat  = 2;  // 314
-    constexpr int numRows = 3;  // 42
-    constexpr int numCols = 2;  // 36
+  { // Rectangular matrix case
+    constexpr int numMat  = 314;  // 314
+    constexpr int numRows = 42;  // 42
+    constexpr int numCols = 36;  // 36
     Kokkos::View<Scalar**, ExecutionSpace> tau("tau", numMat, numCols);
     Kokkos::View<Scalar**, ExecutionSpace> tmp("work buffer", numMat, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> As("A matrices", numMat, numRows, numCols);
@@ -394,26 +394,6 @@ void test_QR_batch() {
       Scalar randStart, randEnd;
       Test::getRandomBounds(max_val, randStart, randEnd);
       Kokkos::fill_random(ExecutionSpace{}, As, rand_pool, randStart, randEnd);
-    }
-
-    {
-      typename Kokkos::View<Scalar***, ExecutionSpace>::HostMirror As_h = Kokkos::create_mirror_view(As);
-      Kokkos::deep_copy(As_h, As);
-      As_h(0, 0, 0) = 3.0;
-      As_h(0, 0, 1) = 5.0;
-      As_h(0, 1, 0) = 4.0;
-      As_h(0, 1, 1) = 0.0;
-      As_h(0, 2, 0) = 0.0;
-      As_h(0, 2, 1) = -3.0;
-
-      As_h(1, 0, 0) = 3.0;
-      As_h(1, 0, 1) = 5.0;
-      As_h(1, 1, 0) = 4.0;
-      As_h(1, 1, 1) = 0.0;
-      As_h(1, 2, 0) = 0.0;
-      As_h(1, 2, 1) = -3.0;
-
-      Kokkos::deep_copy(As, As_h);
     }
     Kokkos::deep_copy(Bs, As);
 

@@ -180,7 +180,7 @@ struct SerialApplyQ_RightForwardInternal {
       /// -----------------------------------------------------
       // right apply householder to partitioned B1 and B2
       SerialApplyRightHouseholderInternal::invoke(m, n_B2, tau, A_part3x3.A21, as0, B_part1x3.A1, bs0, B_part1x3.A2,
-                                                  bs0, bs1, ws);
+                                                  bs0, bs1, w, ws);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);
