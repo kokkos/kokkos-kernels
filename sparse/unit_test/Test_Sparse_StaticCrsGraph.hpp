@@ -240,7 +240,7 @@ void run_test_graph4() {
 
 } /* namespace TestStaticCrsGraph */
 
-TEST(NotSureWhatGoesThere, staticcrsgraph) {
+TEST(TestCategory, staticcrsgraph) {
   TestStaticCrsGraph::run_test_graph<TestDevice>();
   TestStaticCrsGraph::run_test_graph2<TestDevice>();
   TestStaticCrsGraph::run_test_graph3<TestDevice>(1, 0);
