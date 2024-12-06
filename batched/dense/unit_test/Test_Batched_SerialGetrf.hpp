@@ -27,16 +27,14 @@ using namespace KokkosBatched;
 namespace Test {
 namespace Getrf {
 
-template <typename DeviceType, typename AViewType, typename PivViewType,
-          typename AlgoTagType>
+template <typename DeviceType, typename AViewType, typename PivViewType, typename AlgoTagType>
 struct Functor_BatchedSerialGetrf {
   using execution_space = typename DeviceType::execution_space;
   AViewType _a;
   PivViewType _ipiv;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialGetrf(const AViewType &a, const PivViewType &ipiv)
-      : _a(a), _ipiv(ipiv) {}
+  Functor_BatchedSerialGetrf(const AViewType &a, const PivViewType &ipiv) : _a(a), _ipiv(ipiv) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int k, int &info) const {
@@ -60,8 +58,7 @@ struct Functor_BatchedSerialGetrf {
   }
 };
 
-template <typename DeviceType, typename ScalarType, typename AViewType,
-          typename BViewType, typename CViewType>
+template <typename DeviceType, typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 struct Functor_BatchedSerialGemm {
   using execution_space = typename DeviceType::execution_space;
   AViewType _a;
@@ -70,8 +67,7 @@ struct Functor_BatchedSerialGemm {
   ScalarType _alpha, _beta;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialGemm(const ScalarType alpha, const AViewType &a,
-                            const BViewType &b, const ScalarType beta,
+  Functor_BatchedSerialGemm(const ScalarType alpha, const AViewType &a, const BViewType &b, const ScalarType beta,
                             const CViewType &c)
       : _alpha(alpha), _a(a), _b(b), _beta(beta), _c(c) {}
 
@@ -81,9 +77,8 @@ struct Functor_BatchedSerialGemm {
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
     auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
-                              Algo::Gemm::Unblocked>::invoke(_alpha, aa, bb,
-                                                             _beta, cc);
+    KokkosBatched::SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Unblocked>::invoke(_alpha, aa, bb,
+                                                                                                     _beta, cc);
   }
 
   inline void run() {
@@ -96,8 +91,7 @@ struct Functor_BatchedSerialGemm {
   }
 };
 
-template <typename DeviceType, typename ScalarType, typename LayoutType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 /// \brief Implementation details of batched getrf test
 ///        LU factorization with partial pivoting
 ///        A = [[1. 0. 0. 0.]
@@ -122,13 +116,10 @@ void impl_test_batched_getrf_analytical(const int N) {
   using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
 
   constexpr int BlkSize = 4;
-  View3DType A("A", N, BlkSize, BlkSize),
-      A_reconst("A_reconst", N, BlkSize, BlkSize),
-      NL("NL", N, BlkSize, BlkSize), L("L", N, BlkSize, BlkSize),
-      U("U", N, BlkSize, BlkSize), LU("LU", N, BlkSize, BlkSize),
+  View3DType A("A", N, BlkSize, BlkSize), A_reconst("A_reconst", N, BlkSize, BlkSize), NL("NL", N, BlkSize, BlkSize),
+      L("L", N, BlkSize, BlkSize), U("U", N, BlkSize, BlkSize), LU("LU", N, BlkSize, BlkSize),
       I("I", N, BlkSize, BlkSize);
-  RealView2DType ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing),
-                      N, BlkSize);
+  RealView2DType ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing), N, BlkSize);
   PivView2DType ipiv("ipiv", N, BlkSize), ipiv_ref("ipiv_ref", N, BlkSize);
 
   auto h_A        = Kokkos::create_mirror_view(A);
@@ -150,35 +141,27 @@ void impl_test_batched_getrf_analytical(const int N) {
   Kokkos::fence();
 
   // getrf to factorize matrix A = P * L * U
-  auto info = Functor_BatchedSerialGetrf<DeviceType, View3DType, PivView2DType,
-                             AlgoTagType>(LU, ipiv)
-      .run();
+  auto info = Functor_BatchedSerialGetrf<DeviceType, View3DType, PivView2DType, AlgoTagType>(LU, ipiv).run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
   // Reconstruct L and D from Factorized matrix A
   // Copy non-diagonal lower triangular components to NL
-  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Lower>(
-      LU, NL, -1);
+  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Lower>(LU, NL, -1);
 
   // Copy upper triangular components to U
-  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Upper>(
-      LU, U);
+  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Upper>(LU, U);
 
   // Copy I to L
   Kokkos::deep_copy(L, I);
 
   // Matrix matrix addition by Gemm
   // NL + I by NL * I + L (==I) (result stored in L)
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType>(1.0, NL, I, 1.0, L)
-      .run();
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType>(1.0, NL, I, 1.0, L).run();
 
   // LU = L * U
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType>(1.0, L, U, 0.0, LU)
-      .run();
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType>(1.0, L, U, 0.0, LU).run();
 
   Kokkos::fence();
 
@@ -218,8 +201,7 @@ void impl_test_batched_getrf_analytical(const int N) {
   }
 }
 
-template <typename DeviceType, typename ScalarType, typename LayoutType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 /// \brief Implementation details of batched getrf test
 ///        LU factorization with partial pivoting
 ///
@@ -234,13 +216,10 @@ void impl_test_batched_getrf(const int N, const int BlkSize) {
   using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
 
-  View3DType A("A", N, BlkSize, BlkSize),
-      A_reconst("A_reconst", N, BlkSize, BlkSize),
-      NL("NL", N, BlkSize, BlkSize), L("L", N, BlkSize, BlkSize),
-      U("U", N, BlkSize, BlkSize), LU("LU", N, BlkSize, BlkSize),
+  View3DType A("A", N, BlkSize, BlkSize), A_reconst("A_reconst", N, BlkSize, BlkSize), NL("NL", N, BlkSize, BlkSize),
+      L("L", N, BlkSize, BlkSize), U("U", N, BlkSize, BlkSize), LU("LU", N, BlkSize, BlkSize),
       I("I", N, BlkSize, BlkSize);
-  RealView2DType ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing),
-                      N, BlkSize);
+  RealView2DType ones(Kokkos::view_alloc("ones", Kokkos::WithoutInitializing), N, BlkSize);
   PivView2DType ipiv("ipiv", N, BlkSize);
 
   using execution_space = typename DeviceType::execution_space;
@@ -259,35 +238,27 @@ void impl_test_batched_getrf(const int N, const int BlkSize) {
   Kokkos::fence();
 
   // getrf to factorize matrix A = P * L * U
-  auto info = Functor_BatchedSerialGetrf<DeviceType, View3DType, PivView2DType,
-                             AlgoTagType>(LU, ipiv)
-      .run();
+  auto info = Functor_BatchedSerialGetrf<DeviceType, View3DType, PivView2DType, AlgoTagType>(LU, ipiv).run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
   // Reconstruct L and D from Factorized matrix A
   // Copy non-diagonal lower triangular components to NL
-  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Lower>(
-      LU, NL, -1);
+  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Lower>(LU, NL, -1);
 
   // Copy upper triangular components to U
-  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Upper>(
-      LU, U);
+  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Upper>(LU, U);
 
   // Copy I to L
   Kokkos::deep_copy(L, I);
 
   // Matrix matrix addition by Gemm
   // NL + I by NL * I + L (==I) (result stored in L)
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType>(1.0, NL, I, 1.0, L)
-      .run();
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType>(1.0, NL, I, 1.0, L).run();
 
   // LU = L * U
-  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType,
-                            View3DType>(1.0, L, U, 0.0, LU)
-      .run();
+  Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType>(1.0, L, U, 0.0, LU).run();
 
   Kokkos::fence();
 

@@ -28,14 +28,11 @@ namespace KokkosBatched {
 
 struct SerialIamaxInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int n,
-                                           const ValueType *KOKKOS_RESTRICT x,
-                                           const int xs0);
+  KOKKOS_INLINE_FUNCTION static int invoke(const int n, const ValueType *KOKKOS_RESTRICT x, const int xs0);
 };
 
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int SerialIamaxInternal::invoke(
-    const int n, const ValueType *KOKKOS_RESTRICT x, const int xs0) {
+KOKKOS_INLINE_FUNCTION int SerialIamaxInternal::invoke(const int n, const ValueType *KOKKOS_RESTRICT x, const int xs0) {
   using IPT = Kokkos::Details::InnerProductSpaceTraits<ValueType>;
 
   ValueType amax = IPT::norm(x[0 * xs0]);
@@ -52,13 +49,12 @@ KOKKOS_INLINE_FUNCTION int SerialIamaxInternal::invoke(
   return imax;
 };
 
-  template <typename XViewType>
-  KOKKOS_INLINE_FUNCTION int SerialIamax::invoke(const XViewType &x) {
-    if (x.extent(0) <= 0) return -1;
-    if (x.extent(0) == 1) return 0;
-    return SerialIamaxInternal::invoke(
-        x.extent(0), x.data(), x.stride(0));
-  }
+template <typename XViewType>
+KOKKOS_INLINE_FUNCTION int SerialIamax::invoke(const XViewType &x) {
+  if (x.extent(0) <= 0) return -1;
+  if (x.extent(0) == 1) return 0;
+  return SerialIamaxInternal::invoke(x.extent(0), x.data(), x.stride(0));
+}
 
 }  // namespace KokkosBatched
 
