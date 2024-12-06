@@ -335,3 +335,35 @@ int test_batched_getrf() {
 
   return 0;
 }
+
+#if defined(KOKKOSKERNELS_INST_FLOAT)
+TEST_F(TestCategory, test_batched_getrf_float) {
+  using algo_tag_type = typename Algo::Getrf::Unblocked;
+
+  test_batched_getrf<TestDevice, float, algo_tag_type>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_DOUBLE)
+TEST_F(TestCategory, test_batched_getrf_double) {
+  using algo_tag_type = typename Algo::Getrf::Unblocked;
+
+  test_batched_getrf<TestDevice, double, algo_tag_type>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+TEST_F(TestCategory, test_batched_getrf_fcomplex) {
+  using algo_tag_type = typename Algo::Getrf::Unblocked;
+
+  test_batched_getrf<TestDevice, Kokkos::complex<float>, algo_tag_type>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+TEST_F(TestCategory, test_batched_getrf_dcomplex) {
+  using algo_tag_type = typename Algo::Getrf::Unblocked;
+
+  test_batched_getrf<TestDevice, Kokkos::complex<double>, algo_tag_type>();
+}
+#endif
