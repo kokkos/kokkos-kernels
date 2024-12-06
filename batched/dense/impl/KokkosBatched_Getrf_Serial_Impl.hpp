@@ -74,16 +74,11 @@ struct Stack {
 };
 
 template <typename AViewType, typename PivViewType>
-KOKKOS_INLINE_FUNCTION static int checkGetrfInput(
-    [[maybe_unused]] const AViewType &A, const PivViewType &ipiv) {
-  static_assert(Kokkos::is_view_v<AViewType>,
-                "KokkosBatched::getrf: AViewType is not a Kokkos::View.");
-  static_assert(Kokkos::is_view_v<PivViewType>,
-                "KokkosBatched::getrf: PivViewType is not a Kokkos::View.");
-  static_assert(AViewType::rank == 2,
-                "KokkosBatched::getrf: AViewType must have rank 2.");
-  static_assert(PivViewType::rank == 1,
-                "KokkosBatched::getrf: PivViewType must have rank 1.");
+KOKKOS_INLINE_FUNCTION static int checkGetrfInput([[maybe_unused]] const AViewType &A, const PivViewType &ipiv) {
+  static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::getrf: AViewType is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<PivViewType>, "KokkosBatched::getrf: PivViewType is not a Kokkos::View.");
+  static_assert(AViewType::rank == 2, "KokkosBatched::getrf: AViewType must have rank 2.");
+  static_assert(PivViewType::rank == 1, "KokkosBatched::getrf: PivViewType must have rank 1.");
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   const int m = A.extent(0), n = A.extent(1);
   const int npiv = ipiv.extent(0);
@@ -101,16 +96,13 @@ KOKKOS_INLINE_FUNCTION static int checkGetrfInput(
   return 0;
 }
 
-
 template <>
 struct SerialGetrf<Algo::Getrf::Unblocked> {
-
   // Host only implementation with recursive algorithm
   template <typename AViewType, typename PivViewType,
-            std::enable_if_t<Kokkos::SpaceAccessibility<Kokkos::HostSpace,
-            typename AViewType::memory_space>::accessible, int> = 0>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const PivViewType &ipiv) {
+            std::enable_if_t<
+                Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename AViewType::memory_space>::accessible, int> = 0>
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const PivViewType &ipiv) {
     using ScalarType = typename AViewType::non_const_value_type;
     auto info        = checkGetrfInput(A, ipiv);
     if (info) return info;
@@ -144,10 +136,9 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
       }
 
       // Compute elements
-      const ScalarType alpha = 1.0 / A(0, 0);
-      auto sub_col_A = Kokkos::subview(A, Kokkos::pair<int, int>(1, m), 0);
-      [[maybe_unused]] auto info_scal =
-          KokkosBlas::SerialScale::invoke(alpha, sub_col_A);
+      const ScalarType alpha          = 1.0 / A(0, 0);
+      auto sub_col_A                  = Kokkos::subview(A, Kokkos::pair<int, int>(1, m), 0);
+      [[maybe_unused]] auto info_scal = KokkosBlas::SerialScale::invoke(alpha, sub_col_A);
 
       return 0;
     } else {
@@ -159,8 +150,8 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
       //        [ A10 ]
 
       // split A into two submatrices A = [A0, A1]
-      auto A0 = Kokkos::subview(A, Kokkos::ALL, Kokkos::pair<int, int>(0, n1));
-      auto A1 = Kokkos::subview(A, Kokkos::ALL, Kokkos::pair<int, int>(n1, n));
+      auto A0    = Kokkos::subview(A, Kokkos::ALL, Kokkos::pair<int, int>(0, n1));
+      auto A1    = Kokkos::subview(A, Kokkos::ALL, Kokkos::pair<int, int>(n1, n));
       auto ipiv0 = Kokkos::subview(ipiv, Kokkos::pair<int, int>(0, n1));
       auto iinfo = invoke(A0, ipiv0);
 
@@ -170,47 +161,34 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
       // Apply interchanges to  [ --- ]
       //                        [ A11 ]
 
-      [[maybe_unused]] auto info_laswp =
-          KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(
-              ipiv0, A1);
+      [[maybe_unused]] auto info_laswp = KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(ipiv0, A1);
 
       // split A into four submatrices
       // A = [[A00, A01],
       //      [A10, A11]]
-      auto A00 = Kokkos::subview(A, Kokkos::pair<int, int>(0, n1),
-                                 Kokkos::pair<int, int>(0, n1));
-      auto A01 = Kokkos::subview(A, Kokkos::pair<int, int>(0, n1),
-                                 Kokkos::pair<int, int>(n1, n));
-      auto A10 = Kokkos::subview(A, Kokkos::pair<int, int>(n1, m),
-                                 Kokkos::pair<int, int>(0, n1));
-      auto A11 = Kokkos::subview(A, Kokkos::pair<int, int>(n1, m),
-                                 Kokkos::pair<int, int>(n1, n));
+      auto A00 = Kokkos::subview(A, Kokkos::pair<int, int>(0, n1), Kokkos::pair<int, int>(0, n1));
+      auto A01 = Kokkos::subview(A, Kokkos::pair<int, int>(0, n1), Kokkos::pair<int, int>(n1, n));
+      auto A10 = Kokkos::subview(A, Kokkos::pair<int, int>(n1, m), Kokkos::pair<int, int>(0, n1));
+      auto A11 = Kokkos::subview(A, Kokkos::pair<int, int>(n1, m), Kokkos::pair<int, int>(n1, n));
 
       // Solve A00 * X = A01
       [[maybe_unused]] auto info_trsm =
-          KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose,
-                                    Diag::Unit,
-                                    Algo::Trsm::Unblocked>::invoke(1.0, A00,
-                                                                   A01);
+          KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit,
+                                    Algo::Trsm::Unblocked>::invoke(1.0, A00, A01);
 
       // Update A11 = A11 - A10 * A01
       [[maybe_unused]] auto info_gemm =
-          KokkosBatched::SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
-                                    Algo::Gemm::Unblocked>::invoke(-1.0, A10,
-                                                                   A01, 1.0,
-                                                                   A11);
+          KokkosBatched::SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Unblocked>::invoke(
+              -1.0, A10, A01, 1.0, A11);
 
       // Factor A11
-      auto ipiv1 =
-          Kokkos::subview(ipiv, Kokkos::pair<int, int>(n1, Kokkos::min(m, n)));
-      iinfo = invoke(A11, ipiv1);
+      auto ipiv1 = Kokkos::subview(ipiv, Kokkos::pair<int, int>(n1, Kokkos::min(m, n)));
+      iinfo      = invoke(A11, ipiv1);
 
       if (info == 0 && iinfo > 0) info = iinfo + n1;
 
       // Apply interchanges to A10
-      info_laswp =
-          KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(
-              ipiv1, A10);
+      info_laswp = KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(ipiv1, A10);
 
       // Pivot indices
       for (int i = n1; i < Kokkos::min(m, n); i++) {
@@ -222,11 +200,10 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
   }
 
   // Device only implementation with recursive algorithm
-  template <typename AViewType, typename PivViewType, 
-            std::enable_if_t<!Kokkos::SpaceAccessibility<Kokkos::HostSpace,
-            typename AViewType::memory_space>::accessible, int> = 0>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const PivViewType &ipiv) {
+  template <typename AViewType, typename PivViewType,
+            std::enable_if_t<
+                !Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename AViewType::memory_space>::accessible, int> = 0>
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const PivViewType &ipiv) {
     using ScalarType = typename AViewType::non_const_value_type;
     auto info        = checkGetrfInput(A, ipiv);
     if (info) return info;
@@ -245,42 +222,31 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
       int current[7];
       stack.pop(current);
 
-      int state = current[0], m_start = current[1], n_start = current[2],
-          piv_start = current[3], m_size = current[4], n_size = current[5],
-          piv_size = current[6];
+      int state = current[0], m_start = current[1], n_start = current[2], piv_start = current[3], m_size = current[4],
+          n_size = current[5], piv_size = current[6];
 
       // Quick return if possible
       if (m_size <= 0 || n_size <= 0) continue;
 
-      auto A_current =
-          Kokkos::subview(A, Kokkos::pair<int, int>(m_start, m_start + m_size),
-                          Kokkos::pair<int, int>(n_start, n_start + n_size));
+      auto A_current = Kokkos::subview(A, Kokkos::pair<int, int>(m_start, m_start + m_size),
+                                       Kokkos::pair<int, int>(n_start, n_start + n_size));
 
-      auto ipiv_current = Kokkos::subview(
-          ipiv, Kokkos::pair<int, int>(piv_start, piv_start + piv_size));
-      auto n1 = Kokkos::min(m_size, n_size) / 2;
+      auto ipiv_current = Kokkos::subview(ipiv, Kokkos::pair<int, int>(piv_start, piv_start + piv_size));
+      auto n1           = Kokkos::min(m_size, n_size) / 2;
 
       // split A into two submatrices A = [A0, A1]
-      auto A0    = Kokkos::subview(A_current, Kokkos::ALL,
-                                Kokkos::pair<int, int>(0, n1));
-      auto A1    = Kokkos::subview(A_current, Kokkos::ALL,
-                                Kokkos::pair<int, int>(n1, n_size));
+      auto A0    = Kokkos::subview(A_current, Kokkos::ALL, Kokkos::pair<int, int>(0, n1));
+      auto A1    = Kokkos::subview(A_current, Kokkos::ALL, Kokkos::pair<int, int>(n1, n_size));
       auto ipiv0 = Kokkos::subview(ipiv_current, Kokkos::pair<int, int>(0, n1));
-      auto ipiv1 = Kokkos::subview(
-          ipiv_current,
-          Kokkos::pair<int, int>(n1, Kokkos::min(m_size, n_size)));
+      auto ipiv1 = Kokkos::subview(ipiv_current, Kokkos::pair<int, int>(n1, Kokkos::min(m_size, n_size)));
 
       // split A into four submatrices
       // A = [[A00, A01],
       //      [A10, A11]]
-      auto A00 = Kokkos::subview(A_current, Kokkos::pair<int, int>(0, n1),
-                                 Kokkos::pair<int, int>(0, n1));
-      auto A01 = Kokkos::subview(A_current, Kokkos::pair<int, int>(0, n1),
-                                 Kokkos::pair<int, int>(n1, n_size));
-      auto A10 = Kokkos::subview(A_current, Kokkos::pair<int, int>(n1, m_size),
-                                 Kokkos::pair<int, int>(0, n1));
-      auto A11 = Kokkos::subview(A_current, Kokkos::pair<int, int>(n1, m_size),
-                                 Kokkos::pair<int, int>(n1, n_size));
+      auto A00 = Kokkos::subview(A_current, Kokkos::pair<int, int>(0, n1), Kokkos::pair<int, int>(0, n1));
+      auto A01 = Kokkos::subview(A_current, Kokkos::pair<int, int>(0, n1), Kokkos::pair<int, int>(n1, n_size));
+      auto A10 = Kokkos::subview(A_current, Kokkos::pair<int, int>(n1, m_size), Kokkos::pair<int, int>(0, n1));
+      auto A11 = Kokkos::subview(A_current, Kokkos::pair<int, int>(n1, m_size), Kokkos::pair<int, int>(n1, n_size));
 
       if (state == 0) {
         // start state
@@ -305,18 +271,15 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
           }
 
           // Compute elements
-          const ScalarType alpha = 1.0 / A_current(0, 0);
-          auto sub_col_A =
-              Kokkos::subview(A_current, Kokkos::pair<int, int>(1, m_size), 0);
-          [[maybe_unused]] auto info_scal =
-              KokkosBlas::SerialScale::invoke(alpha, sub_col_A);
+          const ScalarType alpha          = 1.0 / A_current(0, 0);
+          auto sub_col_A                  = Kokkos::subview(A_current, Kokkos::pair<int, int>(1, m_size), 0);
+          [[maybe_unused]] auto info_scal = KokkosBlas::SerialScale::invoke(alpha, sub_col_A);
           continue;
         }
 
         // Push states onto the stack in reverse order of how they are executed
         // in the recursive version
-        int after_second[7] = {2,      m_start, n_start, piv_start,
-                               m_size, n_size,  piv_size};
+        int after_second[7] = {2, m_start, n_start, piv_start, m_size, n_size, piv_size};
         int second[7]       = {0,
                          m_start + n1,
                          n_start + n1,
@@ -324,8 +287,7 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
                          m_size - n1,
                          n_size - n1,
                          static_cast<int>(Kokkos::min(m_size, n_size)) - n1};
-        int after_first[7]  = {1,      m_start, n_start, piv_start,
-                              m_size, n_size,  piv_size};
+        int after_first[7]  = {1, m_start, n_start, piv_start, m_size, n_size, piv_size};
         int first[7]        = {0, m_start, n_start, piv_start, m_size, n1, n1};
 
         stack.push(after_second);
@@ -342,28 +304,22 @@ struct SerialGetrf<Algo::Getrf::Unblocked> {
         //                        [ A01 ]
         // Apply interchanges to  [ --- ]
         //                        [ A11 ]
-        KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(
-            ipiv0, A1);
+        KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(ipiv0, A1);
 
         // Solve A00 * X = A01
         [[maybe_unused]] auto info_trsm =
-            KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower,
-                                      Trans::NoTranspose, Diag::Unit,
-                                      Algo::Trsm::Unblocked>::invoke(1.0, A00,
-                                                                     A01);
+            KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit,
+                                      Algo::Trsm::Unblocked>::invoke(1.0, A00, A01);
 
         // Update A11 = A11 - A10 * A01
         [[maybe_unused]] auto info_gemm =
-            KokkosBatched::SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
-                                      Algo::Gemm::Unblocked>::invoke(-1.0, A10,
-                                                                     A01, 1.0,
-                                                                     A11);
+            KokkosBatched::SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Unblocked>::invoke(
+                -1.0, A10, A01, 1.0, A11);
 
       } else if (state == 2) {
         // after second recursive call
         // Apply interchanges to A10
-        KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(
-            ipiv1, A10);
+        KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(ipiv1, A10);
 
         // Pivot indices
         for (int i = n1; i < Kokkos::min(m_size, n_size); i++) {
