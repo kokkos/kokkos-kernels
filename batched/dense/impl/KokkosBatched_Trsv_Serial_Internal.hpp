@@ -108,7 +108,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
 
       // trsm update
       const ValueType *KOKKOS_RESTRICT Ap = A + p * as0 + p * as1;
-      /**/ ValueType *KOKKOS_RESTRICT bp    = b + p * bs0;
+      /**/ ValueType *KOKKOS_RESTRICT bp  = b + p * bs0;
 
       if (use_unit_diag)
         trsm_u.serial_invoke(Ap, pb, 1, bp);
@@ -154,8 +154,8 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invok
     for (int p = (m - 1); p >= 0; --p) {
       const int iend = p;
 
-      const ValueType *KOKKOS_RESTRICT a01 = A + p * as1;
-      /**/ ValueType *KOKKOS_RESTRICT beta1  = b + p * bs0;
+      const ValueType *KOKKOS_RESTRICT a01  = A + p * as1;
+      /**/ ValueType *KOKKOS_RESTRICT beta1 = b + p * bs0;
 
       // with KOKKOS_RESTRICT a compiler assumes that the pointer is not
       // accessed by others op(/=) uses this pointer and changes the associated
@@ -198,7 +198,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
 
       // trsm update
       const ValueType *KOKKOS_RESTRICT Ap = A + p * as0 + p * as1;
-      /**/ ValueType *KOKKOS_RESTRICT bp    = b + p * bs0;
+      /**/ ValueType *KOKKOS_RESTRICT bp  = b + p * bs0;
 
       if (use_unit_diag)
         trsm_u.serial_invoke(Ap, pb, 1, bp);
