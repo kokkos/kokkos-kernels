@@ -262,10 +262,11 @@ void impl_test_batched_getrf(const int N, const int BlkSize) {
 
   // Reconstruct L and D from Factorized matrix A
   // Copy non-diagonal lower triangular components to NL
-  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Lower>(LU, NL, -1);
+  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Lower, KokkosBatched::Diag::NonUnit>(LU, NL,
+                                                                                                             -1);
 
   // Copy upper triangular components to U
-  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Upper>(LU, U);
+  create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Upper, KokkosBatched::Diag::NonUnit>(LU, U);
 
   // Copy I to L
   Kokkos::deep_copy(L, I);
