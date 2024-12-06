@@ -194,7 +194,6 @@ void impl_test_batched_trsv_analytical(const std::size_t N) {
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
   using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
-  using PivView2DType     = Kokkos::View<int **, LayoutType, DeviceType>;
 
   constexpr std::size_t BlkSize = 3, incx = 2;
   View3DType A("A", N, BlkSize, BlkSize);
@@ -301,7 +300,6 @@ void impl_test_batched_trsv(const std::size_t N, const std::size_t BlkSize) {
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
   using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
-  using PivView2DType     = Kokkos::View<int **, LayoutType, DeviceType>;
 
   constexpr std::size_t incx = 2;
   View3DType A("A", N, BlkSize, BlkSize), AT("AT", N, BlkSize, BlkSize);
