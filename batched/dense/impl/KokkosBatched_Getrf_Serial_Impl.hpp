@@ -1,0 +1,177 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
+
+#ifndef KOKKOSBATCHED_GETRF_SERIAL_IMPL_HPP_
+#define KOKKOSBATCHED_GETRF_SERIAL_IMPL_HPP_
+
+#include <KokkosBatched_Util.hpp>
+#include <KokkosBlas1_scal.hpp>
+#include <KokkosBatched_Trsm_Decl.hpp>
+#include <KokkosBatched_Gemm_Decl.hpp>
+#include <KokkosBatched_Iamax.hpp>
+#include <KokkosBatched_Laswp.hpp>
+
+namespace KokkosBatched {
+
+template <typename AViewType, typename PivViewType>
+KOKKOS_INLINE_FUNCTION static int checkGetrfInput(
+    [[maybe_unused]] const AViewType &A, const PivViewType &ipiv) {
+  static_assert(Kokkos::is_view_v<AViewType>,
+                "KokkosBatched::getrf: AViewType is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<PivViewType>,
+                "KokkosBatched::getrf: PivViewType is not a Kokkos::View.");
+  static_assert(AViewType::rank == 2,
+                "KokkosBatched::getrf: AViewType must have rank 2.");
+  static_assert(PivViewType::rank == 1,
+                "KokkosBatched::getrf: PivViewType must have rank 1.");
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+  const int m = A.extent(0), n = A.extent(1);
+  const int npiv = ipiv.extent(0);
+  if (npiv != Kokkos::min(m, n)) {
+    Kokkos::printf(
+        "KokkosBatched::getrf: the dimension of the ipiv array must "
+        "satisfy ipiv.extent(0) == max(m, n): ipiv: %d, A: "
+        "%d "
+        "x %d \n",
+        npiv, m, n);
+    return 1;
+  }
+
+#endif
+  return 0;
+}
+
+template <>
+struct SerialGetrf<Algo::Getrf::Unblocked> {
+  template <typename AViewType, typename PivViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
+                                           const PivViewType &ipiv) {
+    using ScalarType = typename AViewType::non_const_value_type;
+    auto info        = checkGetrfInput(A, ipiv);
+    if (info) return info;
+
+    const int m = A.extent(0), n = A.extent(1);
+
+    // Quick return if possible
+    if (m <= 0 || n <= 0) return 0;
+
+    // Use unblocked code for one row case
+    // Just need to handle ipiv and info
+    if (m == 1) {
+      ipiv(0) = 0;
+      if (A(0, 0) == 0) return 1;
+
+      return 0;
+    } else if (n == 1) {
+      // Use unblocked code for one column case
+      // Compute machine safe minimum
+      auto col_A = Kokkos::subview(A, Kokkos::ALL, 0);
+
+      // [FIXME] maybe better to update the argument by reference
+      int i   = SerialIamax::invoke(col_A);
+      ipiv(0) = i;
+
+      if (A(i, 0) == 0) return 1;
+
+      // Apply the interchange
+      if (i != 0) {
+        auto temp = A(0, 0);
+        A(0, 0)   = A(i, 0);
+        A(i, 0)   = temp;
+      }
+
+      // Compute elements
+      const ScalarType alpha = 1.0 / A(0, 0);
+      auto sub_col_A = Kokkos::subview(A, Kokkos::pair<int, int>(1, m), 0);
+      [[maybe_unused]] auto info_scal =
+          KokkosBlas::SerialScale::invoke(alpha, sub_col_A);
+
+      return 0;
+    } else {
+      // Use recursive code
+      auto n1 = Kokkos::min(m, n) / 2;
+
+      //        [ A00 ]
+      // Factor [ --- ]
+      //        [ A10 ]
+
+      // split A into two submatrices A = [A0, A1]
+      auto A0 = Kokkos::subview(A, Kokkos::ALL, Kokkos::pair<int, int>(0, n1));
+      auto A1 = Kokkos::subview(A, Kokkos::ALL, Kokkos::pair<int, int>(n1, n));
+      auto ipiv0 = Kokkos::subview(ipiv, Kokkos::pair<int, int>(0, n1));
+      auto iinfo = invoke(A0, ipiv0);
+
+      if (info == 0 && iinfo > 0) info = iinfo;
+
+      //                        [ A01 ]
+      // Apply interchanges to  [ --- ]
+      //                        [ A11 ]
+
+      [[maybe_unused]] auto info_laswp =
+          KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(
+              ipiv0, A1);
+
+      // split A into four submatrices
+      // A = [[A00, A01],
+      //      [A10, A11]]
+      auto A00 = Kokkos::subview(A, Kokkos::pair<int, int>(0, n1),
+                                 Kokkos::pair<int, int>(0, n1));
+      auto A01 = Kokkos::subview(A, Kokkos::pair<int, int>(0, n1),
+                                 Kokkos::pair<int, int>(n1, n));
+      auto A10 = Kokkos::subview(A, Kokkos::pair<int, int>(n1, m),
+                                 Kokkos::pair<int, int>(0, n1));
+      auto A11 = Kokkos::subview(A, Kokkos::pair<int, int>(n1, m),
+                                 Kokkos::pair<int, int>(n1, n));
+
+      // Solve A00 * X = A01
+      [[maybe_unused]] auto info_trsm =
+          KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose,
+                                    Diag::Unit,
+                                    Algo::Trsm::Unblocked>::invoke(1.0, A00,
+                                                                   A01);
+
+      // Update A11 = A11 - A10 * A01
+      [[maybe_unused]] auto info_gemm =
+          KokkosBatched::SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
+                                    Algo::Gemm::Unblocked>::invoke(-1.0, A10,
+                                                                   A01, 1.0,
+                                                                   A11);
+
+      // Factor A11
+      auto ipiv1 =
+          Kokkos::subview(ipiv, Kokkos::pair<int, int>(n1, Kokkos::min(m, n)));
+      iinfo = invoke(A11, ipiv1);
+
+      if (info == 0 && iinfo > 0) info = iinfo + n1;
+
+      // Apply interchanges to A10
+      info_laswp =
+          KokkosBatched::SerialLaswp<Side::Left, Direct::Forward>::invoke(
+              ipiv1, A10);
+
+      // Pivot indices
+      for (int i = n1; i < Kokkos::min(m, n); i++) {
+        ipiv(i) += n1;
+      }
+
+      return info;
+    }
+  }
+};
+
+}  // namespace KokkosBatched
+
+#endif  // KOKKOSBATCHED_GETRF_SERIAL_IMPL_HPP_
