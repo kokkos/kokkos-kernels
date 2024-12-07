@@ -187,7 +187,7 @@ void run_test_graph4() {
 
   // StaticCrsGraph with Unmanaged trait will contain row_map and entries
   // members with the Unmanaged memory trait. Use of such a StaticCrsGraph
-  // requires an allocaton of memory for the unmanaged views to wrap.
+  // requires an allocation of memory for the unmanaged views to wrap.
   //
   // In this test, a graph (via raw arrays) resides on the host.
   // The pointers are wrapped by unmanaged Views.
