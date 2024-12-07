@@ -59,7 +59,7 @@ void run_test_graph() {
   hView hx;
 
   dx = KokkosSparse::create_staticcrsgraph<dView>("dx", graph);
-  hx = KokkosSparse::create_mirror(dx);
+  hx = create_mirror(dx);
 
   ASSERT_EQ(hx.row_map.extent(0) - 1, LENGTH);
 
@@ -99,8 +99,8 @@ void run_test_graph2() {
   }
 
   dView dx = KokkosSparse::create_staticcrsgraph<dView>("test", sizes);
-  hView hx = KokkosSparse::create_mirror(dx);
-  hView mx = KokkosSparse::create_mirror(dx);
+  hView hx = create_mirror(dx);
+  hView mx = create_mirror(dx);
 
   ASSERT_EQ((size_t)dx.row_map.extent(0), (size_t)LENGTH + 1);
   ASSERT_EQ((size_t)hx.row_map.extent(0), (size_t)LENGTH + 1);
@@ -162,7 +162,7 @@ void run_test_graph3(size_t B, size_t N) {
   int C    = 0;
   dView dx = KokkosSparse::create_staticcrsgraph<dView>("test", sizes);
   dx.create_block_partitioning(B, C);
-  hView hx = KokkosSparse::create_mirror(dx);
+  hView hx = create_mirror(dx);
 
   for (size_t i = 0; i < B; i++) {
     size_t ne = 0;
