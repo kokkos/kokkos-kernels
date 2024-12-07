@@ -18,7 +18,7 @@
 
 #include <vector>
 
-#include <Kokkos_StaticCrsGraph.hpp>
+#include <KokkosSparse_StaticCrsGraph.hpp>
 #include <Kokkos_Core.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -27,7 +27,7 @@ namespace TestStaticCrsGraph {
 
 template <class Space>
 void run_test_graph() {
-  using dView = Kokkos::StaticCrsGraph<unsigned, Space>;
+  using dView = KokkosSparse::StaticCrsGraph<unsigned, Space>;
   using hView = typename dView::HostMirror;
 
   const unsigned LENGTH = 1000;
@@ -45,7 +45,7 @@ void run_test_graph() {
     dView d1;
     ASSERT_FALSE(d1.is_allocated());
 
-    d1 = Kokkos::create_staticcrsgraph<dView>("d1", graph);
+    d1 = KokkosSparse::create_staticcrsgraph<dView>("d1", graph);
 
     dView d2(d1);
     dView d3(d1.entries, d1.row_map);
@@ -58,8 +58,8 @@ void run_test_graph() {
   dView dx;
   hView hx;
 
-  dx = Kokkos::create_staticcrsgraph<dView>("dx", graph);
-  hx = Kokkos::create_mirror(dx);
+  dx = KokkosSparse::create_staticcrsgraph<dView>("dx", graph);
+  hx = KokkosSparse::create_mirror(dx);
 
   ASSERT_EQ(hx.row_map.extent(0) - 1, LENGTH);
 
@@ -85,7 +85,7 @@ void run_test_graph() {
 
 template <class Space>
 void run_test_graph2() {
-  using dView = Kokkos::StaticCrsGraph<unsigned[3], Space>;
+  using dView = KokkosSparse::StaticCrsGraph<unsigned[3], Space>;
   using hView = typename dView::HostMirror;
 
   const unsigned LENGTH = 10;
@@ -98,9 +98,9 @@ void run_test_graph2() {
     total_length += (sizes[i] = 6 + i % 4);
   }
 
-  dView dx = Kokkos::create_staticcrsgraph<dView>("test", sizes);
-  hView hx = Kokkos::create_mirror(dx);
-  hView mx = Kokkos::create_mirror(dx);
+  dView dx = KokkosSparse::create_staticcrsgraph<dView>("test", sizes);
+  hView hx = KokkosSparse::create_mirror(dx);
+  hView mx = KokkosSparse::create_mirror(dx);
 
   ASSERT_EQ((size_t)dx.row_map.extent(0), (size_t)LENGTH + 1);
   ASSERT_EQ((size_t)hx.row_map.extent(0), (size_t)LENGTH + 1);
@@ -145,7 +145,7 @@ template <class Space>
 void run_test_graph3(size_t B, size_t N) {
   srand(10310);
 
-  using dView = Kokkos::StaticCrsGraph<int, Space>;
+  using dView = KokkosSparse::StaticCrsGraph<int, Space>;
   using hView = typename dView::HostMirror;
 
   const unsigned LENGTH = 2000;
@@ -160,9 +160,9 @@ void run_test_graph3(size_t B, size_t N) {
   sizes[1998] = N;
 
   int C    = 0;
-  dView dx = Kokkos::create_staticcrsgraph<dView>("test", sizes);
+  dView dx = KokkosSparse::create_staticcrsgraph<dView>("test", sizes);
   dx.create_block_partitioning(B, C);
-  hView hx = Kokkos::create_mirror(dx);
+  hView hx = KokkosSparse::create_mirror(dx);
 
   for (size_t i = 0; i < B; i++) {
     size_t ne = 0;
@@ -180,7 +180,7 @@ void run_test_graph4() {
   using layout_type        = Kokkos::LayoutRight;
   using space_type         = Space;
   using memory_traits_type = Kokkos::MemoryUnmanaged;
-  using dView              = Kokkos::StaticCrsGraph<ordinal_type, layout_type, space_type, memory_traits_type>;
+  using dView              = KokkosSparse::StaticCrsGraph<ordinal_type, layout_type, space_type, memory_traits_type>;
   using hView              = typename dView::HostMirror;
 
   dView dx;
