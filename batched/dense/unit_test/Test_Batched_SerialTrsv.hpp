@@ -322,8 +322,8 @@ void impl_test_batched_trsv(const std::size_t N, const std::size_t BlkSize) {
   create_triangular_matrix<View3DType, View3DType, typename ParamTagType::uplo, typename ParamTagType::diag>(A, AT);
 
   // trsv to solve U * x = b or L * x = b
-  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(1.0,
-                                                                                                                 A, x)
+  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(1.0, A,
+                                                                                                                 x)
       .run();
 
   Functor_BatchedSerialTrsv<DeviceType, View3DType, StridedView2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(
