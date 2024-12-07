@@ -319,28 +319,18 @@ void impl_test_batched_trsv(const std::size_t N, const std::size_t BlkSize) {
   Kokkos::deep_copy(x_s, x);
 
   // Create triangluar matrix
-  create_triangular_matrix<View3DType, View3DType, typename ParamTagType::uplo, KokkosBatched::Diag::NonUnit>(A, AT);
+  create_triangular_matrix<View3DType, View3DType, typename ParamTagType::uplo, typename ParamTagType::diag>(A, AT);
 
   // trsv to solve U * x = b or L * x = b
   Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(1.0,
-                                                                                                                 AT, x)
+                                                                                                                 A, x)
       .run();
 
   Functor_BatchedSerialTrsv<DeviceType, View3DType, StridedView2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(
-      1.0, AT, x_s)
+      1.0, A, x_s)
       .run();
 
   Kokkos::fence();
-
-  if constexpr (std::is_same_v<typename ParamTagType::diag, KokkosBatched::Diag::Unit>) {
-    auto h_AT = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), AT);
-    for (std::size_t ib = 0; ib < N; ib++) {
-      for (std::size_t i = 0; i < BlkSize; i++) {
-        h_AT(ib, i, i) = 1.0;
-      }
-    }
-    Kokkos::deep_copy(AT, h_AT);
-  }
 
   // Compute A * x by gemv
   // Gemv to compute A*x, this should be identical to b
