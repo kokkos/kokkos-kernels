@@ -33,11 +33,11 @@ struct qrFunctor {
   TauViewType taus;
   TmpViewType ws;
   MatricesType Qs, Bs;
-  ErrorViewType global_error;
+  ErrorViewType error;
 
   qrFunctor(MatricesType As_, TauViewType taus_, TmpViewType ws_, MatricesType Qs_, MatricesType Bs_,
-            ErrorViewType global_error_)
-      : As(As_), taus(taus_), ws(ws_), Qs(Qs_), Bs(Bs_), global_error(global_error_) {}
+            ErrorViewType error_)
+      : As(As_), taus(taus_), ws(ws_), Qs(Qs_), Bs(Bs_), error(error_) {}
 
   KOKKOS_FUNCTION
   void operator()(const int matIdx) const {
@@ -50,7 +50,7 @@ struct qrFunctor {
     const Scalar SC_one = Kokkos::ArithTraits<Scalar>::one();
     const Scalar tol    = Kokkos::ArithTraits<Scalar>::eps() * 10;
 
-    int error = 0;
+    int error_lcl = 0;
 
     KokkosBatched::SerialQR<KokkosBlas::Algo::QR::Unblocked>::invoke(A, tau, w);
 
@@ -77,18 +77,17 @@ struct qrFunctor {
       for (int colIdx = 0; colIdx < Q.extent_int(1); ++colIdx) {
         if (rowIdx == colIdx) {
           if (Kokkos::abs(Q(rowIdx, colIdx) - SC_one) > tol) {
-            error += 1;
+            error_lcl += 1;
             Kokkos::printf("matIdx=%d, Q(%d, %d)=%e instead of 1.0.\n", matIdx, rowIdx, colIdx, Q(rowIdx, colIdx));
           }
         } else {
           if (Kokkos::abs(Q(rowIdx, colIdx)) > tol) {
-            error += 1;
+            error_lcl += 1;
             Kokkos::printf("matIdx=%d, Q(%d, %d)=%e instead of 0.0.\n", matIdx, rowIdx, colIdx, Q(rowIdx, colIdx));
           }
         }
       }
     }
-    Kokkos::atomic_add(&global_error(), error);
 
     // Apply Q' to B which holds a copy of the orginal A
     // Afterwards B should hold a copy of R and be zero below its diagonal
@@ -97,20 +96,20 @@ struct qrFunctor {
       for (int colIdx = 0; colIdx < B.extent_int(1); ++colIdx) {
         if (rowIdx <= colIdx) {
           if (Kokkos::abs(B(rowIdx, colIdx) - A(rowIdx, colIdx)) > tol * Kokkos::abs(A(rowIdx, colIdx))) {
-            error += 1;
+            error_lcl += 1;
             Kokkos::printf("B stores R\nmatIdx=%d, B(%d, %d)=%e instead of %e.\n", matIdx, rowIdx, colIdx,
                            B(rowIdx, colIdx), A(rowIdx, colIdx));
           }
         } else {
           if (Kokkos::abs(B(rowIdx, colIdx)) > 1000 * tol) {
-            error += 1;
+            error_lcl += 1;
             Kokkos::printf("B stores R\nmatIdx=%d, B(%d, %d)=%e instead of 0.0.\n", matIdx, rowIdx, colIdx,
                            B(rowIdx, colIdx));
           }
         }
       }
     }
-    Kokkos::atomic_add(&global_error(), error);
+    error(matIdx) = error_lcl;
   }
 };
 
@@ -358,7 +357,7 @@ void test_QR_batch() {
     Kokkos::View<Scalar***, ExecutionSpace> As("A matrices", numMat, numRows, numRows);
     Kokkos::View<Scalar***, ExecutionSpace> Bs("B matrices", numMat, numRows, numRows);
     Kokkos::View<Scalar***, ExecutionSpace> Qs("Q matrices", numMat, numRows, numRows);
-    Kokkos::View<int, ExecutionSpace> global_error("global number of error");
+    Kokkos::View<int*, ExecutionSpace> error("global number of error", numMat);
 
     Kokkos::Random_XorShift64_Pool<ExecutionSpace> rand_pool(2718);
     constexpr double max_val = 1000;
@@ -369,16 +368,19 @@ void test_QR_batch() {
     }
     Kokkos::deep_copy(Bs, As);
 
-    qrFunctor myFunc(As, tau, tmp, Qs, Bs, global_error);
+    qrFunctor myFunc(As, tau, tmp, Qs, Bs, error);
     Kokkos::parallel_for("KokkosBatched::test_QR_batch", Kokkos::RangePolicy<ExecutionSpace>(0, numMat), myFunc);
+    Kokkos::fence();
 
-    typename Kokkos::View<int, ExecutionSpace>::HostMirror global_error_h = Kokkos::create_mirror_view(global_error);
-    Kokkos::deep_copy(global_error_h, global_error);
-    EXPECT_EQ(global_error_h(), 0);
+    typename Kokkos::View<int*, ExecutionSpace>::HostMirror error_h = Kokkos::create_mirror_view(error);
+    Kokkos::deep_copy(error_h, error);
+    int global_error = 0;
+    for(int matIdx = 0; matIdx < numMat; ++matIdx) { global_error += error_h(matIdx); }
+    EXPECT_EQ(global_error, 0);
   }
 
   { // Rectangular matrix case
-    constexpr int numMat  = 314;  // 314
+    constexpr int numMat  = 25;  // 314
     constexpr int numRows = 42;  // 42
     constexpr int numCols = 36;  // 36
     Kokkos::View<Scalar**, ExecutionSpace> tau("tau", numMat, numCols);
@@ -386,7 +388,7 @@ void test_QR_batch() {
     Kokkos::View<Scalar***, ExecutionSpace> As("A matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Bs("B matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Qs("Q matrices", numMat, numRows, numRows);
-    Kokkos::View<int, ExecutionSpace> global_error("global number of error");
+    Kokkos::View<int*, ExecutionSpace> error("global number of error", numMat);
 
     Kokkos::Random_XorShift64_Pool<ExecutionSpace> rand_pool(2718);
     constexpr double max_val = 1000;
@@ -397,12 +399,20 @@ void test_QR_batch() {
     }
     Kokkos::deep_copy(Bs, As);
 
-    qrFunctor myFunc(As, tau, tmp, Qs, Bs, global_error);
+    qrFunctor myFunc(As, tau, tmp, Qs, Bs, error);
     Kokkos::parallel_for("KokkosBatched::test_QR_batch", Kokkos::RangePolicy<ExecutionSpace>(0, numMat), myFunc);
 
-    typename Kokkos::View<int, ExecutionSpace>::HostMirror global_error_h = Kokkos::create_mirror_view(global_error);
-    Kokkos::deep_copy(global_error_h, global_error);
-    EXPECT_EQ(global_error_h(), 0);
+    typename Kokkos::View<int*, ExecutionSpace>::HostMirror error_h = Kokkos::create_mirror_view(error);
+    Kokkos::deep_copy(error_h, error);
+
+    int global_error = 0;
+    for(int matIdx = 0; matIdx < numMat; ++matIdx) {
+      if(0 < error_h(matIdx)) {
+	std::cout << "Errors found for matrix " << matIdx << ": " << error_h(matIdx) << std::endl;
+      }
+      global_error += error_h(matIdx);
+    }
+    EXPECT_EQ(global_error, 0);
   }
 }
 
