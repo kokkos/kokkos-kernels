@@ -27,12 +27,11 @@ namespace Impl {
 template <typename AViewType, typename bViewType>
 KOKKOS_INLINE_FUNCTION static int checkTrsvInput([[maybe_unused]] const AViewType &A,
                                                  [[maybe_unused]] const bViewType &b) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::trsv: AViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<bViewType>, "KokkosBatched::trsv: bViewType is not a Kokkos::View.");
   static_assert(AViewType::rank == 2, "KokkosBatched::trsv: AViewType must have rank 2.");
   static_assert(bViewType::rank == 1, "KokkosBatched::trsv: bViewType must have rank 1.");
-
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   const int lda = A.extent(0), n = A.extent(1);
   if (lda < Kokkos::max(1, n)) {
     Kokkos::printf(
