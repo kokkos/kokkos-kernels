@@ -34,8 +34,8 @@ struct SerialApplyLeftHouseholderInternal {
                                            /* */ ValueType* u2, const int u2s,
                                            /* */ ValueType* a1t, const int a1ts,
                                            /* */ ValueType* A2, const int as0, const int as1,
-                                           /* */ ValueType* w1t) {
-    typedef ValueType value_type;
+                                           /* */ ValueType* w1t, const int ws0) {
+    using value_type = ValueType;
 
     /// u2  m x 1
     /// a1t 1 x n
@@ -54,15 +54,15 @@ struct SerialApplyLeftHouseholderInternal {
     for (int j = 0; j < n; ++j) {
       value_type tmp = a1t[j * a1ts];
       for (int i = 0; i < m; ++i) tmp += Kokkos::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
-      w1t[j] = tmp * inv_tau;  // /= (*tau);
+      w1t[j * ws0] = tmp * inv_tau;  // /= (*tau);
     }
 
     // a1t -= w1t    (axpy)
-    for (int j = 0; j < n; ++j) a1t[j * a1ts] -= w1t[j];
+    for (int j = 0; j < n; ++j) a1t[j * a1ts] -= w1t[j * ws0];
 
     // A2  -= u2 w1t (ger)
     for (int j = 0; j < n; ++j)
-      for (int i = 0; i < m; ++i) A2[i * as0 + j * as1] -= u2[i * u2s] * w1t[j];
+      for (int i = 0; i < m; ++i) A2[i * as0 + j * as1] -= u2[i * u2s] * w1t[j * ws0];
 
     return 0;
   }
@@ -74,8 +74,8 @@ struct SerialApplyRightHouseholderInternal {
                                            /* */ ValueType* u2, const int u2s,
                                            /* */ ValueType* a1, const int a1s,
                                            /* */ ValueType* A2, const int as0, const int as1,
-                                           /* */ ValueType* w1) {
-    typedef ValueType value_type;
+                                           /* */ ValueType* w1, const int ws0) {
+    using value_type = ValueType;
     /// u2 n x 1
     /// a1 m x 1
     /// A2 m x n
@@ -93,15 +93,16 @@ struct SerialApplyRightHouseholderInternal {
     for (int i = 0; i < m; ++i) {
       value_type tmp = a1[i * a1s];
       for (int j = 0; j < n; ++j) tmp += A2[i * as0 + j * as1] * u2[j * u2s];
-      w1[i] = tmp * inv_tau;  // \= (*tau);
+      w1[i * ws0] = tmp * inv_tau;  // \= (*tau);
     }
 
     // a1 -= w1 (axpy)
-    for (int i = 0; i < m; ++i) a1[i * a1s] -= w1[i];
+    for (int i = 0; i < m; ++i) a1[i * a1s] -= w1[i * ws0];
 
     // A2 -= w1 * u2' (ger with conjugate)
     for (int j = 0; j < n; ++j)
-      for (int i = 0; i < m; ++i) A2[i * as0 + j * as1] -= w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
+      for (int i = 0; i < m; ++i)
+        A2[i * as0 + j * as1] -= w1[i * ws0] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
 
     return 0;
   }
