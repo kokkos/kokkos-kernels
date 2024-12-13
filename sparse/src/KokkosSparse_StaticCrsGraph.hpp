@@ -26,6 +26,8 @@
 #undef KOKKOS_IMPL_DO_NOT_WARN_INCLUDE_STATIC_CRS_GRAPH
 
 namespace KokkosSparse {
+using Kokkos::create_mirror;
+using Kokkos::create_mirror_view;
 using Kokkos::create_staticcrsgraph;
 using Kokkos::GraphRowViewConst;
 using Kokkos::maximum_entry;
