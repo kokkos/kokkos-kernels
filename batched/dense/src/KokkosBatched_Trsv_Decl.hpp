@@ -76,11 +76,11 @@ struct Trsv {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const bViewType &b) {
     int r_val = 0;
-    if (std::is_same_v<ArgMode, Mode::Serial>) {
+    if constexpr (std::is_same_v<ArgMode, Mode::Serial>) {
       r_val = SerialTrsv<ArgUplo, ArgTrans, ArgDiag, ArgAlgo>::invoke(alpha, A, b);
-    } else if (std::is_same_v<ArgMode, Mode::Team>) {
+    } else if constexpr (std::is_same_v<ArgMode, Mode::Team>) {
       r_val = TeamTrsv<MemberType, ArgUplo, ArgTrans, ArgDiag, ArgAlgo>::invoke(member, alpha, A, b);
-    } else if (std::is_same_v<ArgMode, Mode::TeamVector>) {
+    } else if constexpr (std::is_same_v<ArgMode, Mode::TeamVector>) {
       r_val = TeamVectorTrsv<MemberType, ArgUplo, ArgTrans, ArgDiag, ArgAlgo>::invoke(member, alpha, A, b);
     }
     return r_val;
@@ -155,46 +155,46 @@ struct Trsv {
 
 #define KOKKOSBATCHED_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE(MODETYPE, ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0,   \
                                                               AS1, B, BS)                                              \
-  if (std::is_same_v<MODETYPE, KokkosBatched::Mode::Serial>) {                                                         \
+  if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Serial>) {                                               \
     KOKKOSBATCHED_SERIAL_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS);     \
-  } else if (std::is_same_v<MODETYPE, KokkosBatched::Mode::Team>) {                                                    \
+  } else if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Team>) {                                          \
     KOKKOSBATCHED_TEAM_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, B,    \
                                                                BS);                                                    \
-  } else if (std::is_same_v<MODETYPE, KokkosBatched::Mode::TeamVector>) {                                              \
+  } else if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::TeamVector>) {                                    \
     KOKKOSBATCHED_TEAMVECTOR_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, \
                                                                      B, BS);                                           \
   }
 
 #define KOKKOSBATCHED_TRSV_LOWER_TRANSPOSE_INTERNAL_INVOKE(MODETYPE, ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, \
                                                            B, BS)                                                      \
-  if (std::is_same_v<MODETYPE, KokkosBatched::Mode::Serial>) {                                                         \
+  if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Serial>) {                                               \
     KOKKOSBATCHED_SERIAL_TRSV_LOWER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS);        \
-  } else if (std::is_same_v<MODETYPE, KokkosBatched::Mode::Team>) {                                                    \
+  } else if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Team>) {                                          \
     KOKKOSBATCHED_TEAM_TRSV_LOWER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS);  \
-  } else if (std::is_same_v<MODETYPE, KokkosBatched::Mode::TeamVector>) {                                              \
+  } else if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::TeamVector>) {                                    \
     KOKKOSBATCHED_TEAMVECTOR_TRSV_LOWER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, B, \
                                                                   BS);                                                 \
   }
 
 #define KOKKOSBATCHED_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE(MODETYPE, ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0,   \
                                                               AS1, B, BS)                                              \
-  if (std::is_same_v<MODETYPE, KokkosBatched::Mode::Serial>) {                                                         \
+  if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Serial>) {                                               \
     KOKKOSBATCHED_SERIAL_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS);     \
-  } else if (std::is_same_v<MODETYPE, KokkosBatched::Mode::Team>) {                                                    \
+  } else if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Team>) {                                          \
     KOKKOSBATCHED_TEAM_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, B,    \
                                                                BS);                                                    \
-  } else if (std::is_same_v<MODETYPE, KokkosBatched::Mode::TeamVector>) {                                              \
+  } else if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::TeamVector>) {                                    \
     KOKKOSBATCHED_TEAMVECTOR_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, \
                                                                      B, BS);                                           \
   }
 
 #define KOKKOSBATCHED_TRSV_UPPER_TRANSPOSE_INTERNAL_INVOKE(MODETYPE, ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, \
                                                            B, BS)                                                      \
-  if (std::is_same_v<MODETYPE, KokkosBatched::Mode::Serial>) {                                                         \
+  if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Serial>) {                                               \
     KOKKOSBATCHED_SERIAL_TRSV_UPPER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS);        \
-  } else if (std::is_same_v<MODETYPE, KokkosBatched::Mode::Team>) {                                                    \
+  } else if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Team>) {                                          \
     KOKKOSBATCHED_TEAM_TRSV_UPPER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS);  \
-  } else if (std::is_same_v<MODETYPE, KokkosBatched::Mode::TeamVector>) {                                              \
+  } else if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::TeamVector>) {                                    \
     KOKKOSBATCHED_TEAMVECTOR_TRSV_UPPER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, B, \
                                                                   BS);                                                 \
   }
