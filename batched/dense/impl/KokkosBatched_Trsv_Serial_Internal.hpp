@@ -214,6 +214,27 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
 }
 
 }  // namespace Impl
+
+template <typename AlgoType>
+struct [[deprecated("Use KokkosBatched::SerialTrsv instead")]] SerialTrsvInternalLower {
+  template <typename ScalarType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const int m, const ScalarType alpha,
+                                           const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+                                           /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
+    return Impl::SerialTrsvInternalLower<AlgoType>::invoke(use_unit_diag, false, m, alpha, A, as0, as1, b, bs0);
+  }
+};
+
+template <typename AlgoType>
+struct [[deprecated("Use KokkosBatched::SerialTrsv instead")]] SerialTrsvInternalUpper {
+  template <typename ScalarType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const int m, const ScalarType alpha,
+                                           const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+                                           /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
+    return Impl::SerialTrsvInternalUpper<AlgoType>::invoke(use_unit_diag, false, m, alpha, A, as0, as1, b, bs0);
+  }
+};
+
 }  // namespace KokkosBatched
 
 #endif
