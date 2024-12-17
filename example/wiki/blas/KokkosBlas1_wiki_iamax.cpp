@@ -1,3 +1,4 @@
+#include <iostream>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas1_iamax.hpp>
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    printf("Iamax of X: %i, Expected: %i\n", max_loc, expected_max_loc);
+    std::cout << "Iamax of X: " << max_loc << ", Expected: " << expected_max_loc << std::endl;
   }
   Kokkos::finalize();
 }
