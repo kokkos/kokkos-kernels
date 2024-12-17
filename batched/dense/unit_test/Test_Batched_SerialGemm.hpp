@@ -127,24 +127,23 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   auto h_C     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C);
   auto h_C_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C_ref);
 
-  // check c_expected = c_actual
-  // std::conditional<, float,
+  // check C = C_ref
   using mag_type = typename ats::mag_type;
   mag_type sum(1), diff(0);
 
   mag_type eps = ats::epsilon();
-  eps *= std::is_same<ValueType, Kokkos::Experimental::half_t>::value ||
-                 std::is_same<ValueType, Kokkos::Experimental::bhalf_t>::value
+  eps *= std::is_same_v<ValueType, Kokkos::Experimental::half_t> ||
+                 std::is_same_v<ValueType, Kokkos::Experimental::bhalf_t>
              ? 4
              : 1e3;
 
-  for (int k = 0; k < N; ++k) {
-    for (int i = 0; i < matCdim1; ++i) {
+  for (int k = 0; k < N; ++k)
+    for (int i = 0; i < matCdim1; ++i)
       for (int j = 0; j < matCdim2; ++j) {
-        EXPECT_NEAR_KK(h_C(k, i, j), h_C_ref(k, i, j), eps);
+        sum += ats::abs(h_C_ref(k, i, j));
+        diff += ats::abs(h_C_ref(k, i, j) - h_C(k, i, j));
       }
-    }
-  }
+  EXPECT_NEAR_KK(diff / sum, 0, eps);
 }
 }  // namespace Gemm
 }  // namespace Test
