@@ -66,7 +66,7 @@ namespace KokkosBlas {
 template <class execution_space, class AViewType, class BViewType>
 void trmm(const execution_space& space, const char side[], const char uplo[], const char trans[], const char diag[],
           typename BViewType::const_value_type& alpha, const AViewType& A, const BViewType& B) {
-  static_assert(Kokkos::is_execution_space_v<execution_space>, "trmm: execution_space must be a Kokkos::execution_space.")
+  static_assert(Kokkos::is_execution_space_v<execution_space>, "trmm: execution_space must be a Kokkos::execution_space.");
   static_assert(Kokkos::is_view_v<AViewType>, "trmm: AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view_v<BViewType>, "trmm: BViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(AViewType::rank) == 2, "trmm: AViewType must have rank 2.");

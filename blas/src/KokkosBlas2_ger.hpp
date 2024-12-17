@@ -58,7 +58,7 @@ void ger(const ExecutionSpace& space, const char trans[], const typename AViewTy
   static_assert(static_cast<int>(YViewType::rank) == 1, "ger: YViewType must have rank 1.");
 
   static_assert(std::is_same_v<typename AViewType::value_type, typename AViewType::non_const_value_type>,
-		"ger: AViewType must store non const values.")
+		"ger: AViewType must store non const values.");
 
   // Check compatibility of dimensions at run time.
   if ((A.extent(0) != x.extent(0)) || (A.extent(1) != y.extent(0))) {
