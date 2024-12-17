@@ -60,8 +60,8 @@ void ger(const ExecutionSpace& space, const char trans[], const typename AViewTy
   static_assert(std::is_same_v<typename AViewType::value_type, typename AViewType::non_const_value_type>,
                 "ger: AViewType must store non const values.");
 
-      // Check compatibility of dimensions at run time.
-      if ((A.extent(0) != x.extent(0)) || (A.extent(1) != y.extent(0))) {
+  // Check compatibility of dimensions at run time.
+  if ((A.extent(0) != x.extent(0)) || (A.extent(1) != y.extent(0))) {
     std::ostringstream os;
     os << "KokkosBlas::ger: Dimensions of A, x, and y do not match: "
        << "A is " << A.extent(0) << " by " << A.extent(1) << ", x has size " << x.extent(0) << ", y has size "
