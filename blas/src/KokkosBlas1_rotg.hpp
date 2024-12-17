@@ -45,7 +45,7 @@ void rotg(execution_space const& space, SViewType const& a, SViewType const& b, 
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename MViewType::memory_space>::accessible,
                 "rotg: execution_space cannot access data in MViewType");
   static_assert(!Kokkos::ArithTraits<typename MViewType::value_type>::is_complex,
-		"rotg: MViewType cannot hold complex values.");
+                "rotg: MViewType cannot hold complex values.");
 
   using SView_Internal = Kokkos::View<
       typename SViewType::value_type, typename KokkosKernels::Impl::GetUnifiedLayout<SViewType>::array_layout,
