@@ -140,6 +140,20 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
 }
 
 }  // namespace Impl
+
+template <typename ArgAlgo>
+struct [[deprecated("Use KokkosBatched::SerialGemm instead")]] SerialGemmInternal {
+  template <typename ScalarType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const int k, const ScalarType alpha,
+                                           const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+                                           const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
+                                           const ScalarType beta,
+                                           /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
+    return Impl::SerialGemmInternal<ArgAlgo>::invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), m, n, k, alpha,
+                                                     A, as0, as1, B, bs0, bs1, beta, C, cs0, cs1);
+  }
+};
+
 }  // namespace KokkosBatched
 
 #endif
