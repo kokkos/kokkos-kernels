@@ -176,11 +176,12 @@ struct SerialSVDInternal {
       if (n - i > 1) {
         KokkosBatched::SerialApplyLeftHouseholderInternal::invoke<value_type>(
             m - i - 1, n - i - 1, &tau, &SVDIND(A, i + 1, i), As0, &SVDIND(A, i, i + 1), As1, &SVDIND(A, i + 1, i + 1),
-            As0, As1, work);
+            As0, As1, work, 1);
       }
       if (U) {
-        KokkosBatched::SerialApplyRightHouseholderInternal::invoke<value_type>(
-            m, m - i - 1, &tau, &SVDIND(A, i + 1, i), As0, &SVDIND(U, 0, i), Us0, &SVDIND(U, 0, i + 1), Us0, Us1, work);
+        KokkosBatched::SerialApplyRightHouseholderInternal::invoke<value_type>(m, m - i - 1, &tau, &SVDIND(A, i + 1, i),
+                                                                               As0, &SVDIND(U, 0, i), Us0,
+                                                                               &SVDIND(U, 0, i + 1), Us0, Us1, work, 1);
       }
       // Zero out A subdiag explicitly (NOTE: may not be necessary...)
       for (int j = i + 1; j < m; j++) {
@@ -193,12 +194,12 @@ struct SerialSVDInternal {
         if (m - i > 1) {
           KokkosBatched::SerialApplyRightHouseholderInternal::invoke<value_type>(
               m - i - 1, n - i - 2, &tau, &SVDIND(A, i, i + 2), As1, &SVDIND(A, i + 1, i + 1), As0,
-              &SVDIND(A, i + 1, i + 2), As0, As1, work);
+              &SVDIND(A, i + 1, i + 2), As0, As1, work, 1);
         }
         if (Vt) {
           KokkosBatched::SerialApplyLeftHouseholderInternal::invoke<value_type>(
               n - i - 2, n, &tau, &SVDIND(A, i, i + 2), As1, &SVDIND(Vt, i + 1, 0), Vts1, &SVDIND(Vt, i + 2, 0), Vts0,
-              Vts1, work);
+              Vts1, work, 1);
         }
         // Zero out A superdiag row explicitly
         for (int j = i + 2; j < n; j++) {
