@@ -20,7 +20,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class VectorView, class ScalarView>
+template <class ExecutionSpace, class VectorView, class MagnitudeView, class ScalarView>
 struct rot_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -36,6 +36,9 @@ namespace Impl {
   template <>                                                                                           \
   struct rot_tpl_spec_avail<EXECSPACE,                                                                  \
                             Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
+                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                      \
+                            Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,        \
+					 Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                  \
                                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                      \
                             Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,  \
                                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                    \
@@ -64,6 +67,8 @@ KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, 
   struct rot_tpl_spec_avail<                                                                                        \
       EXECSPACE,                                                                                                    \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+		   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,		                                            \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
     enum : bool { value = true };                                                                                   \
   };
