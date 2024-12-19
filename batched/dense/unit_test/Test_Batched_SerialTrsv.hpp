@@ -19,6 +19,7 @@
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBlas2_gemv.hpp"
@@ -51,23 +52,25 @@ struct Functor_BatchedSerialTrsv {
       : m_a(a), m_b(b), m_alpha(alpha) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const ParamTagType &, const int k) const {
+  void operator()(const ParamTagType &, const int k, int &info) const {
     auto aa = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto bb = Kokkos::subview(m_b, k, Kokkos::ALL());
 
-    SerialTrsv<typename ParamTagType::uplo, typename ParamTagType::trans, typename ParamTagType::diag,
-               AlgoTagType>::invoke(m_alpha, aa, bb);
+    info += SerialTrsv<typename ParamTagType::uplo, typename ParamTagType::trans, typename ParamTagType::diag,
+                       AlgoTagType>::invoke(m_alpha, aa, bb);
   }
 
-  inline void run() {
+  inline int run() {
     using value_type = typename AViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialTrsv");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
+    int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, m_b.extent(0));
-    Kokkos::parallel_for(name.c_str(), policy, *this);
+    Kokkos::parallel_reduce(name.c_str(), policy, *this, info_sum);
     Kokkos::Profiling::popRegion();
+    return info_sum;
   }
 };
 
@@ -128,13 +131,17 @@ void impl_test_batched_trsv_blocking(const int N, const int BlkSize) {
   Kokkos::deep_copy(a1, a0);
   Kokkos::deep_copy(b1, b0);
 
-  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Blocked>(alpha,
-                                                                                                               a0, b0)
-      .run();
-  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, AlgoTagType>(alpha, a1, b1)
-      .run();
+  auto info0 =
+      Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Blocked>(
+          alpha, a0, b0)
+          .run();
+  auto info1 = Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, AlgoTagType>(
+                   alpha, a1, b1)
+                   .run();
 
   Kokkos::fence();
+  EXPECT_EQ(info0, 0);
+  EXPECT_EQ(info1, 0);
 
   /// for comparison send it to host
   auto b0_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b0);
@@ -188,12 +195,12 @@ void impl_test_batched_trsv_blocking(const int N, const int BlkSize) {
 template <typename DeviceType, typename ScalarType, typename ValueType, typename LayoutType, typename ParamTagType,
           typename AlgoTagType>
 void impl_test_batched_trsv_analytical(const std::size_t N) {
-  using ats      = typename Kokkos::ArithTraits<ScalarType>;
+  using ats      = typename Kokkos::ArithTraits<ValueType>;
   using RealType = typename ats::mag_type;
 
-  using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
-  using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
-  using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
+  using View2DType        = Kokkos::View<ValueType **, LayoutType, DeviceType>;
+  using StridedView2DType = Kokkos::View<ValueType **, Kokkos::LayoutStride, DeviceType>;
+  using View3DType        = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
 
   constexpr std::size_t BlkSize = 3, incx = 2;
   View3DType A("A", N, BlkSize, BlkSize);
@@ -260,14 +267,17 @@ void impl_test_batched_trsv_analytical(const std::size_t N) {
   Kokkos::deep_copy(x_s, x);
 
   // trsv to solve U * x = b or L * x = b
-  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(1.0, A,
-                                                                                                                 x)
-      .run();
-  Functor_BatchedSerialTrsv<DeviceType, View3DType, StridedView2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(
-      1.0, A, x_s)
-      .run();
+  auto info =
+      Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(
+          1.0, A, x)
+          .run();
+  auto info_s = Functor_BatchedSerialTrsv<DeviceType, View3DType, StridedView2DType, ScalarType, ParamTagType,
+                                          Algo::Trsv::Unblocked>(1.0, A, x_s)
+                    .run();
 
   Kokkos::fence();
+  EXPECT_EQ(info, 0);
+  EXPECT_EQ(info_s, 0);
 
   // Check x = x_ref
   RealType eps = 1.0e1 * ats::epsilon();
@@ -294,12 +304,13 @@ void impl_test_batched_trsv_analytical(const std::size_t N) {
 template <typename DeviceType, typename ScalarType, typename ValueType, typename LayoutType, typename ParamTagType,
           typename AlgoTagType>
 void impl_test_batched_trsv(const std::size_t N, const std::size_t BlkSize) {
-  using ats      = typename Kokkos::ArithTraits<ScalarType>;
+  using ats      = typename Kokkos::ArithTraits<ValueType>;
   using RealType = typename ats::mag_type;
 
-  using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
-  using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
-  using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
+  using View2DType        = Kokkos::View<ValueType **, LayoutType, DeviceType>;
+  using StridedView2DType = Kokkos::View<ValueType **, Kokkos::LayoutStride, DeviceType>;
+  using View3DType        = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
+  using DynViewType       = Kokkos::DynRankView<ValueType, LayoutType, DeviceType>;
 
   constexpr std::size_t incx = 2;
   View3DType A("A", N, BlkSize, BlkSize), AT("AT", N, BlkSize, BlkSize);
@@ -309,6 +320,10 @@ void impl_test_batched_trsv(const std::size_t N, const std::size_t BlkSize) {
   Kokkos::LayoutStride layout{N, incx, BlkSize, N * incx};
   StridedView2DType x_s("x_s", layout), y_s("y_s", layout);  // Solutions
 
+  // Testing DynViewType
+  DynViewType A_d("A_d", N, BlkSize, BlkSize);
+  DynViewType x_d("x_d", N, BlkSize), y_d("y_d", N, BlkSize);
+
   using execution_space = typename DeviceType::execution_space;
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
   ScalarType randStart, randEnd;
@@ -317,20 +332,31 @@ void impl_test_batched_trsv(const std::size_t N, const std::size_t BlkSize) {
   Kokkos::fill_random(x, rand_pool, randStart, randEnd);
   Kokkos::deep_copy(x_ref, x);  // Keep reference solution
   Kokkos::deep_copy(x_s, x);
+  Kokkos::deep_copy(x_d, x);
+  Kokkos::deep_copy(A_d, A);
 
   // Create triangluar matrix
   create_triangular_matrix<View3DType, View3DType, typename ParamTagType::uplo, typename ParamTagType::diag>(A, AT);
 
   // trsv to solve U * x = b or L * x = b
-  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(1.0, A,
-                                                                                                                 x)
-      .run();
+  auto info =
+      Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(
+          1.0, A, x)
+          .run();
 
-  Functor_BatchedSerialTrsv<DeviceType, View3DType, StridedView2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(
-      1.0, A, x_s)
-      .run();
+  auto info_s = Functor_BatchedSerialTrsv<DeviceType, View3DType, StridedView2DType, ScalarType, ParamTagType,
+                                          Algo::Trsv::Unblocked>(1.0, A, x_s)
+                    .run();
+
+  auto info_d =
+      Functor_BatchedSerialTrsv<DeviceType, DynViewType, DynViewType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(
+          1.0, A_d, x_d)
+          .run();
 
   Kokkos::fence();
+  EXPECT_EQ(info, 0);
+  EXPECT_EQ(info_s, 0);
+  EXPECT_EQ(info_d, 0);
 
   // Compute A * x by gemv
   // Gemv to compute A*x, this should be identical to b
@@ -341,6 +367,11 @@ void impl_test_batched_trsv(const std::size_t N, const std::size_t BlkSize) {
   // Gemv to compute A*x, this should be identical to b
   Functor_BatchedSerialGemv<DeviceType, ScalarType, View3DType, StridedView2DType, StridedView2DType, ParamTagType>(
       1.0, AT, x_s, 0.0, y_s)
+      .run();
+
+  // Gemv to compute A*x, this should be identical to b
+  Functor_BatchedSerialGemv<DeviceType, ScalarType, View3DType, DynViewType, DynViewType, ParamTagType>(1.0, AT, x_d,
+                                                                                                        0.0, y_d)
       .run();
 
   // Check A*x = x_ref
@@ -359,6 +390,14 @@ void impl_test_batched_trsv(const std::size_t N, const std::size_t BlkSize) {
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t i = 0; i < BlkSize; i++) {
       EXPECT_NEAR_KK(h_y(ib, i), h_x_ref(ib, i), eps);
+    }
+  }
+
+  // Testing for dynamic views, reusing y
+  auto h_y_d = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y_d);
+  for (std::size_t ib = 0; ib < N; ib++) {
+    for (std::size_t i = 0; i < BlkSize; i++) {
+      EXPECT_NEAR_KK(h_y_d(ib, i), h_x_ref(ib, i), eps);
     }
   }
 }
