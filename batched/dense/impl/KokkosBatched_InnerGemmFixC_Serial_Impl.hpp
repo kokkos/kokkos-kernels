@@ -362,14 +362,14 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 5>::serial_invoke(OpA opA, OpB opB, 
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = opA(A[i0 + p * _as1]);
-    b_p0    = opB(B[p * _bs0 + j0]);
-    a_1p    = opA(A[i1 + p * _as1]);
-    b_p1    = opB(B[p * _bs0 + j1]);
-    a_2p    = opA(A[i2 + p * _as1]);
-    b_p2    = opB(B[p * _bs0 + j2]);
-    a_3p    = opA(A[i3 + p * _as1]);
-    b_p3    = opB(B[p * _bs0 + j3]);
+    a_0p      = opA(A[i0 + p * _as1]);
+    b_p0      = opB(B[p * _bs0 + j0]);
+    a_1p      = opA(A[i1 + p * _as1]);
+    b_p1      = opB(B[p * _bs0 + j1]);
+    a_2p      = opA(A[i2 + p * _as1]);
+    b_p2      = opB(B[p * _bs0 + j2]);
+    a_3p      = opA(A[i3 + p * _as1]);
+    b_p3      = opB(B[p * _bs0 + j3]);
     /**/ b_p4 = opB(B[p * _bs0 + j4]);
 
     c_00 += a_0p * b_p0;
@@ -438,12 +438,12 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 5>::serial_invoke(OpA opA, OpB opB, 
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = opA(A[i0 + p * _as1]);
-    b_p0    = opB(B[p * _bs0 + j0]);
-    a_1p    = opA(A[i1 + p * _as1]);
-    b_p1    = opB(B[p * _bs0 + j1]);
-    a_2p    = opA(A[i2 + p * _as1]);
-    b_p2    = opB(B[p * _bs0 + j2]);
+    a_0p      = opA(A[i0 + p * _as1]);
+    b_p0      = opB(B[p * _bs0 + j0]);
+    a_1p      = opA(A[i1 + p * _as1]);
+    b_p1      = opB(B[p * _bs0 + j1]);
+    a_2p      = opA(A[i2 + p * _as1]);
+    b_p2      = opB(B[p * _bs0 + j2]);
     /**/ b_p3 = opB(B[p * _bs0 + j3]);
     /**/ b_p4 = opB(B[p * _bs0 + j4]);
 
@@ -503,10 +503,10 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 5>::serial_invoke(OpA opA, OpB opB, 
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = opA(A[i0 + p * _as1]);
-    b_p0    = opB(B[p * _bs0 + j0]);
-    a_1p    = opA(A[i1 + p * _as1]);
-    b_p1    = opB(B[p * _bs0 + j1]);
+    a_0p      = opA(A[i0 + p * _as1]);
+    b_p0      = opB(B[p * _bs0 + j0]);
+    a_1p      = opA(A[i1 + p * _as1]);
+    b_p1      = opB(B[p * _bs0 + j1]);
     /**/ b_p2 = opB(B[p * _bs0 + j2]);
     /**/ b_p3 = opB(B[p * _bs0 + j3]);
     /**/ b_p4 = opB(B[p * _bs0 + j4]);
@@ -557,8 +557,8 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 5>::serial_invoke(OpA opA, OpB opB, 
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = opA(A[i0 + p * _as1]);
-    b_p0    = opB(B[p * _bs0 + j0]);
+    a_0p      = opA(A[i0 + p * _as1]);
+    b_p0      = opB(B[p * _bs0 + j0]);
     /**/ b_p1 = opB(B[p * _bs0 + j1]);
     /**/ b_p2 = opB(B[p * _bs0 + j2]);
     /**/ b_p3 = opB(B[p * _bs0 + j3]);
@@ -808,12 +808,12 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 4>::serial_invoke(OpA opA, OpB opB, 
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = opA(A[i0 + p * _as1]);
-    b_p0    = opB(B[p * _bs0 + j0]);
-    a_1p    = opA(A[i1 + p * _as1]);
-    b_p1    = opB(B[p * _bs0 + j1]);
-    a_2p    = opA(A[i2 + p * _as1]);
-    b_p2    = opB(B[p * _bs0 + j2]);
+    a_0p      = opA(A[i0 + p * _as1]);
+    b_p0      = opB(B[p * _bs0 + j0]);
+    a_1p      = opA(A[i1 + p * _as1]);
+    b_p1      = opB(B[p * _bs0 + j1]);
+    a_2p      = opA(A[i2 + p * _as1]);
+    b_p2      = opB(B[p * _bs0 + j2]);
     /**/ b_p3 = opB(B[p * _bs0 + j3]);
 
     c_00 += a_0p * b_p0;
@@ -865,10 +865,10 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 4>::serial_invoke(OpA opA, OpB opB, 
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = opA(A[i0 + p * _as1]);
-    b_p0    = opB(B[p * _bs0 + j0]);
-    a_1p    = opA(A[i1 + p * _as1]);
-    b_p1    = opB(B[p * _bs0 + j1]);
+    a_0p      = opA(A[i0 + p * _as1]);
+    b_p0      = opB(B[p * _bs0 + j0]);
+    a_1p      = opA(A[i1 + p * _as1]);
+    b_p1      = opB(B[p * _bs0 + j1]);
     /**/ b_p2 = opB(B[p * _bs0 + j2]);
     /**/ b_p3 = opB(B[p * _bs0 + j3]);
 
@@ -913,8 +913,8 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 4>::serial_invoke(OpA opA, OpB opB, 
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = opA(A[i0 + p * _as1]);
-    b_p0    = opB(B[p * _bs0 + j0]);
+    a_0p      = opA(A[i0 + p * _as1]);
+    b_p0      = opB(B[p * _bs0 + j0]);
     /**/ b_p1 = opB(B[p * _bs0 + j1]);
     /**/ b_p2 = opB(B[p * _bs0 + j2]);
     /**/ b_p3 = opB(B[p * _bs0 + j3]);
@@ -1078,10 +1078,10 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 3>::serial_invoke(OpA opA, OpB opB, 
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = opA(A[i0 + p * _as1]);
-    b_p0    = opB(B[p * _bs0 + j0]);
-    a_1p    = opA(A[i1 + p * _as1]);
-    b_p1    = opB(B[p * _bs0 + j1]);
+    a_0p      = opA(A[i0 + p * _as1]);
+    b_p0      = opB(B[p * _bs0 + j0]);
+    a_1p      = opA(A[i1 + p * _as1]);
+    b_p1      = opB(B[p * _bs0 + j1]);
     /**/ b_p2 = opB(B[p * _bs0 + j2]);
 
     c_00 += a_0p * b_p0;
@@ -1119,8 +1119,8 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 3>::serial_invoke(OpA opA, OpB opB, 
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = opA(A[i0 + p * _as1]);
-    b_p0    = opB(B[p * _bs0 + j0]);
+    a_0p      = opA(A[i0 + p * _as1]);
+    b_p0      = opB(B[p * _bs0 + j0]);
     /**/ b_p1 = opB(B[p * _bs0 + j1]);
     /**/ b_p2 = opB(B[p * _bs0 + j2]);
 
