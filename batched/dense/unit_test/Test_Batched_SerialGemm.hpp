@@ -14,13 +14,11 @@
 //
 //@HEADER
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+/// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
-
-// #include "KokkosBatched_Vector.hpp"
-
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
 
@@ -50,28 +48,28 @@ struct Functor_TestBatchedSerialGemm {
       : m_a(a), m_b(b), m_c(c), m_alpha(alpha), m_beta(beta) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const ParamTagType &, const int k) const {
+  void operator()(const ParamTagType &, const int k, int &info) const {
     auto aa = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto bb = Kokkos::subview(m_b, k, Kokkos::ALL(), Kokkos::ALL());
     auto cc = Kokkos::subview(m_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    SerialGemm<typename ParamTagType::transA, typename ParamTagType::transB, AlgoTagType>::invoke(m_alpha, aa, bb,
-                                                                                                  m_beta, cc);
+    info += SerialGemm<typename ParamTagType::transA, typename ParamTagType::transB, AlgoTagType>::invoke(
+        m_alpha, aa, bb, m_beta, cc);
   }
 
-  inline void run() {
+  inline int run() {
     using value_type = typename ViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialGemm");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
+    int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, m_c.extent(0));
-    Kokkos::parallel_for(name.c_str(), policy, *this);
+    Kokkos::parallel_reduce(name.c_str(), policy, *this, info_sum);
     Kokkos::Profiling::popRegion();
+    return info_sum;
   }
 };
-
-/// \brief Implementation details of batched trsm analytical test
 
 /// \brief Implementation details of batched gemm test
 /// \param N [in] Batch size of matrices
@@ -121,8 +119,10 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   vgemm.run();  // Compute C_ref
 
   // Compute using gemm API
-  Functor_TestBatchedSerialGemm<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(alpha, A, B, beta, C)
-      .run();
+  auto info =
+      Functor_TestBatchedSerialGemm<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(alpha, A, B, beta, C)
+          .run();
+  EXPECT_EQ(info, 0);
 
   auto h_C     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C);
   auto h_C_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C_ref);
