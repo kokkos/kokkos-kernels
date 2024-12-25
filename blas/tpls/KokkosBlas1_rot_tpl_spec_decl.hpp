@@ -157,12 +157,15 @@ namespace Impl {
       EXECSPACE,                                                                                                     \
       Kokkos::View<double*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
       true, ETI_SPEC_AVAIL> {                                                                                        \
     using VectorView =                                                                                               \
         Kokkos::View<double*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+    using MagnitudeView =                                                                                            \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
     using ScalarView =                                                                                               \
         Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-    static void rot(EXECSPACE const& space, VectorView const& X, VectorView const& Y, ScalarView const& c,           \
+    static void rot(EXECSPACE const& space, VectorView const& X, VectorView const& Y, MagnitudeView const& c,        \
                     ScalarView const& s) {                                                                           \
       Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_CUBLAS,double]");                                           \
       rot_print_specialization<EXECSPACE, VectorView, ScalarView>();                                                 \
@@ -182,13 +185,16 @@ namespace Impl {
   struct Rot<                                                                                                          \
       EXECSPACE,                                                                                                       \
       Kokkos::View<float*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,      \
+      Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,       \
       Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true, \
       ETI_SPEC_AVAIL> {                                                                                                \
     using VectorView =                                                                                                 \
         Kokkos::View<float*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;    \
+    using MagnitudeView =                                                                                              \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
     using ScalarView =                                                                                                 \
         Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
-    static void rot(EXECSPACE const& space, VectorView const& X, VectorView const& Y, ScalarView const& c,             \
+    static void rot(EXECSPACE const& space, VectorView const& X, VectorView const& Y, MagnitudeView const& c,          \
                     ScalarView const& s) {                                                                             \
       Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_CUBLAS,float]");                                              \
       rot_print_specialization<EXECSPACE, VectorView, ScalarView>();                                                   \
@@ -210,12 +216,17 @@ namespace Impl {
       Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                           \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
       Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
+      Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
+		   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,		                                            \
       true, ETI_SPEC_AVAIL> {                                                                                       \
     using VectorView = Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,          \
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                       \
-    using ScalarView =                                                                                              \
+    using MagnitudeView =                                                                                           \
         Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
-    static void rot(EXECSPACE const& space, VectorView const& X, VectorView const& Y, ScalarView const& c,          \
+    using ScalarView =                                                                                              \
+        Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                          \
+		     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;		                                            \
+    static void rot(EXECSPACE const& space, VectorView const& X, VectorView const& Y, MagnitudeView const& c,       \
                     ScalarView const& s) {                                                                          \
       Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_CUBLAS,complex<double>]");                                 \
       rot_print_specialization<EXECSPACE, VectorView, ScalarView>();                                                \
@@ -225,7 +236,8 @@ namespace Impl {
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                      \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));         \
       cublasZdrot(singleton.handle, X.extent_int(0), reinterpret_cast<cuDoubleComplex*>(X.data()), 1,               \
-                  reinterpret_cast<cuDoubleComplex*>(Y.data()), 1, c.data(), s.data());                             \
+                  reinterpret_cast<cuDoubleComplex*>(Y.data()), 1, c.data(),                                        \
+		  reinterpret_cast<cuDoubleComplex*>(s.data()));	                                            \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                       \
       Kokkos::Profiling::popRegion();                                                                               \
     }                                                                                                               \
@@ -237,13 +249,17 @@ namespace Impl {
       EXECSPACE,                                                                                                       \
       Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                               \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true, \
+      Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,       \
+      Kokkos::View<Kokkos::complex<float>, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,                                                     \
       ETI_SPEC_AVAIL> {                                                                                                \
-    using VectorView = Kokkos::View<Kokkos::complex<float>, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,               \
+    using VectorView = Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,              \
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
-    using ScalarView =                                                                                                 \
+    using MagnitudeView =                                                                                              \
         Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
-    static void rot(EXECSPACE const& space, VectorView const& X, VectorView const& Y, ScalarView const& c,             \
+    using ScalarView = Kokkos::View<Kokkos::complex<float>, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,               \
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
+    static void rot(EXECSPACE const& space, VectorView const& X, VectorView const& Y, MagnitudeView const& c,          \
                     ScalarView const& s) {                                                                             \
       Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_CUBLAS,complex<float>]");                                     \
       rot_print_specialization<EXECSPACE, VectorView, ScalarView>();                                                   \
@@ -253,7 +269,7 @@ namespace Impl {
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                         \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));            \
       cublasCsrot(singleton.handle, X.extent_int(0), reinterpret_cast<cuComplex*>(X.data()), 1,                        \
-                  reinterpret_cast<cuComplex*>(Y.data()), 1, c.data(), s.data());                                      \
+                  reinterpret_cast<cuComplex*>(Y.data()), 1, c.data(), reinterpret_cast<cuComplex*>(s.data()));        \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                          \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
