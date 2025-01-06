@@ -7,10 +7,10 @@
 #include "KokkosKernels_PrintUtils.hpp"
 
 using execution_space = Kokkos::DefaultExecutionSpace;
-using Scalar    = double;
-using Vector = Kokkos::View<Scalar*, execution_space>;
-using ParamView = Kokkos::View<Scalar[5], execution_space>;
-using ScalarView = Kokkos::View<Scalar, execution_space>;
+using Scalar          = double;
+using Vector          = Kokkos::View<Scalar*, execution_space>;
+using ParamView       = Kokkos::View<Scalar[5], execution_space>;
+using ScalarView      = Kokkos::View<Scalar, execution_space>;
 
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
@@ -36,7 +36,8 @@ int main(int argc, char* argv[]) {
     KokkosKernels::Impl::kk_print_1Dview(std::cout, y);
 
     // Calculate Givens rotation coefficients to eliminate y(0)
-    KokkosBlas::rotmg<execution_space, ScalarView, ScalarView, ParamView>(execution_space(), d1, d2, Kokkos::subview(x, 0), Kokkos::subview(y, 0), param);
+    KokkosBlas::rotmg<execution_space, ScalarView, ScalarView, ParamView>(
+        execution_space(), d1, d2, Kokkos::subview(x, 0), Kokkos::subview(y, 0), param);
 
     auto paramHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), param);
 
@@ -47,26 +48,24 @@ int main(int argc, char* argv[]) {
     KokkosKernels::Impl::kk_print_1Dview(std::cout, d2);
     std::cout << "flag = " << paramHost(0) << '\n';
     std::cout << "h components = ";
-    for(int i = 0; i < 4; i++)
-      std::cout << paramHost(1+i) << " ";
+    for (int i = 0; i < 4; i++) std::cout << paramHost(1 + i) << " ";
     std::cout << '\n';
 
     // Zero out y(0), which was left unmodified by rotmg.
     Kokkos::deep_copy(Kokkos::subview(y, 0), Scalar(0));
 
     // Apply the rotation to the remaining entries of x and y
-    KokkosBlas::rotm(execution_space(), Kokkos::subview(x, Kokkos::make_pair(1, N)), Kokkos::subview(y, Kokkos::make_pair(1, N)), param);
+    KokkosBlas::rotm(execution_space(), Kokkos::subview(x, Kokkos::make_pair(1, N)),
+                     Kokkos::subview(y, Kokkos::make_pair(1, N)), param);
 
     // Apply scaling factors: sqrt(d1) and sqrt(d2) to x and y respectively
-    Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, N),
-        KOKKOS_LAMBDA(int i)
-        {
+    Kokkos::parallel_for(
+        Kokkos::RangePolicy<execution_space>(0, N), KOKKOS_LAMBDA(int i) {
           x(i) *= Kokkos::sqrt(d1());
           y(i) *= Kokkos::sqrt(d2());
         });
 
-    std::cout << "\nx,y after applying modified Givens rotation\n";
-    std::cout << "(including scaling by [sqrt(d1), sqrt(d2)]):\n";
+    std::cout << "\nx,y after applying modified Givens rotation and scaling by [sqrt(d1), sqrt(d2)]):\n";
     KokkosKernels::Impl::kk_print_1Dview(std::cout, x);
     KokkosKernels::Impl::kk_print_1Dview(std::cout, y);
   }

@@ -6,9 +6,9 @@
 #include "KokkosKernels_PrintUtils.hpp"
 
 using execution_space = Kokkos::DefaultExecutionSpace;
-using Scalar    = double;
-using Vector = Kokkos::View<Scalar*, execution_space>;
-using ScalarView = Kokkos::View<Scalar, execution_space>;
+using Scalar          = double;
+using Vector          = Kokkos::View<Scalar*, execution_space>;
+using ScalarView      = Kokkos::View<Scalar, execution_space>;
 
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
@@ -30,7 +30,8 @@ int main(int argc, char* argv[]) {
     ScalarView s("s");
 
     // Calculate Givens rotation coefficients to eliminate y(0)
-    KokkosBlas::rotg<execution_space, ScalarView, ScalarView>(execution_space(), Kokkos::subview(x, 0), Kokkos::subview(y, 0), c, s);
+    KokkosBlas::rotg<execution_space, ScalarView, ScalarView>(execution_space(), Kokkos::subview(x, 0),
+                                                              Kokkos::subview(y, 0), c, s);
 
     std::cout << "\nrotg output (rotation parameters) to eliminate y(0):\n";
     std::cout << "c = ";
@@ -47,7 +48,8 @@ int main(int argc, char* argv[]) {
     Kokkos::deep_copy(Kokkos::subview(y, 0), Scalar(0));
 
     // Apply the rotation to the remaining entries of x and y
-    KokkosBlas::rot(execution_space(), Kokkos::subview(x, Kokkos::make_pair(1, N)), Kokkos::subview(y, Kokkos::make_pair(1, N)), c, s);
+    KokkosBlas::rot(execution_space(), Kokkos::subview(x, Kokkos::make_pair(1, N)),
+                    Kokkos::subview(y, Kokkos::make_pair(1, N)), c, s);
 
     std::cout << "\nx,y after applying Givens rotation:\n";
     KokkosKernels::Impl::kk_print_1Dview(std::cout, x);
