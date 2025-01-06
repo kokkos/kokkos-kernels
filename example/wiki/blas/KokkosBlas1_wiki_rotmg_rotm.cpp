@@ -3,7 +3,6 @@
 #include <Kokkos_Random.hpp>
 #include "KokkosBlas1_rotmg.hpp"
 #include "KokkosBlas1_rotm.hpp"
-#include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_PrintUtils.hpp"
 
 using execution_space = Kokkos::DefaultExecutionSpace;
