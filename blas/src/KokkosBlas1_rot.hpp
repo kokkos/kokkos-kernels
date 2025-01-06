@@ -20,6 +20,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas1_rot_spec.hpp>
 #include <KokkosKernels_helpers.hpp>
+#include <KokkosKernels_Error.hpp>
 
 namespace KokkosBlas {
 
