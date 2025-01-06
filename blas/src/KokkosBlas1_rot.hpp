@@ -17,10 +17,27 @@
 #ifndef KOKKOSBLAS1_ROT_HPP_
 #define KOKKOSBLAS1_ROT_HPP_
 
+#include <Kokkos_Core.hpp>
 #include <KokkosBlas1_rot_spec.hpp>
+#include <KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 
+// clang-format off
+/// \brief Apply a plane rotation.
+///
+/// \tparam execution_space Space on which to execute. Must be able to access VectorView, MagnitudeView and ScalarView.
+/// \tparam VectorView A 1-D view of nonconst scalars
+/// \tparam MagnitudeView A 0-D view of nonconst, real-valued scalar
+/// \tparam ScalarView A 0-D view of scalar
+///
+/// \param space [in] the execution space
+/// \param X [in/out] First vector to be rotated
+/// \param Y [in/out] Second vector to be rotated
+/// \param c [out] cosine value associated with the
+///          rotation
+/// \param s [out] sine value associated with the rotation
+// clang-format on
 template <class execution_space, class VectorView, class MagnitudeView, class ScalarView>
 void rot(execution_space const& space, VectorView const& X, VectorView const& Y, MagnitudeView const& c,
          ScalarView const& s) {

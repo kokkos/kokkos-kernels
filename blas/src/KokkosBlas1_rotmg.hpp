@@ -19,6 +19,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas1_rotmg_spec.hpp>
+#include <KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 
@@ -32,11 +33,11 @@ namespace KokkosBlas {
 ///         static extent 5 that holds non const data
 ///
 /// \param space [in] execution space used for parallel loops
-/// \param d1 [in/out]
-/// \param d2 [in/out]
-/// \param x1 [in/out]
-/// \param y1 [in]
-/// \param param [out]
+/// \param d1 [in/out] On input, square of initial x scaling factor. On output, square of x scaling factor to be applied
+/// after rotm. \param d2 [in/out] On input, square of initial y scaling factor. On output, square of y scaling factor
+/// to be applied after rotm. \param x1 [in/out] On input, element from first vector to rotate. On output, the rotated
+/// element before scaling. \param y1 [in] Element from second vector to rotate. It is not modified by this routine.
+/// \param param [out] 5-element parameter array defining the rotation, to be used by rotm.
 ///
 template <class execution_space, class DXView, class YView, class PView>
 void rotmg(execution_space const& space, DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1,
