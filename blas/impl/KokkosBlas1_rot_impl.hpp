@@ -42,7 +42,7 @@ struct rot_functor {
   }
 };
 
-  template <class ExecutionSpace, class VectorView, class MagnitudeView, class ScalarView>
+template <class ExecutionSpace, class VectorView, class MagnitudeView, class ScalarView>
 void Rot_Invoke(ExecutionSpace const& space, VectorView const& X, VectorView const& Y, MagnitudeView const& c,
                 ScalarView const& s) {
   Kokkos::RangePolicy<ExecutionSpace> rot_policy(space, 0, X.extent(0));

@@ -76,7 +76,8 @@ void rot(execution_space const& space, VectorView const& X, VectorView const& Y,
   ScalarView_Internal s_(s);
 
   Kokkos::Profiling::pushRegion("KokkosBlas::rot");
-  Impl::Rot<execution_space, VectorView_Internal, MagnitudeView_Internal, ScalarView_Internal>::rot(space, X_, Y_, c_, s_);
+  Impl::Rot<execution_space, VectorView_Internal, MagnitudeView_Internal, ScalarView_Internal>::rot(space, X_, Y_, c_,
+                                                                                                    s_);
   Kokkos::Profiling::popRegion();
 }
 

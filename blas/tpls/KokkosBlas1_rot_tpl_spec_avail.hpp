@@ -32,17 +32,17 @@ namespace Impl {
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-#define KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXECSPACE)                                  \
-  template <>                                                                                           \
-  struct rot_tpl_spec_avail<EXECSPACE,                                                                  \
-                            Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                      \
-                            Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,        \
-					 Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                  \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                      \
-                            Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,  \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                    \
-    enum : bool { value = true };                                                                       \
+#define KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXECSPACE)                                     \
+  template <>                                                                                              \
+  struct rot_tpl_spec_avail<                                                                               \
+      EXECSPACE,                                                                                           \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                          \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                               \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,                                 \
+                   Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                           \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                             \
+    enum : bool { value = true };                                                                          \
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -68,7 +68,7 @@ KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, 
       EXECSPACE,                                                                                                    \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
       Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
-		   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,		                                            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
     enum : bool { value = true };                                                                                   \
   };
