@@ -24,6 +24,16 @@ KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+  wiki_blas1_rotg_rot
+  SOURCES KokkosBlas1_wiki_rotg_rot.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+  wiki_blas1_rotmg_rotm
+  SOURCES KokkosBlas1_wiki_rotmg_rotm.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   wiki_blas2_ger
   SOURCES KokkosBlas2_wiki_ger.cpp
   )
