@@ -262,9 +262,9 @@ namespace Impl {
       cublasPointerMode_t pointer_mode;                                                                             \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                      \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));         \
-      cublasZdrot(singleton.handle, X.extent_int(0), reinterpret_cast<cuDoubleComplex*>(X.data()), 1,               \
-                  reinterpret_cast<cuDoubleComplex*>(Y.data()), 1, c.data(),                                        \
-                  reinterpret_cast<cuDoubleComplex*>(s.data()));                                                    \
+      cublasZrot(singleton.handle, X.extent_int(0), reinterpret_cast<cuDoubleComplex*>(X.data()), 1,                \
+                 reinterpret_cast<cuDoubleComplex*>(Y.data()), 1, c.data(),                                         \
+                 reinterpret_cast<cuDoubleComplex*>(s.data()));                                                     \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                       \
       Kokkos::Profiling::popRegion();                                                                               \
     }                                                                                                               \
@@ -295,8 +295,8 @@ namespace Impl {
       cublasPointerMode_t pointer_mode;                                                                            \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(singleton.handle, &pointer_mode));                     \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, CUBLAS_POINTER_MODE_DEVICE));        \
-      cublasCsrot(singleton.handle, X.extent_int(0), reinterpret_cast<cuComplex*>(X.data()), 1,                    \
-                  reinterpret_cast<cuComplex*>(Y.data()), 1, c.data(), reinterpret_cast<cuComplex*>(s.data()));    \
+      cublasCrot(singleton.handle, X.extent_int(0), reinterpret_cast<cuComplex*>(X.data()), 1,                     \
+                 reinterpret_cast<cuComplex*>(Y.data()), 1, c.data(), reinterpret_cast<cuComplex*>(s.data()));     \
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(singleton.handle, pointer_mode));                      \
       Kokkos::Profiling::popRegion();                                                                              \
     }                                                                                                              \
