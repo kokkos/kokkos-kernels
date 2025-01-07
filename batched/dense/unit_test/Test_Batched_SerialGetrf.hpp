@@ -22,8 +22,6 @@
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include "Test_Batched_DenseUtils.hpp"
 
-using namespace KokkosBatched;
-
 namespace Test {
 namespace Getrf {
 
@@ -338,7 +336,7 @@ int test_batched_getrf() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, test_batched_getrf_float) {
-  using algo_tag_type = typename Algo::Getrf::Unblocked;
+  using algo_tag_type = typename KokkosBatched::Algo::Getrf::Unblocked;
 
   test_batched_getrf<TestDevice, float, algo_tag_type>();
 }
@@ -346,7 +344,7 @@ TEST_F(TestCategory, test_batched_getrf_float) {
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, test_batched_getrf_double) {
-  using algo_tag_type = typename Algo::Getrf::Unblocked;
+  using algo_tag_type = typename KokkosBatched::Algo::Getrf::Unblocked;
 
   test_batched_getrf<TestDevice, double, algo_tag_type>();
 }
@@ -354,7 +352,7 @@ TEST_F(TestCategory, test_batched_getrf_double) {
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, test_batched_getrf_fcomplex) {
-  using algo_tag_type = typename Algo::Getrf::Unblocked;
+  using algo_tag_type = typename KokkosBatched::Algo::Getrf::Unblocked;
 
   test_batched_getrf<TestDevice, Kokkos::complex<float>, algo_tag_type>();
 }
@@ -362,7 +360,7 @@ TEST_F(TestCategory, test_batched_getrf_fcomplex) {
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, test_batched_getrf_dcomplex) {
-  using algo_tag_type = typename Algo::Getrf::Unblocked;
+  using algo_tag_type = typename KokkosBatched::Algo::Getrf::Unblocked;
 
   test_batched_getrf<TestDevice, Kokkos::complex<double>, algo_tag_type>();
 }
