@@ -25,8 +25,6 @@
 #include "KokkosKernels_TestUtils.hpp"
 #include "KokkosKernels_TestVanilla.hpp"
 
-using namespace KokkosBatched;
-
 namespace Test {
 namespace Gemm {
 
@@ -53,8 +51,9 @@ struct Functor_TestBatchedSerialGemm {
     auto bb = Kokkos::subview(m_b, k, Kokkos::ALL(), Kokkos::ALL());
     auto cc = Kokkos::subview(m_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    info += SerialGemm<typename ParamTagType::transA, typename ParamTagType::transB, AlgoTagType>::invoke(
-        m_alpha, aa, bb, m_beta, cc);
+    info +=
+        KokkosBatched::SerialGemm<typename ParamTagType::transA, typename ParamTagType::transB, AlgoTagType>::invoke(
+            m_alpha, aa, bb, m_beta, cc);
   }
 
   inline int run() {
@@ -107,10 +106,10 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   Kokkos::deep_copy(C_ref, C);
 
   Functor_BatchedVanillaGEMM<ViewType, ViewType, ViewType, execution_space> vgemm;
-  vgemm.A_t   = !std::is_same_v<transA, Trans::NoTranspose>;
-  vgemm.B_t   = !std::is_same_v<transB, Trans::NoTranspose>;
-  vgemm.A_c   = std::is_same_v<transA, Trans::ConjTranspose>;
-  vgemm.B_c   = std::is_same_v<transB, Trans::ConjTranspose>;
+  vgemm.A_t   = !std::is_same_v<transA, KokkosBatched::Trans::NoTranspose>;
+  vgemm.B_t   = !std::is_same_v<transB, KokkosBatched::Trans::NoTranspose>;
+  vgemm.A_c   = std::is_same_v<transA, KokkosBatched::Trans::ConjTranspose>;
+  vgemm.B_c   = std::is_same_v<transB, KokkosBatched::Trans::ConjTranspose>;
   vgemm.A     = A;
   vgemm.B     = B;
   vgemm.C     = C_ref;
