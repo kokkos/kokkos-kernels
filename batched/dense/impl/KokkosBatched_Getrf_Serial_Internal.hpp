@@ -126,9 +126,8 @@ KOKKOS_INLINE_FUNCTION int SerialGetrfInternalHost<Algo::Getrf::Unblocked>::invo
     // Use recursive code
     auto n1 = Kokkos::min(m, n) / 2;
 
-    //        [ A00 ]
-    // Factor [ --- ]
-    //        [ A10 ]
+    // Factor A0 = [[A00],
+    //              [A10]]
 
     // split A into two submatrices A = [A0, A1]
     auto A0    = Kokkos::subview(A, Kokkos::ALL, Kokkos::pair<int, int>(0, n1));
@@ -138,9 +137,8 @@ KOKKOS_INLINE_FUNCTION int SerialGetrfInternalHost<Algo::Getrf::Unblocked>::invo
 
     if (info == 0 && iinfo > 0) info = iinfo;
 
-    //                        [ A01 ]
-    // Apply interchanges to  [ --- ]
-    //                        [ A11 ]
+    // Apply interchanges to A1 = [[A01],
+    //                             [A11]]
 
     [[maybe_unused]] auto info_laswp = KokkosBatched::SerialLaswp<Direct::Forward>::invoke(ipiv0, A1);
 
@@ -202,7 +200,7 @@ KOKKOS_INLINE_FUNCTION int SerialGetrfInternalDevice<Algo::Getrf::Unblocked>::in
   if (m <= 0 || n <= 0) return 0;
 
   while (!stack.isEmpty()) {
-    // First of make a subview based on the current state
+    // Firstly, make a subview based on the current state
     int current[7];
     stack.pop(current);
 
@@ -280,13 +278,11 @@ KOKKOS_INLINE_FUNCTION int SerialGetrfInternalDevice<Algo::Getrf::Unblocked>::in
 
     } else if (state == 1) {
       // after first recursive call
-      //        [ A00 ]
-      // Factor [ --- ]
-      //        [ A10 ]
+      // Factor A0 = [[A00],
+      //              [A10]]
 
-      //                        [ A01 ]
-      // Apply interchanges to  [ --- ]
-      //                        [ A11 ]
+      // Apply interchanges to A1 = [[A01],
+      //                             [A11]]
       KokkosBatched::SerialLaswp<Direct::Forward>::invoke(ipiv0, A1);
 
       // Solve A00 * X = A01

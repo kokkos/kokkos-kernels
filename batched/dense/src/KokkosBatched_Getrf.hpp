@@ -30,6 +30,20 @@ namespace KokkosBatched {
 ///   where P is a permutation matrix, L is lower triangular with unit
 ///   diagonal elements (lower trapezoidal if m > n), and U is upper
 ///   triangular (upper trapezoidal if m < n).
+///
+/// This is the recusive version of the algorithm. It divides the matrix
+/// into four submatrices:
+/// A = [[A00, A01],
+///      [A10, A11]]
+/// where A00 is a square matrix of size n0, A11 is a matrix of size n1 by n1
+/// with n0 = min(m, n) / 2 and n1 = n - n0.
+///
+/// This function calls itself to factorize A0 = [[A00],
+//                                                [A10]]
+/// do the swaps on A1 = [[A01],
+///                       [A11]]
+/// solve A01, update A11, then calls itself to factorize A11
+/// and do the swaps on A10.
 /// \tparam AViewType: Input type for the matrix, needs to be a 2D view
 /// \tparam PivViewType: Input type for the pivot indices, needs to be a 1D view
 ///
