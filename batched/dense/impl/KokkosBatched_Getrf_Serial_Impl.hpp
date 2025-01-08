@@ -23,7 +23,8 @@
 namespace KokkosBatched {
 namespace Impl {
 template <typename AViewType, typename PivViewType>
-KOKKOS_INLINE_FUNCTION static int checkGetrfInput([[maybe_unused]] const AViewType &A, const PivViewType &ipiv) {
+KOKKOS_INLINE_FUNCTION static int checkGetrfInput([[maybe_unused]] const AViewType &A,
+                                                  [[maybe_unused]] const PivViewType &ipiv) {
   static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::getrf: AViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<PivViewType>, "KokkosBatched::getrf: PivViewType is not a Kokkos::View.");
   static_assert(AViewType::rank == 2, "KokkosBatched::getrf: AViewType must have rank 2.");
