@@ -20,6 +20,22 @@
 #include "Kokkos_ArithTraits.hpp"
 
 namespace KokkosBlas {
+namespace Impl {
+struct OpID {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
+    return v;
+  }
+};
+
+struct OpConj {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
+    using KAT = Kokkos::ArithTraits<ValueType>;
+    return KAT::conj(v);
+  }
+};
+}  // namespace Impl
 
 //////// Tags for BLAS ////////
 
