@@ -11,7 +11,7 @@ using Vector          = Kokkos::View<Scalar*, execution_space>;
 using ScalarView      = Kokkos::View<Scalar, execution_space>;
 
 int main(int argc, char* argv[]) {
-  Kokkos::initialize();
+  Kokkos::initialize(argc, argv);
   {
     const int N = 10;
     Vector x("x", N);
