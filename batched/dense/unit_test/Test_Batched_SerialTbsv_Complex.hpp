@@ -75,33 +75,33 @@ TEST_F(TestCategory, batched_serial_tbsv_u_t_n_fcomplex) {
 }
 
 // CONJUGATE TRANSPOSE
-TEST_F(TestCategory, batched_serial_tbsv_l_ct_u_dcomplex) {
+TEST_F(TestCategory, batched_serial_tbsv_l_c_u_fcomplex) {
   using param_tag_type = ::Test::Tbsv::ParamTag<KokkosBatched::Uplo::Lower, KokkosBatched::Trans::ConjTranspose,
                                                 KokkosBatched::Diag::Unit>;
   using algo_tag_type  = typename Algo::Tbsv::Unblocked;
 
-  test_batched_tbsv<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_tbsv<TestDevice, Kokkos::complex<float>, param_tag_type, algo_tag_type>();
 }
-TEST_F(TestCategory, batched_serial_tbsv_l_ct_n_dcomplex) {
+TEST_F(TestCategory, batched_serial_tbsv_l_c_n_fcomplex) {
   using param_tag_type = ::Test::Tbsv::ParamTag<KokkosBatched::Uplo::Lower, KokkosBatched::Trans::ConjTranspose,
                                                 KokkosBatched::Diag::NonUnit>;
   using algo_tag_type  = typename Algo::Tbsv::Unblocked;
 
-  test_batched_tbsv<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_tbsv<TestDevice, Kokkos::complex<float>, param_tag_type, algo_tag_type>();
 }
-TEST_F(TestCategory, batched_serial_tbsv_u_ct_u_dcomplex) {
+TEST_F(TestCategory, batched_serial_tbsv_u_c_u_fcomplex) {
   using param_tag_type = ::Test::Tbsv::ParamTag<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::ConjTranspose,
                                                 KokkosBatched::Diag::Unit>;
   using algo_tag_type  = typename Algo::Tbsv::Unblocked;
 
-  test_batched_tbsv<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_tbsv<TestDevice, Kokkos::complex<float>, param_tag_type, algo_tag_type>();
 }
-TEST_F(TestCategory, batched_serial_tbsv_u_ct_n_dcomplex) {
+TEST_F(TestCategory, batched_serial_tbsv_u_c_n_fcomplex) {
   using param_tag_type = ::Test::Tbsv::ParamTag<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::ConjTranspose,
                                                 KokkosBatched::Diag::NonUnit>;
   using algo_tag_type  = typename Algo::Tbsv::Unblocked;
 
-  test_batched_tbsv<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+  test_batched_tbsv<TestDevice, Kokkos::complex<float>, param_tag_type, algo_tag_type>();
 }
 #endif
 
@@ -166,28 +166,28 @@ TEST_F(TestCategory, batched_serial_tbsv_u_t_n_dcomplex) {
 }
 
 // CONJUGATE TRANSPOSE
-TEST_F(TestCategory, batched_serial_tbsv_l_ct_u_dcomplex) {
+TEST_F(TestCategory, batched_serial_tbsv_l_c_u_dcomplex) {
   using param_tag_type = ::Test::Tbsv::ParamTag<KokkosBatched::Uplo::Lower, KokkosBatched::Trans::ConjTranspose,
                                                 KokkosBatched::Diag::Unit>;
   using algo_tag_type  = typename Algo::Tbsv::Unblocked;
 
   test_batched_tbsv<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
-TEST_F(TestCategory, batched_serial_tbsv_l_ct_n_dcomplex) {
+TEST_F(TestCategory, batched_serial_tbsv_l_c_n_dcomplex) {
   using param_tag_type = ::Test::Tbsv::ParamTag<KokkosBatched::Uplo::Lower, KokkosBatched::Trans::ConjTranspose,
                                                 KokkosBatched::Diag::NonUnit>;
   using algo_tag_type  = typename Algo::Tbsv::Unblocked;
 
   test_batched_tbsv<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
-TEST_F(TestCategory, batched_serial_tbsv_u_ct_u_dcomplex) {
+TEST_F(TestCategory, batched_serial_tbsv_u_c_u_dcomplex) {
   using param_tag_type = ::Test::Tbsv::ParamTag<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::ConjTranspose,
                                                 KokkosBatched::Diag::Unit>;
   using algo_tag_type  = typename Algo::Tbsv::Unblocked;
 
   test_batched_tbsv<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
-TEST_F(TestCategory, batched_serial_tbsv_u_ct_n_dcomplex) {
+TEST_F(TestCategory, batched_serial_tbsv_u_c_n_dcomplex) {
   using param_tag_type = ::Test::Tbsv::ParamTag<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::ConjTranspose,
                                                 KokkosBatched::Diag::NonUnit>;
   using algo_tag_type  = typename Algo::Tbsv::Unblocked;
