@@ -143,7 +143,7 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   auto h_x1 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x1);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < BlkSize; j++) {
-      EXPECT_NEAR_KK(h_x0(i, j), h_x1(i, j), eps);
+      Test::EXPECT_NEAR_KK_REL(h_x0(i, j), h_x1(i, j), eps);
     }
   }
 }
@@ -252,7 +252,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
   auto h_x_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_ref);
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t j = 0; j < BlkSize; j++) {
-      Test::EXPECT_NEAR_KK_REL(h_x0(ib, j), h_x_ref(ib, j), eps);
+      EXPECT_NEAR_KK(h_x0(ib, j), h_x_ref(ib, j), eps);
     }
   }
 
@@ -261,7 +261,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
   Kokkos::deep_copy(h_x0, x0);
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t j = 0; j < BlkSize; j++) {
-      Test::EXPECT_NEAR_KK_REL(h_x0(ib, j), h_x_ref(ib, j), eps);
+      EXPECT_NEAR_KK(h_x0(ib, j), h_x_ref(ib, j), eps);
     }
   }
 }
