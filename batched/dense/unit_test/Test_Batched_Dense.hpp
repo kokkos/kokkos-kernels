@@ -64,6 +64,7 @@
 #include "Test_Batched_SerialLaswp.hpp"
 #include "Test_Batched_SerialIamax.hpp"
 #include "Test_Batched_SerialGetrf.hpp"
+#include "Test_Batched_SerialGetrs.hpp"
 
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"
