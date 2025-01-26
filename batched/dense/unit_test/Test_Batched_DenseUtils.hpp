@@ -269,7 +269,8 @@ void create_banded_pds_matrix(InViewType& in, OutViewType& out, int k = 1, bool 
 }
 
 /// \brief Converts a banded matrix to a full matrix.
-/// Takes a banded matrix in banded storage and converts it to a full matrix.
+/// Takes a upper/lower triangular banded matrix in banded storage
+/// and converts it to a full matrix.
 ///
 /// \tparam InViewType: Input type for the matrix, needs to be a 3D view
 /// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
@@ -309,21 +310,32 @@ void banded_to_full(InViewType& in, OutViewType& out, int k = 1) {
   Kokkos::deep_copy(out, h_out);
 }
 
+/// \brief Converts a banded matrix to a full matrix.
+/// Takes a banded matrix in banded storage and converts it to a full matrix.
+///
+/// \tparam InViewType: Input type for the matrix, needs to be a 3D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
+///
+/// \param in [in]: Input batched banded matrix, a rank 3 view
+/// \param out [out]: Output batched full matrix, a rank 3 view
+/// \param kl [in]: Number of subdiagonals for within the band of A (default is 1)
+/// \param ku [in]: Number of superdiagonals for within the band of A (default is 1)
+///
 template <typename InViewType, typename OutViewType>
 void banded_to_full(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
   auto h_in        = Kokkos::create_mirror_view(in);
   auto h_out       = Kokkos::create_mirror_view(out);
   using value_type = typename InViewType::non_const_value_type;
-  const int N = out.extent(0), BlkSize = out.extent(2);
+  const int Nb = in.extent(0), m = in.extent(1), n = in.extent(2);
 
   Kokkos::deep_copy(h_in, in);
   assert(in.extent(0) == out.extent(0));
   assert(in.extent(1) == static_cast<std::size_t>(2 * kl + ku + 1));
   assert(in.extent(2) == out.extent(2));
 
-  for (int i0 = 0; i0 < N; i0++) {
-    for (int i1 = 0; i1 < BlkSize; i1++) {
-      for (int i2 = Kokkos::max(0, i1 - ku); i2 < Kokkos::min(BlkSize, i1 + kl + ku + 1); i2++) {
+  for (int i0 = 0; i0 < Nb; i0++) {
+    for (int i1 = 0; i1 < m; i1++) {
+      for (int i2 = Kokkos::max(0, i1 - ku); i2 < Kokkos::min(n, i1 + kl + ku + 1); i2++) {
         auto row_in_banded = kl + ku + i1 - i2;
         h_out(i0, i1, i2)  = h_in(i0, row_in_banded, i2);
       }
@@ -332,21 +344,33 @@ void banded_to_full(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
   Kokkos::deep_copy(out, h_out);
 }
 
+/// \brief Converts a full matrix to a banded matrix.
+/// Takes a full matrix and converts it to a banded matrix.
+///
+/// \tparam InViewType: Input type for the matrix, needs to be a 3D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
+///
+/// \param in [in]: Input batched full matrix, a rank 3 view
+/// \param out [out]: Output batched banded matrix, a rank 3 view
+/// \param kl [in]: Number of subdiagonals for within the band of A (default is 1)
+/// \param ku [in]: Number of superdiagonals for within the band of A (default is 1)
+///
 template <typename InViewType, typename OutViewType>
 void full_to_banded(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
   auto h_in        = Kokkos::create_mirror_view(in);
   auto h_out       = Kokkos::create_mirror_view(out);
   using value_type = typename InViewType::non_const_value_type;
-  const int N = in.extent(0), BlkSize = in.extent(2);
+  const int Nb = in.extent(0), m = in.extent(1), n = in.extent(2);
 
   Kokkos::deep_copy(h_in, in);
   assert(out.extent(0) == in.extent(0));
   assert(out.extent(1) == static_cast<std::size_t>(2 * kl + ku + 1));
   assert(out.extent(2) == in.extent(2));
 
-  for (int i0 = 0; i0 < N; i0++) {
-    for (int i1 = 0; i1 < BlkSize; i1++) {
-      for (int i2 = Kokkos::max(0, i1 - ku); i2 < Kokkos::min(BlkSize, i1 + kl + 1); i2++) {
+  for (int i0 = 0; i0 < Nb; i0++) {
+    for (int i1 = 0; i1 < m; i1++) {
+      for (int i2 = Kokkos::max(0, i1 - ku); i2 < Kokkos::min(n, i1 + kl + 1); i2++) {
+        // Do not use the element from the full matrix if it is outside the band
         auto row_in_banded           = kl + ku + i1 - i2;
         h_out(i0, row_in_banded, i2) = h_in(i0, i1, i2);
       }
