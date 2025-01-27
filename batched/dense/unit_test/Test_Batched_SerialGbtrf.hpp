@@ -20,7 +20,6 @@
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Getrf.hpp>
 #include <KokkosBatched_Gbtrf.hpp>
-#include <KokkosBatched_Gemm_Decl.hpp>
 #include "Test_Batched_DenseUtils.hpp"
 
 namespace Test {
@@ -108,7 +107,7 @@ struct Functor_BatchedSerialGetrf {
 ///             [0.5,     1, 0, 0],             [0,       0,    0,   -3],
 ///             [-0.5, -0.2, 1, 0],             [0,       0,    1,  1.5],
 ///             [0,    -0.8, 1, 1]]             [0,      -1, -2.5, -3.2],
-///        U =  [[2, -1,      1,  -3. ],        [2,    -2.5,   -3, -5.4],
+///        U =  [[2, -1,      1,  -3. ],        [2,    -2.5,   -3,  5.4],
 ///              [0, -2.5, -2.5,  1.5 ],        [-0.5, -0.2,    1,    0],
 ///              [0,  0,     -3,  -3.2],        [0.5,  -0.8,    0,    0]]
 ///              [0,  0,      0,   5.4]]
@@ -157,7 +156,7 @@ struct Functor_BatchedSerialGetrf {
 ///             [0.5,     1,     0,     0],        [0,       0,     0,    -3],
 ///             [-0.5, -0.2,     1,     0],        [0,       0,     1,   1.5],
 ///             [   0, -0.8,     1,     1],        [0,      -1,  -2.5,  -3.2],
-///             [   0,    0,     0,     0]]        [2,    -2.5,    -3,  -5.4],
+///             [   0,    0,     0,     0]]        [2,    -2.5,    -3,   5.4],
 ///        U =  [[2, -1,      1,  -3. ],           [-0.5, -0.2,     1,     0],
 ///              [0, -2.5, -2.5,  1.5 ],           [0.5,  -0.8,     0,     0]]
 ///              [0,  0,     -3,  -3.2],
@@ -193,7 +192,7 @@ void impl_test_batched_gbtrf_analytical(const int Nb) {
   auto h_U2_ref    = Kokkos::create_mirror_view(U2_ref);
   auto h_ipiv2_ref = Kokkos::create_mirror_view(ipiv2_ref);
 
-  for (std::size_t ib = 0; ib < Nb; ib++) {
+  for (int ib = 0; ib < Nb; ib++) {
     h_A2(ib, 0, 0) = 1;
     h_A2(ib, 0, 1) = -3;
     h_A2(ib, 0, 2) = -2;
@@ -346,24 +345,24 @@ void impl_test_batched_gbtrf_analytical(const int Nb) {
 
   RealType eps = 1.0e1 * ats::epsilon();
   for (int ib = 0; ib < Nb; ib++) {
-    for (int i = 0; i < BlkSize; i++) {
-      EXPECT_EQ(h_ipiv0(ib, i), h_ipiv0_ref(ib, i));
-      EXPECT_EQ(h_ipiv2(ib, i), h_ipiv2_ref(ib, i));
-      for (int j = 0; j < BlkSize; j++) {
-        EXPECT_NEAR_KK(h_U0(ib, i, j), h_U0_ref(ib, i, j), eps);
-        EXPECT_NEAR_KK(h_NL0(ib, i, j), h_NL0_ref(ib, i, j), eps);
+    for (int j = 0; j < BlkSize; j++) {
+      EXPECT_EQ(h_ipiv0(ib, j), h_ipiv0_ref(ib, j));
+      EXPECT_EQ(h_ipiv2(ib, j), h_ipiv2_ref(ib, j));
+      for (int i = 0; i < BlkSize; i++) {
+        EXPECT_NEAR_KK(h_U0(ib, i, j), h_U0_ref(ib, i, j), eps, "h_U0");
+        EXPECT_NEAR_KK(h_NL0(ib, i, j), h_NL0_ref(ib, i, j), eps, "h_NL0");
       }
-      for (int j = 0; j < BlkSize - 1; j++) {
-        EXPECT_NEAR_KK(h_U1(ib, i, j), h_U1_ref(ib, i, j), eps);
-        EXPECT_NEAR_KK(h_NL1(ib, i, j), h_NL1_ref(ib, i, j), eps);
+      for (int i = 0; i < BlkSize - 1; i++) {
+        EXPECT_NEAR_KK(h_U1(ib, i, j), h_U1_ref(ib, i, j), eps, "h_U1");
+        EXPECT_NEAR_KK(h_NL1(ib, i, j), h_NL1_ref(ib, i, j), eps, "h_NL1");
       }
-      for (int j = 0; j < BlkSize + 1; j++) {
-        EXPECT_NEAR_KK(h_U2(ib, i, j), h_U2_ref(ib, i, j), eps);
-        EXPECT_NEAR_KK(h_NL2(ib, i, j), h_NL2_ref(ib, i, j), eps);
+      for (int i = 0; i < BlkSize + 1; i++) {
+        EXPECT_NEAR_KK(h_U2(ib, i, j), h_U2_ref(ib, i, j), eps, "h_U2");
+        EXPECT_NEAR_KK(h_NL2(ib, i, j), h_NL2_ref(ib, i, j), eps, "h_NL2");
       }
     }
-    for (int i = 0; i < BlkSize - 1; i++) {
-      EXPECT_EQ(h_ipiv1(ib, i), h_ipiv1_ref(ib, i));
+    for (int j = 0; j < BlkSize - 1; j++) {
+      EXPECT_EQ(h_ipiv1(ib, j), h_ipiv1_ref(ib, j));
     }
   }
 }
@@ -396,11 +395,7 @@ void impl_test_batched_gbtrf(const int Nb, const int BlkSize) {
 
   // Initialize LU with random matrix
   KokkosKernels::Impl::getRandomBounds(1.0, randStart, randEnd);
-  Kokkos::fill_random(A, rand_pool, randStart, randEnd);
-
-  // Make the matrix Positive Definite Symmetric and Diagonal dominant
-  random_to_pds(A, LU);
-  Kokkos::deep_copy(A, ScalarType(0.0));
+  Kokkos::fill_random(LU, rand_pool, randStart, randEnd);
 
   full_to_banded(LU, AB, kl, ku);  // In banded storage
   banded_to_full(AB, A, kl, ku);   // In full storage
@@ -408,7 +403,7 @@ void impl_test_batched_gbtrf(const int Nb, const int BlkSize) {
   Kokkos::deep_copy(LU, A);  // for getrf
 
   // gbtrf to factorize matrix A = P * L * U
-  Functor_BatchedSerialGbtrf<DeviceType, View3DType, PivView2DType, AlgoTagType>(AB, ipiv, kl, ku).run();
+  Functor_BatchedSerialGbtrf<DeviceType, View3DType, PivView2DType, AlgoTagType>(AB, ipiv, kl, ku, BlkSize).run();
 
   // Extract matrix U and L from AB
   // first convert it to the full matrix (stored in A)
@@ -472,10 +467,10 @@ int test_batched_gbtrf() {
     using LayoutType = Kokkos::LayoutLeft;
     Test::Gbtrf::impl_test_batched_gbtrf_analytical<DeviceType, ScalarType, LayoutType, AlgoTagType>(1);
     Test::Gbtrf::impl_test_batched_gbtrf_analytical<DeviceType, ScalarType, LayoutType, AlgoTagType>(2);
-    // for (int i = 5; i < 10; i++) {
-    //   Test::Gbtrf::impl_test_batched_gbtrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
-    //   Test::Gbtrf::impl_test_batched_gbtrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
-    // }
+    for (int i = 0; i < 10; i++) {
+      Test::Gbtrf::impl_test_batched_gbtrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Gbtrf::impl_test_batched_gbtrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
+    }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
@@ -483,10 +478,10 @@ int test_batched_gbtrf() {
     using LayoutType = Kokkos::LayoutRight;
     Test::Gbtrf::impl_test_batched_gbtrf_analytical<DeviceType, ScalarType, LayoutType, AlgoTagType>(1);
     Test::Gbtrf::impl_test_batched_gbtrf_analytical<DeviceType, ScalarType, LayoutType, AlgoTagType>(2);
-    // for (int i = 5; i < 10; i++) {
-    //   Test::Gbtrf::impl_test_batched_gbtrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
-    //   Test::Gbtrf::impl_test_batched_gbtrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
-    // }
+    for (int i = 0; i < 10; i++) {
+      Test::Gbtrf::impl_test_batched_gbtrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(1, i);
+      Test::Gbtrf::impl_test_batched_gbtrf<DeviceType, ScalarType, LayoutType, AlgoTagType>(2, i);
+    }
   }
 #endif
 

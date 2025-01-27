@@ -24,7 +24,6 @@
 
 namespace KokkosBatched {
 namespace Impl {
-
 template <typename AlgoType>
 struct SerialGbtrfInternal {
   template <typename ABViewType, typename PivViewType>
@@ -107,7 +106,7 @@ KOKKOS_INLINE_FUNCTION int SerialGbtrfInternal<Algo::Gbtrf::Unblocked>::invoke(c
     }
   }
   return 0;
-};
+}
 
 }  // namespace Impl
 }  // namespace KokkosBatched

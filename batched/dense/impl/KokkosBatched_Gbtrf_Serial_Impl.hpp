@@ -74,13 +74,14 @@ struct SerialGbtrf<Algo::Gbtrf::Unblocked> {
   template <typename ABViewType, typename PivViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ABViewType &AB, const PivViewType &piv, const int kl, const int ku,
                                            const int m = -1) {
-    int m_tmp = m > 0 ? m : AB.extent(1);
+    // default: m == n
+    int n     = AB.extent(1);
+    int m_tmp = m > 0 ? m : n;
 
     auto info = Impl::checkGbtrfInput(AB, kl, ku, m_tmp);
     if (info) return info;
 
     // Quick return if possible
-    int ldab = AB.extent(0), n = AB.extent(1);
     if (m_tmp == 0 || n == 0) return 0;
 
     return Impl::SerialGbtrfInternal<Algo::Gbtrf::Unblocked>::invoke(AB, piv, kl, ku, m_tmp);

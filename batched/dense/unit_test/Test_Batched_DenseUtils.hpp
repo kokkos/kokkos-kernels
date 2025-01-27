@@ -326,7 +326,7 @@ void banded_to_full(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
   auto h_in        = Kokkos::create_mirror_view(in);
   auto h_out       = Kokkos::create_mirror_view(out);
   using value_type = typename InViewType::non_const_value_type;
-  const int Nb = in.extent(0), m = in.extent(1), n = in.extent(2);
+  const int Nb = out.extent(0), m = out.extent(1), n = out.extent(2);
 
   Kokkos::deep_copy(h_in, in);
   assert(in.extent(0) == out.extent(0));
@@ -395,15 +395,15 @@ void full_to_banded(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
 ///
 template <typename InViewType, typename OutViewType, typename UploType, typename DiagType>
 void create_triangular_matrix(InViewType& in, OutViewType& out, int k = 0) {
-  auto h_in   = Kokkos::create_mirror_view(in);
-  auto h_out  = Kokkos::create_mirror_view(out);
-  const int N = in.extent(0), BlkSize = in.extent(1);
+  auto h_in    = Kokkos::create_mirror_view(in);
+  auto h_out   = Kokkos::create_mirror_view(out);
+  const int Nb = in.extent(0), m = in.extent(1), n = in.extent(2);
 
   Kokkos::deep_copy(h_in, in);
   Kokkos::deep_copy(h_out, 0.0);
-  for (int i0 = 0; i0 < N; i0++) {
-    for (int i1 = 0; i1 < BlkSize; i1++) {
-      for (int i2 = 0; i2 < BlkSize; i2++) {
+  for (int i0 = 0; i0 < Nb; i0++) {
+    for (int i1 = 0; i1 < m; i1++) {
+      for (int i2 = 0; i2 < n; i2++) {
         if constexpr (std::is_same_v<UploType, KokkosBatched::Uplo::Upper>) {
           // Upper
           // Zero out elements below the k-th diagonal
@@ -414,7 +414,8 @@ void create_triangular_matrix(InViewType& in, OutViewType& out, int k = 0) {
           h_out(i0, i1, i2) = i2 > i1 + k ? 0.0 : h_in(i0, i1, i2);
         }
       }
-
+    }
+    for (int i1 = 0; i1 < Kokkos::min(m, n); i1++) {
       if constexpr (std::is_same_v<DiagType, KokkosBatched::Diag::Unit>) {
         // Unit diagonal
         h_out(i0, i1, i1) = 1.0;
