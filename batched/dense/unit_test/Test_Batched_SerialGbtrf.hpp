@@ -375,7 +375,6 @@ template <typename DeviceType, typename ScalarType, typename LayoutType, typenam
 void impl_test_batched_gbtrf(const int Nb, const int BlkSize) {
   using ats           = typename Kokkos::ArithTraits<ScalarType>;
   using RealType      = typename ats::mag_type;
-  using View2DType    = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
 
