@@ -167,7 +167,6 @@ template <typename DeviceType, typename ScalarType, typename LayoutType, typenam
 void impl_test_batched_gbtrf_analytical(const int Nb) {
   using ats           = typename Kokkos::ArithTraits<ScalarType>;
   using RealType      = typename ats::mag_type;
-  using View2DType    = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
 
@@ -304,21 +303,21 @@ void impl_test_batched_gbtrf_analytical(const int Nb) {
   auto h_A0    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A0);
   auto h_A1    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A1);
   Kokkos::deep_copy(h_A2, A2);
-  for (std::size_t ib = 0; ib < Nb; ib++) {
-    for (int j = 0; j < A0.extent(1) - 1; j++) {
-      for (int i = j + 1; i < A0.extent(2) - 1; i++) {
+  for (int ib = 0; ib < Nb; ib++) {
+    for (int j = 0; j < BlkSize - 1; j++) {
+      for (int i = j + 1; i < BlkSize - 1; i++) {
         Kokkos::kokkos_swap(h_A0(ib, i, j), h_A0(ib, h_ipiv0(ib, i), j));
       }
     }
 
-    for (int j = 0; j < A1.extent(1) - 1; j++) {
-      for (int i = j + 1; i < A1.extent(2) - 1; i++) {
+    for (int j = 0; j < BlkSize - 2; j++) {
+      for (int i = j + 1; i < BlkSize - 1; i++) {
         Kokkos::kokkos_swap(h_A1(ib, i, j), h_A1(ib, h_ipiv1(ib, i), j));
       }
     }
 
-    for (int j = 0; j < A2.extent(1) - 1; j++) {
-      for (int i = j + 1; i < A2.extent(2) - 1; i++) {
+    for (int j = 0; j < BlkSize; j++) {
+      for (int i = j + 1; i < BlkSize - 1; i++) {
         Kokkos::kokkos_swap(h_A2(ib, i, j), h_A2(ib, h_ipiv2(ib, i), j));
       }
     }

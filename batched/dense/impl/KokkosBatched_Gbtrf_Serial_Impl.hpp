@@ -55,7 +55,7 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrfInput([[maybe_unused]] const ABViewT
     return 1;
   }
 
-  const int lda = AB.extent(0), n = AB.extent(1);
+  const int lda = AB.extent(0);
   if (lda < (2 * kl + ku + 1)) {
     Kokkos::printf(
         "KokkosBatched::gbtrs: leading dimension of A must be smaller than 2 * "

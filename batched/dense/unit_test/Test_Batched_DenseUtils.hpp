@@ -323,9 +323,8 @@ void banded_to_full(InViewType& in, OutViewType& out, int k = 1) {
 ///
 template <typename InViewType, typename OutViewType>
 void banded_to_full(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
-  auto h_in        = Kokkos::create_mirror_view(in);
-  auto h_out       = Kokkos::create_mirror_view(out);
-  using value_type = typename InViewType::non_const_value_type;
+  auto h_in    = Kokkos::create_mirror_view(in);
+  auto h_out   = Kokkos::create_mirror_view(out);
   const int Nb = out.extent(0), m = out.extent(1), n = out.extent(2);
 
   Kokkos::deep_copy(h_in, in);
@@ -357,9 +356,8 @@ void banded_to_full(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
 ///
 template <typename InViewType, typename OutViewType>
 void full_to_banded(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
-  auto h_in        = Kokkos::create_mirror_view(in);
-  auto h_out       = Kokkos::create_mirror_view(out);
-  using value_type = typename InViewType::non_const_value_type;
+  auto h_in    = Kokkos::create_mirror_view(in);
+  auto h_out   = Kokkos::create_mirror_view(out);
   const int Nb = in.extent(0), m = in.extent(1), n = in.extent(2);
 
   Kokkos::deep_copy(h_in, in);

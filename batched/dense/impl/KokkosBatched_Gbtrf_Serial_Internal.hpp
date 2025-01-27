@@ -63,8 +63,8 @@ KOKKOS_INLINE_FUNCTION int SerialGbtrfInternal<Algo::Gbtrf::Unblocked>::invoke(c
     // Find pivot and test for singularity. KM is the number of subdiagonals
     // elements in the current column.
     int km          = Kokkos::min(kl, m - j - 1);
-    auto sub_col_AB = Kokkos::subview(AB, Kokkos::pair<int, int>(kv, kv + km + 1), j);
-    int jp          = SerialIamax::invoke(sub_col_AB);
+    auto cur_col_AB = Kokkos::subview(AB, Kokkos::pair<int, int>(kv, kv + km + 1), j);
+    int jp          = SerialIamax::invoke(cur_col_AB);
     piv(j)          = jp + j;
 
     if (AB(kv + jp, j) == 0) {
