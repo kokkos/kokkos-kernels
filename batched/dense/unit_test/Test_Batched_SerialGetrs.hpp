@@ -23,8 +23,6 @@
 #include <KokkosBatched_Getrs.hpp>
 #include "Test_Batched_DenseUtils.hpp"
 
-using namespace KokkosBatched;
-
 namespace Test {
 namespace Getrs {
 
