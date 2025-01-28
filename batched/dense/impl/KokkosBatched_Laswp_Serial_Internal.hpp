@@ -96,6 +96,15 @@ struct SerialLaswpVectorBackwardInternal {
                                            /* */ ValueType *KOKKOS_RESTRICT A, const int as0) {
     for (int i = (plen - 1); i >= 0; --i) {
       const int piv = p[i * ps0];
+
+// On H100 with Cuda 12.0.0, the compiler seems to apply
+// an aggressive optimization which crashes this function
+// Insert unnecessary operation to disallow optimization
+#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_HOPPER90)
+#if CUDA_VERSION == 12000
+      if (piv < 0) return 0;
+#endif
+#endif
       if (piv != i) {
         const int idx_i = i * as0, idx_p = piv * as0;
         const ValueType tmp = A[idx_i];
