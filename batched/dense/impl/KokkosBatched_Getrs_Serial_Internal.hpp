@@ -30,48 +30,46 @@ struct SerialGetrsInternal {
 
 //// Non-transpose ////
 template <>
-struct SerialGetrsInternal<Trans::NoTranspose, Algo::Getrs::Unblocked> {
-  template <typename AViewType, typename PivViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const PivViewType &piv, const BViewType &b) {
-    KokkosBatched::SerialLaswp<Direct::Forward>::invoke(piv, b);
-    KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Trsm::Unblocked>::invoke(
-        1.0, A, b);
-    KokkosBatched::SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
-                              Algo::Trsm::Unblocked>::invoke(1.0, A, b);
+template <typename AViewType, typename PivViewType, typename BViewType>
+KOKKOS_INLINE_FUNCTION int SerialGetrsInternal<Trans::NoTranspose, Algo::Getrs::Unblocked>::invoke(
+    const AViewType &A, const PivViewType &piv, const BViewType &b) {
+  KokkosBatched::SerialLaswp<Direct::Forward>::invoke(piv, b);
+  KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Trsm::Unblocked>::invoke(
+      1.0, A, b);
+  KokkosBatched::SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Trsm::Unblocked>::invoke(
+      1.0, A, b);
 
-    return 0;
-  }
-};
+  return 0;
+}
 
 //// Transpose ////
 template <>
-struct SerialGetrsInternal<Trans::Transpose, Algo::Getrs::Unblocked> {
-  template <typename AViewType, typename PivViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const PivViewType &piv, const BViewType &b) {
-    KokkosBatched::SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, Diag::NonUnit, Algo::Trsm::Unblocked>::invoke(
-        1.0, A, b);
-    KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::Unit, Algo::Trsm::Unblocked>::invoke(
-        1.0, A, b);
-    KokkosBatched::SerialLaswp<Direct::Backward>::invoke(piv, b);
+template <typename AViewType, typename PivViewType, typename BViewType>
+KOKKOS_INLINE_FUNCTION int SerialGetrsInternal<Trans::Transpose, Algo::Getrs::Unblocked>::invoke(const AViewType &A,
+                                                                                                 const PivViewType &piv,
+                                                                                                 const BViewType &b) {
+  KokkosBatched::SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, Diag::NonUnit, Algo::Trsm::Unblocked>::invoke(
+      1.0, A, b);
+  KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::Unit, Algo::Trsm::Unblocked>::invoke(1.0,
+                                                                                                                  A, b);
+  KokkosBatched::SerialLaswp<Direct::Backward>::invoke(piv, b);
 
-    return 0;
-  }
-};
+  return 0;
+}
 
 //// Conj-Transpose ////
 template <>
-struct SerialGetrsInternal<Trans::ConjTranspose, Algo::Getrs::Unblocked> {
-  template <typename AViewType, typename PivViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const PivViewType &piv, const BViewType &b) {
-    KokkosBatched::SerialTrsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Diag::NonUnit,
-                              Algo::Trsm::Unblocked>::invoke(1.0, A, b);
-    KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::ConjTranspose, Diag::Unit, Algo::Trsm::Unblocked>::invoke(
-        1.0, A, b);
-    KokkosBatched::SerialLaswp<Direct::Backward>::invoke(piv, b);
+template <typename AViewType, typename PivViewType, typename BViewType>
+KOKKOS_INLINE_FUNCTION int SerialGetrsInternal<Trans::ConjTranspose, Algo::Getrs::Unblocked>::invoke(
+    const AViewType &A, const PivViewType &piv, const BViewType &b) {
+  KokkosBatched::SerialTrsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Diag::NonUnit,
+                            Algo::Trsm::Unblocked>::invoke(1.0, A, b);
+  KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::ConjTranspose, Diag::Unit, Algo::Trsm::Unblocked>::invoke(
+      1.0, A, b);
+  KokkosBatched::SerialLaswp<Direct::Backward>::invoke(piv, b);
 
-    return 0;
-  }
-};
+  return 0;
+}
 
 }  // namespace Impl
 }  // namespace KokkosBatched
