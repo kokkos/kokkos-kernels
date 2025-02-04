@@ -293,7 +293,7 @@ void impl_test_batched_ger(const std::size_t N, const std::size_t BlkSize) {
   View3DType A("A", N, BlkSize, BlkSize), A0("A0", N, BlkSize, BlkSize), A_s("A_s", N, BlkSize, BlkSize),
       A0_s("A0_s", N, BlkSize, BlkSize), A_ref("A_ref", N, BlkSize, BlkSize), A0_ref("A0_ref", N, BlkSize, BlkSize);
 
-  View2DType x("x", N, BlkSize, BlkSize), y("y", N, BlkSize, BlkSize);
+  View2DType x("x", N, BlkSize), y("y", N, BlkSize);
 
   const std::size_t incx = 2;
   // Testing incx argument with strided views
