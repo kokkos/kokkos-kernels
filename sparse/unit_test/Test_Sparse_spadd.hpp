@@ -122,7 +122,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   Kokkos::deep_copy(c_row_map, (size_type)5);
   auto addHandle = handle.get_spadd_handle();
   typename Device::execution_space exec{};
-  KokkosSparse::Experimental::spadd_symbolic(exec, &handle, numRows, numCols, A.graph.row_map, A.graph.entries,
+  KokkosSparse::spadd_symbolic(exec, &handle, numRows, numCols, A.graph.row_map, A.graph.entries,
                                              B.graph.row_map, B.graph.entries, c_row_map);
   size_type c_nnz = addHandle->get_c_nnz();
   // Fill values, entries with incorrect incorret
@@ -130,7 +130,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   Kokkos::deep_copy(c_values, ((typename KAT::mag_type)5) * KAT::one());
   entries_type c_entries("C entries", c_nnz);
   Kokkos::deep_copy(c_entries, (lno_t)5);
-  KokkosSparse::Experimental::spadd_numeric(exec, &handle, numRows, numCols, A.graph.row_map, A.graph.entries, A.values,
+  KokkosSparse::spadd_numeric(exec, &handle, numRows, numCols, A.graph.row_map, A.graph.entries, A.values,
                                             KAT::one(), B.graph.row_map, B.graph.entries, B.values, KAT::one(),
                                             c_row_map, c_entries, c_values);
   // done with handle
