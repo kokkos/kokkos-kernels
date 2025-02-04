@@ -176,7 +176,7 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params) 
       sequential_kh.set_dynamic_scheduling(true);
     }
 
-    spgemm_symbolic(&sequential_kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST,
+    KokkosSparse::spgemm_symbolic(&sequential_kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST,
                     crsMat2.graph.row_map, crsMat2.graph.entries, TRANSPOSESECOND, row_mapC_ref);
 
     ExecSpace().fence();
@@ -217,7 +217,7 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params) 
     valuesC  = scalar_view_t("valuesC (empty)", 0);
 
     Kokkos::Timer timer1;
-    spgemm_symbolic(&kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST, crsMat2.graph.row_map,
+    KokkosSparse::spgemm_symbolic(&kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST, crsMat2.graph.row_map,
                     crsMat2.graph.entries, TRANSPOSESECOND, row_mapC);
 
     ExecSpace().fence();

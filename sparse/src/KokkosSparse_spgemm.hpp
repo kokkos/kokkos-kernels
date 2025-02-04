@@ -48,7 +48,7 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode, const
   entries_type entriesC;
   values_type valuesC;
 
-  KokkosSparse::Experimental::spgemm_symbolic(&kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
+  KokkosSparse::spgemm_symbolic(&kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
                                               A.graph.entries, Amode, B.graph.row_map, B.graph.entries, Bmode,
                                               row_mapC);
 
@@ -89,7 +89,7 @@ void block_spgemm_symbolic(KernelHandle& kh, const AMatrixType& A, const bool tr
 
   row_map_type row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "non_const_lnow_row"), A.numRows() + 1);
 
-  KokkosSparse::Experimental::spgemm_symbolic(&kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
+  KokkosSparse::spgemm_symbolic(&kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
                                               A.graph.entries, transposeA, B.graph.row_map, B.graph.entries, transposeB,
                                               row_mapC);
 
@@ -125,7 +125,7 @@ void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode, const 
   // using entries_type = typename CMatrix::row_map_type::non_const_type;
   // using values_type  = typename CMatrix::values_type::non_const_type;
 
-  KokkosSparse::Experimental::spgemm_numeric(&kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
+  KokkosSparse::spgemm_numeric(&kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
                                              A.graph.entries, A.values, Amode, B.graph.row_map, B.graph.entries,
                                              B.values, Bmode, C.graph.row_map, C.graph.entries, C.values);
 }
@@ -152,7 +152,7 @@ void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode, 
     throw std::invalid_argument("Block SpGEMM must be called for matrices with the same block size");
   }
 
-  KokkosSparse::Experimental::spgemm_numeric(&kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
+  KokkosSparse::spgemm_numeric(&kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
                                              A.graph.entries, A.values, Amode, B.graph.row_map, B.graph.entries,
                                              B.values, Bmode, C.graph.row_map, C.graph.entries, C.values, blockDim);
 }

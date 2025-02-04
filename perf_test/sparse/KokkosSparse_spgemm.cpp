@@ -351,7 +351,7 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
       sequential_kh.set_dynamic_scheduling(true);
     }
 
-    spgemm_symbolic(&sequential_kh, m, n, k, A.graph.row_map, A.graph.entries, TRANSPOSEFIRST, B.graph.row_map,
+    KokkosSparse::spgemm_symbolic(&sequential_kh, m, n, k, A.graph.row_map, A.graph.entries, TRANSPOSEFIRST, B.graph.row_map,
                     B.graph.entries, TRANSPOSESECOND, row_mapC_ref);
 
     ExecSpace().fence();
@@ -360,7 +360,7 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
     entriesC_ref         = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
     valuesC_ref          = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 
-    spgemm_numeric(&sequential_kh, m, n, k, A.graph.row_map, A.graph.entries, A.values, TRANSPOSEFIRST,
+    KokkosSparse::spgemm_numeric(&sequential_kh, m, n, k, A.graph.row_map, A.graph.entries, A.values, TRANSPOSEFIRST,
 
                    B.graph.row_map, B.graph.entries, B.values, TRANSPOSESECOND, row_mapC_ref, entriesC_ref,
                    valuesC_ref);
@@ -398,7 +398,7 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
     valuesC  = scalar_view_t("valuesC (empty)", 0);
 
     Kokkos::Timer timer1;
-    spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, TRANSPOSEFIRST, B.graph.row_map, B.graph.entries,
+    KokkosSparse::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, TRANSPOSEFIRST, B.graph.row_map, B.graph.entries,
                     TRANSPOSESECOND, row_mapC);
 
     ExecSpace().fence();
@@ -411,7 +411,7 @@ void run_spgemm(int argc, char** argv, perf_test::CommonInputParams) {
       entriesC = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
       valuesC  = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
     }
-    spgemm_numeric(&kh, m, n, k, A.graph.row_map, A.graph.entries, A.values, TRANSPOSEFIRST, B.graph.row_map,
+    KokkosSparse::spgemm_numeric(&kh, m, n, k, A.graph.row_map, A.graph.entries, A.values, TRANSPOSEFIRST, B.graph.row_map,
                    B.graph.entries, B.values, TRANSPOSESECOND, row_mapC, entriesC, valuesC);
 
     ExecSpace().fence();
