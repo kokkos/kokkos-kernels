@@ -621,15 +621,14 @@ struct IlutWrap {
     // TODO: let compute_residual_norm also take an execution space argument and
     // use that for exec!
     typename KHandle::HandleExecSpace exec{};
-    KokkosSparse::Experimental::spadd_symbolic(exec, &kh, m, n, A_row_map, A_entries, LU_row_map, LU_entries,
-                                               R_row_map);
+    KokkosSparse::spadd_symbolic(exec, &kh, m, n, A_row_map, A_entries, LU_row_map, LU_entries, R_row_map);
 
     const size_type r_nnz = addHandle->get_c_nnz();
     Kokkos::resize(exec, R_entries, r_nnz);
     Kokkos::resize(exec, R_values, r_nnz);
 
-    KokkosSparse::Experimental::spadd_numeric(exec, &kh, m, n, A_row_map, A_entries, A_values, 1., LU_row_map,
-                                              LU_entries, LU_values, -1., R_row_map, R_entries, R_values);
+    KokkosSparse::spadd_numeric(exec, &kh, m, n, A_row_map, A_entries, A_values, 1., LU_row_map, LU_entries, LU_values,
+                                -1., R_row_map, R_entries, R_values);
     // TODO: how to make this policy use exec?
     auto policy = ih.get_default_team_policy();
 
