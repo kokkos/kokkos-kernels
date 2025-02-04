@@ -177,7 +177,7 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params) 
     }
 
     KokkosSparse::spgemm_symbolic(&sequential_kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST,
-                    crsMat2.graph.row_map, crsMat2.graph.entries, TRANSPOSESECOND, row_mapC_ref);
+                                  crsMat2.graph.row_map, crsMat2.graph.entries, TRANSPOSESECOND, row_mapC_ref);
 
     ExecSpace().fence();
 
@@ -217,8 +217,8 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params) 
     valuesC  = scalar_view_t("valuesC (empty)", 0);
 
     Kokkos::Timer timer1;
-    KokkosSparse::spgemm_symbolic(&kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST, crsMat2.graph.row_map,
-                    crsMat2.graph.entries, TRANSPOSESECOND, row_mapC);
+    KokkosSparse::spgemm_symbolic(&kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST,
+                                  crsMat2.graph.row_map, crsMat2.graph.entries, TRANSPOSESECOND, row_mapC);
 
     ExecSpace().fence();
     double symbolic_time = timer1.seconds();
