@@ -222,7 +222,7 @@ void spadd_symbolic(const ExecSpace &exec, KernelHandle *handle, const AMatrix &
     addHandle->set_c_nnz(A.graph.entries.extent(0));
   } else {
     KokkosSparse::spadd_symbolic(exec, handle, A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries,
-                                               B.graph.row_map, B.graph.entries, row_mapC);
+                                 B.graph.row_map, B.graph.entries, row_mapC);
   }
 
   // Now create and allocate the entries and values
@@ -249,9 +249,9 @@ void spadd_numeric(const ExecSpace &exec, KernelHandle *handle, const AScalar al
     Kokkos::deep_copy(exec, C.graph.entries, A.graph.entries);
     KokkosBlas::scal(exec, C.values, alpha, A.values);
   } else {
-    KokkosSparse::spadd_numeric(exec, handle, A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries,
-                                              A.values, alpha, B.graph.row_map, B.graph.entries, B.values, beta,
-                                              C.graph.row_map, C.graph.entries, C.values);
+    KokkosSparse::spadd_numeric(exec, handle, A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries, A.values,
+                                alpha, B.graph.row_map, B.graph.entries, B.values, beta, C.graph.row_map,
+                                C.graph.entries, C.values);
   }
 }
 
@@ -274,19 +274,19 @@ namespace Experimental {
 
 template <typename ExecSpace, typename KernelHandle, typename alno_row_view_t_, typename alno_nnz_view_t_,
           typename blno_row_view_t_, typename blno_nnz_view_t_, typename clno_row_view_t_>
-[[deprecated("spadd_symbolic was promoted out of Experimental, please use KokkosSparse::spadd_symbolic instead.")]]
-void spadd_symbolic(const ExecSpace &exec, KernelHandle *handle,
-                    typename KernelHandle::const_nnz_lno_t m,  // same type as column indices
-                    typename KernelHandle::const_nnz_lno_t n, const alno_row_view_t_ a_rowmap,
-                    const alno_nnz_view_t_ a_entries, const blno_row_view_t_ b_rowmap, const blno_nnz_view_t_ b_entries,
-                    clno_row_view_t_ c_rowmap) {
+[[deprecated("spadd_symbolic was promoted out of Experimental, please use KokkosSparse::spadd_symbolic instead.")]] void
+spadd_symbolic(const ExecSpace &exec, KernelHandle *handle,
+               typename KernelHandle::const_nnz_lno_t m,  // same type as column indices
+               typename KernelHandle::const_nnz_lno_t n, const alno_row_view_t_ a_rowmap,
+               const alno_nnz_view_t_ a_entries, const blno_row_view_t_ b_rowmap, const blno_nnz_view_t_ b_entries,
+               clno_row_view_t_ c_rowmap) {
   KokkosSparse::spadd_symbolic(exec, handle, m, n, a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap);
 }
 
 // one without an execution space arg
 template <typename KernelHandle, typename... Args>
-[[deprecated("spadd_symbolic was promoted out of Experimental, please use KokkosSparse::spadd_symbolic instead.")]]
-void spadd_symbolic(KernelHandle *handle, Args... args) {
+[[deprecated("spadd_symbolic was promoted out of Experimental, please use KokkosSparse::spadd_symbolic instead.")]] void
+spadd_symbolic(KernelHandle *handle, Args... args) {
   KokkosSparse::spadd_symbolic(typename KernelHandle::HandleExecSpace{}, handle, args...);
 }
 
@@ -294,27 +294,24 @@ template <typename ExecSpace, typename KernelHandle, typename alno_row_view_t_, 
           typename ascalar_t_, typename ascalar_nnz_view_t_, typename blno_row_view_t_, typename blno_nnz_view_t_,
           typename bscalar_t_, typename bscalar_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_,
           typename cscalar_nnz_view_t_>
-[[deprecated("spadd_numeric was promoted out of Experimental, please use KokkosSparse::spadd_numeric instead.")]]
-void spadd_numeric(const ExecSpace &exec, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t m,
-                   typename KernelHandle::const_nnz_lno_t n, const alno_row_view_t_ a_rowmap,
-                   const alno_nnz_view_t_ a_entries, const ascalar_nnz_view_t_ a_values, const ascalar_t_ alpha,
-                   const blno_row_view_t_ b_rowmap, const blno_nnz_view_t_ b_entries,
-                   const bscalar_nnz_view_t_ b_values, const bscalar_t_ beta, const clno_row_view_t_ c_rowmap,
-                   clno_nnz_view_t_ c_entries, cscalar_nnz_view_t_ c_values) {
-
-  KokkosSparse::spadd_numeric(exec, handle, m, n, a_rowmap, a_entries, a_values, alpha, b_rowmap, b_entries, b_values, beta, c_rowmap, c_entries, c_values);
-
+[[deprecated("spadd_numeric was promoted out of Experimental, please use KokkosSparse::spadd_numeric instead.")]] void
+spadd_numeric(const ExecSpace &exec, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t m,
+              typename KernelHandle::const_nnz_lno_t n, const alno_row_view_t_ a_rowmap,
+              const alno_nnz_view_t_ a_entries, const ascalar_nnz_view_t_ a_values, const ascalar_t_ alpha,
+              const blno_row_view_t_ b_rowmap, const blno_nnz_view_t_ b_entries, const bscalar_nnz_view_t_ b_values,
+              const bscalar_t_ beta, const clno_row_view_t_ c_rowmap, clno_nnz_view_t_ c_entries,
+              cscalar_nnz_view_t_ c_values) {
+  KokkosSparse::spadd_numeric(exec, handle, m, n, a_rowmap, a_entries, a_values, alpha, b_rowmap, b_entries, b_values,
+                              beta, c_rowmap, c_entries, c_values);
 }
 
 // one without an execution space arg
 template <typename KernelHandle, typename... Args>
-[[deprecated("spadd_numeric was promoted out of Experimental, please use KokkosSparse::spadd_numeric instead.")]]
-void spadd_numeric(KernelHandle *handle, Args... args) {
-
+[[deprecated("spadd_numeric was promoted out of Experimental, please use KokkosSparse::spadd_numeric instead.")]] void
+spadd_numeric(KernelHandle *handle, Args... args) {
   KokkosSparse::spadd_numeric(handle, args...);
-
 }
-} // namespace Experimental
+}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #undef SAME_TYPE
