@@ -1159,6 +1159,7 @@ void backward_sweep_block_gauss_seidel_apply(KernelHandle *handle, typename Kern
                                             y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }
 
+#if !defined(DOXY)
 namespace Experimental {
 
 template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
@@ -1407,5 +1408,6 @@ backward_sweep_block_gauss_seidel_apply(KernelHandle *handle, typename KernelHan
 }
 
 }  // namespace Experimental
+#endif
 }  // namespace KokkosSparse
 #endif
