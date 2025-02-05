@@ -80,16 +80,15 @@ struct IlutWrap {
 
     const size_type nrows = ih.get_nrows();
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, nrows, nrows, nrows, L_row_map, L_entries, false, U_row_map,
-                                                U_entries, false, LU_row_map);
+    KokkosSparse::spgemm_symbolic(&kh, nrows, nrows, nrows, L_row_map, L_entries, false, U_row_map, U_entries, false,
+                                  LU_row_map);
 
     const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     Kokkos::resize(LU_entries, lu_nnz_size);
     Kokkos::resize(LU_values, lu_nnz_size);
 
-    KokkosSparse::Experimental::spgemm_numeric(&kh, nrows, nrows, nrows, L_row_map, L_entries, L_values, false,
-                                               U_row_map, U_entries, U_values, false, LU_row_map, LU_entries,
-                                               LU_values);
+    KokkosSparse::spgemm_numeric(&kh, nrows, nrows, nrows, L_row_map, L_entries, L_values, false, U_row_map, U_entries,
+                                 U_values, false, LU_row_map, LU_entries, LU_values);
 
     // Need to sort LU CRS if on CUDA!
     sort_crs_matrix<execution_space>(LU_row_map, LU_entries, LU_values);
