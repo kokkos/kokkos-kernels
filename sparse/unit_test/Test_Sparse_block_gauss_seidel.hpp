@@ -98,12 +98,12 @@ int run_block_gauss_seidel_1(
 
   if (!skip_symbolic) {
     KokkosSparse::block_gauss_seidel_symbolic(&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
-                                       input_mat.graph.entries, is_symmetric_graph);
+                                              input_mat.graph.entries, is_symmetric_graph);
   }
 
   if (!skip_numeric) {
     KokkosSparse::block_gauss_seidel_numeric<format>(&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
-                                              input_mat.graph.entries, input_mat.values, is_symmetric_graph);
+                                                     input_mat.graph.entries, input_mat.values, is_symmetric_graph);
   }
 
   switch (apply_type) {
@@ -332,12 +332,13 @@ void test_block_gauss_seidel_empty() {
     scalar_view_t values("Values", 0);
     // also, make sure graph symmetrization doesn't crash on zero rows
     KokkosSparse::block_gauss_seidel_symbolic(&kh, num_rows, num_rows, block_size, rowmap, entries, false);
-    KokkosSparse::block_gauss_seidel_numeric<mtx_format>(&kh, num_rows, num_rows, block_size, rowmap, entries, values, false);
+    KokkosSparse::block_gauss_seidel_numeric<mtx_format>(&kh, num_rows, num_rows, block_size, rowmap, entries, values,
+                                                         false);
     scalar_view_t x("X", num_rows);
     scalar_view_t y("Y", num_rows);
     scalar_t omega(0.9);
-    KokkosSparse::symmetric_block_gauss_seidel_apply<mtx_format>(&kh, num_rows, num_rows, block_size, rowmap, entries, values,
-                                                          x, y, false, true, omega, 3);
+    KokkosSparse::symmetric_block_gauss_seidel_apply<mtx_format>(&kh, num_rows, num_rows, block_size, rowmap, entries,
+                                                                 values, x, y, false, true, omega, 3);
     kh.destroy_gs_handle();
   }
 }
