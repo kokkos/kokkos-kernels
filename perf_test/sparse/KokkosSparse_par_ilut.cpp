@@ -233,8 +233,8 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh, const sp_matrix_
 
     if (!measure_symbolic) {
       state.ResumeTiming();
-      KokkosSparse::spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map,
-                     U_entries, U_values);
+      KokkosSparse::spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+                                   U_row_map, U_entries, U_values);
       Kokkos::fence();
       state.PauseTiming();
     }

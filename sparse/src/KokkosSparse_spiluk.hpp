@@ -415,22 +415,23 @@ namespace Experimental {
 
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType, typename LRowMapType,
           typename LEntriesType, typename URowMapType, typename UEntriesType>
-[[deprecated("spiluk_numeric was promoted out of Experimental, please use KokkosSparse::spiluk_numeric instead.")]]
-void spiluk_symbolic(KernelHandle* handle, typename KernelHandle::const_nnz_lno_t fill_lev, ARowMapType& A_rowmap,
-                     AEntriesType& A_entries, LRowMapType& L_rowmap, LEntriesType& L_entries, URowMapType& U_rowmap,
-                     UEntriesType& U_entries, int nstreams = 1) {
-  KokkosSparse::spiluk_symbolic(handle, fill_lev, A_rowmap, A_entries, L_rowmap, L_entries, U_rowmap, U_entries, nstreams);
+[[deprecated("spiluk_numeric was promoted out of Experimental, please use KokkosSparse::spiluk_numeric instead.")]] void
+spiluk_symbolic(KernelHandle* handle, typename KernelHandle::const_nnz_lno_t fill_lev, ARowMapType& A_rowmap,
+                AEntriesType& A_entries, LRowMapType& L_rowmap, LEntriesType& L_entries, URowMapType& U_rowmap,
+                UEntriesType& U_entries, int nstreams = 1) {
+  KokkosSparse::spiluk_symbolic(handle, fill_lev, A_rowmap, A_entries, L_rowmap, L_entries, U_rowmap, U_entries,
+                                nstreams);
 }
 
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType, typename AValuesType,
           typename LRowMapType, typename LEntriesType, typename LValuesType, typename URowMapType,
           typename UEntriesType, typename UValuesType>
-[[deprecated("spiluk_numeric was promoted out of Experimental, please use KokkosSparse::spiluk_numeric instead.")]]
-void spiluk_numeric(KernelHandle* handle, typename KernelHandle::const_nnz_lno_t fill_lev, ARowMapType& A_rowmap,
-                    AEntriesType& A_entries, AValuesType& A_values, LRowMapType& L_rowmap, LEntriesType& L_entries,
-                    LValuesType& L_values, URowMapType& U_rowmap, UEntriesType& U_entries, UValuesType& U_values) {
-  KokkosSparse::spiluk_numeric(handle, fill_lev, A_rowmap, A_entries, A_values, L_rowmap, L_entries, L_values,
-			       U_rowmap, U_entries, U_values);
+[[deprecated("spiluk_numeric was promoted out of Experimental, please use KokkosSparse::spiluk_numeric instead.")]] void
+spiluk_numeric(KernelHandle* handle, typename KernelHandle::const_nnz_lno_t fill_lev, ARowMapType& A_rowmap,
+               AEntriesType& A_entries, AValuesType& A_values, LRowMapType& L_rowmap, LEntriesType& L_entries,
+               LValuesType& L_values, URowMapType& U_rowmap, UEntriesType& U_entries, UValuesType& U_values) {
+  KokkosSparse::spiluk_numeric(handle, fill_lev, A_rowmap, A_entries, A_values, L_rowmap, L_entries, L_values, U_rowmap,
+                               U_entries, U_values);
 }
 
 template <class ExecutionSpace, typename KernelHandle, typename ARowMapType, typename AEntriesType,
