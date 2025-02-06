@@ -21,6 +21,7 @@
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBlas1_scal.hpp>
 #include <KokkosBatched_Iamax.hpp>
+#include "KokkosBatched_Ger_Serial_Internal.hpp"
 
 namespace KokkosBatched {
 namespace Impl {
@@ -92,15 +93,9 @@ KOKKOS_INLINE_FUNCTION int SerialGbtrfInternal<Algo::Gbtrf::Unblocked>::invoke(c
           auto x = Kokkos::subview(AB, Kokkos::pair<int, int>(kv + 1, kv + km + 1), j);
 
           // dger or zgeru with alpha = -1.0
-          for (int k = 0; k < ju - j; ++k) {
-            auto y_k = AB(kv - 1 - k, j + k + 1);
-            if (y_k != 0) {
-              auto temp = -1.0 * y_k;
-              for (int i = 0; i < km; ++i) {
-                AB(kv + i - k, j + k + 1) += x(i) * temp;
-              }
-            }
-          }
+          const int abs0 = AB.stride(0), abs1 = AB.stride(1);
+          Impl::SerialGerInternal::invoke(KokkosBlas::Impl::OpID(), km, ju - j, -1.0, &AB(kv + 1, j), abs0,
+                                          &AB(kv - 1, j + 1), (abs1 - abs0), &AB(kv, j + 1), abs0, (abs1 - abs0));
         }
       }
     }
