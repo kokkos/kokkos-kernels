@@ -702,48 +702,53 @@ void sptrsv_solve_streams(const std::vector<ExecutionSpace> &execspace_v, const 
 
 }  // sptrsv_solve_streams
 
+#if !defined(DOXY)
 template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
-[[deprecated("sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]]
-void sptrsv_symbolic(const ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap,
-                     lno_nnz_view_t_ entries) {
+[[deprecated(
+    "sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_symbolic(const ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries) {
   KokkosSparse::sptrsv_symbolic(space, handle, rowmap, entries);
 }
 
 template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
-[[deprecated("sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]]
-void sptrsv_symbolic(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries) {
+[[deprecated(
+    "sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_symbolic(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries) {
   KokkosSparse::sptrsv_symbolic(handle, rowmap, entries);
 }
 
 template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_,
           typename scalar_nnz_view_t_>
-[[deprecated("sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]]
-void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries,
-                     scalar_nnz_view_t_ values) {
+[[deprecated(
+    "sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries,
+                scalar_nnz_view_t_ values) {
   KokkosSparse::sptrsv_symbolic(space, handle, rowmap, entries, values);
 }
 
 template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
-[[deprecated("sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]]
-void sptrsv_symbolic(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values) {
+[[deprecated(
+    "sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_symbolic(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values) {
   KokkosSparse::sptrsv_symbolic(handle, rowmap, entries, values);
 }
 
 template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_,
           typename scalar_nnz_view_t_, class BType, class XType>
-[[deprecated("sptrsv_solve was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]]
-void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries,
-                  scalar_nnz_view_t_ values, BType b, XType x) {
+[[deprecated("sptrsv_solve was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_solve(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries,
+             scalar_nnz_view_t_ values, BType b, XType x) {
   KokkosSparse::sptrsv_solve(space, handle, rowmap, entries, values, b, x);
 }
 
 template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           class BType, class XType>
-[[deprecated("sptrsv_solve was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]]
-void sptrsv_solve(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
-                  BType b, XType x) {
+[[deprecated("sptrsv_solve was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_solve(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, BType b,
+             XType x) {
   KokkosSparse::sptrsv_solve(handle, rowmap, entries, values, b, x);
 }
+#endif
 
 }  // namespace Experimental
 }  // namespace KokkosSparse
