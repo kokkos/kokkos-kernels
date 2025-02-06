@@ -35,8 +35,6 @@
 using kokkos_complex_double = Kokkos::complex<double>;
 using kokkos_complex_float  = Kokkos::complex<float>;
 
-namespace KSExp = KokkosSparse::Experimental;
-
 namespace Test {
 
 enum GSApplyType {
