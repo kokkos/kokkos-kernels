@@ -209,10 +209,10 @@ struct SptrsvTest {
         kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
       }
 
-      sptrsv_symbolic(&kh, row_map, entries, values);
+      KokkosSparse::sptrsv_symbolic(&kh, row_map, entries, values);
       Kokkos::fence();
 
-      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+      KokkosSparse::sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       scalar_t sum = 0.0;
@@ -588,7 +588,7 @@ struct SptrsvTest {
       kh_ptr_v[i] = &kh_v[i];
 
       // Symbolic phase
-      sptrsv_symbolic(kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i]);
+      KokkosSparse::sptrsv_symbolic(kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i]);
       Kokkos::fence();
     }  // Done handle creation and sptrsv_symbolic on all streams
 
