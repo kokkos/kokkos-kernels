@@ -102,7 +102,6 @@ void impl_test_batched_syr_analytical(const std::size_t Nb) {
 
   const std::size_t BlkSize = 4;
   View3DType A("A", Nb, BlkSize, BlkSize), A_s("A_s", Nb, BlkSize, BlkSize), A_ref("A_ref", Nb, BlkSize, BlkSize);
-
   View2DType x("x", Nb, BlkSize);
 
   const std::size_t incx = 2;
@@ -229,8 +228,7 @@ void impl_test_batched_syr(const std::size_t Nb, const std::size_t BlkSize) {
 
   View3DType A("A", Nb, BlkSize, BlkSize), A0("A0", Nb, BlkSize, BlkSize), A_s("A_s", Nb, BlkSize, BlkSize),
       A0_s("A0_s", Nb, BlkSize, BlkSize), A_ref("A_ref", Nb, BlkSize, BlkSize), A0_ref("A0_ref", Nb, BlkSize, BlkSize);
-
-  View2DType x("x", Nb, BlkSize, BlkSize);
+  View2DType x("x", Nb, BlkSize);
 
   const std::size_t incx = 2;
   // Testing incx argument with strided views
