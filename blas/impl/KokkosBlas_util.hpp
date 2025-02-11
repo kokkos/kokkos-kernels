@@ -35,6 +35,14 @@ struct OpConj {
     return KAT::conj(v);
   }
 };
+
+struct OpReal {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION typename Kokkos::ArithTraits<ValueType>::mag_type operator()(ValueType v) const {
+    using KAT = Kokkos::ArithTraits<ValueType>;
+    return KAT::real(v);
+  }
+};
 }  // namespace Impl
 
 //////// Tags for BLAS ////////
