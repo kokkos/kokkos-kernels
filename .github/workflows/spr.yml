@@ -30,27 +30,65 @@ jobs:
           ref: ${{ inputs.kokkos_version }}
           path: kokkos
 
-      - name: configure
+      - name: configure_kokkos
         run: |
-          mkdir -p build
-          cd build
-          ../kokkos-kernels/cm_generate_makefile.bash \
-            --with-openmp \
-            --with-serial \
-            --arch=SPR \
-            --compiler=icpx \
-            --cxxflags="-fp-model=precise" \
-            --with-scalars=double,complex_double,float,complex_float \
-            --with-ordinals=int,int64_t \
-            --with-offsets=int,size_t \
-            --with-tpls=mkl \
-            --kokkos-cmake-flags=-DKokkos_ENABLE_ONEDPL=OFF \
-            --kokkos-path=$PWD/../kokkos
+          mkdir -p kokkos/{build,install}
+          cd kokkos/build
 
-      - name: build
-        working-directory: build
-        run: make -j8
+          cmake \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_CXX_COMPILER=icpx \
+            -DCMAKE_CXX_FLAGS="-fp-model=precise" \
+            -DCMAKE_INSTALL_PREFIX="$PWD/../install" \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DKokkos_ENABLE_SERIAL=ON \
+            -DKokkos_ENABLE_OPENMP=ON \
+            -DKokkos_ARCH_SPR=ON \
+            -DKokkos_ENABLE_TESTS=OFF \
+            -DKokkos_ENABLE_EXAMPLES=OFF \
+            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            -DKokkos_ENABLE_ONEDPL=OFF \
+            ..
+
+      - name: build_and_install_kokkos
+        run: |
+          cmake --build "$PWD/kokkos/build" -j 12
+          cmake --install "$PWD/kokkos/build"
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cd kokkos-kernels/build
+
+          cmake \
+          -S "$PWD/.." \
+          -B "$PWD" \
+          -D BUILD_SHARED_LIBS=OFF \
+          -D CMAKE_CXX_COMPILER=icpx \
+          -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
+          -D CMAKE_CXX_FLAGS="-fp-model=precise -Wno-pass-failed -Wno-unused-command-line-argument" \
+          -D CMAKE_INSTALL_PREFIX= \
+          -D Kokkos_ROOT="$PWD/../../kokkos/install" \
+          -D KokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+          -D KokkosKernels_ENABLE_TESTS=ON \
+          -D KokkosKernels_ENABLE_PERFTESTS=ON \
+          -D KokkosKernels_ENABLE_EXAMPLES=ON \
+          -D KokkosKernels_INST_FLOAT=ON \
+          -D KokkosKernels_INST_COMPLEX_FLOAT=ON \
+          -D KokkosKernels_INST_DOUBLE=ON \
+          -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
+          -D KokkosKernels_INST_ORDINAL_INT64_T=ON \
+          -D KokkosKernels_INST_ORDINAL_INT=ON \
+          -D KokkosKernels_INST_OFFSET_SIZE_T=ON \
+          -D KokkosKernels_INST_OFFSET_INT=ON \
+          -D KokkosKernels_ENABLE_TPL_MKL=ON
+
+      - name: build_kokkos_kernels
+        run: cmake --build "$PWD/kokkos-kernels/build" -j 12
 
       - name: test
-        working-directory: build
+        working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
