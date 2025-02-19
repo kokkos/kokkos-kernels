@@ -56,8 +56,6 @@
 #include "Test_Batched_SerialPttrs_Real.hpp"
 #include "Test_Batched_SerialPttrs_Complex.hpp"
 #include "Test_Batched_SerialPbtrf.hpp"
-#include "Test_Batched_SerialPbtrf_Real.hpp"
-#include "Test_Batched_SerialPbtrf_Complex.hpp"
 #include "Test_Batched_SerialPbtrs.hpp"
 #include "Test_Batched_SerialPbtrs_Real.hpp"
 #include "Test_Batched_SerialPbtrs_Complex.hpp"
