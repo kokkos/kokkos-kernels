@@ -132,20 +132,7 @@ void test_alignPtrTo() {
       Kokkos::RangePolicy<ExecSpace>(space, 0, teamSize),
       KOKKOS_LAMBDA(int i, int &lerr) { lerr += (results(i) != i); }, errs);
 
-// if SYCL is enabled, only TEST_FN 1 and 4 should work
-#if defined(KOKKOS_ENABLE_SYCL)
-  if constexpr (std::is_same_v<ExecSpace, Kokkos::Experimental::SYCL>) {
-    if constexpr ((1 == TEST_FN) || (4 == TEST_FN)) {
-      EXPECT_EQ(0, errs);
-    } else {
-      EXPECT_NE(0, errs);
-    }
-  } else {
-    EXPECT_EQ(0, errs);
-  }
-#else
   EXPECT_EQ(0, errs);
-#endif
 }
 
 TEST_F(TestCategory, common_AlignPtrTo_0) { test_alignPtrTo<0, TestDevice>(); }
