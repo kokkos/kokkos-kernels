@@ -588,6 +588,7 @@ TEST_F(TestCategory, batched_scalar_serial_svd_double) {
   testIssue1786<double, Kokkos::LayoutRight, TestDevice>();
   testSpecialCases<double, Kokkos::LayoutLeft, TestDevice>();
   testSpecialCases<double, Kokkos::LayoutRight, TestDevice>();
+  testTwoByTwoInternal<double, Kokkos::LayoutLeft, TestDevice>();
   testTwoByTwoInternal<double, Kokkos::LayoutRight, TestDevice>();
 }
 #endif
@@ -601,5 +602,7 @@ TEST_F(TestCategory, batched_scalar_serial_svd_float) {
   testIssue1786<float, Kokkos::LayoutRight, TestDevice>();
   testSpecialCases<float, Kokkos::LayoutLeft, TestDevice>();
   testSpecialCases<float, Kokkos::LayoutRight, TestDevice>();
+  testTwoByTwoInternal<float, Kokkos::LayoutLeft, TestDevice>();
+  testTwoByTwoInternal<float, Kokkos::LayoutRight, TestDevice>();
 }
 #endif
