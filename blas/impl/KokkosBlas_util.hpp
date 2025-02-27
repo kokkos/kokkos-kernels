@@ -177,6 +177,7 @@ struct Algo {
   using Tbsv   = Level2;
   using Pbtrf  = Level2;
   using Pbtrs  = Level2;
+  using Gbtrf  = Level2;
 };
 
 template <class T>
