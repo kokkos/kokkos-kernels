@@ -67,7 +67,6 @@
 #include "Test_Batched_SerialLacgv.hpp"
 #include "Test_Batched_SerialGbtrf.hpp"
 
-
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"
 #include "Test_Batched_TeamAxpy_Real.hpp"
