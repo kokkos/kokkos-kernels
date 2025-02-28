@@ -19,7 +19,7 @@ jobs:
       - name: Install Dependencies
         run: |
           brew install doxygen
-	  python3 --version
+          python3 --version
           python3 -m venv .venv
           . .venv/bin/activate
           pip install -r kokkos-kernels/docs/build_requirements.txt
@@ -32,12 +32,12 @@ jobs:
           cd kokkos-kernels/docs
           make html
 
-      - name: Updload documentation as artifact
-        id: deployment
-        uses: actions/upload-pages-artifact@v3.0.1
-        with:
-          name: github-pages
-          path: kokkos-kernels/docs/generated_docs
+      # - name: Updload documentation as artifact
+      #   id: deployment
+      #   uses: actions/upload-pages-artifact@v3.0.1
+      #   with:
+      #     name: github-pages
+      #     path: kokkos-kernels/docs/generated_docs
 
   # deploy:
   #   if: ${{ github.ref == 'refs/heads/main' }}
