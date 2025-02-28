@@ -21,13 +21,12 @@ jobs:
       - name: build_docs
         working-directory: kokkos-kernels/docs
         run: make html
-
-      # - name: Updload documentation as artifact
-      #   id: deployment
-      #   uses: actions/upload-pages-artifact@v3.0.1
-      #   with:
-      #     name: github-pages
-      #     path: kokkos-kernels/docs/generated_docs
+      - name: Updload documentation as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v3.0.1
+        with:
+          name: github-pages
+          path: kokkos-kernels/docs/generated_docs
 
   # deploy:
   #   if: ${{ github.ref == 'refs/heads/main' }}
