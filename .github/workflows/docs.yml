@@ -2,15 +2,13 @@ name: github-DOCS
 
 on:
   pull_request:
-    branches:
-      - master
-      - develop
+    types: [ opened, reopened, synchronize ]
 
 permissions:
   contents: none
 
 jobs:
-  docs-check:
+  build:
     runs-on: [macos-latest]
     steps:
       - name: checkout_kokkos_kernels
@@ -21,6 +19,7 @@ jobs:
       - name: Install Dependencies
         run: |
           brew install doxygen
+	  python3 --version
           python3 -m venv .venv
           . .venv/bin/activate
           pip install -r kokkos-kernels/docs/build_requirements.txt
@@ -31,4 +30,27 @@ jobs:
         run: | 
           . .venv/bin/activate
           cd kokkos-kernels/docs
-          make
+          make html
+
+      - name: Updload documentation as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v3.0.1
+        with:
+          name: github-pages
+          path: kokkos-kernels/docs/generated_docs
+
+  # deploy:
+  #   if: ${{ github.ref == 'refs/heads/main' }}
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   runs-on: [macos-latest]
+  #   needs: build
+  #   permissions:
+  #     contents: read
+  #     pages: write      # to deploy to Pages
+  #     id-token: write   # to verify the deployment originates from an appropriate source
+  #   steps:
+  #     - name: Deploy to GitHub Pages
+  #       id: deployment
+  #       uses: actions/deploy-pages@v4.0.5

@@ -16,3 +16,6 @@ compile_commands.json
 
 #MacOS hidden files
 .DS_Store
+
+#Documentation build
+docs/generated_docs/
