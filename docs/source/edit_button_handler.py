@@ -125,7 +125,7 @@ if __name__ == "__main__":
     print('==> Starting adding buttons to html files:')
     # Getting lists of documents and html files
     document_files = FileFinder(directory=project_path, file_extension=['.md', '.rst']).get_files()
-    generated_docs_dir = os.path.join(project_path, '../generated_docs')
+    generated_docs_dir = os.path.join(project_path, '../generated_docs/docs')
     html_files = FileFinder(directory=generated_docs_dir, file_extension=['.html']).get_files()
     # Excluded files (Files created by Sphinx, not to be overwritten with edit button)
     excluded_files = [os.path.abspath(os.path.join(generated_docs_dir, 'genindex.html')),
