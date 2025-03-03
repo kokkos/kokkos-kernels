@@ -1,4 +1,4 @@
-Sphinx==6.2.1
+Sphinx==8.2.3
 furo==2024.4.27
 myst-parser==3.0.1
 sphinx-copybutton==0.5.0
