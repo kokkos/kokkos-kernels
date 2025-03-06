@@ -1,6 +1,6 @@
-Sphinx==6.2.1
-furo==2024.4.27
-myst-parser==3.0.1
-sphinx-copybutton==0.5.0
-sphinx-design==0.5.0
-m2r2==0.3.2
+Sphinx==6.2.1 --hash=sha256:97787ff1fa3256a3eef9eda523a63dbf299f7b47e053cfcf684a1c2a8380c912
+furo==2024.4.27 --hash=sha256:f7eb1b2c2204fd9cbd4af42e027289a67f17a98a4e14f4f9e2f17b96d61bb020
+myst-parser==3.0.1 --hash=sha256:6457aaa33a5d474aca678b8ead9b3dc298e89c68e67012e73146ea6fd54babf1
+sphinx-copybutton==0.5.0 --hash=sha256:9684dec7434bd73f0eea58dda93f9bb879d24bff2d8b187b1f2ec08dfe7b5f48
+sphinx-design==0.5.0 --hash=sha256:1af1267b4cea2eedd6724614f19dcc88fe2e15aff65d06b2f6252cee9c4f4c1e
+m2r2==0.3.2 --hash=sha256:d3684086b61b4bebe2307f15189495360f05a123c9bda2a66462649b7ca236aa
