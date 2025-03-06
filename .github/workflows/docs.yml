@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: '3.13.2'
-      - run: pip install -r kokkos-kernels/docs/build_requirements.txt
+      - run: pip install --require-hashes -r kokkos-kernels/docs/build_requirements.txt
       - name: build_docs
         working-directory: kokkos-kernels/docs
         run: |
