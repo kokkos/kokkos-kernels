@@ -36,8 +36,8 @@ struct SerialQR_Internal {
                                            const int n,  // n = NumCols(A)
                                            /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
-                                           /* */ ValueType *w, const int ws) {
-    typedef ValueType value_type;
+                                           /* */ ValueType *w) {
+    using value_type = ValueType;
 
     /// Given a matrix A, it computes QR decomposition of the matrix
     ///  - t is to store tau and w is for workspace
@@ -69,7 +69,7 @@ struct SerialQR_Internal {
 
       // left apply householder to A22
       SerialApplyLeftHouseholderInternal::invoke(m_A22, n_A22, tau, A_part3x3.A21, as0, A_part3x3.A12, as1,
-                                                 A_part3x3.A22, as0, as1, w, ws);
+                                                 A_part3x3.A22, as0, as1, w);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);

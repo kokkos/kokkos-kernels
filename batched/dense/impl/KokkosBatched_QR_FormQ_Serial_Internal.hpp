@@ -37,7 +37,7 @@ struct SerialQR_FormQ_Internal {
                                            /* */ ValueType* A, const int as0, const int as1,
                                            /* */ ValueType* t, const int ts,
                                            /* */ ValueType* Q, const int qs0, const int qs1,
-                                           /* */ ValueType* w, const int ws, const bool is_Q_zero = false) {
+                                           /* */ ValueType* w, const bool is_Q_zero = false) {
     using value_type = ValueType;
 
     /// Given a matrix A that includes QR factorization
@@ -58,7 +58,7 @@ struct SerialQR_FormQ_Internal {
       SerialSetIdentityInternal::invoke(m, m, Q, qs0, qs1);
     }
 
-    return SerialApplyQ_LeftForwardInternal::invoke(m, m, k, A, as0, as1, t, ts, Q, qs0, qs1, w, ws);
+    return SerialApplyQ_LeftForwardInternal::invoke(m, m, k, A, as0, as1, t, ts, Q, qs0, qs1, w);
   }
 };
 

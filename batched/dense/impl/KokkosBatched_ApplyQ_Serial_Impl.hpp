@@ -33,7 +33,7 @@ KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Left, Trans::NoTranspose, Algo::Ap
     const AViewType &A, const tViewType &t, const BViewType &B, const wViewType &w) {
   return SerialApplyQ_LeftForwardInternal::invoke(B.extent(0), B.extent(1), A.extent(1), A.data(), A.stride_0(),
                                                   A.stride_1(), t.data(), t.stride_0(), B.data(), B.stride_0(),
-                                                  B.stride_1(), w.data(), w.stride_0());
+                                                  B.stride_1(), w.data());
 }
 
 template <>
@@ -42,7 +42,7 @@ KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Left, Trans::Transpose, Algo::Appl
     const AViewType &A, const tViewType &t, const BViewType &B, const wViewType &w) {
   return SerialApplyQ_LeftBackwardInternal::invoke(B.extent(0), B.extent(1), A.extent(1), A.data(), A.stride_0(),
                                                    A.stride_1(), t.data(), t.stride_0(), B.data(), B.stride_0(),
-                                                   B.stride_1(), w.data(), w.stride_0());
+                                                   B.stride_1(), w.data());
 }
 
 template <>
@@ -51,7 +51,7 @@ KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Right, Trans::NoTranspose, Algo::A
     const AViewType &A, const tViewType &t, const BViewType &B, const wViewType &w) {
   return SerialApplyQ_RightForwardInternal::invoke(B.extent(0), B.extent(1), A.extent(1), A.data(), A.stride_0(),
                                                    A.stride_1(), t.data(), t.stride_0(), B.data(), B.stride_0(),
-                                                   B.stride_1(), w.data(), w.strid_0());
+                                                   B.stride_1(), w.data());
 }
 
 }  // namespace KokkosBatched

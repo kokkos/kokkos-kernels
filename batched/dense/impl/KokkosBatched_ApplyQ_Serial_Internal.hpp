@@ -36,8 +36,8 @@ struct SerialApplyQ_LeftForwardInternal {
                                            /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
                                            /* */ ValueType *B, const int bs0, const int bs1,
-                                           /* */ ValueType *w, const int ws) {
-    typedef ValueType value_type;
+                                           /* */ ValueType *w) {
+    using value_type = ValueType;
 
     /// Given a matrix A that includes a series of householder vectors,
     /// it applies a unitary matrix Q to B from left without transpose
@@ -73,7 +73,7 @@ struct SerialApplyQ_LeftForwardInternal {
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
       SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1, B_part3x1.A2, bs0,
-                                                 bs1, w, ws);
+                                                 bs1, w);
 
       /// -----------------------------------------------------
       A_part2x2.mergeToABR(A_part3x3);
@@ -90,8 +90,8 @@ struct SerialApplyQ_LeftBackwardInternal {
                                            /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
                                            /* */ ValueType *B, const int bs0, const int bs1,
-                                           /* */ ValueType *w, const int ws) {
-    typedef ValueType value_type;
+                                           /* */ ValueType *w) {
+    using value_type = ValueType;
 
     /// Given a matrix A that includes a series of householder vectors,
     /// it applies a unitary matrix Q to B from left with transpose
@@ -127,7 +127,7 @@ struct SerialApplyQ_LeftBackwardInternal {
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
       SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1, B_part3x1.A2, bs0,
-                                                 bs1, w, ws);
+                                                 bs1, w);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);
@@ -143,8 +143,8 @@ struct SerialApplyQ_RightForwardInternal {
                                            /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
                                            /* */ ValueType *B, const int bs0, const int bs1,
-                                           /* */ ValueType *w, const int ws) {
-    typedef ValueType value_type;
+                                           /* */ ValueType *w) {
+    using value_type = ValueType;
 
     /// Given a matrix A that includes a series of householder vectors,
     /// it applies a unitary matrix Q to B from left without transpose
@@ -180,7 +180,7 @@ struct SerialApplyQ_RightForwardInternal {
       /// -----------------------------------------------------
       // right apply householder to partitioned B1 and B2
       SerialApplyRightHouseholderInternal::invoke(m, n_B2, tau, A_part3x3.A21, as0, B_part1x3.A1, bs0, B_part1x3.A2,
-                                                  bs0, bs1, w, ws);
+                                                  bs0, bs1, w);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);

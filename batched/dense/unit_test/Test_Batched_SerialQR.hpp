@@ -96,12 +96,10 @@ struct qrFunctor {
         if (rowIdx == colIdx) {
           if (Kokkos::abs(I(rowIdx, colIdx) - SC_one) > tol) {
             error_lcl += 1;
-            // Kokkos::printf("matIdx=%d, Q(%d, %d)=%e instead of 1.0.\n", matIdx, rowIdx, colIdx, I(rowIdx, colIdx));
           }
         } else {
           if (Kokkos::abs(I(rowIdx, colIdx)) > tol) {
             error_lcl += 1;
-            // Kokkos::printf("matIdx=%d, Q(%d, %d)=%e instead of 0.0.\n", matIdx, rowIdx, colIdx, I(rowIdx, colIdx));
           }
         }
       }
@@ -116,14 +114,10 @@ struct qrFunctor {
         if (rowIdx <= colIdx) {
           if (Kokkos::abs(B(rowIdx, colIdx) - A(rowIdx, colIdx)) > tol * Kokkos::abs(A(rowIdx, colIdx))) {
             error_lcl += 1;
-            // Kokkos::printf("B stores R\nmatIdx=%d, B(%d, %d)=%e instead of %e.\n", matIdx, rowIdx, colIdx,
-            //                B(rowIdx, colIdx), A(rowIdx, colIdx));
           }
         } else {
           if (Kokkos::abs(B(rowIdx, colIdx)) > tol) {
             error_lcl += 1;
-            // Kokkos::printf("B stores R\nmatIdx=%d, B(%d, %d)=%e instead of 0.0.\n", matIdx, rowIdx, colIdx,
-            //                B(rowIdx, colIdx));
           }
         }
       }
