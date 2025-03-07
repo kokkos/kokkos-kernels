@@ -38,13 +38,12 @@ struct qrFunctor {
 
   Scalar max_val;
 
-  qrFunctor(MatricesType As_, TauViewType taus_, TmpViewType ws_, MatricesType Qs_, MatricesType Qts_,
-            MatricesType Is_, MatricesType Bs_, ErrorViewType error_, Scalar max_val_)
-    : As(As_), taus(taus_), ws(ws_), Qs(Qs_), Qts(Qts_), Is(Is_), Bs(Bs_), error(error_), max_val(max_val_) {}
+  qrFunctor(MatricesType As_, TauViewType taus_, TmpViewType ws_, MatricesType Qs_, MatricesType Qts_, MatricesType Is_,
+            MatricesType Bs_, ErrorViewType error_, Scalar max_val_)
+      : As(As_), taus(taus_), ws(ws_), Qs(Qs_), Qts(Qts_), Is(Is_), Bs(Bs_), error(error_), max_val(max_val_) {}
 
   KOKKOS_FUNCTION
   void operator()(const int matIdx) const {
-
     const int max_rows_cols = Kokkos::max(As.extent_int(1), As.extent_int(2));
 
     auto A   = Kokkos::subview(As, matIdx, Kokkos::ALL, Kokkos::ALL);
@@ -60,7 +59,9 @@ struct qrFunctor {
 
     int error_lcl = 0;
 
-    for (int idx = 0; idx < w.extent_int(0); ++idx) { w(idx) = 0.0; }
+    for (int idx = 0; idx < w.extent_int(0); ++idx) {
+      w(idx) = 0.0;
+    }
     KokkosBatched::SerialQR<KokkosBlas::Algo::QR::Unblocked>::invoke(A, tau, w);
 
     // Store identity in Q and Qt
@@ -70,29 +71,37 @@ struct qrFunctor {
     }
 
     // Call ApplyQ on Q
-    for (int idx = 0; idx < w.extent_int(0); ++idx) { w(idx) = 0.0; }
+    for (int idx = 0; idx < w.extent_int(0); ++idx) {
+      w(idx) = 0.0;
+    }
     KokkosBatched::SerialApplyQ<Side::Left, Trans::NoTranspose, Algo::ApplyQ::Unblocked>::invoke(A, tau, Q, w);
 
     // Copy Q into I
-    for(int rowIdx = 0; rowIdx < Q.extent_int(0); ++rowIdx) {
-      for(int colIdx = 0; colIdx < Q.extent_int(1); ++colIdx) {
-	I(rowIdx, colIdx) = Q(rowIdx, colIdx);
+    for (int rowIdx = 0; rowIdx < Q.extent_int(0); ++rowIdx) {
+      for (int colIdx = 0; colIdx < Q.extent_int(1); ++colIdx) {
+        I(rowIdx, colIdx) = Q(rowIdx, colIdx);
       }
     }
 
     // Call ApplyQ with transpose mode on Qt
-    for (int idx = 0; idx < w.extent_int(0); ++idx) { w(idx) = 0.0; }
+    for (int idx = 0; idx < w.extent_int(0); ++idx) {
+      w(idx) = 0.0;
+    }
     KokkosBatched::SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, tau, Qt, w);
 
     // Call ApplyQ with transpose mode on I
-    for (int idx = 0; idx < w.extent_int(0); ++idx) { w(idx) = 0.0; }
+    for (int idx = 0; idx < w.extent_int(0); ++idx) {
+      w(idx) = 0.0;
+    }
     KokkosBatched::SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, tau, I, w);
 
     // At this point I stores Q'Q
     // which should be the identity matrix
     for (int rowIdx = 0; rowIdx < I.extent_int(0); ++rowIdx) {
       for (int colIdx = 0; colIdx < I.extent_int(1); ++colIdx) {
-	if (Kokkos::abs(Q(rowIdx, colIdx) - Qt(colIdx, rowIdx)) > tol) { ++error_lcl; }
+        if (Kokkos::abs(Q(rowIdx, colIdx) - Qt(colIdx, rowIdx)) > tol) {
+          ++error_lcl;
+        }
         if (rowIdx == colIdx) {
           if (Kokkos::abs(I(rowIdx, colIdx) - SC_one) > tol) {
             error_lcl += 1;
@@ -107,7 +116,9 @@ struct qrFunctor {
 
     // Apply Q' to B which holds a copy of the orginal A
     // Afterwards B should hold a copy of R and be zero below its diagonal
-    for (int idx = 0; idx < w.extent_int(0); ++idx) { w(idx) = 0.0; }
+    for (int idx = 0; idx < w.extent_int(0); ++idx) {
+      w(idx) = 0.0;
+    }
     KokkosBatched::SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, tau, B, w);
     for (int rowIdx = 0; rowIdx < B.extent_int(0); ++rowIdx) {
       for (int colIdx = 0; colIdx < B.extent_int(1); ++colIdx) {
@@ -408,7 +419,7 @@ void test_QR_batch(const int numMat, const int numRows, const int numCols) {
 
   {
     Kokkos::View<Scalar**, ExecutionSpace> tau("tau", numMat, numCols);
-    Kokkos::View<Scalar*, ExecutionSpace> tmp("work buffer", numMat*Kokkos::max(numRows, numCols));
+    Kokkos::View<Scalar*, ExecutionSpace> tmp("work buffer", numMat * Kokkos::max(numRows, numCols));
     Kokkos::View<Scalar***, ExecutionSpace> As("A matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Bs("B matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Qs("Q matrices", numMat, numRows, numRows);
@@ -437,7 +448,7 @@ void test_QR_batch(const int numMat, const int numRows, const int numCols) {
     Kokkos::deep_copy(error_h, error);
 
     int global_error = 0;
-    for(int matIdx = 0; matIdx < numMat; ++matIdx) {
+    for (int matIdx = 0; matIdx < numMat; ++matIdx) {
       global_error += error_h(matIdx);
     }
     EXPECT_EQ(global_error, 0);
@@ -448,7 +459,6 @@ template <class Device, class Scalar, class AlgoTagType>
 void test_QR_batch(const int numMat, const int numRows) {
   test_QR_batch<Device, Scalar, AlgoTagType>(numMat, numRows, numRows);
 }
-
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, serial_qr_square_analytic_float) {
