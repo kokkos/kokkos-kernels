@@ -24,6 +24,7 @@
 
 namespace KokkosBatched {
 
+namespace Impl {
 ///
 /// Serial Internal Impl
 /// ====================
@@ -77,6 +78,8 @@ struct SerialQR_Internal {
     return 0;
   }
 };
+
+}  // namespace Impl
 
 }  // end namespace KokkosBatched
 

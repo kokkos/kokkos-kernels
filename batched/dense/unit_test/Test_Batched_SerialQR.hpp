@@ -501,15 +501,43 @@ TEST_F(TestCategory, serial_qr_batch_double) {
 #endif
 
 // #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
-// TEST_F(TestCategory, batched_scalar_serial_qr_scomplex) {
+// TEST_F(TestCategory, serial_qr_square_analytic_scomplex) {
+//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
+//   test_QR_square<TestDevice, Kokkos::complex<float>, AlgoTagType>();
+// }
+// TEST_F(TestCategory, serial_qr_rectangular_analytic_scomplex) {
 //   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
 //   test_QR_rectangular<TestDevice, Kokkos::complex<float>, AlgoTagType>();
 // }
+// TEST_F(TestCategory, serial_qr_batch_scomplex) {
+//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
+//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(314, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(10, 42, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(100, 42, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(200, 42, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(250, 42, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(300, 42, 36);
+// }
 // #endif
 
+// These algorithms are not implemented correctly for complex numbers
+// we can look at this in a second step...
 // #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-// TEST_F(TestCategory, batched_scalar_serial_qr_dcomplex) {
+// TEST_F(TestCategory, serial_qr_square_analytic_dcomplex) {
+//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
+//   test_QR_square<TestDevice, Kokkos::complex<double>, AlgoTagType>();
+// }
+// TEST_F(TestCategory, serial_qr_rectangular_analytic_dcomplex) {
 //   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
 //   test_QR_rectangular<TestDevice, Kokkos::complex<double>, AlgoTagType>();
+// }
+// TEST_F(TestCategory, serial_qr_batch_dcomplex) {
+//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
+//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(314, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(10, 42, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(100, 42, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(200, 42, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(250, 42, 36);
+//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(300, 42, 36);
 // }
 // #endif
