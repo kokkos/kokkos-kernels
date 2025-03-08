@@ -179,9 +179,8 @@ struct SerialSVDInternal {
             As0, As1, work);
       }
       if (U) {
-        KokkosBatched::SerialApplyRightHouseholderInternal::invoke<value_type>(m, m - i - 1, &tau, &SVDIND(A, i + 1, i),
-                                                                               As0, &SVDIND(U, 0, i), Us0,
-                                                                               &SVDIND(U, 0, i + 1), Us0, Us1, work);
+        KokkosBatched::SerialApplyRightHouseholderInternal::invoke<value_type>(
+            m, m - i - 1, &tau, &SVDIND(A, i + 1, i), As0, &SVDIND(U, 0, i), Us0, &SVDIND(U, 0, i + 1), Us0, Us1, work);
       }
       // Zero out A subdiag explicitly (NOTE: may not be necessary...)
       for (int j = i + 1; j < m; j++) {

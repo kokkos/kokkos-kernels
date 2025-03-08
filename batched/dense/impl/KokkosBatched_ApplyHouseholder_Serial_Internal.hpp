@@ -101,8 +101,7 @@ struct SerialApplyRightHouseholderInternal {
 
     // A2 -= w1 * u2' (ger with conjugate)
     for (int j = 0; j < n; ++j)
-      for (int i = 0; i < m; ++i)
-        A2[i * as0 + j * as1] -= w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
+      for (int i = 0; i < m; ++i) A2[i * as0 + j * as1] -= w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
 
     return 0;
   }

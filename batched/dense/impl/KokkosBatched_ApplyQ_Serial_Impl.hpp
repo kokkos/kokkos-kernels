@@ -31,32 +31,24 @@ template <>
 template <typename AViewType, typename tViewType, typename BViewType, typename wViewType>
 KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Left, Trans::NoTranspose, Algo::ApplyQ::Unblocked>::invoke(
     const AViewType &A, const tViewType &t, const BViewType &B, const wViewType &w) {
-  static_assert(Kokkos::is_view<AViewType>::value,
-		"KokkosBatched::SerialQR::invoke: AViewType must be a Kokkos::View");
-  static_assert(AViewType::rank() == 2,
-		"KokkosBatched::SerialQR::invoke: AViewType must have rank 2");
+  static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::SerialQR::invoke: AViewType must be a Kokkos::View");
+  static_assert(AViewType::rank() == 2, "KokkosBatched::SerialQR::invoke: AViewType must have rank 2");
 
-  static_assert(Kokkos::is_view<tViewType>::value,
-		"KokkosBatched::SerialQR::invoke: tViewType must be a Kokkos::View");
-  static_assert(tViewType::rank() == 1,
-		"KokkosBatched::SerialQR::invoke: tViewType must have rank 1");
+  static_assert(Kokkos::is_view<tViewType>::value, "KokkosBatched::SerialQR::invoke: tViewType must be a Kokkos::View");
+  static_assert(tViewType::rank() == 1, "KokkosBatched::SerialQR::invoke: tViewType must have rank 1");
 
-  static_assert(Kokkos::is_view<BViewType>::value,
-		"KokkosBatched::SerialQR::invoke: BViewType must be a Kokkos::View");
-  static_assert(BViewType::rank() == 2,
-		"KokkosBatched::SerialQR::invoke: BViewType must have rank 2");
+  static_assert(Kokkos::is_view<BViewType>::value, "KokkosBatched::SerialQR::invoke: BViewType must be a Kokkos::View");
+  static_assert(BViewType::rank() == 2, "KokkosBatched::SerialQR::invoke: BViewType must have rank 2");
 
-  static_assert(Kokkos::is_view<wViewType>::value,
-		"KokkosBatched::SerialQR::invoke: wViewType must be a Kokkos::View");
-  static_assert(wViewType::rank() == 1,
-		"KokkosBatched::SerialQR::invoke: wViewType must have rank 1");
+  static_assert(Kokkos::is_view<wViewType>::value, "KokkosBatched::SerialQR::invoke: wViewType must be a Kokkos::View");
+  static_assert(wViewType::rank() == 1, "KokkosBatched::SerialQR::invoke: wViewType must have rank 1");
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  if(!w.span_is_contiguous()) {
+  if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialQR::invoke: w must have a contiguous span.");
     return 1;
   }
-  if(A.extent_int(1) != t.extent_int(0)) {
+  if (A.extent_int(1) != t.extent_int(0)) {
     Kokkos::printf("KokkosBatched::SerialQR::invoke: A.extent(1) is different from t.extent(0).");
     return 1;
   }
@@ -71,32 +63,24 @@ template <>
 template <typename AViewType, typename tViewType, typename BViewType, typename wViewType>
 KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(
     const AViewType &A, const tViewType &t, const BViewType &B, const wViewType &w) {
-  static_assert(Kokkos::is_view<AViewType>::value,
-		"KokkosBatched::SerialQR::invoke: AViewType must be a Kokkos::View");
-  static_assert(AViewType::rank() == 2,
-		"KokkosBatched::SerialQR::invoke: AViewType must have rank 2");
+  static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::SerialQR::invoke: AViewType must be a Kokkos::View");
+  static_assert(AViewType::rank() == 2, "KokkosBatched::SerialQR::invoke: AViewType must have rank 2");
 
-  static_assert(Kokkos::is_view<tViewType>::value,
-		"KokkosBatched::SerialQR::invoke: tViewType must be a Kokkos::View");
-  static_assert(tViewType::rank() == 1,
-		"KokkosBatched::SerialQR::invoke: tViewType must have rank 1");
+  static_assert(Kokkos::is_view<tViewType>::value, "KokkosBatched::SerialQR::invoke: tViewType must be a Kokkos::View");
+  static_assert(tViewType::rank() == 1, "KokkosBatched::SerialQR::invoke: tViewType must have rank 1");
 
-  static_assert(Kokkos::is_view<BViewType>::value,
-		"KokkosBatched::SerialQR::invoke: BViewType must be a Kokkos::View");
-  static_assert(BViewType::rank() == 2,
-		"KokkosBatched::SerialQR::invoke: BViewType must have rank 2");
+  static_assert(Kokkos::is_view<BViewType>::value, "KokkosBatched::SerialQR::invoke: BViewType must be a Kokkos::View");
+  static_assert(BViewType::rank() == 2, "KokkosBatched::SerialQR::invoke: BViewType must have rank 2");
 
-  static_assert(Kokkos::is_view<wViewType>::value,
-		"KokkosBatched::SerialQR::invoke: wViewType must be a Kokkos::View");
-  static_assert(wViewType::rank() == 1,
-		"KokkosBatched::SerialQR::invoke: wViewType must have rank 1");
+  static_assert(Kokkos::is_view<wViewType>::value, "KokkosBatched::SerialQR::invoke: wViewType must be a Kokkos::View");
+  static_assert(wViewType::rank() == 1, "KokkosBatched::SerialQR::invoke: wViewType must have rank 1");
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  if(!w.span_is_contiguous()) {
+  if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialQR::invoke: w must have a contiguous span.");
     return 1;
   }
-  if(A.extent_int(1) != t.extent_int(0)) {
+  if (A.extent_int(1) != t.extent_int(0)) {
     Kokkos::printf("KokkosBatched::SerialQR::invoke: A.extent(1) is different from t.extent(0).");
     return 1;
   }
@@ -111,32 +95,24 @@ template <>
 template <typename AViewType, typename tViewType, typename BViewType, typename wViewType>
 KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Right, Trans::NoTranspose, Algo::ApplyQ::Unblocked>::invoke(
     const AViewType &A, const tViewType &t, const BViewType &B, const wViewType &w) {
-  static_assert(Kokkos::is_view<AViewType>::value,
-		"KokkosBatched::SerialQR::invoke: AViewType must be a Kokkos::View");
-  static_assert(AViewType::rank() == 2,
-		"KokkosBatched::SerialQR::invoke: AViewType must have rank 2");
+  static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::SerialQR::invoke: AViewType must be a Kokkos::View");
+  static_assert(AViewType::rank() == 2, "KokkosBatched::SerialQR::invoke: AViewType must have rank 2");
 
-  static_assert(Kokkos::is_view<tViewType>::value,
-		"KokkosBatched::SerialQR::invoke: tViewType must be a Kokkos::View");
-  static_assert(tViewType::rank() == 1,
-		"KokkosBatched::SerialQR::invoke: tViewType must have rank 1");
+  static_assert(Kokkos::is_view<tViewType>::value, "KokkosBatched::SerialQR::invoke: tViewType must be a Kokkos::View");
+  static_assert(tViewType::rank() == 1, "KokkosBatched::SerialQR::invoke: tViewType must have rank 1");
 
-  static_assert(Kokkos::is_view<BViewType>::value,
-		"KokkosBatched::SerialQR::invoke: BViewType must be a Kokkos::View");
-  static_assert(BViewType::rank() == 2,
-		"KokkosBatched::SerialQR::invoke: BViewType must have rank 2");
+  static_assert(Kokkos::is_view<BViewType>::value, "KokkosBatched::SerialQR::invoke: BViewType must be a Kokkos::View");
+  static_assert(BViewType::rank() == 2, "KokkosBatched::SerialQR::invoke: BViewType must have rank 2");
 
-  static_assert(Kokkos::is_view<wViewType>::value,
-		"KokkosBatched::SerialQR::invoke: wViewType must be a Kokkos::View");
-  static_assert(wViewType::rank() == 1,
-		"KokkosBatched::SerialQR::invoke: wViewType must have rank 1");
+  static_assert(Kokkos::is_view<wViewType>::value, "KokkosBatched::SerialQR::invoke: wViewType must be a Kokkos::View");
+  static_assert(wViewType::rank() == 1, "KokkosBatched::SerialQR::invoke: wViewType must have rank 1");
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  if(!w.span_is_contiguous()) {
+  if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialQR::invoke: w must have a contiguous span.");
     return 1;
   }
-  if(A.extent_int(1) != t.extent_int(0)) {
+  if (A.extent_int(1) != t.extent_int(0)) {
     Kokkos::printf("KokkosBatched::SerialQR::invoke: A.extent(1) is different from t.extent(0).");
     return 1;
   }
