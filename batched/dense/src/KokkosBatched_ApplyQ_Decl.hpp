@@ -28,6 +28,11 @@ namespace KokkosBatched {
 
 template <typename ArgSide, typename ArgTrans, typename ArgAlgo>
 struct SerialApplyQ {
+  static_assert(is_side_v<ArgSide>, "KokkosBatched::SerialApplyQ: ArgSide must be a KokkosBatched::Side.");
+  static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::SerialApplyQ: ArgTrans must be a KokkosBlas::Trans.");
+  static_assert(KokkosBlas::is_level2_v<ArgAlgo>,
+                "KokkosBatched::SerialApplyQ: ArgAlgo must be a KokkosBlas::Algo::Level2.");
+
   template <typename AViewType, typename tViewType, typename BViewType, typename wViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const tViewType &t, const BViewType &B,
                                            const wViewType &w);
@@ -39,6 +44,11 @@ struct SerialApplyQ {
 
 template <typename MemberType, typename ArgSide, typename ArgTrans, typename ArgAlgo>
 struct TeamApplyQ {
+  static_assert(is_side_v<ArgSide>, "KokkosBatched::SerialApplyQ: ArgSide must be a KokkosBatched::Side.");
+  static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::SerialApplyQ: ArgTrans must be a KokkosBlas::Trans.");
+  static_assert(KokkosBlas::is_level2_v<ArgAlgo>,
+                "KokkosBatched::SerialApplyQ: ArgAlgo must be a KokkosBlas::Algo::Level2.");
+
   template <typename AViewType, typename tViewType, typename BViewType, typename wViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const tViewType &t,
                                            const BViewType &B, const wViewType &w);
@@ -50,6 +60,11 @@ struct TeamApplyQ {
 
 template <typename MemberType, typename ArgSide, typename ArgTrans, typename ArgAlgo>
 struct TeamVectorApplyQ {
+  static_assert(is_side_v<ArgSide>, "KokkosBatched::SerialApplyQ: ArgSide must be a KokkosBatched::Side.");
+  static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::SerialApplyQ: ArgTrans must be a KokkosBlas::Trans.");
+  static_assert(KokkosBlas::is_level2_v<ArgAlgo>,
+                "KokkosBatched::SerialApplyQ: ArgAlgo must be a KokkosBlas::Algo::Level2.");
+
   template <typename AViewType, typename tViewType, typename BViewType, typename wViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const tViewType &t,
                                            const BViewType &B, const wViewType &w);
@@ -60,6 +75,11 @@ struct TeamVectorApplyQ {
 ///
 template <typename MemberType, typename ArgSide, typename ArgTrans, typename ArgMode, typename ArgAlgo>
 struct ApplyQ {
+  static_assert(is_side_v<ArgSide>, "KokkosBatched::ApplyQ: ArgSide must be a KokkosBatched::Side.");
+  static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::ApplyQ: ArgTrans must be a KokkosBlas::Trans.");
+  static_assert(KokkosBlas::is_mode_v<ArgMode>, "KokkosBatched::ApplyQ: ArgMode must be a KokkosBlas::Mode.");
+  static_assert(KokkosBlas::is_level2_v<ArgAlgo>, "KokkosBatched::ApplyQ: ArgAlgo must be a KokkosBlas::Algo::Level2.");
+
   template <typename AViewType, typename tViewType, typename BViewType, typename wViewType>
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const tViewType &t,
                                                 const BViewType &B, const wViewType &w) {

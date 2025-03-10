@@ -139,7 +139,7 @@ struct qrFunctor {
 
 template <class Device, class Scalar, class AlgoTagType>
 void test_QR_square() {
-  // Analytical test with a rectangular matrix
+  // Analytical test with a square matrix
   //     [12, -51,   4]              [150, -69,  58]        [14,  21, -14]
   // A = [ 6, 167, -68]    Q = 1/175 [ 75, 158,  -6]    R = [ 0, 175, -70]
   //     [-4,  24, -41]              [-50,  30, 165]        [ 0,   0, -35]
@@ -161,16 +161,16 @@ void test_QR_square() {
   ColVectorViewType t("t", n);
   ColWorkViewType w("w", n);
 
-  typename MatrixViewType::HostMirror A_h = Kokkos::create_mirror_view(A);
-  A_h(0, 0)                               = 12;
-  A_h(0, 1)                               = -51;
-  A_h(0, 2)                               = 4;
-  A_h(1, 0)                               = 6;
-  A_h(1, 1)                               = 167;
-  A_h(1, 2)                               = -68;
-  A_h(2, 0)                               = -4;
-  A_h(2, 1)                               = 24;
-  A_h(2, 2)                               = -41;
+  auto A_h  = Kokkos::create_mirror_view(A);
+  A_h(0, 0) = 12;
+  A_h(0, 1) = -51;
+  A_h(0, 2) = 4;
+  A_h(1, 0) = 6;
+  A_h(1, 1) = 167;
+  A_h(1, 2) = -68;
+  A_h(2, 0) = -4;
+  A_h(2, 1) = 24;
+  A_h(2, 2) = -41;
 
   Kokkos::deep_copy(A, A_h);
   Kokkos::deep_copy(B, A_h);
@@ -185,8 +185,7 @@ void test_QR_square() {
 
   Kokkos::fence();
   Kokkos::deep_copy(A_h, A);
-  typename ColVectorViewType::HostMirror tau = Kokkos::create_mirror_view(t);
-  Kokkos::deep_copy(tau, t);
+  auto tau_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, t);
 
   Test::EXPECT_NEAR_KK_REL(A_h(0, 0), static_cast<Scalar>(-14), tol);
   Test::EXPECT_NEAR_KK_REL(A_h(0, 1), static_cast<Scalar>(-21), tol);
@@ -198,16 +197,15 @@ void test_QR_square() {
   // Test::EXPECT_NEAR_KK_REL(A_h(2, 1),   35.0, tol);      // Analytical expression too painful to compute...
   Test::EXPECT_NEAR_KK_REL(A_h(2, 2), static_cast<Scalar>(35), tol);
 
-  Test::EXPECT_NEAR_KK_REL(tau(0), static_cast<Scalar>(7. / 13.), tol);
-  // Test::EXPECT_NEAR_KK_REL(tau(1), 25. / 32., tol);      // Analytical expression too painful to compute...
-  Test::EXPECT_NEAR_KK_REL(tau(2), static_cast<Scalar>(1. / 2.), tol);
+  Test::EXPECT_NEAR_KK_REL(tau_h(0), static_cast<Scalar>(7. / 13.), tol);
+  // Test::EXPECT_NEAR_KK_REL(tau_h(1), 25. / 32., tol);      // Analytical expression too painful to compute...
+  Test::EXPECT_NEAR_KK_REL(tau_h(2), static_cast<Scalar>(1. / 2.), tol);
 
   Kokkos::parallel_for(
       "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
         KokkosBatched::SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, t, B, w);
       });
-  typename MatrixViewType::HostMirror B_h = Kokkos::create_mirror_view(B);
-  Kokkos::deep_copy(B_h, B);
+  auto B_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B);
 
   Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-14), B_h(0, 0), tol);
   Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-21), B_h(0, 1), tol);
@@ -224,8 +222,7 @@ void test_QR_square() {
         KokkosBatched::SerialQR_FormQ_Internal::invoke(m, n, A.data(), A.stride(0), A.stride(1), t.data(), t.stride(0),
                                                        Q.data(), Q.stride(0), Q.stride(1), w.data(), w.stride(0));
       });
-  typename MatrixViewType::HostMirror Q_h = Kokkos::create_mirror_view(Q);
-  Kokkos::deep_copy(Q_h, Q);
+  auto Q_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Q);
 
   Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 7.), Q_h(0, 0), tol);
   Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(69. / 175.), Q_h(0, 1), tol);
@@ -279,13 +276,13 @@ void test_QR_rectangular() {
   ColVectorViewType t("t", n);
   ColWorkViewType w("w", Kokkos::max(m, n));
 
-  typename MatrixViewType::HostMirror A_h = Kokkos::create_mirror_view(A);
-  A_h(0, 0)                               = 3;
-  A_h(0, 1)                               = 5;
-  A_h(1, 0)                               = 4;
-  A_h(1, 1)                               = 0;
-  A_h(2, 0)                               = 0;
-  A_h(2, 1)                               = -3;
+  auto A_h  = Kokkos::create_mirror_view(A);
+  A_h(0, 0) = 3;
+  A_h(0, 1) = 5;
+  A_h(1, 0) = 4;
+  A_h(1, 1) = 0;
+  A_h(2, 0) = 0;
+  A_h(2, 1) = -3;
 
   Kokkos::deep_copy(A, A_h);
   Kokkos::deep_copy(B, A_h);
@@ -300,8 +297,7 @@ void test_QR_rectangular() {
 
   Kokkos::fence();
   Kokkos::deep_copy(A_h, A);
-  typename ColVectorViewType::HostMirror tau = Kokkos::create_mirror_view(t);
-  Kokkos::deep_copy(tau, t);
+  auto tau_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, t);
 
   Test::EXPECT_NEAR_KK_REL(A_h(0, 0), static_cast<Scalar>(-5.0), tol);
   Test::EXPECT_NEAR_KK_REL(A_h(0, 1), static_cast<Scalar>(-3.0), tol);
@@ -310,15 +306,14 @@ void test_QR_rectangular() {
   Test::EXPECT_NEAR_KK(A_h(2, 0), static_cast<Scalar>(0.), tol);
   Test::EXPECT_NEAR_KK_REL(A_h(2, 1), static_cast<Scalar>(1. / 3.), tol);
 
-  Test::EXPECT_NEAR_KK_REL(tau(0), static_cast<Scalar>(5. / 8.), tol);
-  Test::EXPECT_NEAR_KK_REL(tau(1), static_cast<Scalar>(10. / 18.), tol);
+  Test::EXPECT_NEAR_KK_REL(tau_h(0), static_cast<Scalar>(5. / 8.), tol);
+  Test::EXPECT_NEAR_KK_REL(tau_h(1), static_cast<Scalar>(10. / 18.), tol);
 
   Kokkos::parallel_for(
       "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
         KokkosBatched::SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, t, B, w);
       });
-  typename MatrixViewType::HostMirror B_h = Kokkos::create_mirror_view(B);
-  Kokkos::deep_copy(B_h, B);
+  auto B_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B);
 
   Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-5.0), B_h(0, 0), tol);
   Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-3.0), B_h(0, 1), tol);
@@ -332,8 +327,7 @@ void test_QR_rectangular() {
         KokkosBatched::SerialQR_FormQ_Internal::invoke(m, n, A.data(), A.stride(0), A.stride(1), t.data(), t.stride(0),
                                                        Q.data(), Q.stride(0), Q.stride(1), w.data(), w.stride(0));
       });
-  typename MatrixViewType::HostMirror Q_h = Kokkos::create_mirror_view(Q);
-  Kokkos::deep_copy(Q_h, Q);
+  auto Q_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Q);
 
   Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
   Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
@@ -437,15 +431,13 @@ void test_QR_batch(const int numMat, const int numRows, const int numCols) {
     Kokkos::fence();
     Kokkos::deep_copy(Bs, As);
 
-    typename Kokkos::View<Scalar***, ExecutionSpace>::HostMirror As_h = Kokkos::create_mirror_view(As);
-    Kokkos::deep_copy(As_h, As);
+    auto As_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, As);
 
     qrFunctor myFunc(As, tau, tmp, Qs, Qts, Is, Bs, error, max_val);
     Kokkos::parallel_for("KokkosBatched::test_QR_batch", Kokkos::RangePolicy<ExecutionSpace>(0, numMat), myFunc);
     Kokkos::fence();
 
-    typename Kokkos::View<int*, ExecutionSpace>::HostMirror error_h = Kokkos::create_mirror_view(error);
-    Kokkos::deep_copy(error_h, error);
+    auto error_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, error);
 
     int global_error = 0;
     for (int matIdx = 0; matIdx < numMat; ++matIdx) {
