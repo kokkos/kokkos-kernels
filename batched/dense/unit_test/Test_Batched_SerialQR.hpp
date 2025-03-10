@@ -117,7 +117,7 @@ struct qrFunctor {
     // Store identity in Q
     for (int rowIdx = 0; rowIdx < Q.extent_int(0); ++rowIdx) {
       for (int colIdx = 0; colIdx < Q.extent_int(1); ++colIdx) {
-	Q(rowIdx, colIdx)  = (rowIdx == colIdx) ? SC_one : Kokkos::ArithTraits<Scalar>::zero();
+	Q(rowIdx, colIdx) = (rowIdx == colIdx) ? SC_one : Kokkos::ArithTraits<Scalar>::zero();
       }
     }
 
