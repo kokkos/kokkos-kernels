@@ -114,6 +114,26 @@ struct qrFunctor {
       }
     }
 
+    // Store identity in Q
+    for (int rowIdx = 0; rowIdx < Q.extent_int(0); ++rowIdx) {
+      for (int colIdx = 0; colIdx < Q.extent_int(1); ++colIdx) {
+	Q(rowIdx, colIdx)  = (rowIdx == colIdx) ? SC_one : Kokkos::ArithTraits<Scalar>::zero();
+      }
+    }
+
+    // Call ApplyQ on Q
+    for (int idx = 0; idx < w.extent_int(0); ++idx) {
+      w(idx) = 0.0;
+    }
+    KokkosBatched::SerialApplyQ<Side::Right, Trans::NoTranspose, Algo::ApplyQ::Unblocked>::invoke(A, tau, Q, w);
+    for (int rowIdx = 0; rowIdx < I.extent_int(0); ++rowIdx) {
+      for (int colIdx = 0; colIdx < I.extent_int(1); ++colIdx) {
+        if (Kokkos::abs(Q(rowIdx, colIdx) - Qt(colIdx, rowIdx)) > tol) {
+          ++error_lcl;
+        }
+      }
+    }
+
     // Apply Q' to B which holds a copy of the orginal A
     // Afterwards B should hold a copy of R and be zero below its diagonal
     for (int idx = 0; idx < w.extent_int(0); ++idx) {
@@ -145,9 +165,9 @@ void test_QR_square() {
   //     [-4,  24, -41]              [-50,  30, 165]        [ 0,   0, -35]
   //
   // Expected outputs:
-  //                         [ -5,  -3]
-  // tau = [5/8, 10/18]  A = [1/2,   5]
-  //                         [  0, 1/3]
+  //                          [   14,  21, -14]
+  // tau = [7/13, , 1/2]  A = [-6/26, 175, -70]
+  //                          [ 4/26,    , -35]
   //
 
   using MatrixViewType    = Kokkos::View<Scalar**>;
@@ -250,6 +270,27 @@ void test_QR_square() {
   Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 2), tol);
   Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
   Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 1), tol);
+
+  Kokkos::deep_copy(Q_h, 0);
+  Q_h(0, 0) = 1.0;
+  Q_h(1, 1) = 1.0;
+  Q_h(2, 2) = 1.0;
+  Kokkos::deep_copy(Q, Q_h);
+  Kokkos::parallel_for(
+      "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
+        KokkosBatched::SerialApplyQ<Side::Right, Trans::NoTranspose, Algo::ApplyQ::Unblocked>::invoke(A, t, Q, w);
+      });
+  Kokkos::deep_copy(Q_h, Q);
+
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 7.), Q_h(0, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(69. / 175.), Q_h(0, 1), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-58. / 175.), Q_h(0, 2), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-3. / 7.), Q_h(1, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-158. / 175.), Q_h(1, 1), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(6. / 175.), Q_h(1, 2), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(2. / 7.), Q_h(2, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 35.), Q_h(2, 1), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-33. / 35.), Q_h(2, 2), tol);
 }
 
 template <class Device, class Scalar, class AlgoTagType>
@@ -399,6 +440,27 @@ void test_QR_rectangular() {
   Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 2), tol);
   Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
   Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 1), tol);
+
+  Kokkos::deep_copy(Q_h, 0);
+  Q_h(0, 0) = 1.0;
+  Q_h(1, 1) = 1.0;
+  Q_h(2, 2) = 1.0;
+  Kokkos::deep_copy(Q, Q_h);
+  Kokkos::parallel_for(
+      "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
+        KokkosBatched::SerialApplyQ<Side::Right, Trans::NoTranspose, Algo::ApplyQ::Unblocked>::invoke(A, t, Q, w);
+      });
+  Kokkos::deep_copy(Q_h, Q);
+
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
 }
 
 template <class Device, class Scalar, class AlgoTagType>
