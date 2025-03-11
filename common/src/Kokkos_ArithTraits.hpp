@@ -1087,11 +1087,8 @@ class ArithTraits<std::complex<RealFloatType> > {
 #ifdef KOKKOS_ENABLE_SYCL
   template <typename Dummy = RealFloatType>
   static bool isInf(const std::complex<Dummy>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isinf;
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
-    using sycl::isinf;
-#endif
+    KOKKOS_IF_ON_HOST((using std::isinf;))
+    KOKKOS_IF_ON_DEVICE((using sycl::isinf;))
     return isinf(real(x)) || isinf(imag(x));
   }
   template <>
@@ -1101,20 +1098,16 @@ class ArithTraits<std::complex<RealFloatType> > {
   }
 #else
   static bool isInf(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isinf;
-#endif
+    KOKKOS_IF_ON_HOST((using std::isinf;))
     return isinf(real(x)) || isinf(imag(x));
   }
 #endif
+
 #ifdef KOKKOS_ENABLE_SYCL
   template <typename Dummy = RealFloatType>
   static bool isNan(const std::complex<Dummy>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isnan;
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
-    using sycl::isnan;
-#endif
+    KOKKOS_IF_ON_HOST((using std::isnan;))
+    KOKKOS_IF_ON_DEVICE((using sycl::isnan;))
     return isnan(real(x)) || isnan(imag(x));
   }
   template <>
@@ -1124,9 +1117,7 @@ class ArithTraits<std::complex<RealFloatType> > {
   }
 #else
   static bool isNan(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isnan;
-#endif
+    KOKKOS_IF_ON_HOST((using std::isnan;))
     return isnan(real(x)) || isnan(imag(x));
   }
 #endif
