@@ -136,7 +136,7 @@ class BatchedDblBufGemm {
 
   HandleType *const __handle;
   AViewType A_;
-  BViewType __B;
+  BViewType B_;
   CViewType __C;
   ScalarType __alpha, __beta;
   ArgTransA __transA_tag;
@@ -156,7 +156,7 @@ class BatchedDblBufGemm {
 
  public:
   BatchedDblBufGemm(HandleType *const handle, ScalarType alpha, AViewType A, BViewType B, ScalarType beta, CViewType C)
-      : __handle(handle), A_(A), __B(B), __C(C), __alpha(alpha), __beta(beta) {}
+      : __handle(handle), A_(A), B_(B), __C(C), __alpha(alpha), __beta(beta) {}
 
   int invoke() {
     __run();
@@ -181,7 +181,7 @@ class BatchedDblBufGemm {
     constexpr int stride_n = TILE_N / reg_n;
     using functor_type     = Functor<member_type, reg_m, reg_n, stride_m, stride_n>;
 
-    functor_type functor(*this, A_, __B, __C);
+    functor_type functor(*this, A_, B_, __C);
 
     if (__handle->enableDebug) {
       std::cout << "algo_type:" << __handle->get_kernel_algo_type() << std::endl
@@ -245,7 +245,7 @@ class BatchedDblBufGemm {
    private:
     BatchedDblBufGemm &__ei;
     AViewType A_;
-    BViewType __B;
+    BViewType B_;
     CViewType __C;
     ScalarType __alpha, __beta;
     int __k;
@@ -254,11 +254,11 @@ class BatchedDblBufGemm {
    public:
     size_t get_n_sub_tiles() { return __n_sub_tiles; }
 
-    // NOTE: We cannot use __ei.{A_,__B,__C,__beta,__alpha,__k} in the operator
+    // NOTE: We cannot use __ei.{A_,B_,__C,__beta,__alpha,__k} in the operator
     // below. If those are used, we  get an invalid memory error from cuda. I
     // suspect this is due the values not being copied to device and then
     // runtime resolution of the host address &__ei.
-    Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C) : __ei(ei), A_(A), __B(B), __C(C) {
+    Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C) : __ei(ei), A_(A), B_(B), __C(C) {
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
         ei.__c_batch_size = ei.__C.extent_int(0);
         ei.__c_m          = ei.__C.extent_int(1);
@@ -383,7 +383,7 @@ class BatchedDblBufGemm {
       auto svA =
           subview_wrapper(A_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transA_tag);
       auto svB =
-          subview_wrapper(__B, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
+          subview_wrapper(B_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
       auto svC = subview_wrapper(__C, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag);
 
       // Allocate scratch memory buffers used for prefetching
@@ -526,7 +526,7 @@ class BatchedDblBufGemm {
       auto svA =
           subview_wrapper(A_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transA_tag);
       auto svB =
-          subview_wrapper(__B, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
+          subview_wrapper(B_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
       auto svC = subview_wrapper(__C, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag);
 
       // Allocate scratch memory buffers used for prefetching
