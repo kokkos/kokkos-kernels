@@ -302,10 +302,10 @@ void impl_test_batched_pttrf_analytical(const int N) {
     h_d_ref(ib, 0) = h_d(ib, 0);
 
     h_e_ref(ib, 0) = h_e(ib, 0) / h_d(ib, 0);
-    h_d_ref(ib, 1) = h_d(ib, 1) - h_e_ref(ib, 0) * h_e(ib, 0);
+    h_d_ref(ib, 1) = h_d(ib, 1) - ats::real(h_e_ref(ib, 0)) * ats::real(h_e(ib, 0));
 
     h_e_ref(ib, 1) = h_e(ib, 1) / h_d_ref(ib, 1);
-    h_d_ref(ib, 2) = h_d(ib, 2) - h_e_ref(ib, 1) * h_e(ib, 1);
+    h_d_ref(ib, 2) = h_d(ib, 2) - ats::real(h_e_ref(ib, 1)) * ats::real(h_e(ib, 1));
   }
 
   // Factorize matrix A -> L * D * L**T
