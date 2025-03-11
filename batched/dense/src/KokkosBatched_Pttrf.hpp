@@ -40,6 +40,7 @@ namespace KokkosBatched {
 
 template <typename ArgAlgo>
 struct SerialPttrf {
+  static_assert(std::is_same_v<ArgAlgo, Algo::Pttrf::Unblocked>, "KokkosBatched::pttrf: Use Algo::Pttrf::Unblocked");
   template <typename DViewType, typename EViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d, const EViewType &e);
 };
