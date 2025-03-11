@@ -265,6 +265,18 @@ struct Side {
   struct Right {};
 };
 
+template <class T>
+struct is_side : std::false_type {};
+
+template <>
+struct is_side<Side::Left> : std::true_type {};
+
+template <>
+struct is_side<Side::Right> : std::true_type {};
+
+template <class T>
+constexpr bool is_side_v = is_side<T>::value;
+
 struct Uplo {
   struct Upper {};
   struct Lower {};

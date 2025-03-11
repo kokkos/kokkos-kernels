@@ -59,11 +59,41 @@ struct Mode {
   };
 };
 
+template <class T>
+struct is_mode : std::false_type {};
+
+template <>
+struct is_mode<Mode::Serial> : std::true_type {};
+
+template <>
+struct is_mode<Mode::Team> : std::true_type {};
+
+template <>
+struct is_mode<Mode::TeamVector> : std::true_type {};
+
+template <class T>
+static constexpr bool is_mode_v = is_mode<T>::value;
+
 struct Trans {
   struct Transpose {};
   struct NoTranspose {};
   struct ConjTranspose {};
 };
+
+template <class T>
+struct is_trans : std::false_type {};
+
+template <>
+struct is_trans<Trans::Transpose> : std::true_type {};
+
+template <>
+struct is_trans<Trans::NoTranspose> : std::true_type {};
+
+template <>
+struct is_trans<Trans::ConjTranspose> : std::true_type {};
+
+template <class T>
+static constexpr bool is_trans_v = is_trans<T>::value;
 
 struct Algo {
   struct Level3 {
@@ -148,6 +178,24 @@ struct Algo {
   using Pbtrf  = Level2;
   using Pbtrs  = Level2;
 };
+
+template <class T>
+struct is_level2 : std::false_type {};
+
+template <>
+struct is_level2<Algo::Level2::Unblocked> : std::true_type {};
+
+template <>
+struct is_level2<Algo::Level2::Blocked> : std::true_type {};
+
+template <>
+struct is_level2<Algo::Level2::MKL> : std::true_type {};
+
+template <>
+struct is_level2<Algo::Level2::CompactMKL> : std::true_type {};
+
+template <class T>
+static constexpr bool is_level2_v = is_level2<T>::value;
 
 namespace Impl {
 
