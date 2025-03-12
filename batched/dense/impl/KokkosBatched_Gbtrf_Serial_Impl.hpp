@@ -22,12 +22,27 @@
 
 namespace KokkosBatched {
 namespace Impl {
-template <typename ABViewType>
-KOKKOS_INLINE_FUNCTION static int checkGbtrfInput([[maybe_unused]] const ABViewType &AB, [[maybe_unused]] const int kl,
-                                                  [[maybe_unused]] const int ku, [[maybe_unused]] const int m) {
+template <typename ABViewType, typename PivViewType>
+KOKKOS_INLINE_FUNCTION static int checkGbtrfInput([[maybe_unused]] const ABViewType &AB,
+                                                  [[maybe_unused]] const PivViewType &ipiv,
+                                                  [[maybe_unused]] const int kl, [[maybe_unused]] const int ku,
+                                                  [[maybe_unused]] const int m) {
   static_assert(Kokkos::is_view_v<ABViewType>, "KokkosBatched::gbtrf: ABViewType is not a Kokkos::View.");
-  static_assert(ABViewType::rank == 2, "KokkosBatched::gbtrs: ABViewType must have rank 2.");
+  static_assert(Kokkos::is_view_v<PivViewType>, "KokkosBatched::gbtrf: PivViewType is not a Kokkos::View.");
+  static_assert(ABViewType::rank == 2, "KokkosBatched::gbtrf: ABViewType must have rank 2.");
+  static_assert(PivViewType::rank == 1, "KokkosBatched::gbtrf: PivViewType must have rank 1.");
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+  const int n    = AB.extent(1);
+  const int npiv = ipiv.extent(0);
+  if (npiv != Kokkos::min(m, n)) {
+    Kokkos::printf(
+        "KokkosBatched::gbtrf: the dimension of the ipiv array must "
+        "satisfy ipiv.extent(0) == max(m, n): ipiv: %d, A: "
+        "%d "
+        "x %d \n",
+        npiv, m, n);
+    return 1;
+  }
   if (m < 0) {
     Kokkos::printf(
         "KokkosBatched::gbtrf: input parameter m must not be less than 0: m "
@@ -78,7 +93,7 @@ struct SerialGbtrf<Algo::Gbtrf::Unblocked> {
     int n     = AB.extent(1);
     int m_tmp = m > 0 ? m : n;
 
-    auto info = Impl::checkGbtrfInput(AB, kl, ku, m_tmp);
+    auto info = Impl::checkGbtrfInput(AB, piv, kl, ku, m_tmp);
     if (info) return info;
 
     // Quick return if possible
