@@ -256,7 +256,7 @@ void impl_test_batched_pttrf_quick_return(const int N, const int BlkSize) {
 
 /// \brief Implementation details of batched pttrf test
 /// Confirm that A = L*D*L**T (or L*D*L**H) where
-/// for full storage,
+/// for conventional storage,
 /// A: [[4, 1, 0],
 ///     [1, 4, 1],
 ///     [0, 1, 4]]
@@ -267,14 +267,13 @@ void impl_test_batched_pttrf_quick_return(const int N, const int BlkSize) {
 ///     [1/4, 0, 0],
 ///     [0, 1/(4-1*(1/4)), 0]]
 ///
-/// for tridiagonal storage,
+/// for packed storage for tridiagonal matrix,
 /// AD: [4, 4, 4], AE: [1, 1]
 ///
 /// D: [4, 4-1*(1/4), 4-1*(1/(4-1*(1/4)))]
 /// L: [1/4, 1/(4-1*(1/4))]
 ///
 /// \param N [in] Batch size of matrix A
-/// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_pttrf_analytical(const int N) {
   using ats            = typename Kokkos::ArithTraits<ScalarType>;
