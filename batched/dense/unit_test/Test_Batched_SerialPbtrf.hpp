@@ -94,7 +94,7 @@ struct Functor_BatchedSerialGemm {
 
 /// \brief Implementation details of batched pbtrf analytical test
 ///        Confirm A = U**H * U or L * L**H, where
-///        For full storage,
+///        For conventional storage,
 ///        A: [[4, 1],
 ///            [1, 4]]
 ///        L: [[sqrt(4), 0],
@@ -140,7 +140,7 @@ void impl_test_batched_pbtrf_analytical(const int N) {
   create_banded_triangular_matrix<View3DType, View3DType, ArgUplo>(A, Ab, k, true);
 
   // Make a reference using the naive Cholesky decomposition
-  // Cholesky decomposition for full storage
+  // Cholesky decomposition for conventional storage
   // l_kk = np.sqrt( a_kk - sum_{i=1}^{k-1}( l_ik^2 ) )
   // l_ik = 1/l_kk * ( a_ik - sum_{j=1}^{k-1}( l_ij * l_kj ) )
   auto h_Ab_ref = Kokkos::create_mirror_view(Ab_ref);
@@ -222,14 +222,14 @@ void impl_test_batched_pbtrf(const int N, const int k, const int BlkSize) {
   if (std::is_same_v<typename ParamTagType::uplo, KokkosBatched::Uplo::Upper>) {
     // A = U**H * U
     View3DType U("U", N, BlkSize, BlkSize);
-    banded_to_full<View3DType, View3DType, ArgUplo>(Ab, U, k);
+    banded_to_dense<View3DType, View3DType, ArgUplo>(Ab, U, k);
     Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::ConjTranspose,
                               Trans::NoTranspose>(1.0, U, U, 0.0, A_reconst)
         .run();
   } else {
     // A = L * L**H
     View3DType L("L", N, BlkSize, BlkSize);
-    banded_to_full<View3DType, View3DType, ArgUplo>(Ab, L, k);
+    banded_to_dense<View3DType, View3DType, ArgUplo>(Ab, L, k);
     Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose,
                               Trans::ConjTranspose>(1.0, L, L, 0.0, A_reconst)
         .run();

@@ -88,7 +88,6 @@ struct Functor_BatchedSerialGetrf {
 /// \brief Implementation details of batched gbtrf analytical test
 ///
 /// \param Nb [in] Batch size of matrices
-/// \param BlkSize [in] Block size of matrix A
 ///        4x4 matrix
 ///        which satisfies PA = LU
 ///        P = [[0, 0, 1, 0],
@@ -265,9 +264,9 @@ void impl_test_batched_gbtrf_analytical(const int Nb) {
   Kokkos::deep_copy(h_ipiv1_ref, h_ipiv2_m3);
 
   // Convert into banded storage
-  full_to_banded(A0, AB0, kl, ku);
-  full_to_banded(A1, AB1, kl, ku);
-  full_to_banded(A2, AB2, kl, ku);
+  dense_to_banded(A0, AB0, kl, ku);
+  dense_to_banded(A1, AB1, kl, ku);
+  dense_to_banded(A2, AB2, kl, ku);
 
   // gbtrf to factorize matrix A = P * L * U
   auto info0 =
@@ -285,10 +284,10 @@ void impl_test_batched_gbtrf_analytical(const int Nb) {
   EXPECT_EQ(info2, 0);
 
   // Extract matrix U and L from AB
-  // first convert it to the full matrix (stored in A)
-  banded_to_full<View3DType, View3DType>(AB0, A0, kl, ku);
-  banded_to_full<View3DType, View3DType>(AB1, A1, kl, ku);
-  banded_to_full<View3DType, View3DType>(AB2, A2, kl, ku);
+  // first convert it to the dense matrix (stored in A)
+  banded_to_dense<View3DType, View3DType>(AB0, A0, kl, ku);
+  banded_to_dense<View3DType, View3DType>(AB1, A1, kl, ku);
+  banded_to_dense<View3DType, View3DType>(AB2, A2, kl, ku);
 
   // Copy upper triangular components to U
   create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Upper, KokkosBatched::Diag::NonUnit>(A0, U0);
@@ -348,16 +347,16 @@ void impl_test_batched_gbtrf_analytical(const int Nb) {
       EXPECT_EQ(h_ipiv0(ib, j), h_ipiv0_ref(ib, j));
       EXPECT_EQ(h_ipiv2(ib, j), h_ipiv2_ref(ib, j));
       for (int i = 0; i < BlkSize; i++) {
-        EXPECT_NEAR_KK(h_U0(ib, i, j), h_U0_ref(ib, i, j), eps, "h_U0");
-        EXPECT_NEAR_KK(h_NL0(ib, i, j), h_NL0_ref(ib, i, j), eps, "h_NL0");
+        EXPECT_NEAR_KK(h_U0(ib, i, j), h_U0_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_NL0(ib, i, j), h_NL0_ref(ib, i, j), eps);
       }
       for (int i = 0; i < BlkSize - 1; i++) {
-        EXPECT_NEAR_KK(h_U1(ib, i, j), h_U1_ref(ib, i, j), eps, "h_U1");
-        EXPECT_NEAR_KK(h_NL1(ib, i, j), h_NL1_ref(ib, i, j), eps, "h_NL1");
+        EXPECT_NEAR_KK(h_U1(ib, i, j), h_U1_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_NL1(ib, i, j), h_NL1_ref(ib, i, j), eps);
       }
       for (int i = 0; i < BlkSize + 1; i++) {
-        EXPECT_NEAR_KK(h_U2(ib, i, j), h_U2_ref(ib, i, j), eps, "h_U2");
-        EXPECT_NEAR_KK(h_NL2(ib, i, j), h_NL2_ref(ib, i, j), eps, "h_NL2");
+        EXPECT_NEAR_KK(h_U2(ib, i, j), h_U2_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_NL2(ib, i, j), h_NL2_ref(ib, i, j), eps);
       }
     }
     for (int j = 0; j < BlkSize - 1; j++) {
@@ -368,8 +367,7 @@ void impl_test_batched_gbtrf_analytical(const int Nb) {
 
 /// \brief Implementation details of batched gbtrf test
 ///
-/// \param N [in] Batch size of RHS (banded matrix can also be batched matrix)
-/// \param k [in] Number of superdiagonals or subdiagonals of matrix A
+/// \param N [in] Batch size of matrix A
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_gbtrf(const int Nb, const int BlkSize) {
@@ -395,8 +393,8 @@ void impl_test_batched_gbtrf(const int Nb, const int BlkSize) {
   KokkosKernels::Impl::getRandomBounds(1.0, randStart, randEnd);
   Kokkos::fill_random(LU, rand_pool, randStart, randEnd);
 
-  full_to_banded(LU, AB, kl, ku);  // In banded storage
-  banded_to_full(AB, A, kl, ku);   // In full storage
+  dense_to_banded(LU, AB, kl, ku);  // In banded storage
+  banded_to_dense(AB, A, kl, ku);   // In conventional storage
 
   Kokkos::deep_copy(LU, A);  // for getrf
 
@@ -404,8 +402,8 @@ void impl_test_batched_gbtrf(const int Nb, const int BlkSize) {
   Functor_BatchedSerialGbtrf<DeviceType, View3DType, PivView2DType, AlgoTagType>(AB, ipiv, kl, ku, BlkSize).run();
 
   // Extract matrix U and L from AB
-  // first convert it to the full matrix (stored in A)
-  banded_to_full<View3DType, View3DType>(AB, A, kl, ku);
+  // first convert it to the dense matrix (stored in A)
+  banded_to_dense<View3DType, View3DType>(AB, A, kl, ku);
 
   // Copy upper triangular components to U
   create_triangular_matrix<View3DType, View3DType, KokkosBatched::Uplo::Upper, KokkosBatched::Diag::NonUnit>(A, U);
