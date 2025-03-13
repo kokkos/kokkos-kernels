@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSKERNELS_BLOCKUTILS_HPP
-#define _KOKKOSKERNELS_BLOCKUTILS_HPP
+#ifndef KOKKOSKERNELS_BLOCKUTILS_HPP
+#define KOKKOSKERNELS_BLOCKUTILS_HPP
 
 // #include <Kokkos_Atomic.hpp>
 // #include <atomic>
@@ -98,4 +98,4 @@ KOKKOS_INLINE_FUNCTION void kk_vector_block_add_mul(const size_type block_dim, v
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#endif  //  _KOKKOSKERNELS_BLOCKUTILS_HPP
+#endif  //  KOKKOSKERNELS_BLOCKUTILS_HPP
