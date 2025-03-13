@@ -1,0 +1,36 @@
+stages:
+  - test
+
+hipcc:
+  stage: test
+  tags: [frontier, shell]
+  id_tokens:
+    OLCF_ID_TOKEN:
+      aud: https://code.olcf.ornl.gov
+  variables:
+    OLCF_SERVICE_ACCOUNT: ums018_auser
+  script:
+    - module load rocm/6.3.1
+    - export CRAYPE_LINK_TYPE=dynamic
+    - export CMAKE_BUILD_PARALLEL_LEVEL=48
+    - git clone https://github.com/kokkos/kokkos.git
+    - cd kokkos
+    - cmake -B build_hip -DCMAKE_CXX_COMPILER=hipcc -DKokkos_ENABLE_HIP=ON -DCMAKE_INSTALL_PREFIX=${PWD}/install
+    - cmake --build build_hip --target install
+    - cd ../..
+    - cmake -S${PWD}/kokkos-kernels -B${PWD}/kokkos-kernels/build 
+      -DCMAKE_CXX_COMPILER=hipcc 
+      -DCMAKE_INSTALL_PREFIX=${PWD}/kokkos-kernels/install 
+      -DCMAKE_BUILD_TYPE="Release" 
+      -DCMAKE_VERBOSE_MAKEFILE=ON 
+      -DSITE=OLCF-Frontier 
+      -DKokkos_ROOT=${PWD}/kokkos-kernels/kokkos/install 
+      -DKokkosKernels_ENABLE_TPL_ROCSOLVER=ON 
+      -DKokkosKernels_ENABLE_TPL_ROCSPARSE=ON
+      -DKokkosKernels_ENABLE_TPL_ROCBLAS=ON 
+      -DKokkosKernels_ENABLE_TESTS=ON 
+      -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON 
+      -DKokkosKernels_ENABLE_PERFTESTS=OFF 
+      -DKokkosKernels_ENABLE_BENCHMARK:BOOL=OFF 
+      -DKokkosKernels_INST_COMPLEX_DOUBLE=ON
+    - ctest -V --test-dir ${PWD}/kokkos-kernels/build -D Nightly
