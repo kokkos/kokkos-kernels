@@ -260,11 +260,7 @@ void impl_test_batched_gbtrs(const int N, const int k, const int BlkSize) {
 
   // Initialize tmp_A with random matrix
   KokkosKernels::Impl::getRandomBounds(1.0, randStart, randEnd);
-  Kokkos::fill_random(A, rand_pool, randStart, randEnd);
-
-  // Make the matrix Positive Definite Symmetric and Diagonal dominant
-  random_to_pds(A, tmp_A);
-  Kokkos::deep_copy(A, ScalarType(0.0));
+  Kokkos::fill_random(tmp_A, rand_pool, randStart, randEnd);
 
   dense_to_banded(tmp_A, AB, kl, ku);  // In banded storage
   banded_to_dense(AB, A, kl, ku);      // In conventional storage
