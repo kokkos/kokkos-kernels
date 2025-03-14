@@ -33,6 +33,9 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
   static_assert(AViewType::rank == 2, "KokkosBatched::gbtrs: AViewType must have rank 2.");
   static_assert(PivViewType::rank == 1, "KokkosBatched::gbtrs: PivViewType must have rank 1.");
   static_assert(BViewType::rank == 1, "KokkosBatched::gbtrs: BViewType must have rank 1.");
+  using PivValueType = typename PivViewType::non_const_value_type;
+  static_assert(std::is_integral_v<PivValueType>,
+                "KokkosBatched::gbtrs: value type of PivViewType must be an integral type.");
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   if (kl < 0) {
     Kokkos::printf(

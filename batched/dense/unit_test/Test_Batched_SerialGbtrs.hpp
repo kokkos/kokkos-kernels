@@ -249,8 +249,8 @@ void impl_test_batched_gbtrs(const int N, const int k, const int BlkSize) {
   const int kl = k, ku = k;
   const int ldab = 2 * kl + ku + 1;
   View3DType A("A", N, BlkSize, BlkSize), tmp_A("tmp_A", N, BlkSize, BlkSize),
-      AB("AB", N, ldab, BlkSize);                                                     // Banded matrix
-  View2DType x0("x0", N, BlkSize), x_ref("x_ref", N, BlkSize), y0("y0", N, BlkSize);  // Solutions
+      AB("AB", N, ldab, BlkSize);                         // Banded matrix
+  View2DType x0("x0", N, BlkSize), y0("y0", N, BlkSize);  // Solutions
   PivViewType ipiv("ipiv", N, BlkSize);
 
   // Create a random matrix A and make it Positive Definite Symmetric
