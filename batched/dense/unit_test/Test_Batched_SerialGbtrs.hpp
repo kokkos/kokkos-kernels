@@ -108,7 +108,7 @@ struct Functor_BatchedSerialGemv {
   KOKKOS_INLINE_FUNCTION
   Functor_BatchedSerialGemv(const ScalarType alpha, const AViewType &a, const xViewType &x, const ScalarType beta,
                             const yViewType &y)
-      : m_alpha(alpha), m_a(a), m_x(x), m_beta(beta), m_y(y) {}
+      : m_a(a), m_x(x), m_y(y), m_alpha(alpha), m_beta(beta) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ParamTagType &, const int k) const {
