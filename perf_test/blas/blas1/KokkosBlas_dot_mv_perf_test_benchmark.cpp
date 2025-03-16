@@ -105,9 +105,10 @@ static void run(benchmark::State& state) {
     space.fence();
   }
 
-  size_t flop             = (size_t)2 * m * n * state.iterations();
-  state.counters["FLOP"]  = benchmark::Counter(flop);
-  state.counters["FLOPS"] = benchmark::Counter(flop, benchmark::Counter::kIsRate);
+  const size_t iterFlop   = (size_t)2 * m * n;
+  const size_t totalFlop  = iterFlop * state.iterations();
+  state.counters["FLOP"]  = benchmark::Counter(iterFlop);
+  state.counters["FLOPS"] = benchmark::Counter(totalFlop, benchmark::Counter::kIsRate);
 }
 
 BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
