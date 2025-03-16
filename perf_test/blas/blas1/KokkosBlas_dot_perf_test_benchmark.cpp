@@ -77,7 +77,7 @@
 
 template <class ExecSpace>
 static void run(benchmark::State& state) {
-  const auto m      = state.range(0);
+  const auto m = state.range(0);
   // Declare type aliases
   using Scalar   = double;
   using MemSpace = typename ExecSpace::memory_space;
@@ -98,14 +98,14 @@ static void run(benchmark::State& state) {
   Kokkos::fill_random(x, pool, 10.0);
   Kokkos::fill_random(y, pool, 10.0);
   ExecSpace space;
-  
+
   Kokkos::fence();
   for (auto _ : state) {
     KokkosBlas::dot(space, x, y);
     space.fence();
   }
-  size_t flop = (size_t)2 * m * state.iterations();
-  state.counters["FLOP"] = benchmark::Counter(flop);
+  size_t flop             = (size_t)2 * m * state.iterations();
+  state.counters["FLOP"]  = benchmark::Counter(flop);
   state.counters["FLOPS"] = benchmark::Counter(flop, benchmark::Counter::kIsRate);
 }
 
@@ -114,4 +114,5 @@ BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
     ->Unit(benchmark::kMicrosecond)
     ->UseRealTime()
     ->ArgName("m")
-    ->RangeMultiplier(10)->Range(100000, 100000000);
+    ->RangeMultiplier(10)
+    ->Range(100000, 100000000);
