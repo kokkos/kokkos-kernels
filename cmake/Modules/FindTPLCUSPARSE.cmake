@@ -26,7 +26,8 @@ elseif(CUSPARSE_ROOT OR KokkosKernels_CUSPARSE_ROOT) # nothing specific provided
     LIBRARIES cusparse
     HEADER cusparse.h
   )
-else() # backwards-compatible way
+elseif(CMAKE_VERSION VERSION_LESS "3.27")
+  # backwards compatible way using FIND_PACKAGE(CUDA) (removed in 3.27)
   FIND_PACKAGE(CUDA)
   INCLUDE(FindPackageHandleStandardArgs)
   IF (NOT CUDA_FOUND)
@@ -43,4 +44,9 @@ else() # backwards-compatible way
       KOKKOSKERNELS_CREATE_IMPORTED_TPL(CUSPARSE INTERFACE LINK_LIBRARIES "${CUDA_cusparse_LIBRARY}")
     ENDIF()
   ENDIF()
+else()
+  FIND_PACKAGE(CUDAToolkit REQUIRED)
+  KOKKOSKERNELS_CREATE_IMPORTED_TPL(CUSPARSE EXISTING_IMPORTED_TARGET CUDA::cusparse)
+  # X_FOUND_INFO used to print the Kokkos Kernels config summary
+  get_target_property(CUSPARSE_FOUND_INFO CUDA::cusparse IMPORTED_LOCATION)
 endif()

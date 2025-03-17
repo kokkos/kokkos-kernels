@@ -26,7 +26,8 @@ elseif(CUSOLVER_ROOT OR KokkosKernels_CUSOLVER_ROOT) # nothing specific provided
     LIBRARIES cusolver
     HEADER cusolverDn.h
   )
-else() # backwards-compatible way
+elseif(CMAKE_VERSION VERSION_LESS "3.27")
+  # backwards compatible way using FIND_PACKAGE(CUDA) (removed in 3.27)
   FIND_PACKAGE(CUDA)
   INCLUDE(FindPackageHandleStandardArgs)
   IF (NOT CUDA_FOUND)
@@ -43,4 +44,9 @@ else() # backwards-compatible way
       KOKKOSKERNELS_CREATE_IMPORTED_TPL(CUSOLVER INTERFACE LINK_LIBRARIES "${CUDA_cusolver_LIBRARY}")
     ENDIF()
   ENDIF()
+else()
+  FIND_PACKAGE(CUDAToolkit REQUIRED)
+  KOKKOSKERNELS_CREATE_IMPORTED_TPL(CUSOLVER EXISTING_IMPORTED_TARGET CUDA::cusolver)
+  # X_FOUND_INFO used to print the Kokkos Kernels config summary
+  get_target_property(CUSOLVER_FOUND_INFO CUDA::cusolver IMPORTED_LOCATION)
 endif()
