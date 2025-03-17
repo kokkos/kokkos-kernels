@@ -48,4 +48,6 @@ elseif(CMAKE_VERSION VERSION_LESS "3.27")
 else()
   FIND_PACKAGE(CUDAToolkit)
   KOKKOSKERNELS_CREATE_IMPORTED_TPL(CUBLAS EXISTING_IMPORTED_TARGET CUDA::cublas)
+  # X_FOUND_INFO used to print the Kokkos Kernels config summary
+  get_target_property(CUBLAS_FOUND_INFO CUDA::cublas IMPORTED_LOCATION)
 endif()
