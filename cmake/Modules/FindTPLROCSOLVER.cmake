@@ -22,8 +22,14 @@ ELSEIF(ROCSOLVER_LIBRARY_DIRS)
     HEADER rocsolver.h
   )
 ELSEIF(ROCSOLVER_ROOT OR KokkosKernels_ROCSOLVER_ROOT) # nothing specific provided, just ROOT
+  set(ROCSOLVER_ROOT_DIR ${ROCSOLVER_ROOT})
+  IF(NOT ROCSOLVER_ROOT_DIR)
+    SET(ROCSOLVER_ROOT_DIR ${KokkosKernels_ROCSOLVER_ROOT})
+  ENDIF()
   kokkoskernels_find_imported(ROCSOLVER INTERFACE
+    HEADER_PATHS ${ROCSOLVER_ROOT_DIR}/include/rocsolver
     LIBRARIES rocsolver
+    LIBRARY_PATHS ${ROCSOLVER_ROOT_DIR}/lib/rocsolver
     HEADER rocsolver.h
   )
 ELSE() # backwards-compatible way

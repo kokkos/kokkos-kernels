@@ -22,9 +22,15 @@ ELSEIF(ROCBLAS_LIBRARY_DIRS)
     HEADER rocblas.h
   )
 ELSEIF(ROCBLAS_ROOT OR KokkosKernels_ROCBLAS_ROOT) # nothing specific provided, just ROOT
+  set(ROCBLAS_ROOT_DIR ${ROCBLAS_ROOT})
+  IF(NOT ROCBLAS_ROOT_DIR)
+    SET(ROCBLAS_ROOT_DIR ${KokkosKernels_ROCBLAS_ROOT})
+  ENDIF()
   kokkoskernels_find_imported(ROCBLAS INTERFACE
     LIBRARIES rocblas
+    LIBRARY_PATHS ${ROCBLAS_ROOT_DIR}/lib/rocblas
     HEADER rocblas.h
+    HEADER_PATHS ${ROCBLAS_ROOT_DIR}/include/rocblas
   )
 ELSE() # backwards-compatible way
   FIND_PACKAGE(ROCBLAS)

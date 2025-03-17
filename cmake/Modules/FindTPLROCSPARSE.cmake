@@ -22,10 +22,16 @@ ELSEIF(ROCSPARSE_LIBRARY_DIRS)
     HEADER rocsparse.h
   )
 ELSEIF(ROCSPARSE_ROOT OR KokkosKernels_ROCSPARSE_ROOT) # nothing specific provided, just ROOT
-  kokkoskernels_find_imported(ROCSPARSE INTERFACE
-    LIBRARIES rocsparse
-    HEADER rocsparse.h
-  )
+    set(ROCSPARSE_ROOT_DIR ${ROCSPARSE_ROOT})
+    IF(NOT ROCSPARSE_ROOT_DIR)
+      SET(ROCSPARSE_ROOT_DIR ${KokkosKernels_ROCSPARSE_ROOT})
+    ENDIF()
+    kokkoskernels_find_imported(ROCSPARSE INTERFACE
+      LIBRARIES rocsparse
+      LIBRARY_PATHS ${ROCSPARSE_ROOT_DIR}/lib/rocsparse
+      HEADER rocsparse.h
+      HEADER_PATHS ${ROCSPARSE_ROOT_DIR}/include/rocsparse
+    )
 ELSE() # backwards-compatible way
   FIND_PACKAGE(ROCSPARSE)
   INCLUDE(FindPackageHandleStandardArgs)
