@@ -98,42 +98,22 @@ static void run(benchmark::State& state) {
   Kokkos::deep_copy(x, 3.0);
   Kokkos::deep_copy(y, 2.0);
 
-  std::cout << "Running BLAS Level 1 Kokkos Teams-based implementation DOT "
-               "performance experiment ("
-            << ExecSpace::name() << ")\n";
-
-  std::cout << "Each test input vector has a length of " << m << std::endl;
-
+  Kokkos::fence();
   for (auto _ : state) {
-    // Warm up run of dot:
-    teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace> teamDotFunctorWarmUpInstance(x, y);
-
-    Kokkos::parallel_for("TeamDotUsage -- Warm Up Run", policy(1, Kokkos::AUTO), teamDotFunctorWarmUpInstance);
-
-    // The live test of dot:
-
-    Kokkos::fence();
-    Kokkos::Timer timer;
-
     teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace> teamDotFunctorLiveTestInstance(x, y);
     Kokkos::parallel_for("TeamDotUsage -- Live Test", policy(1, Kokkos::AUTO), teamDotFunctorLiveTestInstance);
-
-    // Kokkos Timer set up and data capture
-    double total = timer.seconds();
-    double avg   = total / repeat;
-    // Flops calculation for a 1D matrix dot product per test run;
-    size_t flopsPerRun = (size_t)2 * m;
-    printf("Avg DOT time: %f s.\n", avg);
-    printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-    state.SetIterationTime(timer.seconds());
-
-    state.counters["Avg DOT time (s):"] = benchmark::Counter(avg, benchmark::Counter::kDefaults);
-    state.counters["Avg DOT FLOP/s:"]   = benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
+    Kokkos::fence();
   }
+  const size_t iterFlop   = (size_t)2 * m;
+  const size_t totalFlop  = iterFlop * state.iterations();
+  state.counters["FLOP"]  = benchmark::Counter(iterFlop);
+  state.counters["FLOPS"] = benchmark::Counter(totalFlop, benchmark::Counter::kIsRate);
 }
 
 BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
     ->Name("KokkosBlas_team_dot/run<Kokkos::DefaultExecutionSpace>")
-    ->ArgNames({"m", "repeat"})
-    ->Args({100000, 1})
-    ->UseManualTime();
+    ->Unit(benchmark::kMicrosecond)
+    ->UseRealTime()
+    ->ArgName("m")
+    ->RangeMultiplier(10)
+    ->Range(100000, 100000000);
