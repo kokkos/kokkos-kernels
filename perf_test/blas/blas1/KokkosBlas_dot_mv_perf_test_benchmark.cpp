@@ -111,8 +111,15 @@ static void run(benchmark::State& state) {
   state.counters["FLOPS"] = benchmark::Counter(totalFlop, benchmark::Counter::kIsRate);
 }
 
+BENCHMARK(run<Kokkos::DefaultHostExecutionSpace>)
+    ->Name("KokkosBlas_dot_mv<DefaultHostExecutionSpace>")
+    ->Unit(benchmark::kMicrosecond)
+    ->UseRealTime()
+    ->ArgNames({"m", "n"})
+    ->ArgsProduct({benchmark::CreateRange(100000, 100000000, 10), benchmark::CreateRange(5, 5, 1)});
+
 BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
-    ->Name("KokkosBlas_dot_mv")
+    ->Name("KokkosBlas_dot_mv<DefaultExecutionSpace>")
     ->Unit(benchmark::kMicrosecond)
     ->UseRealTime()
     ->ArgNames({"m", "n"})
