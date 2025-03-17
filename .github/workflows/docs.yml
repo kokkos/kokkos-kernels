@@ -4,12 +4,29 @@ on:
   pull_request:
     types: [ opened, reopened, synchronize ]
   push:
-    branches: [ develop ]
+    branches: [ develop, doc_enforcement ]
 
 permissions:
   contents: none
 
 jobs:
+  check_updates:
+    runs-on: [macos-latest]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: kokkos-kernels
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: '3.13.2'
+      - run: pip install --require-hashes -r kokkos-kernels/.github/workflows/docs_check_requirements.txt
+      - name: check API changes
+        run: |
+          pwd
+          cd kokkos-kernels
+          git fetch &> /dev/null
+          git diff --name-only origin/develop
+
   build:
     runs-on: [macos-latest]
     steps:
