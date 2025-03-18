@@ -18,6 +18,7 @@
 #define KOKKOSSPARSE_STATICCRSGRAPH_HPP_
 
 #include <Kokkos_Core.hpp>
+#include "KokkosKernels_default_types.hpp"
 
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
 
@@ -249,7 +250,7 @@ struct GraphRowViewConst {
 /// <li> <tt> entries( row_map[i0] + i1 , i2 , i3 , ... ); </tt> </li>
 /// </ul>
 template <class DataType, class Arg1Type, class Arg2Type = void, class Arg3Type = void,
-          typename SizeType = typename Kokkos::ViewTraits<DataType*, Arg1Type, Arg2Type, Arg3Type>::size_type>
+          typename SizeType = ::KokkosKernels::default_size_type>
 class StaticCrsGraph {
  private:
   using traits = Kokkos::ViewTraits<DataType*, Arg1Type, Arg2Type, Arg3Type>;
