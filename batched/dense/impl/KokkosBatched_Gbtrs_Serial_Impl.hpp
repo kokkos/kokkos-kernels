@@ -30,12 +30,14 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
   static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::gbtrs: AViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<PivViewType>, "KokkosBatched::gbtrs: PivViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<BViewType>, "KokkosBatched::gbtrs: BViewType is not a Kokkos::View.");
-  static_assert(AViewType::rank == 2, "KokkosBatched::gbtrs: AViewType must have rank 2.");
-  static_assert(PivViewType::rank == 1, "KokkosBatched::gbtrs: PivViewType must have rank 1.");
-  static_assert(BViewType::rank == 1, "KokkosBatched::gbtrs: BViewType must have rank 1.");
+  static_assert(AViewType::rank() == 2, "KokkosBatched::gbtrs: AViewType must have rank 2.");
+  static_assert(PivViewType::rank() == 1, "KokkosBatched::gbtrs: PivViewType must have rank 1.");
+  static_assert(BViewType::rank() == 1, "KokkosBatched::gbtrs: BViewType must have rank 1.");
   using PivValueType = typename PivViewType::non_const_value_type;
   static_assert(std::is_integral_v<PivValueType>,
                 "KokkosBatched::gbtrs: value type of PivViewType must be an integral type.");
+  static_assert(std::is_same_v<typename BViewType::value_type, typename BViewType::non_const_value_type>,
+                "KokkosBatched::gbtrs: BViewType must have non-const value type.");
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   if (kl < 0) {
     Kokkos::printf(
@@ -58,7 +60,7 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
   const int lda = A.extent(0), n = A.extent(1);
   if (lda < (2 * kl + ku + 1)) {
     Kokkos::printf(
-        "KokkosBatched::gbtrs: leading dimension of A must be smaller than 2 * "
+        "KokkosBatched::gbtrs: leading dimension of A must not be smaller than 2 * "
         "kl + ku + 1: "
         "lda = %d, kl = %d, ku = %d\n",
         lda, kl, ku);
@@ -68,7 +70,7 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
   const int ldb = b.extent(0);
   if (ldb < Kokkos::max(1, n)) {
     Kokkos::printf(
-        "KokkosBatched::gbtrs: leading dimension of b must be smaller than "
+        "KokkosBatched::gbtrs: leading dimension of b must not be smaller than "
         "max(1, n): "
         "ldb = %d, n = %d\n",
         ldb, n);
