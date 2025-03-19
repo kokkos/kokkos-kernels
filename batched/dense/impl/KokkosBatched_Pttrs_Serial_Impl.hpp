@@ -54,8 +54,8 @@ KOKKOS_INLINE_FUNCTION static int checkPttrsInput([[maybe_unused]] const DViewTy
 
   if (ldb < Kokkos::max(1, nd)) {
     Kokkos::printf(
-        "KokkosBatched::pttrs: Dimensions of d and b do not match: d: %d, b: %d \n"
-        "b.extent(0) must be larger or equal to d.extent(0) \n",
+        "KokkosBatched::pttrs: leading dimension of b must not be smaller than "
+        "max(1, n): ldb = %d, n = %d\n",
         ldb, nd);
     return 1;
   }

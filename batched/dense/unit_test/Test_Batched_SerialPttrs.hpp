@@ -355,8 +355,7 @@ void impl_test_batched_pttrs(const int N, const int BlkSize) {
 /// \brief Implementation details of batched pttrs test for early return
 ///        BlkSize must be 0 or 1
 ///
-/// \param N [in] Batch size of RHS (banded matrix can also be batched matrix)
-/// \param k [in] Number of superdiagonals or subdiagonals of matrix A
+/// \param N [in] Batch size of matrix A and RHS
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_pttrs_quick_return(const int N, const int BlkSize) {
