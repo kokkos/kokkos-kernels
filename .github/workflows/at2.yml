@@ -43,3 +43,7 @@ jobs:
   #   uses: ./.github/workflows/volta70.yml
   #   with:
   #     kokkos_version: 4.5.00
+  mi210_rocm621:
+    uses: ./.github/workflows/mi210_rocm621.yml
+    with:
+      kokkos_version: 4.5.00
