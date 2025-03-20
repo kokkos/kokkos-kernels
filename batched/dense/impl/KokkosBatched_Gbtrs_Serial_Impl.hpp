@@ -33,9 +33,9 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
   static_assert(AViewType::rank() == 2, "KokkosBatched::gbtrs: AViewType must have rank 2.");
   static_assert(PivViewType::rank() == 1, "KokkosBatched::gbtrs: PivViewType must have rank 1.");
   static_assert(BViewType::rank() == 1, "KokkosBatched::gbtrs: BViewType must have rank 1.");
-  using PivValueType = typename PivViewType::non_const_value_type;
-  static_assert(std::is_integral_v<PivValueType>,
-                "KokkosBatched::gbtrs: value type of PivViewType must be an integral type.");
+
+  static_assert(std::is_integral_v<typename PivViewType::non_const_value_type>,
+                "KokkosBatched::gbtrs: Value type of PivViewType must be an integral type.");
   static_assert(std::is_same_v<typename BViewType::value_type, typename BViewType::non_const_value_type>,
                 "KokkosBatched::gbtrs: BViewType must have non-const value type.");
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
@@ -57,7 +57,7 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
     return 1;
   }
 
-  const int lda = A.extent(0), n = A.extent(1);
+  const int lda = A.extent_int(0), n = A.extent_int(1);
   if (lda < (2 * kl + ku + 1)) {
     Kokkos::printf(
         "KokkosBatched::gbtrs: leading dimension of A must not be smaller than 2 * "
@@ -67,11 +67,10 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
     return 1;
   }
 
-  const int ldb = b.extent(0);
-  if (ldb < Kokkos::max(1, n)) {
+  const int ldb = b.extent_int(0);
+  if (ldb < n) {
     Kokkos::printf(
-        "KokkosBatched::gbtrs: leading dimension of b must not be smaller than "
-        "max(1, n): "
+        "KokkosBatched::gbtrs: leading dimension of b must not be smaller than n: "
         "ldb = %d, n = %d\n",
         ldb, n);
     return 1;
@@ -96,10 +95,11 @@ struct SerialGbtrs<ArgTrans, Algo::Gbtrs::Unblocked> {
   template <typename AViewType, typename PivViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const PivViewType &piv, const BViewType &b, const int kl,
                                            const int ku) {
-    // quick return if possible
-    if (A.extent(1) == 0) return 0;
     auto info = Impl::checkGbtrsInput(A, piv, b, kl, ku);
     if (info) return info;
+
+    // quick return if possible
+    if (A.extent(1) == 0) return 0;
 
     return Impl::SerialGbtrsInternal<ArgTrans, Algo::Gbtrs::Unblocked>::invoke(A, piv, b, kl, ku);
   }
