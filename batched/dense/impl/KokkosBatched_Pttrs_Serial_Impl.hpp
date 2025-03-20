@@ -40,11 +40,11 @@ KOKKOS_INLINE_FUNCTION static int checkPttrsInput([[maybe_unused]] const DViewTy
                 "KokkosBatched::pttrs: BViewType must have non-const value type.");
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  const int nd  = d.extent(0);
-  const int ne  = e.extent(0);
-  const int ldb = b.extent(0);
+  const int nd  = d.extent_int(0);
+  const int ne  = e.extent_int(0);
+  const int ldb = b.extent_int(0);
 
-  if (ne + 1 != nd) {
+  if ((nd > 0 || ne > 0) && (ne + 1 != nd)) {
     Kokkos::printf(
         "KokkosBatched::pttrs: Dimensions of d and e do not match: d: %d, e: %d \n"
         "e.extent(0) must be equal to d.extent(0) - 1\n",
@@ -52,10 +52,10 @@ KOKKOS_INLINE_FUNCTION static int checkPttrsInput([[maybe_unused]] const DViewTy
     return 1;
   }
 
-  if (ldb < Kokkos::max(1, nd)) {
+  if (ldb < nd) {
     Kokkos::printf(
         "KokkosBatched::pttrs: leading dimension of b must not be smaller than "
-        "max(1, n): ldb = %d, n = %d\n",
+        "n: ldb = %d, n = %d\n",
         ldb, nd);
     return 1;
   }
@@ -68,11 +68,11 @@ template <typename ArgUplo>
 struct SerialPttrs<ArgUplo, Algo::Pttrs::Unblocked> {
   template <typename DViewType, typename EViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d, const EViewType &e, const BViewType &b) {
-    // Quick return if possible
-    if (d.extent(0) == 0) return 0;
-
     auto info = Impl::checkPttrsInput(d, e, b);
     if (info) return info;
+
+    // Quick return if possible
+    if (d.extent(0) == 0) return 0;
 
     using ScalarType = typename DViewType::non_const_value_type;
     int n            = d.extent(0);
