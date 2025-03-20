@@ -76,7 +76,7 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
     return 1;
   }
 
-  const int npiv = ipiv.extent(0);
+  const int npiv = ipiv.extent_int(0);
   if (npiv != n) {
     Kokkos::printf(
         "KokkosBatched::gbtrs: the dimension of the ipiv array must "
