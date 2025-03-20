@@ -72,12 +72,11 @@ struct SerialPttrs<ArgUplo, Algo::Pttrs::Unblocked> {
     if (info) return info;
 
     // Quick return if possible
-    if (d.extent(0) == 0) return 0;
-
-    using ScalarType = typename DViewType::non_const_value_type;
-    int n            = d.extent(0);
+    int n = d.extent_int(0);
+    if (n == 0) return 0;
 
     if (n == 1) {
+      using ScalarType       = typename DViewType::non_const_value_type;
       const ScalarType alpha = 1.0 / d(0);
       return KokkosBlas::SerialScale::invoke(alpha, b);
     }
