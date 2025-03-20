@@ -30,23 +30,27 @@ if(ROCSOLVER_FOUND)
   )
 
 elseif(ROCSOLVER_LIBRARIES AND ROCSOLVER_LIBRARY_DIRS AND ROCSOLVER_INCLUDE_DIRS)
+  message(WARNING "ROCSOLVER_LIBRARIES AND ROCSOLVER_LIBRARY_DIRS AND ROCSOLVER_INCLUDE_DIRS are deprecated please use ROCSOLVER_DIR or ROCSOLVER_ROOT so find_packge logic can be used instead.")
   kokkoskernels_find_imported(ROCSOLVER INTERFACE
     LIBRARIES ${ROCSOLVER_LIBRARIES}
     LIBRARY_PATHS ${ROCSOLVER_LIBRARY_DIRS}
     HEADER_PATHS ${ROCSOLVER_INCLUDE_DIRS}
   )
 elseif(ROCSOLVER_LIBRARIES AND ROCSOLVER_LIBRARY_DIRS)
+  message(WARNING "ROCSOLVER_LIBRARIES AND ROCSOLVER_LIBRARY_DIRS are deprecated please use ROCSOLVER_DIR or ROCSOLVER_ROOT so find_packge logic can be used instead.")
   kokkoskernels_find_imported(ROCSOLVER INTERFACE
     LIBRARIES ${ROCSOLVER_LIBRARIES}
     LIBRARY_PATHS ${ROCSOLVER_LIBRARY_DIRS}
     HEADER rocsolver.h
   )
 elseif(ROCSOLVER_LIBRARIES)
+  message(WARNING "ROCSOLVER_LIBRARIES are deprecated please use ROCSOLVER_DIR or ROCSOLVER_ROOT so find_packge logic can be used instead.")
   kokkoskernels_find_imported(ROCSOLVER INTERFACE
     LIBRARIES ${ROCSOLVER_LIBRARIES}
     HEADER rocsolver.h
   )
 elseif(ROCSOLVER_LIBRARY_DIRS)
+  message(WARNING "ROCSOLVER_LIBRARY_DIRS are deprecated please use ROCSOLVER_DIR or ROCSOLVER_ROOT so find_packge logic can be used instead.")
   kokkoskernels_find_imported(ROCSOLVER INTERFACE
     LIBRARIES rocsolver
     LIBRARY_PATHS ${ROCSOLVER_LIBRARY_DIRS}

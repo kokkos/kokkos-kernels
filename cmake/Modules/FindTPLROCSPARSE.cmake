@@ -30,23 +30,27 @@ if(ROCSPARSE_FOUND)
   )
 
 elseif(ROCSPARSE_LIBRARIES AND ROCSPARSE_LIBRARY_DIRS AND ROCSPARSE_INCLUDE_DIRS)
+  message(WARNING "ROCSPARSE_LIBRARIES AND ROCSPARSE_LIBRARY_DIRS AND ROCSPARSE_INCLUDE_DIRS are deprecated please use ROCSPARSE_DIR or ROCSPARSE_ROOT so find_packge logic can be used instead.")
   kokkoskernels_find_imported(ROCSPARSE INTERFACE
     LIBRARIES ${ROCSPARSE_LIBRARIES}
     LIBRARY_PATHS ${ROCSPARSE_LIBRARY_DIRS}
     HEADER_PATHS ${ROCSPARSE_INCLUDE_DIRS}
   )
 elseif(ROCSPARSE_LIBRARIES AND ROCSPARSE_LIBRARY_DIRS)
+  message(WARNING "ROCSPARSE_LIBRARIES AND ROCSPARSE_LIBRARY_DIRS are deprecated please use ROCSPARSE_DIR or ROCSPARSE_ROOT so find_packge logic can be used instead.")
   kokkoskernels_find_imported(ROCSPARSE INTERFACE
     LIBRARIES ${ROCSPARSE_LIBRARIES}
     LIBRARY_PATHS ${ROCSPARSE_LIBRARY_DIRS}
     HEADER rocsparse.h
   )
 elseif(ROCSPARSE_LIBRARIES)
+  message(WARNING "ROCSPARSE_LIBRARIES are deprecated please use ROCSPARSE_DIR or ROCSPARSE_ROOT so find_packge logic can be used instead.")
   kokkoskernels_find_imported(ROCSPARSE INTERFACE
     LIBRARIES ${ROCSPARSE_LIBRARIES}
     HEADER rocsparse.h
   )
 elseif(ROCSPARSE_LIBRARY_DIRS)
+  message(WARNING "ROCSPARSE_LIBRARY_DIRS are deprecated please use ROCSPARSE_DIR or ROCSPARSE_ROOT so find_packge logic can be used instead.")
   kokkoskernels_find_imported(ROCSPARSE INTERFACE
     LIBRARIES rocsparse
     LIBRARY_PATHS ${ROCSPARSE_LIBRARY_DIRS}
