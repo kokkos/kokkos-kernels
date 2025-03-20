@@ -6,12 +6,16 @@
 ### New Features
 
 #### Batched updates
-- implement batched serial lacgv [\#2499](https://github.com/kokkos/kokkos-kernels/pull/2499)
-- Implement batched serial syr [\#2497](https://github.com/kokkos/kokkos-kernels/pull/2497)
-- implement batched serial ger [\#2491](https://github.com/kokkos/kokkos-kernels/pull/2491)
-- Implement batched serial gbtrf [\#2489](https://github.com/kokkos/kokkos-kernels/pull/2489)
-- implement batched serial getrs [\#2483](https://github.com/kokkos/kokkos-kernels/pull/2483)
-- implement batched serial getrf [\#2331](https://github.com/kokkos/kokkos-kernels/pull/2331)
+
+Improvement and refactoring of batched linear algebra and solvers:
+  - implement batched serial lacgv [\#2499](https://github.com/kokkos/kokkos-kernels/pull/2499)
+  - Implement batched serial syr [\#2497](https://github.com/kokkos/kokkos-kernels/pull/2497)
+  - implement batched serial ger [\#2491](https://github.com/kokkos/kokkos-kernels/pull/2491)
+  - Implement batched serial gbtrf [\#2489](https://github.com/kokkos/kokkos-kernels/pull/2489)
+  - implement batched serial getrs [\#2483](https://github.com/kokkos/kokkos-kernels/pull/2483)
+  - implement batched serial getrf [\#2331](https://github.com/kokkos/kokkos-kernels/pull/2331)
+Adding support for batched QR on rectangular matrices (only had square support) and testing associated features:
+  - batched - dense: Testing and fixing Serial QR [\#2342](https://github.com/kokkos/kokkos-kernels/pull/2342)
 
 #### Sparse updates
 - Adopt `Kokkos::StaticCrsGraph` from "Core" and move `Static{Ccs,Crs}Graph` to namespace `KokkosSparse::` [\#2419](https://github.com/kokkos/kokkos-kernels/pull/2419)
@@ -28,22 +32,27 @@
 - Improve batched serial trsm implementation and testing [\#2432](https://github.com/kokkos/kokkos-kernels/pull/2432)
 
 #### Sparse
-- Sparse - SpTRSV: moving kenerls out of Experimental [\#2496](https://github.com/kokkos/kokkos-kernels/pull/2496)
-- Sparse - Iluk deprecate experimental [\#2495](https://github.com/kokkos/kokkos-kernels/pull/2495)
-- Sparse - Gauss Seidel: moving GS out of experimental namespace [\#2494](https://github.com/kokkos/kokkos-kernels/pull/2494)
-- Sparse - spgemm: moving symbolic and numeric phases out of the experimental namespace [\#2493](https://github.com/kokkos/kokkos-kernels/pull/2493)
-- Sparse - SpADD: moving spadd out of experimental [\#2492](https://github.com/kokkos/kokkos-kernels/pull/2492)
+Ahead of Kokkos Kernels 5.0.0 we are deprecating some functions and promoting some out of Experimental
+  - Sparse - SpTRSV: moving kernels out of Experimental [\#2496](https://github.com/kokkos/kokkos-kernels/pull/2496)
+  - Sparse - Iluk deprecate experimental [\#2495](https://github.com/kokkos/kokkos-kernels/pull/2495)
+  - Sparse - Gauss Seidel: moving GS out of experimental namespace [\#2494](https://github.com/kokkos/kokkos-kernels/pull/2494)
+  - Sparse - spgemm: moving symbolic and numeric phases out of the experimental namespace [\#2493](https://github.com/kokkos/kokkos-kernels/pull/2493)
+  - Sparse - SpADD: moving spadd out of experimental [\#2492](https://github.com/kokkos/kokkos-kernels/pull/2492)
 
 ### Build System:
 
 ### Documentation and Testing:
-- Add nightly tests on Frontier [\#2536](https://github.com/kokkos/kokkos-kernels/pull/2536)
-- docs: modifying the workflow to add --require-hases for pip [\#2527](https://github.com/kokkos/kokkos-kernels/pull/2527)
-- docs: pinning github actions by SHA [\#2523](https://github.com/kokkos/kokkos-kernels/pull/2523)
-- docs: deploy documentation after PR merge [\#2513](https://github.com/kokkos/kokkos-kernels/pull/2513)
-- docs: updating to the new documentation and refactoring workflow [\#2512](https://github.com/kokkos/kokkos-kernels/pull/2512)
-- Worflow: refactoring SPR to standard cmake and suppress warnings [\#2502](https://github.com/kokkos/kokkos-kernels/pull/2502)
-- Adding ctest config for cdash submissions [\#2500](https://github.com/kokkos/kokkos-kernels/pull/2500)
+Moving to new documentation on kokkos.org and updating associated workflow
+  - docs: modifying the workflow to add --require-hases for pip [\#2527](https://github.com/kokkos/kokkos-kernels/pull/2527)
+  - docs: pinning github actions by SHA [\#2523](https://github.com/kokkos/kokkos-kernels/pull/2523)
+  - docs: deploy documentation after PR merge [\#2513](https://github.com/kokkos/kokkos-kernels/pull/2513)
+  - docs: updating to the new documentation and refactoring workflow [\#2512](https://github.com/kokkos/kokkos-kernels/pull/2512)
+
+Adding cdash configuration and associated build at OLCF and ALCF
+  - Adding ctest config for cdash submissions [\#2500](https://github.com/kokkos/kokkos-kernels/pull/2500)
+  - Add nightly tests on Frontier [\#2536](https://github.com/kokkos/kokkos-kernels/pull/2536)
+
+- Workflow: refactoring SPR to standard cmake and suppress warnings [\#2502](https://github.com/kokkos/kokkos-kernels/pull/2502)
 - Use fused gtest v1.11.0 from Kokkos [\#2416](https://github.com/kokkos/kokkos-kernels/pull/2416)
 
 ### Examples:
@@ -78,7 +87,6 @@
 - Two-stage GS: initialize functor bool members [\#2420](https://github.com/kokkos/kokkos-kernels/pull/2420)
 - Fix remaining UB sanitizer errors [\#2417](https://github.com/kokkos/kokkos-kernels/pull/2417)
 - remove unused `FillSymmetricLowerEdgesHashMap::lower_only` [\#2415](https://github.com/kokkos/kokkos-kernels/pull/2415)
-- batched - dense: Testing and fixing Serial QR [\#2342](https://github.com/kokkos/kokkos-kernels/pull/2342)
 - Fix unit test headers installation [\#2334](https://github.com/kokkos/kokkos-kernels/pull/2334)
 
 ## [4.5.01](https://github.com/kokkos/kokkos-kernels/tree/4.5.01)
