@@ -14,19 +14,18 @@ if(ROCBLAS_FOUND)
     list(GET kk_rocblas_configs ${rocblas_release_config} kk_rocblas_config)
   elseif(${rocblas_relwithdebinfo_config} GREATER_EQUAL "0")
     list(GET kk_rocblas_configs ${rocblas_relwithdebinfo_config} kk_rocblas_config)
-  elseif()
+  elseif(${rocblas_debug_config} GREATER_EQUAL "0")
     list(GET kk_rocblas_configs ${rocblas_debug_config} kk_rocblas_config)
   endif()
 
   get_target_property(kk_rocblas_library roc::rocblas IMPORTED_LOCATION_${kk_rocblas_config})
   get_filename_component(ROCBLAS_LIBRARIES ${kk_rocblas_library} DIRECTORY)
 
-
   kokkoskernels_find_imported(ROCBLAS INTERFACE
     LIBRARIES rocblas
     LIBRARY_PATHS ${ROCBLAS_LIBRARIES}
-    HEADER_PATHS ${ROCBLAS_INCLUDE_DIRS}
     HEADER rocblas.h
+    HEADER_PATHS "${ROCBLAS_INCLUDE_DIRS};${ROCBLAS_INCLUDE_DIRS}/rocblas"
   )
 
 elseif(ROCBLAS_LIBRARIES AND ROCBLAS_LIBRARY_DIRS AND ROCBLAS_INCLUDE_DIRS)
@@ -65,6 +64,6 @@ else(ROCBLAS_ROOT OR KokkosKernels_ROCBLAS_ROOT) # nothing specific provided, ju
     LIBRARIES rocblas
     LIBRARY_PATHS ${ROCBLAS_ROOT_DIR}/lib
     HEADER rocblas.h
-    HEADER_PATHS ${ROCBLAS_ROOT_DIR}/include
+    HEADER_PATHS "${ROCBLAS_ROOT_DIR}/include;${ROCBLAS_ROOT_DIR}/include/rocblas"
   )
 endif()
