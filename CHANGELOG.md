@@ -34,10 +34,10 @@ Adding support for batched QR on rectangular matrices (only had square support) 
 #### Sparse
 Ahead of Kokkos Kernels 5.0.0 we are deprecating some functions and promoting some out of Experimental
   - Sparse - SpTRSV: moving kernels out of Experimental [\#2496](https://github.com/kokkos/kokkos-kernels/pull/2496)
-  - Sparse - Iluk deprecate experimental [\#2495](https://github.com/kokkos/kokkos-kernels/pull/2495)
-  - Sparse - Gauss Seidel: moving GS out of experimental namespace [\#2494](https://github.com/kokkos/kokkos-kernels/pull/2494)
-  - Sparse - spgemm: moving symbolic and numeric phases out of the experimental namespace [\#2493](https://github.com/kokkos/kokkos-kernels/pull/2493)
-  - Sparse - SpADD: moving spadd out of experimental [\#2492](https://github.com/kokkos/kokkos-kernels/pull/2492)
+  - Sparse - Iluk deprecate Experimental [\#2495](https://github.com/kokkos/kokkos-kernels/pull/2495)
+  - Sparse - Gauss Seidel: moving GS out of Experimental namespace [\#2494](https://github.com/kokkos/kokkos-kernels/pull/2494)
+  - Sparse - spgemm: moving symbolic and numeric phases out of the Experimental namespace [\#2493](https://github.com/kokkos/kokkos-kernels/pull/2493)
+  - Sparse - SpADD: moving spadd out of Experimental [\#2492](https://github.com/kokkos/kokkos-kernels/pull/2492)
 
 ### Build System:
 
