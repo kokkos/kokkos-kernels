@@ -13,8 +13,9 @@ src_doc_mapping = dict([('lapack/src/KokkosLapack_gesv.hpp', ['docs/source/API/l
                         ('lapack/src/KokkosLapack_svd.hpp', ['docs/source/API/lapack/gesvd.rst']),
                         ('lapack/src/KokkosLapack_trtri.hpp', ['docs/source/API/lapack/trtri.rst'])])
 
-diffs_list = open("/Users/lberge/Research/kokkos_eco/sources/kk_lucbv/modified_files.txt", 'r')
+diffs_list = open("./modified_files.txt", 'r')
 modified_files = [line.strip() for line in diffs_list.readlines()]
+diffs_list.close()
 
 modified_public_files = []
 new_apis_to_document  = []
