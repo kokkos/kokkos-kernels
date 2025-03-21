@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [ opened, reopened, synchronize ]
   push:
-    branches: [ develop, doc_enforcement ]
+    branches: [ develop ]
 
 permissions:
   contents: none
@@ -25,7 +25,7 @@ jobs:
           cd kokkos-kernels
           git fetch &> /dev/null
           git diff --name-only origin/develop > modified_files.txt
-	  python scripts/check_api_updates.py
+          python scripts/check_api_updates.py
 
   build:
     runs-on: [macos-latest]
