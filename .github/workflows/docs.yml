@@ -22,10 +22,10 @@ jobs:
       - run: pip install --require-hashes -r kokkos-kernels/.github/workflows/docs_check_requirements.txt
       - name: check API changes
         run: |
-          pwd
           cd kokkos-kernels
           git fetch &> /dev/null
-          git diff --name-only origin/develop
+          git diff --name-only origin/develop > modified_files.txt
+	  python scripts/check_api_updates.py
 
   build:
     runs-on: [macos-latest]
