@@ -1,5 +1,3 @@
-import os
-
 src_directories = ["batched/dense/src",
                    "batched/sparse/src",
                    "blas/src",
@@ -39,6 +37,8 @@ for modified_file in modified_files:
             if len(intersection) == 0:
                 undocumented_changes.append(modified_file)
 
+return_value = 0
+
 print("Modified public files:")
 for modified_file in modified_public_files:
     print("   "+str(modified_file))
@@ -47,11 +47,15 @@ print("")
 if new_apis_to_document:
     print("New undocumented public files:")
     for new_api in new_apis_to_document:
-        print(new_api)
+        print("   "+str(new_api))
     print("Note: you will need to update the src_doc_mapping dictionary in check_api_updates.py")
-print("")
+    print("")
+    return_value = 1
 
 if undocumented_changes:
     print("Likely undocumented public files:")
     for undoc_change in undocumented_changes:
-        print(undoc_change)
+        print("   "+str(undoc_change))
+    return_value = 1
+
+exit(return_value)
