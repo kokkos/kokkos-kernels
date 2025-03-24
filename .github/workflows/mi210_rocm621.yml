@@ -65,7 +65,7 @@ jobs:
           cmake -S "$GITHUB_WORKSPACE/kokkos-kernels" \
             -B "$GITHUB_WORKSPACE/kokkos-kernels/build" \
             -D CMAKE_CXX_COMPILER=hipcc \
-            -D CMAKE_CXX_FLAGS=Release \
+            -D CMAKE_BUILD_TYPE=Release \
             -D CMAKE_CXX_STANDARD=20 \
             -D Kokkos_ROOT="$GITHUB_WORKSPACE/kokkos/install" \
             -D KokkosKernels_ENABLE_TESTS=ON \
