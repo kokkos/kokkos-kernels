@@ -41,19 +41,19 @@ void test_version_info() {
 #endif
   } else if (7 == deviceProp.major) {  // VOLTA, TURING75
 #ifndef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
-    FAIL() << "KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS not set, but found a GPU with compute capability is 7.x";
+    FAIL() << "KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS not set, but found a GPU with compute capability 7.x";
 #endif
   } else if (8 == deviceProp.major) {  // AMPERE, ADA
 #ifndef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
-    FAIL() << "KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS not set, but found a GPU with compute capability is 8.x";
+    FAIL() << "KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS not set, but found a GPU with compute capability 8.x";
 #endif
   } else if (9 == deviceProp.major) {  // HOPPER
 #ifndef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
-    FAIL() << "KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS not set, but found a GPU with compute capability is 9.x";
+    FAIL() << "KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS not set, but found a GPU with compute capability 9.x";
 #endif
   } else if (10 == deviceProp.major && 0 == deviceProp.minor) {  // BLACKWELL
 #ifndef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
-    FAIL() << "KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS not set, but found a GPU with compute capability is 10.x";
+    FAIL() << "KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS not set, but found a GPU with compute capability 10.x";
 #endif
   } else {
     FAIL() << "Internal Kokkos Kernels error, please report this. Ensure KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS is "
