@@ -23,7 +23,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Macros.hpp>
 
-void test_version_info() {
+void test_cuda_independent_threads() {
 #ifdef KOKKOS_ENABLE_CUDA
 
   // pull device off of default CUDA execution space
@@ -65,6 +65,6 @@ void test_version_info() {
 #endif  // KOKKOS_ENABLE_CUDA
 }
 
-TEST_F(TestCategory, common_version) { test_version_info(); }
+TEST_F(TestCategory, common_cudaindependentthreads) { test_cuda_independent_threads(); }
 
 #endif  // TEST_COMMON_CUDAINDEPENDENTTHREADSCHEDULING
