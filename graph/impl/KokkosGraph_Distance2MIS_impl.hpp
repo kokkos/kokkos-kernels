@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSGRAPH_DISTANCE2_MIS_IMPL_HPP
-#define _KOKKOSGRAPH_DISTANCE2_MIS_IMPL_HPP
+#ifndef KOKKOSGRAPH_DISTANCE2_MIS_IMPL_HPP
+#define KOKKOSGRAPH_DISTANCE2_MIS_IMPL_HPP
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Bitset.hpp"
