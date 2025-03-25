@@ -36,10 +36,6 @@ ExecSpaceType get_exec_space_type() {
   return kk_get_exec_space_type<ExecutionSpace>();
 }
 
-inline int get_suggested_vector__size(size_t nr, size_t nnz, ExecSpaceType exec_space) {
-  return kk_get_suggested_vector_size(nr, nnz, exec_space);
-}
-
 template <typename in_lno_view_t, typename out_lno_view_t, typename MyExecSpace>
 void get_histogram(typename in_lno_view_t::size_type in_elements, in_lno_view_t in_view,
                    out_lno_view_t histogram /*must be initialized with 0s*/) {
