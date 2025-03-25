@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSBSPGEMMIMPL_HPP
-#define _KOKKOSBSPGEMMIMPL_HPP
+#ifndef KOKKOSSPARSE_BSPGEMM_IMPL_HPP
+#define KOKKOSSPARSE_BSPGEMM_IMPL_HPP
 
 #include "KokkosSparse_spgemm_impl.hpp"
 

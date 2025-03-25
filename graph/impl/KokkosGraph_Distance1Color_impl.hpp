@@ -20,8 +20,8 @@
 
 #include <bitset>
 
-#ifndef _KOKKOSCOLORINGIMP_HPP
-#define _KOKKOSCOLORINGIMP_HPP
+#ifndef KOKKOSGRAPH_DISTANCE1COLOR_IMPL_HPP
+#define KOKKOSGRAPH_DISTANCE1COLOR_IMPL_HPP
 
 #define EBCOLORING_HIGHER_QUALITY  // suggested
 namespace KokkosGraph {
@@ -2867,4 +2867,4 @@ void graph_color_impl(KernelHandle *handle, typename KernelHandle::nnz_lno_t num
 }  // namespace Impl
 }  // namespace KokkosGraph
 
-#endif  //_KOKKOSCOLORINGIMP_HPP
+#endif  //KOKKOSGRAPH_DISTANCE1COLOR_IMPL_HPP
