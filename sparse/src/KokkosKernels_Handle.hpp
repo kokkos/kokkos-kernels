@@ -903,4 +903,4 @@ class KokkosKernelsHandle {
 }  // namespace Experimental
 }  // namespace KokkosKernels
 
-#endif  //KOKKOSKERNELS_HANDLE_HPP
+#endif  // KOKKOSKERNELS_HANDLE_HPP
