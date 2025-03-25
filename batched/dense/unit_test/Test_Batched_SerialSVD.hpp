@@ -497,6 +497,21 @@ Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
       Ahost = MatrixHost("A5", m, n);
       break;
     }
+    case 6: {
+      m = 3;
+      n = 2;
+      Ahost = MatrixHost("A6", m, n);
+
+      Ahost(0, 0) = -1.6175067619642277e-05;
+      Ahost(1, 0) = -1.6175067619642270e-05;
+      Ahost(2, 0) = 3.0662409276442540e-21;
+
+      Ahost(0, 1) = 1.6175067619642277e-05;
+      Ahost(1, 1) = -1.6175067619642277e-05;
+      Ahost(2, 1) = 2.3002860307475551e-21;
+
+      break;
+    }
     default: throw std::runtime_error("Test case out of bounds.");
   }
   Kokkos::View<Scalar**, Layout, Device> A(Ahost.label(), m, n);
@@ -509,7 +524,7 @@ void testSpecialCases() {
   using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
   using Vector    = Kokkos::View<Scalar*, Device>;
   using ExecSpace = typename Device::execution_space;
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 7; i++) {
     Matrix A = getTestCase<Scalar, Layout, Device>(i);
     int m    = A.extent(0);
     int n    = A.extent(1);
