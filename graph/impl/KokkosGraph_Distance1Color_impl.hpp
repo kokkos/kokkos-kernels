@@ -2867,4 +2867,4 @@ void graph_color_impl(KernelHandle *handle, typename KernelHandle::nnz_lno_t num
 }  // namespace Impl
 }  // namespace KokkosGraph
 
-#endif  //KOKKOSGRAPH_DISTANCE1COLOR_IMPL_HPP
+#endif  // KOKKOSGRAPH_DISTANCE1COLOR_IMPL_HPP
