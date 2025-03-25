@@ -32,7 +32,7 @@ void test_cuda_independent_threads() {
   // retrieve device properties
   cudaDeviceProp deviceProp;
   cudaError_t err = cudaGetDeviceProperties(&deviceProp, device);
-  GTEST_ASSERT(err == cudaSuccess);
+  ASSERT_EQ(err, cudaSuccess);  // no point in continuing if this fails
 
   // no independent thread scheduling for CC < 7.x
   if (deviceProp.major < 7) {
