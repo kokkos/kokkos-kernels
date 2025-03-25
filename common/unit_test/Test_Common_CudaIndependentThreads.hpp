@@ -21,7 +21,7 @@
 #define TEST_COMMON_CUDAINDEPENDENTTHREADSCHEDULING
 
 #include <Kokkos_Core.hpp>
-#include <KokkosKernels_config.h>
+#include <KokkosKernels_Macros.hpp>
 
 void test_version_info() {
 #ifdef KOKKOS_ENABLE_CUDA
