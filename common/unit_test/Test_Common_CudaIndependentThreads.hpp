@@ -56,7 +56,7 @@ void test_version_info() {
     FAIL() << "KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS not set, but found a GPU with compute capability 10.x";
 #endif
   } else {
-    FAIL() << "Internal Kokkos Kernels error, please report this. Ensure KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS is "
+    FAIL() << "Kokkos Kernels developer error, please report this. Ensure KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS is "
               "updated for this GPU architecture, and add the corresponding case to this test."
   }
 
