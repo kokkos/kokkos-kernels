@@ -123,13 +123,11 @@ KOKKOS_INLINE_FUNCTION int SerialGbtrsInternal<Trans::ConjTranspose, Algo::Gbtrs
       auto x = Kokkos::subview(A, Kokkos::pair(kd, kd + lm), j);
       auto y = Kokkos::subview(b, Kokkos::pair(j, j + lm));
 
-      SerialLacgv::invoke(y);
-
+      b(j) = Kokkos::ArithTraits<ValueType>::conj(b(j));
       KokkosBlas::Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
           KokkosBlas::Impl::OpConj(), 1, a.extent(0), -1.0, a.data(), a.stride_0(), a.stride_0(), x.data(),
           x.stride_0(), 1.0, y.data(), y.stride_0());
-
-      SerialLacgv::invoke(y);
+      b(j) = Kokkos::ArithTraits<ValueType>::conj(b(j));
 
       // If pivot index is not j, swap rows l and j in b
       auto l = piv(j);
