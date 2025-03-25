@@ -57,11 +57,11 @@ void test_cuda_independent_threads() {
 #endif
   } else {
     FAIL() << "Kokkos Kernels developer error, please report this. Ensure KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS is "
-              "updated for this GPU architecture, and add the corresponding case to this test."
+              "updated for this GPU architecture, and add the corresponding case to this test.";
   }
 
 #else   // KOKKOS_ENABLE_CUDA
-  GTEST_SKIP() << "CUDA backend not enabled."
+  GTEST_SKIP() << "CUDA backend not enabled.";
 #endif  // KOKKOS_ENABLE_CUDA
 }
 
