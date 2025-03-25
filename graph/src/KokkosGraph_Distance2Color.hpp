@@ -207,4 +207,4 @@ void bipartite_color_columns(KernelHandle *handle, typename KernelHandle::nnz_ln
 }  // end namespace Experimental
 }  // end namespace KokkosGraph
 
-#endif  //KOKKOSGRAPH_GRAPH_COLORDISTANCE2_HPP
+#endif  // KOKKOSGRAPH_GRAPH_COLORDISTANCE2_HPP
