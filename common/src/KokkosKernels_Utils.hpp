@@ -24,8 +24,8 @@
 #include "KokkosKernels_PrintUtils.hpp"
 #include "KokkosKernels_VectorUtils.hpp"
 
-#ifndef _KOKKOSKERNELSUTILS_HPP
-#define _KOKKOSKERNELSUTILS_HPP
+#ifndef KOKKOSKERNELS_UTILS_HPP
+#define KOKKOSKERNELS_UTILS_HPP
 
 namespace KokkosKernels {
 
