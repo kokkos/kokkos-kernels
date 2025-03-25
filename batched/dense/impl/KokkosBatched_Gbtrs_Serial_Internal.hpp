@@ -113,21 +113,21 @@ KOKKOS_INLINE_FUNCTION int SerialGbtrsInternal<Trans::ConjTranspose, Algo::Gbtrs
   // Solve U*X = b for each right hand side, overwriting B with X.
   KokkosBatched::SerialTbsv<Uplo::Upper, Trans::ConjTranspose, Diag::NonUnit, Algo::Tbsv::Unblocked>::invoke(A, b,
                                                                                                              kl + ku);
-
   if (lnoti) {
     for (int j = n - 2; j >= 0; --j) {
       const int lm = Kokkos::min(kl, n - j - 1);
 
       // Gemv transposed
-      auto a = Kokkos::subview(b, Kokkos::pair(j + 1, j + 1 + lm));
-      auto x = Kokkos::subview(A, Kokkos::pair(kd, kd + lm), j);
-      auto y = Kokkos::subview(b, Kokkos::pair(j, j + lm));
+      auto a   = Kokkos::subview(b, Kokkos::pair(j + 1, j + 1 + lm));
+      auto x   = Kokkos::subview(A, Kokkos::pair(kd, kd + lm), j);
+      auto y   = Kokkos::subview(b, Kokkos::pair(j, j + lm));
+      auto b_j = Kokkos::subview(b, Kokkos::pair(j, j + 1));
 
-      b(j) = Kokkos::ArithTraits<ValueType>::conj(b(j));
+      SerialLacgv::invoke(b_j);
       KokkosBlas::Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
           KokkosBlas::Impl::OpConj(), 1, a.extent(0), -1.0, a.data(), a.stride_0(), a.stride_0(), x.data(),
           x.stride_0(), 1.0, y.data(), y.stride_0());
-      b(j) = Kokkos::ArithTraits<ValueType>::conj(b(j));
+      SerialLacgv::invoke(b_j);
 
       // If pivot index is not j, swap rows l and j in b
       auto l = piv(j);
