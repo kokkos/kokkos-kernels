@@ -305,24 +305,30 @@ int test_batched_gbtrs() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     using LayoutType = Kokkos::LayoutLeft;
+    Test::Gbtrs::impl_test_batched_gbtrs_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0);
     Test::Gbtrs::impl_test_batched_gbtrs_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1);
     Test::Gbtrs::impl_test_batched_gbtrs_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(2);
     for (int i = 0; i < 10; i++) {
-      int k = 1;
-      Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1, k, i);
-      Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(2, k, i);
+      for (int k = 1; k < 4; k++) {
+        Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0, k, i);
+        Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1, k, i);
+        Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(2, k, i);
+      }
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     using LayoutType = Kokkos::LayoutRight;
+    Test::Gbtrs::impl_test_batched_gbtrs_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0);
     Test::Gbtrs::impl_test_batched_gbtrs_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1);
     Test::Gbtrs::impl_test_batched_gbtrs_analytical<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(2);
     for (int i = 0; i < 10; i++) {
-      int k = 1;
-      Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1, k, i);
-      Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(2, k, i);
+      for (int k = 1; k < 4; k++) {
+        Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0, k, i);
+        Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1, k, i);
+        Test::Gbtrs::impl_test_batched_gbtrs<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(2, k, i);
+      }
     }
   }
 #endif
