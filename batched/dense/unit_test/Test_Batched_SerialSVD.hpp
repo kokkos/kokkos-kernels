@@ -498,8 +498,8 @@ Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
       break;
     }
     case 6: {
-      m = 3;
-      n = 2;
+      m     = 3;
+      n     = 2;
       Ahost = MatrixHost("A6", m, n);
 
       Ahost(0, 0) = -1.6175067619642277e-05;
