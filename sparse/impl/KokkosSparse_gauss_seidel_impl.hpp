@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSGSIMP_HPP
-#define _KOKKOSGSIMP_HPP
+#ifndef KOKKOSSPARSE_GS_IMPL_HPP
+#define KOKKOSSPARSE_GS_IMPL_HPP
 
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosSparse_Utils.hpp"

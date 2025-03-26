@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSSPARSE_IOUTILS_HPP
-#define _KOKKOSSPARSE_IOUTILS_HPP
+#ifndef KOKKOSSPARSE_IOUTILS_HPP
+#define KOKKOSSPARSE_IOUTILS_HPP
 
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -1379,4 +1379,4 @@ inline void kk_sequential_create_incidence_matrix_transpose(const nnz_lno_t num_
 
 }  // namespace Impl
 }  // namespace KokkosSparse
-#endif  // _KOKKOSSPARSE_IOUTILS_HPP
+#endif  // KOKKOSSPARSE_IOUTILS_HPP
