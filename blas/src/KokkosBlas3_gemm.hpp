@@ -43,8 +43,7 @@ bool gemv_based_gemm(
     const execution_space& space, const char transA[], const char transB[], typename AViewType::const_value_type& alpha,
     const AViewType& A, const BViewType& B, typename CViewType::const_value_type& beta, const CViewType& C,
     typename std::enable_if<!std::is_same_v<typename BViewType::array_layout, Kokkos::LayoutStride> &&
-                            !std::is_same_v<typename CViewType::array_layout, Kokkos::LayoutStride>>::type* =
-        nullptr) {
+                            !std::is_same_v<typename CViewType::array_layout, Kokkos::LayoutStride>>::type* = nullptr) {
   if (toupper(transA[0]) == 'N' && toupper(transB[0]) == 'N' && B.extent(1) == size_t(1)) {
     // since B/C both have a single column and are not LayoutStride,
     // can create a raw contiguous rank-1 vector from them rather than using
@@ -70,8 +69,7 @@ bool gemv_based_gemm(
     typename AViewType::const_value_type& /*alpha*/, const AViewType& /*A*/, const BViewType& /*B*/,
     typename CViewType::const_value_type& /*beta*/, const CViewType& /*C*/,
     typename std::enable_if<std::is_same_v<typename BViewType::array_layout, Kokkos::LayoutStride> ||
-                            std::is_same_v<typename CViewType::array_layout, Kokkos::LayoutStride>>::type* =
-        nullptr) {
+                            std::is_same_v<typename CViewType::array_layout, Kokkos::LayoutStride>>::type* = nullptr) {
   return false;
 }
 }  // namespace Impl
