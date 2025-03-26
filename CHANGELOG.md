@@ -22,6 +22,7 @@ Adding support for batched QR on rectangular matrices (only had square support) 
 - Enable block support for sptrsv streams [\#2429](https://github.com/kokkos/kokkos-kernels/pull/2429)
 
 ### Enhancements:
+- Assume independent thread scheduling for NVIDIA Blackwell architecture [\#2558](https://github.com/kokkos/kokkos-kernels/pull/2558)
 
 #### Batched
 - Refactor batched serial pbtrs implementation details and tests [\#2504](https://github.com/kokkos/kokkos-kernels/pull/2504)
