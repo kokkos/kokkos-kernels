@@ -10,16 +10,9 @@ permissions:
   contents: none
 
 jobs:
-  check-pr-labels:
-    runs-on: [ubuntu-latest]
-    steps:
-      - uses: docker://agilepathway/pull-request-label-checker@sha256:ee57b0e1aedab22063ce6467a6e6358e254a9204693ca20d8a16b2d891db8d5f  # v1.6.32
-        with:
-          none_of: 'CI: skip-docs'
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
 
   check_updates:
-    needs: check-pr-labels
+    if: !contains(github.event.issue.labels.*.name, 'CI: skip-docs')
     runs-on: [ubuntu-latest]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
