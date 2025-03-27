@@ -35,8 +35,6 @@
 #endif
 
 namespace KokkosSparse {
-namespace Experimental {
-
 // TODO TP2 algorithm had issues with some offset-ordinal combo to be addressed
 // when compiled in Trilinos...
 enum class SPTRSVAlgorithm {
@@ -50,6 +48,12 @@ enum class SPTRSVAlgorithm {
   SUPERNODAL_SPMV,
   SUPERNODAL_SPMV_DAG
 };
+
+namespace Experimental {
+
+using SPTRSVAlgorithm
+[[deprecated("KokkosSparse::Experimental::SPTRSVAlgorithm has been moved to KokkosSparse::SPTRSVAlgorithm. Use KokkosSparse::SPTRSVAlgorithm instead.")]]
+ = KokkosSparse::SPTRSVAlgorithm;
 
 template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace, class TemporaryMemorySpace,
           class PersistentMemorySpace>
@@ -268,7 +272,7 @@ class SPTRSVHandle {
 
   bool lower_tri;
 
-  SPTRSVAlgorithm algm;
+  KokkosSparse::SPTRSVAlgorithm algm;
 
   // Symbolic: Level scheduling data
   signed_nnz_lno_view_t level_list;
@@ -300,14 +304,14 @@ class SPTRSVHandle {
   bool require_symbolic_chain_phase;
 
   void set_if_algm_require_symb_lvlsched() {
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_RP ||
-        algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1
+    if (algm == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_RP ||
+        algm == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1
         /*|| algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
-        || algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN
+        || algm == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-        || algm == SPTRSVAlgorithm::SUPERNODAL_NAIVE || algm == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
-        algm == SPTRSVAlgorithm::SUPERNODAL_DAG || algm == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-        algm == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG
+        || algm == KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_NAIVE || algm == KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+        algm == KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_DAG || algm == KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+        algm == KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG
 #endif
     ) {
       require_symbolic_lvlsched_phase = true;
@@ -317,7 +321,7 @@ class SPTRSVHandle {
   }
 
   void set_if_algm_require_symb_chain() {
-    if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
+    if (algm == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
       require_symbolic_chain_phase = true;
     } else {
       require_symbolic_chain_phase = false;
@@ -400,7 +404,7 @@ class SPTRSVHandle {
 #endif
 
  public:
-  SPTRSVHandle(SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_, const size_type block_size_ = 0,
+  SPTRSVHandle(KokkosSparse::SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_, const size_type block_size_ = 0,
                bool symbolic_complete_ = false, bool numeric_complete_ = false)
       :
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
@@ -457,7 +461,7 @@ class SPTRSVHandle {
 
     // Check a few prerequisites before allowing users
     // to run with the cusparse implementation of sptrsv.
-    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+    if (algm == KokkosSparse::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       throw(
           std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but "
@@ -472,7 +476,7 @@ class SPTRSVHandle {
     }
 
 #if defined(__clang__) && defined(KOKKOS_ENABLE_CUDA)
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && Kokkos::ArithTraits<scalar_t>::isComplex &&
+    if (algm == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1 && Kokkos::ArithTraits<scalar_t>::isComplex &&
         std::is_same_v<execution_space, Kokkos::Cuda> && block_size_ != 0) {
       throw(std::runtime_error(
           "sptrsv handle: SPTRSV may not work with blocks+clang+cuda+complex due to a compiler bug"));
@@ -845,14 +849,14 @@ class SPTRSVHandle {
 
   // Can change the algorithm to a "Compatible algorithms" - for ease in some
   // testing cases
-  void set_algorithm(SPTRSVAlgorithm choice) {
+  void set_algorithm(KokkosSparse::SPTRSVAlgorithm choice) {
     if (algm != choice) {
       algm = choice;
     }
   }
 
   KOKKOS_INLINE_FUNCTION
-  SPTRSVAlgorithm get_algorithm() { return algm; }
+  KokkosSparse::SPTRSVAlgorithm get_algorithm() { return algm; }
 
   KOKKOS_INLINE_FUNCTION
   signed_nnz_lno_view_t get_level_list() const { return level_list; }
@@ -965,15 +969,15 @@ class SPTRSVHandle {
     std::string ret_string;
 
     switch (algm) {
-      case SPTRSVAlgorithm::SEQLVLSCHD_RP: ret_string = "SEQLVLSCHD_RP"; break;
-      case SPTRSVAlgorithm::SEQLVLSCHD_TP1: ret_string = "SEQLVLSCHD_TP1"; break;
-      case SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN: ret_string = "SEQLVLSCHD_TP1CHAIN"; break;
-      case SPTRSVAlgorithm::SPTRSV_CUSPARSE: ret_string = "SPTRSV_CUSPARSE"; break;
-      case SPTRSVAlgorithm::SUPERNODAL_NAIVE: ret_string = "SUPERNODAL_NAIVE"; break;
-      case SPTRSVAlgorithm::SUPERNODAL_ETREE: ret_string = "SUPERNODAL_ETREE"; break;
-      case SPTRSVAlgorithm::SUPERNODAL_DAG: ret_string = "SUPERNODAL_DAG"; break;
-      case SPTRSVAlgorithm::SUPERNODAL_SPMV: ret_string = "SUPERNODAL_SPMV"; break;
-      case SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG: ret_string = "SUPERNODAL_SPMV_DAG"; break;
+      case KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_RP: ret_string = "SEQLVLSCHD_RP"; break;
+      case KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1: ret_string = "SEQLVLSCHD_TP1"; break;
+      case KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN: ret_string = "SEQLVLSCHD_TP1CHAIN"; break;
+      case KokkosSparse::SPTRSVAlgorithm::SPTRSV_CUSPARSE: ret_string = "SPTRSV_CUSPARSE"; break;
+      case KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_NAIVE: ret_string = "SUPERNODAL_NAIVE"; break;
+      case KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_ETREE: ret_string = "SUPERNODAL_ETREE"; break;
+      case KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_DAG: ret_string = "SUPERNODAL_DAG"; break;
+      case KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_SPMV: ret_string = "SUPERNODAL_SPMV"; break;
+      case KokkosSparse::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG: ret_string = "SUPERNODAL_SPMV_DAG"; break;
       default: KK_REQUIRE_MSG(false, "Unhandled sptrsv algorithm: " << static_cast<int>(algm));
     }
 
