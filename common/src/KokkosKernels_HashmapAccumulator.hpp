@@ -540,7 +540,7 @@ struct HashmapAccumulator {
   template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION int vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(
       const team_member_t & /* teamMember */, const int /* vector_size */, size_type hash, const key_type key,
-      const value_type value, volatile size_type *used_size, const size_type max_value_size_) {
+      const value_type value, volatile size_type *used_size, const size_type max_value_size) {
     // Cannot compute hash here due to impl_speed use-case
     // hash = compute_hash(key, hashOpRHS_);
     if (key == -1) return insert_success_;
@@ -559,12 +559,12 @@ struct HashmapAccumulator {
 
     // Ensure that threads don't continue incrementing used_size if the hashmap
     // is full, used_size could overflow and result in undefined behavior.
-    if (used_size[0] >= max_value_size_) {
+    if (used_size[0] >= max_value_size) {
       return insert_full_;
     }
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size, size_type(1));
 
-    if (my_write_index >= max_value_size_) {
+    if (my_write_index >= max_value_size) {
       return insert_full_;
     } else {
       keys[my_write_index]   = key;
