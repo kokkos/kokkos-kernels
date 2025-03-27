@@ -113,13 +113,13 @@ struct HashmapAccumulator {
    * Assumption: hash_begins_ are all initialized to -1.
    */
   KOKKOS_INLINE_FUNCTION
-  HashmapAccumulator(const size_type max_value_size_, const size_type hashOpRHS, size_type *hash_begins_,
+  HashmapAccumulator(const size_type max_value_size, const size_type hashOpRHS, size_type *hash_begins_,
                      size_type *hash_nexts_, key_type *keys_, value_type *values_)
       : hash_begins(hash_begins_),
         hash_nexts(hash_nexts_),
         keys(keys_),
         values(values_),
-        max_value_size_(max_value_size_),
+        max_value_size_(max_value_size),
         hashOpRHS_(hashOpRHS) {
     // Substract 1 and use the bitwiseAnd compute_hash member.
     if (std::is_same<hash_type, HashOpType::pow2Modulo>::value) {
