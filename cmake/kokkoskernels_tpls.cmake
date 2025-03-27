@@ -50,7 +50,7 @@ ENDMACRO()
 MACRO(kokkoskernels_create_imported_tpl NAME)
   CMAKE_PARSE_ARGUMENTS(TPL
    "INTERFACE"
-   "LIBRARY;IMPORTED_NAME"
+   "LIBRARY;IMPORTED_NAME;EXISTING_IMPORTED_TARGET"
    "LINK_LIBRARIES;INCLUDES;COMPILE_OPTIONS;LINK_OPTIONS"
    ${ARGN})
 
@@ -62,6 +62,11 @@ MACRO(kokkoskernels_create_imported_tpl NAME)
 
   IF (KOKKOSKERNELS_HAS_TRILINOS)
     #TODO: we need to set a bunch of cache variables here
+  ELSEIF (TPL_EXISTING_IMPORTED_TARGET)
+    # a target alread exists, e.g. from FIND_PACKAGE(CUDAToolkit)
+    # we do not need to make a new library, just alias it to what
+    # KokkosKernels is expected to provide
+    ADD_LIBRARY(${TPL_IMPORTED_NAME} ALIAS ${TPL_EXISTING_IMPORTED_TARGET})
   ELSEIF (TPL_INTERFACE)
     ADD_LIBRARY(${NAME} INTERFACE)
     #Give this an importy-looking name
