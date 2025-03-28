@@ -51,7 +51,7 @@ Example
   using Layout  = default_layout;
 
   int main(int argc, char* argv[]) {
-    Kokkos::initialize();
+    Kokkos::initialize(argc, argv);
     {
       ...
     }
