@@ -11,7 +11,7 @@ Defined in header: :code:`Namespace_function.hpp`
   template <class input_type, class output_type>
   void function(const input_type& in, const output_type& out);
 
-Explain what the function does and what each overall specificities are.
+Explain what the <function> does and what each overall specificities are.
 
 Parameters
 ==========
