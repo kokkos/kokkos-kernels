@@ -2,87 +2,47 @@ name: github-DOCS
 
 on:
   pull_request:
-    branches:
-      - master
-      - develop
+    types: [ opened, reopened, synchronize ]
+  push:
+    branches: [ develop ]
 
 permissions:
   contents: none
 
 jobs:
-  docs-check:
+  build:
     runs-on: [macos-latest]
     steps:
-      - name: checkout_kokkos_kernels
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: kokkos-kernels
-
-      - name: Install Dependencies
-        run: |
-          brew install doxygen
-          python3 -m venv .venv
-          . .venv/bin/activate
-          pip install -r kokkos-kernels/.github/workflows/requirements_docs.txt
-          sphinx-build --version
-          doxygen --version
-
-      - name: checkout_kokkos
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
-          repository: kokkos/kokkos
-          ref: 4.4.01
-          path: kokkos
-
-      - name: configure_kokkos
+          python-version: '3.13.2'
+      - run: pip install --require-hashes -r kokkos-kernels/docs/build_requirements.txt
+      - name: build_docs
+        working-directory: kokkos-kernels/docs
         run: |
-          mkdir -p kokkos/{build,install}
-          cd kokkos/build
-          cmake \
-          -DCMAKE_CXX_FLAGS="-Werror" \
-          -DCMAKE_CXX_STANDARD=17 \
-          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
-          -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
-          -DKokkos_ENABLE_TESTS=OFF \
-          -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
-          ..
+          make html
+      - name: Updload documentation as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          name: github-pages
+          path: kokkos-kernels/docs/generated_docs/
 
-      - name: build_and_install_kokkos
-        working-directory: kokkos/build
-        run: make -j2 install
-
-      # sphinx needs to be available at configure time for the target to be generated
-      - name: configure_kokkos_kernels
-        run: |
-          . .venv/bin/activate
-          mkdir -p kokkos-kernels/{build,install}
-          cd kokkos-kernels/build
-          cmake \
-          -DKokkos_DIR=$PWD/../../kokkos/install/lib/cmake/Kokkos \
-          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
-          -DKokkosKernels_ENABLE_DOCS=ON \
-          ..
-
-      - name: build_kokkos_kernels_doxygen
-        working-directory: kokkos-kernels/build
-        run: |
-         echo "Redirecting full output to doxygen.out..."
-         make Doxygen > doxygen.out 2>&1 || true
-         error_ret=$(grep 'Error' doxygen.out | head -c 1) || true
-         if [ ! -z $error_ret ]; then
-          echo "---- BEGIN: Summary of errors ---- "
-          cat doxygen.out | grep -i 'error:' || true
-          echo "---- END: Summary of errors ---- "
-          echo
-          echo
-          echo "---- BEGIN: Summary of warnings ---- "
-          cat doxygen.out | grep -i 'warning:' || true
-          echo "---- END: Summary of warnings ---- "
-          exit 1
-         fi
-
-      - name: build_kokkos_kernels_sphinx
-        run: | 
-          . .venv/bin/activate
-          cd kokkos-kernels/build
-          make Sphinx
+  deploy:
+    if: ${{ github.ref == 'refs/heads/develop' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: [macos-latest]
+    needs: build
+    permissions:
+      contents: read
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
