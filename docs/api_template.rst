@@ -1,7 +1,7 @@
 namespace::function
 ###################
 
-Defined in header: :code:`Namespace_function.hpp`
+Defined in header: :code:`<namespace>_<function>.hpp`
 
 .. code:: c++
 
