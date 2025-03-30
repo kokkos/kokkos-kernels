@@ -94,6 +94,7 @@ struct Functor_TestBatchedTeamGemm {
 /// \tparam BViewType View type for matrix B
 /// \tparam CViewType View type for matrix C
 /// \tparam ErrorBoundViewType [out] View type for the error bound
+/// \tparam ScalarType Type for scalar alpha and beta
 
 /// \param A [in] Input matrix A
 /// \param B [in] Input matrix B
@@ -103,9 +104,9 @@ struct Functor_TestBatchedTeamGemm {
 /// \param beta [in] Scalar multiplier for matrix C
 /// \param eps [in] Machine precision
 template <typename ArgTransA, typename ArgTransB, typename AViewType, typename BViewType, typename CViewType,
-          typename ErrorBoundViewType>
+          typename ErrorBoundViewType, typename ScalarType>
 void gemm_error_bound(const AViewType &A, const BViewType &B, const CViewType &C, const ErrorBoundViewType &error_bound,
-                      double alpha, double beta, double eps) {
+                      ScalarType alpha, ScalarType beta, double eps) {
   using value_type = typename AViewType::non_const_value_type;
   using ats        = Kokkos::ArithTraits<value_type>;
   using mag_type   = typename ats::mag_type;
@@ -173,6 +174,7 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
   using ViewType        = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
   using FP64Type     = std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, Kokkos::complex<double>, double>;
   using ViewFP64Type = Kokkos::View<FP64Type ***, LayoutType, DeviceType>;
+  using ErrorViewFP64Type = Kokkos::View<double ***, LayoutType, DeviceType>;
 
   /// randomized input testing views
   ScalarType alpha = ScalarType(1.5), beta = ScalarType(3.0);
@@ -180,7 +182,8 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
 
   ViewType A("A", N, matAdim1, matAdim2), B("B", N, matBdim1, matBdim2), C("C", N, matCdim1, matCdim2);
   ViewFP64Type A_fp64("A_fp64", N, matAdim1, matAdim2), B_fp64("B_fp64", N, matBdim1, matBdim2),
-      C_fp64("C_fp64", N, matCdim1, matCdim2), ErrorBound("ErrorBound", N, matCdim1, matCdim2);
+      C_fp64("C_fp64", N, matCdim1, matCdim2);
+  ErrorViewFP64Type ErrorBound("ErrorBound", N, matCdim1, matCdim2);
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
