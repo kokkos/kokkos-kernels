@@ -61,7 +61,7 @@ struct SerialSVD {
       SVD_USV_Tag, const AViewType &A, const UViewType &U, const SViewType &s, const VtViewType &Vt, const WViewType &W,
       typename AViewType::const_value_type tol = Kokkos::ArithTraits<typename AViewType::value_type>::zero());
 
-  // 
+  // Get the workspace size required for a given matrix.
   template <typename AViewType>
   KOKKOS_INLINE_FUNCTION static size_t work_size(const AViewType &A);
 
