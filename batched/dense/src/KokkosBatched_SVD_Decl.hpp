@@ -61,6 +61,10 @@ struct SerialSVD {
       SVD_USV_Tag, const AViewType &A, const UViewType &U, const SViewType &s, const VtViewType &Vt, const WViewType &W,
       typename AViewType::const_value_type tol = Kokkos::ArithTraits<typename AViewType::value_type>::zero());
 
+  // 
+  template <typename AViewType>
+  KOKKOS_INLINE_FUNCTION static size_t work_size(const AViewType &A);
+
   // Version which computes only singular values
   template <typename AViewType, typename SViewType, typename WViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
