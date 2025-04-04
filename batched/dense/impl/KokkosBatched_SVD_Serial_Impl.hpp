@@ -39,6 +39,12 @@ KOKKOS_INLINE_FUNCTION int SerialSVD::invoke(SVD_USV_Tag, const AViewType &A, co
       Vt.stride(0), Vt.stride(1), sigma.data(), sigma.stride(0), work.data(), tol);
 }
 
+// Tell users how much memory the work buffer needs
+template <typename AViewType>
+KOKKOS_INLINE_FUNCTION static size_t work_size(const AViewType &A) {
+  return Kokkos::max(A.extent_int(0), A.extent_int(1));
+}
+
 // Version which computes only singular values
 template <typename AViewType, typename SViewType, typename WViewType>
 KOKKOS_INLINE_FUNCTION int SerialSVD::invoke(SVD_S_Tag, const AViewType &A, const SViewType &sigma,
