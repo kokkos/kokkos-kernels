@@ -29,9 +29,12 @@ KOKKOS_INLINE_FUNCTION static int checkGemmInput([[maybe_unused]] const AViewTyp
   static_assert(Kokkos::is_view_v<BViewType>, "KokkosBatched::gemm: BViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<CViewType>, "KokkosBatched::gemm: CViewType is not a Kokkos::View.");
 
-  static_assert(AViewType::rank <= 2, "KokkosBatched::gemm: AViewType must have rank 0, 1 or 2.");
-  static_assert(BViewType::rank <= 2, "KokkosBatched::gemm: BViewType must have rank 0, 1 or 2.");
-  static_assert(CViewType::rank <= 2, "KokkosBatched::gemm: CViewType must have rank 0, 1 or 2.");
+  static_assert(AViewType::rank() <= 2, "KokkosBatched::gemm: AViewType must have rank 0, 1 or 2.");
+  static_assert(BViewType::rank() <= 2, "KokkosBatched::gemm: BViewType must have rank 0, 1 or 2.");
+  static_assert(CViewType::rank() <= 2, "KokkosBatched::gemm: CViewType must have rank 0, 1 or 2.");
+
+  static_assert(std::is_same_v<typename CViewType::value_type, typename CViewType::non_const_value_type>,
+                "KokkosBatched::gemm: CViewType must have non-const value type.");
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   const int m = C.extent(0), n = C.extent(1);
