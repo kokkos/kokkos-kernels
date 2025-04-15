@@ -55,7 +55,7 @@ src_doc_mapping = dict([
                         ('blas/src/KokkosBlas1_rotm.hpp', ['blas1_rotm.rst']),
                         ('blas/src/KokkosBlas1_rotmg.hpp', ['blas1_rotmg.rst']),
                         ('blas/src/KokkosBlas1_scal.hpp', ['blas1_scal.rst']),
-                        # ('blas/src/KokkosBlas1_set.hpp', ['']),
+                        ('blas/src/KokkosBlas1_set.hpp', ['blas1_set.rst']),
                         # ('blas/src/KokkosBlas1_sum.hpp', ['']),
                         ('blas/src/KokkosBlas1_swap.hpp', ['blas1_swap.rst']),
                         # ('blas/src/KokkosBlas1_update.hpp', ['']),
