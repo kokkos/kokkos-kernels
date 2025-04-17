@@ -1290,7 +1290,6 @@ struct SptrsvWrap {
     using LowerTPFunc = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, true, BlockEnabled);
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
-    using namespace KokkosSparse::Experimental;
     using device_t            = Kokkos::Device<execution_space, temp_mem_space>;
     using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
     using row_map_host_view_t = Kokkos::View<size_type *, Kokkos::HostSpace>;
@@ -1348,14 +1347,14 @@ struct SptrsvWrap {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSPSTRSV_SOLVE_IMPL_PROFILE)
         cudaProfilerStart();
 #endif
-        if (thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
+        if (thandle.get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
           LowerRPFunc lrpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, block_size);
 
           Kokkos::parallel_for("parfor_fixed_lvl",
                                Kokkos::Experimental::require(range_policy(space, node_count, node_count + lvl_nodes),
                                                              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
                                lrpp);
-        } else if (thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
+        } else if (thandle.get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
           LowerTPFunc ltpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
           auto tp =
@@ -1551,7 +1550,7 @@ struct SptrsvWrap {
         cudaProfilerStop();
 #endif
       }  // end if
-    }    // end for lvl
+    }  // end for lvl
 
 #ifdef profile_supernodal_etree
     Kokkos::fence();
@@ -1586,7 +1585,6 @@ struct SptrsvWrap {
     using UpperTPFunc = FunctorTypeMacro(TriLvlSchedTP1SolverFunctor, false, BlockEnabled);
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
-    using namespace KokkosSparse::Experimental;
     using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
     using row_map_host_view_t = Kokkos::View<size_type *, Kokkos::HostSpace>;
 
@@ -1644,13 +1642,13 @@ struct SptrsvWrap {
         cudaProfilerStart();
 #endif
 
-        if (thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
+        if (thandle.get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
           UpperRPFunc urpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, block_size);
           Kokkos::parallel_for("parfor_fixed_lvl",
                                Kokkos::Experimental::require(range_policy(space, node_count, node_count + lvl_nodes),
                                                              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
                                urpp);
-        } else if (thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
+        } else if (thandle.get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
           UpperTPFunc utpp(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, block_size);
           int team_size = thandle.get_team_size();
           auto tp =
@@ -1955,7 +1953,7 @@ struct SptrsvWrap {
         cudaProfilerStop();
 #endif
       }  // end if
-    }    // end for lvl
+    }  // end for lvl
 #ifdef profile_supernodal_etree
     Kokkos::fence();
     double sptrsv_time_seconds = sptrsv_timer.seconds();
@@ -2116,12 +2114,12 @@ struct SptrsvWrap {
           const auto block_enabled  = thandle_v[i]->is_block_enabled();
           KK_REQUIRE(block_enabled == BlockEnabled);
           if (lvl_nodes != 0) {
-            if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
+            if (thandle_v[i]->get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
               Kokkos::parallel_for("parfor_fixed_lvl",
                                    range_policy(execspace_v[i], node_count_v[i], node_count_v[i] + lvl_nodes),
                                    RPFunctor(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i],
                                              nodes_grouped_by_level_v[i], block_size));
-            } else if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
+            } else if (thandle_v[i]->get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
               int team_size = thandle_v[i]->get_team_size();
               auto tp       = team_size == -1 ? team_policy(execspace_v[i], lvl_nodes, Kokkos::AUTO)
                                               : team_policy(execspace_v[i], lvl_nodes, team_size);
@@ -2137,10 +2135,10 @@ struct SptrsvWrap {
             }
             node_count_v[i] += lvl_nodes;
           }  // end if (lvl_nodes != 0)
-        }    // end if (lvl < nlevels_v[i])
-      }      // end for streams
-    }        // end for lvl
-  }          // end tri_solve_streams
+        }  // end if (lvl < nlevels_v[i])
+      }  // end for streams
+    }  // end for lvl
+  }  // end tri_solve_streams
 
 };  // struct SptrsvWrap
 
