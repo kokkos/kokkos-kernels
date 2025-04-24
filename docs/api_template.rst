@@ -40,10 +40,10 @@ Type Requirements
 Example
 =======
 
-.. code:: cppkokkos
+.. code:: cpp
 
-  #include "Kokkos_Core.hpp"
-  #include "Namespace_function.hpp"
+  #include <Kokkos_Core.hpp>
+  #include <Namespace_function.hpp>
 
   using Scalar  = default_scalar;
   using Ordinal = default_lno_t;
