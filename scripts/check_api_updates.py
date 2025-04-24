@@ -109,8 +109,8 @@ src_doc_mapping = dict([
                         # ('sparse/src/KokkosSparse_gmres_handle.hpp', []),
                         # ('sparse/src/KokkosSparse_mdf.hpp', []),
                         # ('sparse/src/KokkosSparse_mdf_handle.hpp', []),
-                        # ('sparse/src/KokkosSparse_par_ilut.hpp', []),
-                        # ('sparse/src/KokkosSparse_par_ilut_handle.hpp', []),
+                        ('sparse/src/KokkosSparse_par_ilut.hpp', ['docs/source/API/sparse/par_ilut.rst']),
+                        ('sparse/src/KokkosSparse_par_ilut_handle.hpp', ['docs/source/API/sparse/par_ilut.rst']),
                         ('sparse/src/KokkosSparse_spadd.hpp', ['docs/source/API/sparse/spadd_numeric.rst',
                                                                'docs/source/API/sparse/spadd_symbolic.rst']),
                         # ('sparse/src/KokkosSparse_spadd_handle.hpp', [])
