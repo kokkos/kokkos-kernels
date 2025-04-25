@@ -1,5 +1,5 @@
 KokkosSparse::par_ilut_symbolic
-###################
+###############################
 
 Parallel threshold incomplete LU factorization ILU(t)
 
@@ -59,8 +59,8 @@ Type Requirements
 - ``L_rowmap`` A rank 1 view of (non const) size type
 - ``U_rowmap`` A rank 1 view of (non const) size type
 
-  KokkosSparse::par_ilut_numeric
-###################
+KokkosSparse::par_ilut_numeric
+##############################
 
 Defined in header: :code:`KokkosSparse_par_ilut.hpp`
 
@@ -106,14 +106,16 @@ Type Requirements
 - ``U_entries`` A rank 1 view of ordinal type
 - ``U_values`` A rank 1 view of scalar type
 
-    KokkosSparse::PAR_ILUTHandle
-###################
+
+KokkosSparse::PAR_ILUTHandle
+############################
+
 Defined in header: :code:`KokkosSparse_par_ilut_handle.hpp`
 
 .. code:: cppkokkos
 
-  PAR_ILUTHandle(const size_type max_iter_, const float_t residual_norm_delta_stop_, const float_t fill_in_limit_,
-                 const bool async_update_, const bool verbose_);
+  PAR_ILUTHandle(const size_type max_iter, const float_t residual_norm_delta_stop, const float_t fill_in_limit,
+                 const bool async_update, const bool verbose);
 
 The handle for the par_ilut algorithm, this should be created from a KernelHandle.
 
@@ -124,28 +126,28 @@ The handle for the par_ilut algorithm, this should be created from a KernelHandl
 Parameters
 ==========
 
-:max_iter_: Hard cap on the number of par_ilut iterations
-:residual_norm_delta_stop_: When the change in residual from
-                            iteration to iteration drops below
-                            this, the algorithm will stop (even if
-                            max_iters has not been hit). If this is set to
-                            zero, computing residual step will be skipped which
-                            can reduce overall memory use and speed up the individual
-                            iterations (it will always do max_iter iterations though).
-:fill_in_limit_: The threshold for removing candidates
-                 from the intermediate L and U is set such
-                 that the resulting sparsity pattern has
-                 at most `fill_in_limit` times the number
-                 of non-zeros of the ILU(0)
-                 factorization. This selection is executed
-                 separately for both factors L and U. A higher fill limit
-                 (2 or 3) may be necessary for very sparse matrices to achieve a
-                 good preconditioner but this will increase the resources needed
-                 by par_ilut.
-:async_update_: Whether compute LU factors should do asychronous
-                updates. When ON, the algorithm will usually converge
-                faster but it makes the algorithm non-deterministic.
-:verbose_: Print information while executing par_ilut
+:max_iter: Hard cap on the number of par_ilut iterations
+:residual_norm_delta_stop: When the change in residual from
+                           iteration to iteration drops below
+                           this, the algorithm will stop (even if
+                           max_iters has not been hit). If this is set to
+                           zero, computing residual step will be skipped which
+                           can reduce overall memory use and speed up the individual
+                           iterations (it will always do max_iter iterations though).
+:fill_in_limit: The threshold for removing candidates
+                from the intermediate L and U is set such
+                that the resulting sparsity pattern has
+                at most `fill_in_limit` times the number
+                of non-zeros of the ILU(0)
+                factorization. This selection is executed
+                separately for both factors L and U. A higher fill limit
+                (2 or 3) may be necessary for very sparse matrices to achieve a
+                good preconditioner but this will increase the resources needed
+                by par_ilut.
+:async_update: Whether compute LU factors should do asychronous
+               updates. When ON, the algorithm will usually converge
+               faster but it makes the algorithm non-deterministic.
+:verbose: Print information while executing par_ilut
 
 Example
 =======
