@@ -40,6 +40,7 @@
 #include "KokkosKernels_Error.hpp"
 #include "KokkosSparse_par_ilut_symbolic_spec.hpp"
 #include "KokkosSparse_par_ilut_numeric_spec.hpp"
+#include "std_algorithms/Kokkos_IsSorted.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
