@@ -153,8 +153,22 @@ class BatchedSerialGemm {
     // matrix transpositions, here we must perform the GEMM on:
     // row_vec x col_vec, which is svA_row' x svB_col to compute the element
     // of C.
-    KokkosBatched::SerialGemm<Trans::Transpose, Trans::NoTranspose, ArgMode>::invoke(alpha, svA_row, svB_col, beta,
-                                                                                     svC_ele);
+    // KokkosBatched::SerialGemm<Trans::Transpose, Trans::NoTranspose, ArgMode>::invoke(alpha, svA_row, svB_col, beta,
+    //                                                                                    svC_ele);
+    using ValueType             = typename CViewType::value_type;
+    ValueType svA_row_x_svB_col = 0;
+    // KokkosBatched::SerialDotInternal::invoke(svA_row.extent(0), svA_row.data(), svA_row.stride(0),
+    //   svB_col.data(), svB_col.stride(0), &svA_row_x_svB_col);
+
+    using ats = Kokkos::ArithTraits<ValueType>;
+    // iC[0]      = ValueType(0);
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+    for (int j = 0; j < int(svA_row.extent(0)); ++j) {
+      svA_row_x_svB_col += ats::conj(svA_row(j)) * svB_col(j);
+    }
+    svC_ele() = beta * svC_ele() + alpha * svA_row_x_svB_col;
   }
 
   KOKKOS_INLINE_FUNCTION

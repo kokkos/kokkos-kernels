@@ -316,9 +316,11 @@ KOKKOS_FUNCTION void serial_axpy(const scalar_type alpha, const XMV X, YMV Y) {
     Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
   }
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL
-
-  return Impl::serial_axpy_mv(X.extent(0), X.extent(1), alpha, X.data(), Y.data(), X.stride_0(), X.stride_1(),
-                              Y.stride_0(), Y.stride_1());
+  if constexpr (XMV::rank() == 1)
+    return Impl::serial_axpy(X.extent(0), alpha, X.data(), Y.data(), X.stride(0), Y.stride(0));
+  else
+    return Impl::serial_axpy_mv(X.extent(0), X.extent(1), alpha, X.data(), Y.data(), X.stride(0), X.stride(1),
+                                Y.stride(0), Y.stride(1));
 }
 
 }  // namespace KokkosBlas
