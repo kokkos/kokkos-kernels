@@ -69,49 +69,49 @@ jobs:
           mkdir -p kokkos/{build,install}
           cd kokkos/build
           cmake \
-          -DKokkos_ENABLE_${{ matrix.backend }}=ON \
-          -DCMAKE_CXX_FLAGS="-Werror" \
-          -DCMAKE_CXX_STANDARD=17 \
-          -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
-          -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
-          -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
-          -DKokkos_ENABLE_TESTS=OFF \
-          -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
-          -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
-          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
-          ..
+	  -S "$PWD/.." \
+	  -B "$PWD" \
+          -D CMAKE_CXX_FLAGS="-Werror" \
+          -D CMAKE_CXX_STANDARD=17 \
+          -D CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+          -D CMAKE_INSTALL_PREFIX=$PWD/../install \
+          -D Kokkos_ENABLE_${{ matrix.backend }}=ON \
+          -D Kokkos_ENABLE_COMPILER_WARNINGS=ON \
+          -D Kokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
+          -D Kokkos_ENABLE_DEPRECATED_CODE_3=OFF \
+          -D Kokkos_ENABLE_TESTS=OFF \
+          -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
-        run: make -j2 install
+        run: cmake --build . --target install --parallel $(nproc)
 
       - name: configure_kokkos_kernels
         run: |
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           cmake \
-          -DKokkos_DIR=$PWD/../../kokkos/install/lib/cmake/Kokkos \
-          -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
-          -DCMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
-          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
-          -DKokkosKernels_ENABLE_TESTS=ON \
-          -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
-          -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
-          -DKokkosKernels_INST_DOUBLE=ON \
-          -DKokkosKernels_INST_COMPLEX_FLOAT=ON \
-          -DKokkosKernels_INST_FLOAT=ON \
-          -DKokkosKernels_INST_LAYOUTLEFT:BOOL=ON \
-          -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON \
-          -DKokkosKernels_INST_OFFSET_INT=ON \
-          -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
-          -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
-          -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
-          ..
+	  -S "$PWD/.." \
+	  -B "$PWD" \
+          -D Kokkos_ROOT="$PWD/../../kokkos/install" \
+          -D CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+          -D CMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
+          -D CMAKE_INSTALL_PREFIX="$PWD/../install" \
+          -D KokkosKernels_ENABLE_TESTS=ON \
+          -D KokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+          -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
+          -D KokkosKernels_INST_DOUBLE=ON \
+          -D KokkosKernels_INST_COMPLEX_FLOAT=ON \
+          -D KokkosKernels_INST_FLOAT=ON \
+          -D KokkosKernels_INST_LAYOUTLEFT:BOOL=ON \
+          -D KokkosKernels_INST_LAYOUTRIGHT:BOOL=ON \
+          -D KokkosKernels_INST_OFFSET_INT=ON \
+          -D KokkosKernels_INST_OFFSET_SIZE_T=ON
 
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
-        run: make -j2
+        run: cmake --build . --target install --parallel $(nproc)
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest -j2 --output-on-failure --timeout 7200
+        run: ctest -j $(nproc) --output-on-failure --timeout 7200
