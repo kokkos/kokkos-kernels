@@ -84,7 +84,7 @@ jobs:
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
-        run: cmake --build . --target install --parallel $(nproc)
+        run: cmake --build . --target install --parallel 3
 
       - name: configure_kokkos_kernels
         run: |
@@ -110,8 +110,8 @@ jobs:
 
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
-        run: cmake --build . --target install --parallel $(nproc)
+        run: cmake --build . --target install --parallel 3
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest -j $(nproc) --output-on-failure --timeout 7200
+        run: ctest -j 3 --output-on-failure --timeout 7200
