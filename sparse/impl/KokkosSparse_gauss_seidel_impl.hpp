@@ -335,12 +335,11 @@ class PointGaussSeidel {
         // if the current row size is larger than shared memory size,
         // than allocate l2 vector.
         if (row.size() > num_max_vals_in_l1) {
-          volatile nnz_scalar_t* tmp = NULL;
-          while (tmp == NULL) {
+          uintptr_t tmp = 0;
+          while (tmp == 0) {
             Kokkos::single(
                 Kokkos::PerThread(teamMember),
-                [&](volatile nnz_scalar_t*& memptr) { memptr = (volatile nnz_scalar_t*)(pool.allocate_chunk(ii)); },
-                tmp);
+                [&](uintptr_t& memptr) { memptr = reinterpret_cast<uintptr_t>(pool.allocate_chunk(ii)); }, tmp);
           }
           all_global_memory = (nnz_scalar_t*)tmp;
           l1_val_size       = num_max_vals_in_l1 * block_size;

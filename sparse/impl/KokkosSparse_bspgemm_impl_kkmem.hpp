@@ -376,17 +376,18 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
           nnz_lno_t *globally_used_hash_indices = NULL;
 
           if (global_memory_hash_size > thread_shmem_key_size) {
-            nnz_lno_t *tmp = NULL;
+            uintptr_t tmp = 0;
             // size_t tid = get_thread_id(row_index);
             // the code gets internal compiler error on gcc 4.7.2
             // assuming that this part only runs on GPUs for now, below fix
             // has the exact same behaviour and runs okay.
             size_t tid = row_index;
 
-            while (tmp == NULL) {
+            while (tmp == 0) {
               Kokkos::single(
                   Kokkos::PerThread(teamMember),
-                  [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(memory_space.allocate_chunk(tid)); }, tmp);
+                  [&](uintptr_t &memptr) { memptr = reinterpret_cast<uintptr_t>(memory_space.allocate_chunk(tid)); },
+                  tmp);
             }
 
             is_global_alloced          = true;

@@ -573,13 +573,11 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
       if (overall_num_unsuccess) {
         // then we allocate second level memory using memory pool.
         if (!l2_allocated) {
-          volatile nnz_lno_t *tmp = NULL;
-          while (tmp == NULL) {
+          uintptr_t tmp = 0;
+          while (tmp == 0) {
             Kokkos::single(
                 Kokkos::PerThread(teamMember),
-                [&](volatile nnz_lno_t *&memptr) {
-                  memptr = (volatile nnz_lno_t *)(memory_space.allocate_chunk(row_ind));
-                },
+                [&](uintptr_t &memptr) { memptr = reinterpret_cast<uintptr_t>(memory_space.allocate_chunk(row_ind)); },
                 tmp);
           }
           globally_used_hash_indices = (nnz_lno_t *)tmp;

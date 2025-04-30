@@ -424,15 +424,13 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
           // TODO: HashmapAccumulator should encapsulate growing the linked
           // lists.
           if (global_memory_hash_size > thread_shmem_key_size) {
-            volatile nnz_lno_t *tmp = NULL;
-            size_t tid              = row_index;
+            uintptr_t tmp = 0;
+            size_t tid    = row_index;
 
-            while (tmp == NULL) {
+            while (tmp == 0) {
               Kokkos::single(
                   Kokkos::PerThread(teamMember),
-                  [&](volatile nnz_lno_t *&memptr) {
-                    memptr = (volatile nnz_lno_t *)(memory_space.allocate_chunk(tid));
-                  },
+                  [&](uintptr_t &memptr) { memptr = reinterpret_cast<uintptr_t>(memory_space.allocate_chunk(tid)); },
                   tmp);
             }
 
@@ -751,20 +749,19 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
       scalar_t *c_row_vals           = valuesC.data() + c_row_begin;
       nnz_lno_t *global_acc_row_keys = c_row;
       scalar_t *global_acc_row_vals  = c_row_vals;
-      volatile nnz_lno_t *tmp        = NULL;
+      uintptr_t tmp                  = 0;
 
       // Initialize hashmaps
       if (c_row_size > max_first_level_hash_size) {
-        while (tmp == NULL) {
+        while (tmp == 0) {
           Kokkos::single(
               Kokkos::PerTeam(teamMember),
-              [&](volatile nnz_lno_t *&memptr) {
-                memptr = (volatile nnz_lno_t *)(memory_space.allocate_chunk(row_index));
-              },
+              [&](uintptr_t &memptr) { memptr = reinterpret_cast<uintptr_t>(memory_space.allocate_chunk(row_index)); },
               tmp);
         }
         global_acc_row_keys = (nnz_lno_t *)(tmp);
-        global_acc_row_vals = KokkosKernels::Impl::alignPtrTo<scalar_t>(tmp + pow2_hash_size);
+        global_acc_row_vals =
+            KokkosKernels::Impl::alignPtrTo<scalar_t>(reinterpret_cast<nnz_lno_t *>(tmp) + pow2_hash_size);
 
         nnz_lno_t num_threads = pow2_hash_size / vector_size;
         Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, num_threads), [&](nnz_lno_t teamind) {
@@ -1013,7 +1010,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
 
       teamMember.team_barrier();
 
-      if (tmp != NULL) {
+      if (tmp != 0) {
         for (nnz_lno_t my_index = vector_shift; my_index < pow2_hash_size; my_index += bs) {
           nnz_lno_t my_b_col = global_acc_row_keys[my_index];
           if (my_b_col != init_value) {
