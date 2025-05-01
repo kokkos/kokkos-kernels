@@ -29,26 +29,36 @@ KOKKOS_INLINE_FUNCTION static int checkGemmInput([[maybe_unused]] const AViewTyp
   static_assert(Kokkos::is_view_v<BViewType>, "KokkosBatched::gemm: BViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<CViewType>, "KokkosBatched::gemm: CViewType is not a Kokkos::View.");
 
-  static_assert(AViewType::rank() <= 2, "KokkosBatched::gemm: AViewType must have rank 0, 1 or 2.");
-  static_assert(BViewType::rank() <= 2, "KokkosBatched::gemm: BViewType must have rank 0, 1 or 2.");
-  static_assert(CViewType::rank() <= 2, "KokkosBatched::gemm: CViewType must have rank 0, 1 or 2.");
+  constexpr std::size_t A_rank = AViewType::rank();
+  constexpr std::size_t B_rank = BViewType::rank();
+  constexpr std::size_t C_rank = CViewType::rank();
+  static_assert(A_rank <= 2, "KokkosBatched::gemm: AViewType must have rank 0, 1 or 2.");
+  static_assert(B_rank <= 2, "KokkosBatched::gemm: BViewType must have rank 0, 1 or 2.");
+  static_assert(C_rank <= 2, "KokkosBatched::gemm: CViewType must have rank 0, 1 or 2.");
 
   static_assert(std::is_same_v<typename CViewType::value_type, typename CViewType::non_const_value_type>,
                 "KokkosBatched::gemm: CViewType must have non-const value type.");
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  const int m = C.extent(0), n = C.extent(1);
-  const int lda = A.extent(0);
-  const int ldb = B.extent(0);
+  const int A_extent_0 = get_extent_int(A, 0);
+  const int A_extent_1 = get_extent_int(A, 1);
+  const int B_extent_0 = get_extent_int(B, 0);
+  const int B_extent_1 = get_extent_int(B, 1);
+  const int C_extent_0 = get_extent_int(C, 0);
+  const int C_extent_1 = get_extent_int(C, 1);
 
-  const int ka = std::is_same_v<ArgTransA, Trans::NoTranspose> ? A.extent(1) : A.extent(0);
-  const int kb = std::is_same_v<ArgTransB, Trans::NoTranspose> ? B.extent(0) : B.extent(1);
+  const int m = C_extent_0, n = C_extent_1;
+  const int lda = A_extent_0;
+  const int ldb = B_extent_0;
+
+  const int ka = std::is_same_v<ArgTransA, Trans::NoTranspose> ? A_extent_1 : A_extent_0;
+  const int kb = std::is_same_v<ArgTransB, Trans::NoTranspose> ? B_extent_0 : B_extent_1;
 
   if (ka != kb) {
     Kokkos::printf(
         "KokkosBatched::gemm: Dimensions of A and B do not match: A: %d x %d, "
         "B: %d x %d\n",
-        A.extent(0), A.extent(1), B.extent(0), B.extent(1));
+        A_extent_0, A_extent_1, B_extent_0, B_extent_1);
     return 1;
   }
 
