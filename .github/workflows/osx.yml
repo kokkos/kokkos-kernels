@@ -72,13 +72,12 @@ jobs:
           -S "$PWD/.." \
           -B "$PWD" \
           -D CMAKE_CXX_FLAGS="-Werror" \
-          -D CMAKE_CXX_STANDARD=17 \
+          -D CMAKE_CXX_STANDARD=20 \
           -D CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -D CMAKE_INSTALL_PREFIX=$PWD/../install \
           -D Kokkos_ENABLE_${{ matrix.backend }}=ON \
           -D Kokkos_ENABLE_COMPILER_WARNINGS=ON \
           -D Kokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
-          -D Kokkos_ENABLE_DEPRECATED_CODE_3=OFF \
           -D Kokkos_ENABLE_TESTS=OFF \
           -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF
 
@@ -93,10 +92,11 @@ jobs:
           cmake \
           -S "$PWD/.." \
           -B "$PWD" \
-          -D Kokkos_ROOT="$PWD/../../kokkos/install" \
-          -D CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -D CMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
+          -D CMAKE_CXX_STANDARD=20 \
+          -D CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -D CMAKE_INSTALL_PREFIX="$PWD/../install" \
+          -D Kokkos_ROOT="$PWD/../../kokkos/install" \
           -D KokkosKernels_ENABLE_TESTS=ON \
           -D KokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
           -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
