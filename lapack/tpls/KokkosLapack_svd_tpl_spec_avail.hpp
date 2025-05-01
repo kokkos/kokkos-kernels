@@ -27,19 +27,19 @@ struct svd_tpl_spec_avail {
 
 // LAPACK
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-#define KOKKOSLAPACK_SVD_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, EXECSPACE)                                        \
-  template <>                                                                                                    \
-  struct svd_tpl_spec_avail<                                                                                     \
-      EXECSPACE,                                                                                                 \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                               \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                     \
-		   Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                     \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                               \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                     \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                               \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                   \
-    enum : bool { value = true };                                                                                \
+#define KOKKOSLAPACK_SVD_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, EXECSPACE)                                  \
+  template <>                                                                                              \
+  struct svd_tpl_spec_avail<                                                                               \
+      EXECSPACE,                                                                                           \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                         \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                               \
+      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                             \
+                   Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                         \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                               \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                         \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                             \
+    enum : bool { value = true };                                                                          \
   };
 
 #if defined(KOKKOS_ENABLE_SERIAL)

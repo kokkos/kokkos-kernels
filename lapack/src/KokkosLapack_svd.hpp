@@ -172,7 +172,7 @@ void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[], con
   // Do some more checks on SVector before picking a unique layout for it
   // as it is a rank-1 view.
   if constexpr (std::is_same_v<typename SVector::array_layout, Kokkos::LayoutStride>) {
-    if(!S.span_is_contiguous()) {
+    if (!S.span_is_contiguous()) {
       throw std::runtime_error("KokkosLapack::svd: S does not have a contiguous span.");
     }
   }
