@@ -33,7 +33,7 @@ struct svd_tpl_spec_avail {
       EXECSPACE,                                                                                                 \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                               \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                     \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
+		   Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                     \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                               \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                     \
@@ -72,7 +72,7 @@ KOKKOSLAPACK_SVD_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLe
   struct svd_tpl_spec_avail<                                                                                           \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,             \
+      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                                           \
@@ -100,7 +100,7 @@ KOKKOSLAPACK_SVD_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<double>, Kokkos::Layout
   struct svd_tpl_spec_avail<                                                                                          \
       Kokkos::HIP,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,             \
+      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::HIP, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,                                           \
