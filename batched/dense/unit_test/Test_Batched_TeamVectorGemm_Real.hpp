@@ -15,7 +15,7 @@
 //@HEADER
 #if defined(KOKKOS_BHALF_T_IS_FLOAT)
 TEST_F(TestCategory, batched_scalar_team_vector_gemm_nt_nt_bhalf_bhalf) {
-  using param_tag_type = Test::TeamGemm::ParamTag::<KokkosBatched::Mode::TeamVector, KokkosBatched::Trans::NoTranspose,
+  using param_tag_type = ::Test::TeamGemm::ParamTag<KokkosBatched::Mode::TeamVector, KokkosBatched::Trans::NoTranspose,
                                                     KokkosBatched::Trans::NoTranspose>;
 
   test_batched_teamgemm<TestDevice, ::Test::bhalfScalarType, ::Test::bhalfScalarType, param_tag_type,
