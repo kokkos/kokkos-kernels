@@ -60,8 +60,8 @@ struct Functor_TestBatchedTeamGemm {
       KokkosBatched::TeamGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
                               AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
     } else if constexpr (std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::TeamVector>) {
-      KokkosBatched::TeamGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
-                              AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
+      KokkosBatched::TeamVectorGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
+                                    AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
     }
   }
 
