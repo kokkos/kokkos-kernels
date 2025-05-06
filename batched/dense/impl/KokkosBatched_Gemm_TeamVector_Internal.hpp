@@ -157,18 +157,17 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGemmInternal<Algo::Gemm::Blocked>::invoke(
 }  // namespace Impl
 
 template <typename ArgAlgo>
-struct [[deprecated("Use KokkosBatched::TeamVectorGemm instead")]] TeamVectorGemmInternal{
-    template <typename MemberType, typename ScalarType, typename ValueType> KOKKOS_INLINE_FUNCTION static int invoke(
-        const MemberType &member, const int m, const int n, const int k, const ScalarType alpha,
-        const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1, const ValueType *KOKKOS_RESTRICT B,
-        const int bs0, const int bs1, const ScalarType beta,
-        /**/ ValueType *KOKKOS_RESTRICT C, const int cs0,
-        const int cs1){return Impl::TeamVectorGemmInternal<ArgAlgo>::invoke(member, KokkosBlas::Impl::OpID(),
-                                                                            KokkosBlas::Impl::OpID(), m, n, k, alpha, A,
-                                                                            as0, as1, B, bs0, bs1, beta, C, cs0, cs1);
-}  // namespace KokkosBatched
-}
-;
+struct [[deprecated("Use KokkosBatched::TeamVectorGemm instead")]] TeamVectorGemmInternal {
+  template <typename MemberType, typename ScalarType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n, const int k,
+                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+                                           const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
+                                           const int bs1, const ScalarType beta,
+                                           /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
+    return Impl::TeamVectorGemmInternal<ArgAlgo>::invoke(member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), m,
+                                                         n, k, alpha, A, as0, as1, B, bs0, bs1, beta, C, cs0, cs1);
+  }  // namespace KokkosBatched
+};
 
 }  // namespace KokkosBatched
 
