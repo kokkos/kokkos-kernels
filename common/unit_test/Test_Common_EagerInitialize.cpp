@@ -14,9 +14,6 @@
 //
 //@HEADER
 
-#ifndef KK_EAGERINIT_TEST_HPP
-#define KK_EAGERINIT_TEST_HPP
-
 #include <iostream>
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_config.h"
@@ -110,4 +107,3 @@ int main() {
   return 0;
 }
 
-#endif
