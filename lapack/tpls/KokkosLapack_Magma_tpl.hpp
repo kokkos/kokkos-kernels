@@ -32,13 +32,9 @@ MagmaSingleton::MagmaSingleton() {
   if (stat != MAGMA_SUCCESS) Kokkos::abort("MAGMA initialization failed\n");
 }
 
-MagmaSingleton::~MagmaSingleton() {
-  magma_finalize();
-}
+MagmaSingleton::~MagmaSingleton() { magma_finalize(); }
 
-MagmaSingleton& MagmaSingleton::singleton() {
-  return get_instance().get();
-}
+MagmaSingleton& MagmaSingleton::singleton() { return get_instance().get(); }
 
 bool MagmaSingleton::is_initialized() { return get_instance(); }
 

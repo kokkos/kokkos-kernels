@@ -25,9 +25,7 @@ namespace Impl {
 RocBlasSingleton::RocBlasSingleton() { KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_create_handle(&handle)); }
 RocBlasSingleton::~RocBlasSingleton() { KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_destroy_handle(handle)); }
 
-RocBlasSingleton& RocBlasSingleton::singleton() {
-  return get_instance().get();
-}
+RocBlasSingleton& RocBlasSingleton::singleton() { return get_instance().get(); }
 
 bool RocBlasSingleton::is_initialized() { return get_instance(); }
 

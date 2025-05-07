@@ -27,13 +27,9 @@ CudaLapackSingleton::CudaLapackSingleton() {
   if (stat != CUSOLVER_STATUS_SUCCESS) Kokkos::abort("CUSOLVER initialization failed\n");
 }
 
-CudaLapackSingleton::~CudaLapackSingleton() {
-  cusolverDnDestroy(handle);
-}
+CudaLapackSingleton::~CudaLapackSingleton() { cusolverDnDestroy(handle); }
 
-CudaLapackSingleton& CudaLapackSingleton::singleton() {
-  return get_instance().get();
-}
+CudaLapackSingleton& CudaLapackSingleton::singleton() { return get_instance().get(); }
 
 bool CudaLapackSingleton::is_initialized() { return get_instance(); }
 

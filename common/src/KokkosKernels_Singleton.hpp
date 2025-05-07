@@ -20,7 +20,7 @@
 #include <Kokkos_Core.hpp>
 
 namespace KokkosKernels {
-namespace Impl { 
+namespace Impl {
 
 // Singleton structure for a default-constructible type.
 // If initialized, the object will be destructed only during Kokkos::finalize.
@@ -28,11 +28,10 @@ namespace Impl {
 //   This is unlike std::unique_ptr, whose destructor frees the object but doesn't
 //   set its internal pointer to null. This can cause a double-free error when Kokkos::finalize
 //   tries to free the same object later.
-template<typename T>
-struct Singleton
-{
+template <typename T>
+struct Singleton {
   void init() {
-    if(!ptr) {
+    if (!ptr) {
       ptr = new T();
       Kokkos::push_finalize_hook([this]() {
         delete this->ptr;
@@ -41,9 +40,7 @@ struct Singleton
     }
   }
 
-  operator bool() const {
-    return ptr != nullptr;
-  }
+  operator bool() const { return ptr != nullptr; }
 
   T& get() {
     init();
@@ -53,7 +50,7 @@ struct Singleton
   T* ptr = nullptr;
 };
 
-}
-}
+}  // namespace Impl
+}  // namespace KokkosKernels
 
 #endif

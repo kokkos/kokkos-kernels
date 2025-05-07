@@ -28,13 +28,9 @@ CudaBlasSingleton::CudaBlasSingleton() {
   if (stat != CUBLAS_STATUS_SUCCESS) Kokkos::abort("CUBLAS initialization failed\n");
 }
 
-CudaBlasSingleton::~CudaBlasSingleton() {
-  cublasDestroy(handle);
-}
+CudaBlasSingleton::~CudaBlasSingleton() { cublasDestroy(handle); }
 
-CudaBlasSingleton& CudaBlasSingleton::singleton() {
-  return get_instance().get();
-}
+CudaBlasSingleton& CudaBlasSingleton::singleton() { return get_instance().get(); }
 
 bool CudaBlasSingleton::is_initialized() { return get_instance(); }
 

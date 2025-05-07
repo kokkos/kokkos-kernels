@@ -28,9 +28,7 @@ namespace Impl {
 CusparseSingleton::CusparseSingleton() { KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle)); }
 CusparseSingleton::~CusparseSingleton() { KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroy(cusparseHandle)); }
 
-CusparseSingleton& CusparseSingleton::singleton() {
-  return get_instance().get();
-}
+CusparseSingleton& CusparseSingleton::singleton() { return get_instance().get(); }
 
 bool CusparseSingleton::is_initialized() { return get_instance(); }
 
@@ -57,9 +55,7 @@ RocsparseSingleton::~RocsparseSingleton() {
   KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_handle(rocsparseHandle));
 }
 
-RocsparseSingleton& RocsparseSingleton::singleton() {
-  return get_instance().get();
-}
+RocsparseSingleton& RocsparseSingleton::singleton() { return get_instance().get(); }
 
 bool RocsparseSingleton::is_initialized() { return get_instance(); }
 

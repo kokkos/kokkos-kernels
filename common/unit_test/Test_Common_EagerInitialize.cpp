@@ -106,4 +106,3 @@ int main() {
     throw std::runtime_error("At least one singleton was not correctly finalized by Kokkos::finalize()");
   return 0;
 }
-

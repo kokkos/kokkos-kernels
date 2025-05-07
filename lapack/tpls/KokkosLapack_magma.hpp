@@ -36,7 +36,7 @@ namespace KokkosLapack {
 namespace Impl {
 using KokkosBlas::Impl::MagmaSingleton;
 }
-}
+}  // namespace KokkosLapack
 #else
 
 namespace KokkosLapack {
