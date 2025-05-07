@@ -752,7 +752,7 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
                                   typename AMatrix::const_size_type>
       AMatrix_Internal;
 
-  //AMatrix_Internal A_i = A;
+  AMatrix_Internal A_i = A;
 
   // Call single-vector version if appropriate
   if (x.extent(1) == 1) {
