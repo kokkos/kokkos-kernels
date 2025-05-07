@@ -475,7 +475,7 @@ void test_QR_batch(const int numMat, const int numRows, const int numCols) {
 
   {
     Kokkos::View<Scalar**, ExecutionSpace> tau("tau", numMat, numCols);
-    Kokkos::View<Scalar*, ExecutionSpace> tmp("work buffer", numMat * Kokkos::max(numRows, numCols));
+    Kokkos::View<Scalar*, ExecutionSpace> tmp("work buffer", static_cast<long>(numMat) * Kokkos::max(numRows, numCols));
     Kokkos::View<Scalar***, ExecutionSpace> As("A matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Bs("B matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Qs("Q matrices", numMat, numRows, numRows);
