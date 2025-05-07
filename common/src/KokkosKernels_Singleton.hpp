@@ -30,7 +30,9 @@ namespace Impl {
 //   tries to free the same object later.
 template <typename T>
 struct Singleton {
-  void init() {
+  // Get the underlying singleton object.
+  // If it hasn't been constructed yet, lazily construct it.
+  T& get() {
     if (!ptr) {
       ptr = new T();
       Kokkos::push_finalize_hook([this]() {
@@ -38,14 +40,10 @@ struct Singleton {
         this->ptr = nullptr;
       });
     }
-  }
-
-  operator bool() const { return ptr != nullptr; }
-
-  T& get() {
-    init();
     return *ptr;
   }
+
+  bool is_initialized() const { return ptr != nullptr; }
 
   T* ptr = nullptr;
 };

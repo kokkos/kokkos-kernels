@@ -30,7 +30,7 @@ CusparseSingleton::~CusparseSingleton() { KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(c
 
 CusparseSingleton& CusparseSingleton::singleton() { return get_instance().get(); }
 
-bool CusparseSingleton::is_initialized() { return get_instance(); }
+bool CusparseSingleton::is_initialized() { return get_instance().is_initialized(); }
 
 KokkosKernels::Impl::Singleton<CusparseSingleton>& CusparseSingleton::get_instance() {
   static KokkosKernels::Impl::Singleton<CusparseSingleton> s;
@@ -57,7 +57,7 @@ RocsparseSingleton::~RocsparseSingleton() {
 
 RocsparseSingleton& RocsparseSingleton::singleton() { return get_instance().get(); }
 
-bool RocsparseSingleton::is_initialized() { return get_instance(); }
+bool RocsparseSingleton::is_initialized() { return get_instance().is_initialized(); }
 
 KokkosKernels::Impl::Singleton<RocsparseSingleton>& RocsparseSingleton::get_instance() {
   static KokkosKernels::Impl::Singleton<RocsparseSingleton> s;

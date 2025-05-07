@@ -31,7 +31,7 @@ CudaLapackSingleton::~CudaLapackSingleton() { cusolverDnDestroy(handle); }
 
 CudaLapackSingleton& CudaLapackSingleton::singleton() { return get_instance().get(); }
 
-bool CudaLapackSingleton::is_initialized() { return get_instance(); }
+bool CudaLapackSingleton::is_initialized() { return get_instance().is_initialized(); }
 
 KokkosKernels::Impl::Singleton<CudaLapackSingleton>& CudaLapackSingleton::get_instance() {
   static KokkosKernels::Impl::Singleton<CudaLapackSingleton> s;

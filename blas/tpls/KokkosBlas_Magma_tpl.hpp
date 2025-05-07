@@ -31,7 +31,7 @@ MagmaSingleton::~MagmaSingleton() { magma_finalize(); }
 
 MagmaSingleton& MagmaSingleton::singleton() { return get_instance().get(); }
 
-bool MagmaSingleton::is_initialized() { return get_instance(); }
+bool MagmaSingleton::is_initialized() { return get_instance().is_initialized(); }
 
 KokkosKernels::Impl::Singleton<MagmaSingleton>& MagmaSingleton::get_instance() {
   static KokkosKernels::Impl::Singleton<MagmaSingleton> s;

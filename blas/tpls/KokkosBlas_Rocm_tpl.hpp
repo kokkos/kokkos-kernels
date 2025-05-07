@@ -27,7 +27,7 @@ RocBlasSingleton::~RocBlasSingleton() { KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocbla
 
 RocBlasSingleton& RocBlasSingleton::singleton() { return get_instance().get(); }
 
-bool RocBlasSingleton::is_initialized() { return get_instance(); }
+bool RocBlasSingleton::is_initialized() { return get_instance().is_initialized(); }
 
 KokkosKernels::Impl::Singleton<RocBlasSingleton>& RocBlasSingleton::get_instance() {
   static KokkosKernels::Impl::Singleton<RocBlasSingleton> s;

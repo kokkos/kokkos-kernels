@@ -32,7 +32,7 @@ CudaBlasSingleton::~CudaBlasSingleton() { cublasDestroy(handle); }
 
 CudaBlasSingleton& CudaBlasSingleton::singleton() { return get_instance().get(); }
 
-bool CudaBlasSingleton::is_initialized() { return get_instance(); }
+bool CudaBlasSingleton::is_initialized() { return get_instance().is_initialized(); }
 
 KokkosKernels::Impl::Singleton<CudaBlasSingleton>& CudaBlasSingleton::get_instance() {
   static KokkosKernels::Impl::Singleton<CudaBlasSingleton> s;
