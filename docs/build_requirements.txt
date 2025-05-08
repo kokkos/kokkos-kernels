@@ -194,4 +194,5 @@ urllib3==2.4.0 \
 # transitive requirement, automatically installed in GA but no hash provided
 # by requests package
 certifi==2025.4.26 \
+  --hash=sha256:0a816057ea3cdefcef70270d2c515e4506bbc954f417fa5ade2021213bb8f0c6 \
   --hash=sha256:30350364dfe371162649852c63336a15c70c6510c2ad5015b21c2345311805f3
