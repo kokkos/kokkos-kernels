@@ -1976,7 +1976,7 @@ void do_gemm_serial_simd_batched_blocked_parallel(options_t options) {
 }
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
   STATUS;
   if (options.blas_args.batch_size_last_dim)
@@ -1999,9 +1999,9 @@ void do_gemm_serial_batched_compact_mkl_parallel(options_t) {
             << " disabled since KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED is "
                "undefined."
             << std::endl;
-#elif !defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+#elif !defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
   std::cerr << std::string(__func__)
-            << " disabled since __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ "
+            << " disabled since KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED "
                "is undefined."
             << std::endl;
 #endif
