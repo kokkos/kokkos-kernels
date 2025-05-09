@@ -56,7 +56,7 @@ struct SerialPbtrf<Uplo::Lower, Algo::Pbtrf::Unblocked> {
     if (info) return info;
 
     const int kd = Ab.extent(0) - 1;
-    return Impl::SerialPbtrfInternalLower<Algo::Pbtrf::Unblocked>::invoke(n, Ab.data(), Ab.stride_0(), Ab.stride_1(),
+    return Impl::SerialPbtrfInternalLower<Algo::Pbtrf::Unblocked>::invoke(n, Ab.data(), Ab.stride(0), Ab.stride(1),
                                                                           kd);
   }
 };
@@ -74,7 +74,7 @@ struct SerialPbtrf<Uplo::Upper, Algo::Pbtrf::Unblocked> {
     if (info) return info;
 
     const int kd = Ab.extent(0) - 1;
-    return Impl::SerialPbtrfInternalUpper<Algo::Pbtrf::Unblocked>::invoke(n, Ab.data(), Ab.stride_0(), Ab.stride_1(),
+    return Impl::SerialPbtrfInternalUpper<Algo::Pbtrf::Unblocked>::invoke(n, Ab.data(), Ab.stride(0), Ab.stride(1),
                                                                           kd);
   }
 };
