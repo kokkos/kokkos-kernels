@@ -745,7 +745,7 @@ size_t getStrideInCoefficient(T const& coeff) {
   size_t result = 1;
   if constexpr (Kokkos::is_view_v<T>) {
     if constexpr ((T::rank == 1) && (std::is_same_v<typename T::array_layout, Kokkos::LayoutStride>)) {
-      result = coeff.stride_0();
+      result = coeff.stride(0);
     }
   }
   return result;
