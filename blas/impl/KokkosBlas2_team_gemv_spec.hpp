@@ -52,8 +52,8 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
                                            const xViewType& x, const ScalarType beta, const yViewType& y) {
     static_assert(AViewType::rank == 2, "KokkosBlas::TeamGemv requires rank-2 A matrix");
     return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(member, A.extent(0), A.extent(1), alpha, A.data(),
-                                                                 A.stride(0), A.stride(1), x.data(), x.stride(0),
-                                                                 beta, y.data(), y.stride(0));
+                                                                 A.stride(0), A.stride(1), x.data(), x.stride(0), beta,
+                                                                 y.data(), y.stride(0));
   }
 };
 
@@ -80,8 +80,8 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
                                            const xViewType& x, const ScalarType beta, const yViewType& y) {
     static_assert(AViewType::rank == 2, "BLAS TeamGemv requires rank-2 A matrix");
     return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(member, A.extent(1), A.extent(0), alpha, A.data(),
-                                                                 A.stride(1), A.stride(0), x.data(), x.stride(0),
-                                                                 beta, y.data(), y.stride(0));
+                                                                 A.stride(1), A.stride(0), x.data(), x.stride(0), beta,
+                                                                 y.data(), y.stride(0));
   }
 };
 

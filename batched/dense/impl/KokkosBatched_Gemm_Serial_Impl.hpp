@@ -634,12 +634,12 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::ConjTranspose
   int r_val = 0;
   if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
     mkl_dgemm_compact(MKL_COL_MAJOR, MKL_CONJTRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(),
-                      A.stride(1), (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1),
-                      format, (MKL_INT)vector_type::vector_length);
+                      A.stride(1), (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
+                      (MKL_INT)vector_type::vector_length);
   } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
     mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_CONJTRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(),
-                      A.stride(0), (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0),
-                      format, (MKL_INT)vector_type::vector_length);
+                      A.stride(0), (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
+                      (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
   }

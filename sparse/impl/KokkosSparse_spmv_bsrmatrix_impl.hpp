@@ -767,8 +767,8 @@ struct BSR_GEMV_Transpose_Functor {
         for (ordinal_type jj = 0; jj < block_dim; ++jj) {
           value_type t(0);
           KokkosBlas::Impl::SerialGemvInternal<KokkosBlas::Algo::Gemv::Blocked>::invoke<value_type, value_type>(
-              1, block_dim, alpha1, Aview.data() + jj, Aview.stride(1), Aview.stride(0), xview.data(),
-              xview.stride(0), beta1, &t, 1);
+              1, block_dim, alpha1, Aview.data() + jj, Aview.stride(1), Aview.stride(0), xview.data(), xview.stride(0),
+              beta1, &t, 1);
           t *= alpha;
           Kokkos::atomic_add(&m_y(ystart + jj), t);
         }
@@ -817,8 +817,7 @@ struct BSR_GEMV_Transpose_Functor {
         //
         KokkosBlas::Impl::TeamVectorGemvInternal<KokkosBlas::Algo::Gemv::Unblocked>::invoke(
             dev, block_dim, block_dim, alpha, A_cur.data(), static_cast<int>(A_cur.stride(1)),
-            static_cast<int>(A_cur.stride(0)), X_cur.data(), static_cast<int>(X_cur.stride(0)), val_zero, shared_y,
-            1);
+            static_cast<int>(A_cur.stride(0)), X_cur.data(), static_cast<int>(X_cur.stride(0)), val_zero, shared_y, 1);
         //
         dev.team_barrier();
         //

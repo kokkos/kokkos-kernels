@@ -57,8 +57,8 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::NoTranspose, 2>::invoke(const AView
     return 1;
   }
 #endif
-  return SerialCopyInternal::invoke(A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1), B.data(),
-                                    B.stride(0), B.stride(1));
+  return SerialCopyInternal::invoke(A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1), B.data(), B.stride(0),
+                                    B.stride(1));
 }
 
 template <>
@@ -79,8 +79,8 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::Transpose, 2>::invoke(const AViewTy
     return 1;
   }
 #endif
-  return SerialCopyInternal::invoke(A.extent(1), A.extent(0), A.data(), A.stride(1), A.stride(0), B.data(),
-                                    B.stride(0), B.stride(1));
+  return SerialCopyInternal::invoke(A.extent(1), A.extent(0), A.data(), A.stride(1), A.stride(0), B.data(), B.stride(0),
+                                    B.stride(1));
 }
 
 ///

@@ -200,8 +200,8 @@ void LU(const int NN) {
           HostSpaceType().fence();
           timer.reset();
 
-          mkl_dgetrfnp_compact(MKL_ROW_MAJOR, BlkSize, BlkSize, (double*)a.data(), a.stride(1), (MKL_INT*)&info,
-                               format, (MKL_INT)N * VectorLength);
+          mkl_dgetrfnp_compact(MKL_ROW_MAJOR, BlkSize, BlkSize, (double*)a.data(), a.stride(1), (MKL_INT*)&info, format,
+                               (MKL_INT)N * VectorLength);
 
           HostSpaceType().fence();
           const double t = timer.seconds();

@@ -70,8 +70,8 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
-                                                                  B_extent_1, alpha, A.data(), A.stride(0),
-                                                                  A.stride(1), B.data(), B.stride(0), B_stride_1);
+                                                                  B_extent_1, alpha, A.data(), A.stride(0), A.stride(1),
+                                                                  B.data(), B.stride(0), B_stride_1);
   }
 };
 
@@ -262,8 +262,8 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
-                                                                  B_extent_1, alpha, A.data(), A.stride(0),
-                                                                  A.stride(1), B.data(), B.stride(0), B_stride_1);
+                                                                  B_extent_1, alpha, A.data(), A.stride(0), A.stride(1),
+                                                                  B.data(), B.stride(0), B_stride_1);
   }
 };
 
@@ -310,8 +310,8 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, 
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
-                                                                  B_extent_1, alpha, A.data(), A.stride(1),
-                                                                  A.stride(0), B.data(), B.stride(0), B_stride_1);
+                                                                  B_extent_1, alpha, A.data(), A.stride(1), A.stride(0),
+                                                                  B.data(), B.stride(0), B_stride_1);
   }
 };
 
@@ -358,8 +358,8 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, 
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(member, ArgDiag::use_unit_diag, B.extent(0),
-                                                                  B_extent_1, alpha, A.data(), A.stride(1),
-                                                                  A.stride(0), B.data(), B.stride(0), B_stride_1);
+                                                                  B_extent_1, alpha, A.data(), A.stride(1), A.stride(0),
+                                                                  B.data(), B.stride(0), B_stride_1);
   }
 };
 

@@ -63,8 +63,8 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
     }
     return TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
         MemberType, ScalarType, typename AViewType::array_layout, typename AViewType::non_const_value_type>(
-        member, A.extent(0), A.extent(1), A.extent(2), alpha, A.data(), A.stride(0), A.stride(1), A.stride(2),
-        x.data(), x.stride(0), x.stride(1), beta, y.data(), y.stride(0), y.stride(1));
+        member, A.extent(0), A.extent(1), A.extent(2), alpha, A.data(), A.stride(0), A.stride(1), A.stride(2), x.data(),
+        x.stride(0), x.stride(1), beta, y.data(), y.stride(0), y.stride(1));
   }
 };
 
@@ -115,8 +115,8 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
     }
     return TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
         MemberType, ScalarType, typename AViewType::array_layout, typename AViewType::non_const_value_type>(
-        member, A.extent(0), A.extent(2), A.extent(1), alpha, A.data(), A.stride(0), A.stride(2), A.stride(1),
-        x.data(), x.stride(0), x.stride(1), beta, y.data(), y.stride(0), y.stride(1));
+        member, A.extent(0), A.extent(2), A.extent(1), alpha, A.data(), A.stride(0), A.stride(2), A.stride(1), x.data(),
+        x.stride(0), x.stride(1), beta, y.data(), y.stride(0), y.stride(1));
   }
 };
 

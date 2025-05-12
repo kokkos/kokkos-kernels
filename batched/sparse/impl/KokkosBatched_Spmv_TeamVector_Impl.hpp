@@ -389,8 +389,8 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
         typename ValuesViewType::non_const_value_type, typename IntView::non_const_value_type,
         typename ValuesViewType::array_layout, dobeta, N_team>(
         member, X.extent(0), X.extent(1), alpha, values.data(), values.stride(0), values.stride(1), row_ptr.data(),
-        row_ptr.stride(0), colIndices.data(), colIndices.stride(0), X.data(), X.stride(0), X.stride(1), beta,
-        Y.data(), Y.stride(0), Y.stride(1));
+        row_ptr.stride(0), colIndices.data(), colIndices.stride(0), X.data(), X.stride(0), X.stride(1), beta, Y.data(),
+        Y.stride(0), Y.stride(1));
   }
 };
 
