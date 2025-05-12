@@ -34,16 +34,18 @@ struct SerialLeftHouseholderInternal {
                                            /* */ ValueType* chi1,
                                            /* */ ValueType* x2, const int x2s,
                                            /* */ ValueType* tau) {
-    typedef ValueType value_type;
-    typedef typename Kokkos::ArithTraits<ValueType>::mag_type mag_type;
+    using value_type = ValueType;
+    using KAT        = Kokkos::ArithTraits<value_type>;
+    using mag_type   = typename KAT::mag_type;
+    using KAT_mag    = Kokkos::ArithTraits<mag_type>;
 
-    const mag_type zero(0);
-    const mag_type half(0.5);
-    const mag_type one(1);
-    const mag_type minus_one(-1);
+    const mag_type zero = KAT_mag::zero();
+    const mag_type one = KAT_mag::one();
+    const mag_type half = one / (one + one);
+    const mag_type minus_one = - one;
 
     /// compute the 2norm of x2
-    mag_type norm_x2_square(0);
+    mag_type norm_x2_square = zero;
     for (int i = 0; i < m_x2; ++i) {
       const auto x2_at_i = x2[i * x2s];
       norm_x2_square += Kokkos::abs(x2_at_i) * Kokkos::abs(x2_at_i);
@@ -52,7 +54,7 @@ struct SerialLeftHouseholderInternal {
     /// if norm_x2 is zero, return with trivial values
     if (norm_x2_square == zero) {
       *chi1 = -(*chi1);
-      *tau  = half;
+      *tau  = half * KAT::one();
 
       return 0;
     }
