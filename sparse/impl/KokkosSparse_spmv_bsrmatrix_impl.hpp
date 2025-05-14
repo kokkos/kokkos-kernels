@@ -1066,9 +1066,10 @@ struct BSR_GEMM_Functor {
         const auto X_blkCol = myRow.block_colidx(jBlock);
         const auto X_ptBeg  = X_blkCol * block_dim;
         const auto X_cur    = Kokkos::subview(m_x, ::Kokkos::make_pair(X_ptBeg, X_ptBeg + block_dim), Kokkos::ALL());
-        KokkosBatched::TeamVectorGemmInternal<KokkosBatched::Algo::Gemm::Unblocked, true>::invoke(
-            dev, static_cast<int>(block_dim), static_cast<int>(num_rhs), static_cast<int>(block_dim), alpha,
-            A_cur.data(), static_cast<int>(A_cur.stride_0()), static_cast<int>(A_cur.stride_1()), X_cur.data(),
+        KokkosBatched::Impl::TeamVectorGemmInternal<KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+            dev, KokkosBlas::Impl::OpConj(), KokkosBlas::Impl::OpID(), static_cast<int>(block_dim),
+            static_cast<int>(num_rhs), static_cast<int>(block_dim), alpha, A_cur.data(),
+            static_cast<int>(A_cur.stride_0()), static_cast<int>(A_cur.stride_1()), X_cur.data(),
             static_cast<int>(X_cur.stride_0()), static_cast<int>(X_cur.stride_1()), val_one, Y_cur.data(),
             static_cast<int>(Y_cur.stride_0()), static_cast<int>(Y_cur.stride_1()));
       }
@@ -1078,11 +1079,11 @@ struct BSR_GEMM_Functor {
         const auto X_blkCol = myRow.block_colidx(jBlock);
         const auto X_ptBeg  = X_blkCol * block_dim;
         const auto X_cur    = Kokkos::subview(m_x, ::Kokkos::make_pair(X_ptBeg, X_ptBeg + block_dim), Kokkos::ALL());
-        KokkosBatched::TeamVectorGemmInternal<KokkosBatched::Algo::Gemm::Unblocked, false>::invoke(
-            dev, block_dim, num_rhs, block_dim, alpha, A_cur.data(), static_cast<int>(A_cur.stride_0()),
-            static_cast<int>(A_cur.stride_1()), X_cur.data(), static_cast<int>(X_cur.stride_0()),
-            static_cast<int>(X_cur.stride_1()), val_one, Y_cur.data(), static_cast<int>(Y_cur.stride_0()),
-            static_cast<int>(Y_cur.stride_1()));
+        KokkosBatched::Impl::TeamVectorGemmInternal<KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+            dev, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), block_dim, num_rhs, block_dim, alpha, A_cur.data(),
+            static_cast<int>(A_cur.stride_0()), static_cast<int>(A_cur.stride_1()), X_cur.data(),
+            static_cast<int>(X_cur.stride_0()), static_cast<int>(X_cur.stride_1()), val_one, Y_cur.data(),
+            static_cast<int>(Y_cur.stride_0()), static_cast<int>(Y_cur.stride_1()));
       }
     }
   }
@@ -1307,10 +1308,10 @@ struct BSR_GEMM_Transpose_Functor {
       for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
         const auto A_cur = myRow.block(jBlock);
         //
-        KokkosBatched::TeamVectorGemmInternal<KokkosBatched::Algo::Gemm::Unblocked, true>::invoke(
-            dev, block_dim, num_rhs, block_dim, alpha, A_cur.data(), static_cast<int>(A_cur.stride_1()),
-            static_cast<int>(A_cur.stride_0()), X_cur.data(), static_cast<int>(X_cur.stride_0()),
-            static_cast<int>(X_cur.stride_1()), val_zero, shared_y, 1, block_dim);
+        KokkosBatched::Impl::TeamVectorGemmInternal<KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+            dev, KokkosBlas::Impl::OpConj(), KokkosBlas::Impl::OpID(), block_dim, num_rhs, block_dim, alpha,
+            A_cur.data(), static_cast<int>(A_cur.stride_1()), static_cast<int>(A_cur.stride_0()), X_cur.data(),
+            static_cast<int>(X_cur.stride_0()), static_cast<int>(X_cur.stride_1()), val_zero, shared_y, 1, block_dim);
         //
         dev.team_barrier();
         //
@@ -1328,10 +1329,10 @@ struct BSR_GEMM_Transpose_Functor {
       for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
         const auto A_cur = myRow.block(jBlock);
         //
-        KokkosBatched::TeamVectorGemmInternal<KokkosBatched::Algo::Gemm::Unblocked, false>::invoke(
-            dev, block_dim, num_rhs, block_dim, alpha, A_cur.data(), static_cast<int>(A_cur.stride_1()),
-            static_cast<int>(A_cur.stride_0()), X_cur.data(), static_cast<int>(X_cur.stride_0()),
-            static_cast<int>(X_cur.stride_1()), val_zero, shared_y, 1, block_dim);
+        KokkosBatched::Impl::TeamVectorGemmInternal<KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+            dev, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), block_dim, num_rhs, block_dim, alpha, A_cur.data(),
+            static_cast<int>(A_cur.stride_1()), static_cast<int>(A_cur.stride_0()), X_cur.data(),
+            static_cast<int>(X_cur.stride_0()), static_cast<int>(X_cur.stride_1()), val_zero, shared_y, 1, block_dim);
         //
         dev.team_barrier();
         //

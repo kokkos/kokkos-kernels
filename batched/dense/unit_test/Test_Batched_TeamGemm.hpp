@@ -19,17 +19,20 @@
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
+#include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
-#include "KokkosBatched_Gemm_Serial_Impl.hpp"
+
 #include "KokkosBatched_Gemm_Team_Impl.hpp"
+#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
 namespace TeamGemm {
 
-template <typename TA, typename TB>
+template <typename Mode, typename TA, typename TB>
 struct ParamTag {
+  using mode   = Mode;
   using transA = TA;
   using transB = TB;
 };
@@ -53,13 +56,20 @@ struct Functor_TestBatchedTeamGemm {
     auto bb = Kokkos::subview(m_b, k, Kokkos::ALL(), Kokkos::ALL());
     auto cc = Kokkos::subview(m_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::TeamGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
-                            AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
+    if constexpr (std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::Team>) {
+      KokkosBatched::TeamGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
+                              AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
+    } else if constexpr (std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::TeamVector>) {
+      KokkosBatched::TeamVectorGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
+                                    AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
+    }
   }
 
   inline void run() {
-    using value_type = typename ViewType::non_const_value_type;
-    std::string name_region("KokkosBatched::Test::TeamGemm");
+    using value_type                  = typename ViewType::non_const_value_type;
+    std::string name_region           = std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::Team>
+                                            ? "KokkosBatched::Test::TeamGemm"
+                                            : "KokkosBatched::Test::TeamVectorGemm";
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
