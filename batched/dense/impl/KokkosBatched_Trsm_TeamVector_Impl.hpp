@@ -49,8 +49,8 @@ struct TeamVectorTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose, A
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamVectorTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B_extent_1, alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_0(), B_stride_1);
+        member, ArgDiag::use_unit_diag, B.extent(0), B_extent_1, alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -76,8 +76,8 @@ struct TeamVectorTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose, 
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamVectorTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B_extent_1, B.extent(0), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B_stride_1, B.stride_0());
+        member, ArgDiag::use_unit_diag, B_extent_1, B.extent(0), alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B_stride_1, B.stride(0));
   }
 };
 
@@ -103,8 +103,8 @@ struct TeamVectorTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose, A
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamVectorTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B_extent_1, alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_0(), B_stride_1);
+        member, ArgDiag::use_unit_diag, B.extent(0), B_extent_1, alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -130,8 +130,8 @@ struct TeamVectorTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, Arg
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamVectorTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B_extent_1, alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_0(), B_stride_1);
+        member, ArgDiag::use_unit_diag, B.extent(0), B_extent_1, alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -157,8 +157,8 @@ struct TeamVectorTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, Arg
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamVectorTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        member, ArgDiag::use_unit_diag, B.extent(0), B_extent_1, alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_0(), B_stride_1);
+        member, ArgDiag::use_unit_diag, B.extent(0), B_extent_1, alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
