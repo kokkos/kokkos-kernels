@@ -79,7 +79,7 @@ struct teamDotFunctor {
 
 template <class ExecSpace>
 static void run(benchmark::State& state) {
-  const auto m      = state.range(0);
+  const auto m = state.range(0);
   // const auto repeat = state.range(1);
   // Declare type aliases
   using Scalar   = double;
