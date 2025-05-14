@@ -78,7 +78,11 @@ struct SerialLeftHouseholderInternal {
 
     /// compute tau
     const mag_type chi1_minus_alpha_square = Kokkos::abs(chi1_minus_alpha) * Kokkos::abs(chi1_minus_alpha);
-    *tau                                   = half + half * (norm_x2_square / chi1_minus_alpha_square);
+    if constexpr(KAT::is_complex) {
+      *tau = alpha / (alpha - Kokkos::conj(*chi1));
+    } else {
+      *tau = half + half * (norm_x2_square / chi1_minus_alpha_square);
+    }
 
     /// overwrite chi1 with alpha
     *chi1 = alpha;
