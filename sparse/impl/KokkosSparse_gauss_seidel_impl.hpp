@@ -1170,7 +1170,6 @@ class PointGaussSeidel {
 #endif
     {
       const_lno_row_view_t xadj        = this->row_map;
-      const_lno_nnz_view_t adj         = this->entries;
       const_scalar_nnz_view_t adj_vals = this->values;
       MyExecSpace my_exec_space        = gsHandle->get_execution_space();
 

@@ -45,75 +45,82 @@
 #include <iostream>
 
 #include <Kokkos_Core.hpp>
-#include <KokkosBlas1_team_dot.hpp>
 #include <Kokkos_Random.hpp>
-#include "KokkosKernels_TestStringUtils.hpp"
 
+#include "KokkosBlas1_dot_benchmark.hpp"
 #include <benchmark/benchmark.h>
 
-// Functor to handle the case of a "without Cuda" build
-template <class Vector, class ExecSpace>
-struct teamDotFunctor {
-  // Compile - time check to see if your data type is a Kokkos::View:
-  static_assert(Kokkos::is_view<Vector>::value, "Vector is not a Kokkos::View.");
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// The Level 1 BLAS perform scalar, vector and vector-vector operations;
+//
+// https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1%3A%3Adot
+//
+// Usage: result = KokkosBlas::dot(x,y); KokkosBlas::dot(r,x,y);
+// Multiplies each value of x(i) [x(i,j)] with y(i) or [y(i,j)] and computes the
+// sum. (If x and y have scalar type Kokkos::complex, the complex conjugate of
+// x(i) or x(i,j) will be used.) VectorX: A rank-1 Kokkos::View VectorY: A
+// rank-1 Kokkos::View ReturnVector: A rank-0 or rank-1 Kokkos::View
+//
+// REQUIREMENTS:
+// Y.rank == 1 or X.rank == 1
+// Y.extent(0) == X.extent(0)
 
-  using Scalar = typename Vector::non_const_value_type;
-  // Vector is templated on memory space
-  using execution_space = ExecSpace;  // Kokkos Execution Space
-  typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
-  typedef typename team_policy::member_type team_member;
+// Dot Test design:
+// 1) create 1D View containing 1D matrix, aka a vector; this will be your X
+// input matrix; 2) create 1D View containing 1D matrix, aka a vector; this will
+// be your Y input matrix; 3) perform the dot operation on the two inputs, and
+// capture result in "result"
 
-  // Declare Kokkos::View Vectors, x and y
-  Vector x;
-  Vector y;
-
-  // Functor instead of KOKKOS_LAMBDA expression
-
-  KOKKOS_INLINE_FUNCTION void operator()(const team_member& team) const { KokkosBlas::Experimental::dot(team, x, y); }
-  // Constructor
-  teamDotFunctor(Vector X_, Vector Y_) {
-    x = X_;
-    y = Y_;
-  }
-};
+// Here, m represents the desired length for each 1D matrix;
+// "m" is used here, because code from another test was adapted for this test.
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class ExecSpace>
 static void run(benchmark::State& state) {
-  const auto m      = state.range(0);
-  const auto repeat = state.range(1);
+  const auto m = state.range(0);
+  const auto n = state.range(1);
   // Declare type aliases
   using Scalar   = double;
   using MemSpace = typename ExecSpace::memory_space;
+  using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
-  // For the Team implementation of dot; ExecSpace is implicit;
-  using policy = Kokkos::TeamPolicy<ExecSpace>;
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m, n);
 
-  // Create 1D view w/ Device as the ExecSpace; this is an input vector
-  Kokkos::View<Scalar*, MemSpace> x("X", m);
-  // Create 1D view w/ Device as the ExecSpace; this is the output vector
-  Kokkos::View<Scalar*, MemSpace> y("Y", m);
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m, n);
 
-  // Here, deep_copy is filling / copying values into Host memory from Views X
-  // and Y
-  Kokkos::deep_copy(x, 3.0);
-  Kokkos::deep_copy(y, 2.0);
+  Kokkos::View<Scalar*, Device> result(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x dot y"), n);
+
+  // Declaring variable pool w/ a seeded random number;
+  // a parallel random number generator, so you
+  // won't get the same number with a given seed each time
+  Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
+
+  Kokkos::fill_random(x, pool, 10.0);
+  Kokkos::fill_random(y, pool, 10.0);
+  ExecSpace space;
 
   Kokkos::fence();
   for (auto _ : state) {
-    teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace> teamDotFunctorLiveTestInstance(x, y);
-    Kokkos::parallel_for("TeamDotUsage -- Live Test", policy(1, Kokkos::AUTO), teamDotFunctorLiveTestInstance);
-    Kokkos::fence();
+    KokkosBlas::dot(space, result, x, y);
+    space.fence();
   }
-  const size_t iterFlop   = (size_t)2 * m;
+
+  const size_t iterFlop   = (size_t)2 * m * n;
   const size_t totalFlop  = iterFlop * state.iterations();
   state.counters["FLOP"]  = benchmark::Counter(iterFlop);
   state.counters["FLOPS"] = benchmark::Counter(totalFlop, benchmark::Counter::kIsRate);
 }
 
-BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
-    ->Name("KokkosBlas_team_dot/run<Kokkos::DefaultExecutionSpace>")
+BENCHMARK(run<Kokkos::DefaultHostExecutionSpace>)
+    ->Name("KokkosBlas_dot_mv<DefaultHostExecutionSpace>")
     ->Unit(benchmark::kMicrosecond)
     ->UseRealTime()
-    ->ArgName("m")
-    ->RangeMultiplier(10)
-    ->Range(100000, 100000000);
+    ->ArgNames({"m", "n"})
+    ->ArgsProduct({benchmark::CreateRange(100000, 100000000, 10), benchmark::CreateRange(5, 5, 1)});
+
+BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
+    ->Name("KokkosBlas_dot_mv<DefaultExecutionSpace>")
+    ->Unit(benchmark::kMicrosecond)
+    ->UseRealTime()
+    ->ArgNames({"m", "n"})
+    ->ArgsProduct({benchmark::CreateRange(100000, 100000000, 10), benchmark::CreateRange(5, 5, 1)});
