@@ -43,8 +43,8 @@ struct TeamVectorApplyQ<MemberType, Side::Left, Trans::NoTranspose, Algo::ApplyQ
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamVectorApplyQ_LeftForwardInternal::invoke(member, B.extent(0), B_extent_1, A.extent(1), A.data(),
-                                                        A.stride_0(), A.stride_1(), t.data(), t.stride_0(), B.data(),
-                                                        B.stride_0(), B_stride_1, w.data());
+                                                        A.stride(0), A.stride(1), t.data(), t.stride(0), B.data(),
+                                                        B.stride(0), B_stride_1, w.data());
   }
 };
 
@@ -64,8 +64,8 @@ struct TeamVectorApplyQ<MemberType, Side::Left, Trans::Transpose, Algo::ApplyQ::
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamVectorApplyQ_LeftBackwardInternal::invoke(member, B.extent(0), B_extent_1, A.extent(1), A.data(),
-                                                         A.stride_0(), A.stride_1(), t.data(), t.stride_0(), B.data(),
-                                                         B.stride_0(), B_stride_1, w.data());
+                                                         A.stride(0), A.stride(1), t.data(), t.stride(0), B.data(),
+                                                         B.stride(0), B_stride_1, w.data());
   }
 };
 
@@ -85,8 +85,8 @@ struct TeamVectorApplyQ<MemberType, Side::Right, Trans::NoTranspose, Algo::Apply
     size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     return TeamVectorApplyQ_RightForwardInternal::invoke(member, B.extent(0), B_extent_1, A.extent(1), A.data(),
-                                                         A.stride_0(), A.stride_1(), t.data(), t.stride_0(), B.data(),
-                                                         B.stride_0(), B_stride_1, w.data());
+                                                         A.stride(0), A.stride(1), t.data(), t.stride(0), B.data(),
+                                                         B.stride(0), B_stride_1, w.data());
   }
 };
 
