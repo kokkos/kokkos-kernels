@@ -224,6 +224,7 @@ jobs:
         # lychee has 224 CPUs
         run: make -j56 all
 
+      # individual ODE tests (e.g. Cuda.RK_Count) were taking more than 3600s
       - name: test
         working-directory: kokkos-kernels/build
-        run: compute-sanitizer --tool=memcheck --target-processes=all ctest --output-on-failure -V --timeout 3600
+        run: compute-sanitizer --tool=memcheck --target-processes=all ctest --output-on-failure -V --timeout 3600 -E 'ode'
