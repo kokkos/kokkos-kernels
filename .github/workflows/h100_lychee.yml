@@ -157,8 +157,8 @@ jobs:
       - name: test
         working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
-  PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_REL:
-    name: PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_REL
+  PR_HOPPER90_CUDA1262_CUDA_LEFT_REL:
+    name: PR_HOPPER90_CUDA1262_CUDA_LEFT_REL
     runs-on: [lychee-cuda-12.6.2-openblas-0.3.28]
 
     steps:
@@ -214,7 +214,6 @@ jobs:
             -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
             -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
             -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
-            -DKokkosKernels_INST_LAYOUTRIGHT=ON \
             -DKokkosKernels_INST_EXECSPACE_SERIAL=OFF \
             -DKokkosKernels_INST_MEMSPACE_HOSTSPACE=OFF \
             -DBUILD_SHARED_LIBS=OFF \
