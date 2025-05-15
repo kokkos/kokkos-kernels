@@ -508,7 +508,7 @@ int test_svd() {
   EXPECT_EQ(ret, 0);
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
-  if constexpr(!std::is_same_v<typename Device::execution_space, Kokkos::Cuda>) {
+  if constexpr (!std::is_same_v<typename Device::execution_space, Kokkos::Cuda>) {
     // cusolver only supports m > n so this should not be tested
     ret = Test::impl_analytic_2x3_svd<view_type_a_layout_left, Device>();
     EXPECT_EQ(ret, 0);
@@ -534,7 +534,7 @@ int test_svd() {
   EXPECT_EQ(ret, 0);
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
-  if constexpr(!std::is_same_v<typename Device::execution_space, Kokkos::Cuda>) {
+  if constexpr (!std::is_same_v<typename Device::execution_space, Kokkos::Cuda>) {
     // cusolver only supports m > n so this should not be tested
     ret = Test::impl_test_svd<view_type_a_layout_left, Device>(70, 100);
     EXPECT_EQ(ret, 0);
