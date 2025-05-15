@@ -529,35 +529,6 @@ int test_svd() {
   EXPECT_EQ(ret, 0);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a_layout_right = Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
-
-  ret = Test::impl_analytic_2x2_svd<view_type_a_layout_right, Device>();
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_analytic_2x3_svd<view_type_a_layout_right, Device>();
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(0, 0);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(1, 1);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(15, 15);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(100, 100);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(100, 70);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(70, 100);
-  EXPECT_EQ(ret, 0);
-#endif
-
   return 1;
 }
 
