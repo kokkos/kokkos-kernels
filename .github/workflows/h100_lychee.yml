@@ -199,6 +199,7 @@ jobs:
         working-directory: kokkos/build
         run: make -j56 install
 
+      # turn off serial instantiation -> only run CUDA tests
       - name: configure_kokkos_kernels
         run: |
           mkdir -p kokkos-kernels/{build,install}
@@ -214,6 +215,8 @@ jobs:
             -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
             -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
             -DKokkosKernels_INST_LAYOUTRIGHT=ON \
+            -DKokkosKernels_INST_EXECSPACE_SERIAL=OFF \
+            -DKokkosKernels_INST_MEMSPACE_HOSTSPACE=OFF \
             -DBUILD_SHARED_LIBS=OFF \
             -DKokkosKernels_ENABLE_DOCS=OFF
 
