@@ -224,4 +224,4 @@ jobs:
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: compute-sanitizer --tool=memcheck --target-process=all ctest --output-on-failure -V --timeout 3600
+        run: compute-sanitizer --tool=memcheck --target-processes=all ctest --output-on-failure -V --timeout 3600
