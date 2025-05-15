@@ -80,9 +80,9 @@ template <class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchSzDim, 
           class ScalarType, class AViewType, class BViewType, class CViewType>
 class BatchedSerialGemm {
  private:
-  AViewType A;
-  BViewType B;
-  CViewType C;
+  AViewType A_;
+  BViewType B_;
+  CViewType C_;
   ScalarType alpha, beta;
   size_t divisor, c_cols, batch_size;
   ArgBatchSzDim batch_layout_tag;
@@ -101,13 +101,13 @@ class BatchedSerialGemm {
       // Set members for ResultsPerThread::Rank0 operator; these members allow
       // each thread to calculate its C output index
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
-        batch_size = C.extent(0);
-        divisor    = C.extent(1) * C.extent(2);
-        c_cols     = C.extent(2);
+        batch_size = C_.extent(0);
+        divisor    = C_.extent(1) * C_.extent(2);
+        c_cols     = C_.extent(2);
       } else {
-        batch_size = C.extent(2);
-        divisor    = C.extent(0) * C.extent(1);
-        c_cols     = C.extent(1);
+        batch_size = C_.extent(2);
+        divisor    = C_.extent(0) * C_.extent(1);
+        c_cols     = C_.extent(1);
       }
 
       // Increase the number of threads by the divisor
@@ -116,9 +116,9 @@ class BatchedSerialGemm {
       run();
     } else if (std::is_same<ArgResultsPerThread, ResultsPerThread::Rank2>::value) {
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value)
-        batch_size = C.extent(0);
+        batch_size = C_.extent(0);
       else
-        batch_size = C.extent(2);
+        batch_size = C_.extent(2);
 
       run();
     } else {
@@ -128,8 +128,8 @@ class BatchedSerialGemm {
     return 0;
   }
 
-  BatchedSerialGemm(ScalarType _alpha, AViewType _A, BViewType _B, ScalarType _beta, CViewType _C)
-      : A(_A), B(_B), C(_C), alpha(_alpha), beta(_beta) {}
+  BatchedSerialGemm(ScalarType _alpha, AViewType A, BViewType B, ScalarType _beta, CViewType C)
+      : A_(A), B_(B), C_(C), alpha(_alpha), beta(_beta) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ResultsPerThread::Rank0 &, const int &i) const {
@@ -144,9 +144,9 @@ class BatchedSerialGemm {
 
     // Due to taking 1-rank subviews out, we must handle transpose here.
     // Use overloads of subview_wrapper to handle transpose at compile time.
-    auto svA_row = subview_wrapper(A, batch_idx, row_idx, Kokkos::ALL(), batch_layout_tag, transA_tag);
-    auto svB_col = subview_wrapper(B, batch_idx, Kokkos::ALL(), col_idx, batch_layout_tag, transB_tag);
-    auto svC_ele = subview_wrapper(C, batch_idx, row_idx, col_idx, batch_layout_tag);
+    auto svA_row = subview_wrapper(A_, batch_idx, row_idx, Kokkos::ALL(), batch_layout_tag, transA_tag);
+    auto svB_col = subview_wrapper(B_, batch_idx, Kokkos::ALL(), col_idx, batch_layout_tag, transB_tag);
+    auto svC_ele = subview_wrapper(C_, batch_idx, row_idx, col_idx, batch_layout_tag);
 
     // Kokkos::subview(scalar, ALL) or Kokkos::subview(ALL, scalar) always
     // returns a column vector. Since the subviews above handle the
@@ -173,9 +173,9 @@ class BatchedSerialGemm {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ResultsPerThread::Rank2 &, const int &i) const {
-    auto svA = subview_wrapper(A, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
-    auto svB = subview_wrapper(B, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
-    auto svC = subview_wrapper(C, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
+    auto svA = subview_wrapper(A_, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
+    auto svB = subview_wrapper(B_, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
+    auto svC = subview_wrapper(C_, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
 
     KokkosBatched::SerialGemm<ArgTransA, ArgTransB, ArgMode>::invoke(alpha, svA, svB, beta, svC);
   }
