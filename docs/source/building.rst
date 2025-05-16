@@ -207,7 +207,7 @@ Relevant flags:
 
 These together tell the build system:
 
-    “Only explicitly instantiate KokkosKernels templates for combinations of (execution space × scalar type × layout) that I need.”
+    *"Only explicitly instantiate KokkosKernels templates for combinations of (execution space × scalar type × layout) that I need."*
 
 When to disable ETI?
 --------------------
