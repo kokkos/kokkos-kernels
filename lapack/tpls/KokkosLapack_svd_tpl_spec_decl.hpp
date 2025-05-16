@@ -20,6 +20,8 @@
 #include "KokkosKernels_Error.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
+#include <iostream>
+
 namespace KokkosLapack {
 namespace Impl {
 template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix, class VMatrix>
