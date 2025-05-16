@@ -27,7 +27,7 @@
 
 /* Some versions of clang that hipcc is basedoff of haven't stabilized
  * std::filesystem yet */
-#if defined(KOKKOS_ENABLE_HIP) && __HIPCC__
+#if defined(KOKKOS_ENABLE_HIP) && __HIPCC__ && (HIP_VERSION < 60000000)
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 #else

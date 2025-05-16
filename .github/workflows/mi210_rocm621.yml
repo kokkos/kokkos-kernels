@@ -50,8 +50,7 @@ jobs:
             -D Kokkos_ENABLE_TESTS=OFF \
             -D Kokkos_ENABLE_EXAMPLES=OFF \
             -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
-            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF
+            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
