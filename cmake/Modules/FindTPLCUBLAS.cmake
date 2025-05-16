@@ -26,7 +26,8 @@ elseif(CUBLAS_ROOT OR KokkosKernels_CUBLAS_ROOT) # nothing specific provided, ju
     LIBRARIES cublas
     HEADER cublas.h
   )
-else() # backwards-compatible way
+elseif(CMAKE_VERSION VERSION_LESS "3.27")
+  # backwards compatible way using FIND_PACKAGE(CUDA) (removed in 3.27)
   FIND_PACKAGE(CUDA)
   INCLUDE(FindPackageHandleStandardArgs)
   IF (NOT CUDA_FOUND)
@@ -44,4 +45,9 @@ else() # backwards-compatible way
         LINK_LIBRARIES "${CUDA_CUBLAS_LIBRARIES}")
     ENDIF()
   ENDIF()
+else()
+  FIND_PACKAGE(CUDAToolkit REQUIRED)
+  KOKKOSKERNELS_CREATE_IMPORTED_TPL(CUBLAS EXISTING_IMPORTED_TARGET CUDA::cublas)
+  # X_FOUND_INFO used to print the Kokkos Kernels config summary
+  get_target_property(CUBLAS_FOUND_INFO CUDA::cublas IMPORTED_LOCATION)
 endif()
