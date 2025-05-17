@@ -1,7 +1,7 @@
 KokkosBatched::Dot
 ##################
 
-Defined in header `KokkosBatched_Dot.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Dot.hpp>`_
+Defined in header: :code:`KokkosBatched_Dot.hpp`
 
 .. code:: c++
 

@@ -1,7 +1,7 @@
 KokkosBatched::Getrf
 ####################
 
-Defined in header `KokkosBatched_Getrf.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Getrf.hpp>`_
+Defined in header: :code:`KokkosBatched_Getrf.hpp`
 
 .. code:: c++
 

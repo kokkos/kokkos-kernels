@@ -1,7 +1,7 @@
 KokkosBatched::Vector
-###################
+#####################
 
-Defined in header `KokkosBatched_Vector.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Vector.hpp>`_
+Defined in header: :code:`KokkosBatched_Vector.hpp`
 
 .. code:: c++
 
@@ -46,14 +46,14 @@ The KokkosBatched::Vector class is a fundamental building block for the KokkosBa
 This header also provides traits for determining appropriate vector lengths for different scalar types and memory spaces, allowing for optimal SIMD utilization on different architectures.
 
 Type Requirements
-----------------
+-----------------
 
 - ``T`` must be a scalar type (float, double, complex<float>, complex<double>)
 - ``l`` must be a positive integer specifying the vector length
 - ``MemorySpace`` must be a valid Kokkos memory space
 
 Key Components
--------------
+--------------
 
 1. **Vector Template**:
    - Primary template for SIMD vectors

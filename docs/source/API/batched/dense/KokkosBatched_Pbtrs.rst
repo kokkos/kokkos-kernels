@@ -1,7 +1,7 @@
 KokkosBatched::Pbtrs
-##################
+####################
 
-Defined in header `KokkosBatched_Pbtrs.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Pbtrs.hpp>`_
+Defined in header: :code:`KokkosBatched_Pbtrs.hpp`
 
 .. code-block:: c++
 
@@ -37,7 +37,7 @@ Parameters
 :b: Input/output view containing the right-hand side(s) on input and the solution(s) on output
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgUplo`` must be one of the following:
    - ``KokkosBatched::Uplo::Upper`` for upper triangular factorization

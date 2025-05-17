@@ -1,7 +1,7 @@
 KokkosBatched::Gbtrs
 ####################
 
-Defined in header `KokkosBatched_Gbtrs.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Gbtrs.hpp>`_
+Defined in header: :code:`KokkosBatched_Gbtrs.hpp`
 
 .. code-block:: c++
 

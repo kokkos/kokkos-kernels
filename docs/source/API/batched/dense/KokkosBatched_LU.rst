@@ -1,7 +1,7 @@
 KokkosBatched::LU
-##################
+#################
 
-Defined in header `KokkosBatched_LU_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_LU_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_LU_Decl.hpp`
 
 .. code:: c++
 
@@ -34,7 +34,7 @@ Parameters
 :tiny: Optional small value added to diagonal elements to prevent division by zero (default = 0)
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgMode`` must be one of:

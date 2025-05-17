@@ -1,7 +1,7 @@
 KokkosBatched::ApplyQ
 #####################
 
-Defined in header `KokkosBatched_ApplyQ_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_ApplyQ_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_ApplyQ_Decl.hpp`
 
 .. code-block:: c++
 

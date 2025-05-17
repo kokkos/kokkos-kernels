@@ -1,7 +1,7 @@
 KokkosBatched::Lacgv
-##################
+####################
 
-Defined in header `KokkosBatched_Lacgv.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Lacgv.hpp>`_
+Defined in header: :code:`KokkosBatched_Lacgv.hpp`
 
 .. code-block:: c++
 
@@ -28,7 +28,7 @@ Parameters
 :x: Input/output view containing the vector to be conjugated
 
 Type Requirements
-----------------
+-----------------
 
 - ``XViewType`` must be a rank-1 view containing the vector
 - If the elements of ``XViewType`` are complex values, the view must support complex conjugation

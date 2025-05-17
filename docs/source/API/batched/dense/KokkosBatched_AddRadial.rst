@@ -1,7 +1,7 @@
 KokkosBatched::AddRadial
 ########################
 
-Defined in header `KokkosBatched_AddRadial_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_AddRadial_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_AddRadial_Decl.hpp`
 
 .. code-block:: c++
 

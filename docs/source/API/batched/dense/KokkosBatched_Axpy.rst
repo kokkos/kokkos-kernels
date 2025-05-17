@@ -1,7 +1,7 @@
 KokkosBatched::Axpy
 ###################
 
-Defined in header `KokkosBatched_Axpy.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Axpy.hpp>`_
+Defined in header: :code:`KokkosBatched_Axpy.hpp`
 
 .. code:: c++
 

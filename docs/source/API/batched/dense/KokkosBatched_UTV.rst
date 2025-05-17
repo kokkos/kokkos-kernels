@@ -1,7 +1,7 @@
 KokkosBatched::UTV
-#################
+##################
 
-Defined in header `KokkosBatched_UTV_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_UTV_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_UTV_Decl.hpp`
 
 .. code:: c++
 
@@ -45,7 +45,7 @@ Parameters
 :matrix_rank: Output parameter for the numerical rank of the matrix
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgAlgo`` must be algorithm variant (implementation dependent)

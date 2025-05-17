@@ -1,7 +1,7 @@
 KokkosBatched::ApplyHouseholder
 ###############################
 
-Defined in header `KokkosBatched_ApplyHouseholder_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_ApplyHouseholder_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_ApplyHouseholder_Decl.hpp`
 
 .. code-block:: c++
 

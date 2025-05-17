@@ -1,7 +1,7 @@
 KokkosBatched::Laswp
-##################
+####################
 
-Defined in header `KokkosBatched_Laswp.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Laswp.hpp>`_
+Defined in header: :code:`KokkosBatched_Laswp.hpp`
 
 .. code-block:: c++
 
@@ -25,7 +25,7 @@ Parameters
 :A: Input/output matrix view to which the row interchanges are applied
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgDirect`` must specify the direction of the permutation:
    - ``KokkosBatched::Direct::Forward`` to apply pivots from first to last

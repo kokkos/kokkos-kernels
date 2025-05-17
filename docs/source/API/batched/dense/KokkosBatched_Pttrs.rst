@@ -1,7 +1,7 @@
 KokkosBatched::Pttrs
-##################
+####################
 
-Defined in header `KokkosBatched_Pttrs.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Pttrs.hpp>`_
+Defined in header: :code:`KokkosBatched_Pttrs.hpp`
 
 .. code-block:: c++
 
@@ -33,7 +33,7 @@ Parameters
 :b: Input/output view containing the right-hand side(s) on input and the solution(s) on output
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgUplo`` must be one of the following:
    - ``KokkosBatched::Uplo::Upper`` if vector e specifies the superdiagonal of a unit bidiagonal matrix U

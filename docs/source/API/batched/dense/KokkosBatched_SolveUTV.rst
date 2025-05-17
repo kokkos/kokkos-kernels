@@ -1,7 +1,7 @@
 KokkosBatched::SolveUTV
-##################
+#######################
 
-Defined in header `KokkosBatched_SolveUTV_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_SolveUTV_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_SolveUTV_Decl.hpp`
 
 .. code-block:: c++
 
@@ -43,7 +43,7 @@ Parameters
 :w: Workspace view (contiguous)
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgAlgo`` must specify the algorithm to be used

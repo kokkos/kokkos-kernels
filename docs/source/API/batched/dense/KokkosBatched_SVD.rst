@@ -1,7 +1,7 @@
 KokkosBatched::SVD
-################
+##################
 
-Defined in header `KokkosBatched_SVD_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_SVD_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_SVD_Decl.hpp`
 
 .. code:: c++
 
@@ -47,7 +47,7 @@ Parameters
 :tol: Optional tolerance value for convergence (default = 0)
 
 Type Requirements
-----------------
+-----------------
 
 - ``AViewType`` must be a rank-2 Kokkos View representing a matrix
 - ``UViewType`` must be a rank-2 Kokkos View with dimensions (m×m)

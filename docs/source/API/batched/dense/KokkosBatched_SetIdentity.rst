@@ -1,7 +1,7 @@
 KokkosBatched::SetIdentity
-######################
+##########################
 
-Defined in header `KokkosBatched_SetIdentity_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_SetIdentity_Decl.hpp>`_
+Defined in header `KokkosBatched_SetIdentity_Decl.hpp`
 
 .. code:: c++
 
@@ -42,7 +42,7 @@ Parameters
 :A: Input/output view for the matrices to be set to identity
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgMode`` must be one of:
