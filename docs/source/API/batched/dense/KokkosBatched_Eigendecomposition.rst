@@ -1,5 +1,5 @@
 KokkosBatched::Eigendecomposition
-##############################
+#################################
 
 Defined in header `KokkosBatched_Eigendecomposition_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Eigendecomposition_Decl.hpp>`_
 
@@ -53,7 +53,7 @@ Parameters
 :W: Workspace view for temporary calculations
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``AViewType`` must be a rank-2 or rank-3 Kokkos View representing square matrices

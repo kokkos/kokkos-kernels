@@ -47,7 +47,7 @@ Parameters
 :a: Input/output view for matrices that will be updated
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgTrans`` must be one of:
 

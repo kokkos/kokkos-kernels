@@ -1,5 +1,5 @@
 KokkosBatched::Gemm
-#####################
+###################
 
 Defined in header `KokkosBatched_Gemm_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Gemm_Decl.hpp>`_
 
@@ -38,7 +38,7 @@ Parameters
 :C: Input/output view for the result matrices
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgTransA`` and ``ArgTransB`` must be one of:

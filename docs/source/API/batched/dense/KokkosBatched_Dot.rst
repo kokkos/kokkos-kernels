@@ -1,5 +1,5 @@
 KokkosBatched::Dot
-#################
+##################
 
 Defined in header `KokkosBatched_Dot.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Dot.hpp>`_
 
@@ -51,7 +51,7 @@ Parameters
 :dot: Output view to store the dot product results
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgTrans`` must be one of:

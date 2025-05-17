@@ -1,5 +1,5 @@
 KokkosBatched::Gemv
-#################
+###################
 
 Defined in header `KokkosBatched_Gemv_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Gemv_Decl.hpp>`_
 
@@ -56,7 +56,7 @@ Parameters
 :y: Input/output view for vectors that will be updated
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgTrans`` must be one of:

@@ -1,5 +1,5 @@
 KokkosBatched::Getrf
-###################
+####################
 
 Defined in header `KokkosBatched_Getrf.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Getrf.hpp>`_
 
@@ -34,7 +34,7 @@ Parameters
 :piv: Output view to store the pivot indices
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgAlgo`` must be one of:
 

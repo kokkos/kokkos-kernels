@@ -1,5 +1,5 @@
 KokkosBatched::AddRadial
-##################
+########################
 
 Defined in header `KokkosBatched_AddRadial_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_AddRadial_Decl.hpp>`_
 
@@ -39,7 +39,7 @@ Parameters
 :A: Input/output matrix view to which diagonal values are added
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ScalarType`` must be a scalar type compatible with the element type of the matrix view

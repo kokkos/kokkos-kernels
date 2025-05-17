@@ -1,5 +1,5 @@
 KokkosBatched::Getrs
-##################
+####################
 
 Defined in header `KokkosBatched_Getrs.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Getrs.hpp>`_
 
@@ -30,7 +30,7 @@ Parameters
 :b: Input/output view containing right-hand sides on input and solutions on output
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgTrans`` must be one of the following:
    - ``KokkosBatched::Trans::NoTranspose`` to solve :math:`A \cdot X = B`
