@@ -1,7 +1,7 @@
 KokkosBatched::Pbtrf
-##################
+####################
 
-Defined in header `KokkosBatched_Pbtrf.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Pbtrf.hpp>`_
+Defined in header: :code:`KokkosBatched_Pbtrf.hpp`
 
 .. code-block:: c++
 
@@ -35,7 +35,7 @@ Parameters
 :ab: Input/output view containing the band matrix in compact band storage format. On exit, contains the Cholesky factorization.
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgUplo`` must be one of the following:
    - ``KokkosBatched::Uplo::Upper`` for upper triangular factorization
@@ -46,7 +46,7 @@ Type Requirements
 - The view must be accessible in the execution space
 
 Band Storage Format
-------------------
+-------------------
 
 In the band storage format:
 

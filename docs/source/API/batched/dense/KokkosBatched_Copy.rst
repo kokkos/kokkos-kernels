@@ -1,7 +1,7 @@
 KokkosBatched::Copy
 ###################
 
-Defined in header `KokkosBatched_Copy_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Copy_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_Copy_Decl.hpp`
 
 .. code:: c++
 

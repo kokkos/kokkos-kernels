@@ -1,7 +1,7 @@
 KokkosBatched::Pttrf
-##################
+####################
 
-Defined in header `KokkosBatched_Pttrf.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Pttrf.hpp>`_
+Defined in header: :code:`KokkosBatched_Pttrf.hpp`
 
 .. code-block:: c++
 
@@ -34,7 +34,7 @@ Parameters
 :e: Input/output view containing subdiagonal elements of the matrix. On exit, contains the subdiagonal elements of L.
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgAlgo`` must be ``KokkosBatched::Algo::Pttrf::Unblocked`` for the unblocked algorithm
 - ``DViewType`` must be a rank-1 view containing the diagonal elements (length n)

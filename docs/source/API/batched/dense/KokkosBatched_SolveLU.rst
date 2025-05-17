@@ -1,7 +1,7 @@
 KokkosBatched::SolveLU
-####################
+######################
 
-Defined in header `KokkosBatched_SolveLU_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_SolveLU_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_SolveLU_Decl.hpp`
 
 .. code:: c++
 
@@ -49,7 +49,7 @@ Parameters
 :B: Input/output view for the right-hand side and solution
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgTrans`` must be one of:

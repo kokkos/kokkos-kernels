@@ -1,7 +1,7 @@
 KokkosBatched::Iamax
-###################
+####################
 
-Defined in header `KokkosBatched_Iamax.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Iamax.hpp>`_
+Defined in header: :code:`KokkosBatched_Iamax.hpp`
 
 .. code:: c++
 
@@ -24,12 +24,12 @@ Parameters
 :x: Input view containing the vector to search
 
 Type Requirements
-----------------
+-----------------
 
 - ``XViewType`` must be a rank-1 Kokkos View representing a vector
 
 Return Value
------------
+------------
 
 - Returns the index of the first element having maximum absolute value
 - Returns 0 for an empty vector (consistent with BLAS)

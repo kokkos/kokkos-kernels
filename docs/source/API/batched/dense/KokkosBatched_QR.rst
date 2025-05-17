@@ -1,7 +1,7 @@
 KokkosBatched::QR
-##################
+#################
 
-Defined in header `KokkosBatched_QR_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_QR_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_QR_Decl.hpp`
 
 .. code:: c++
 
@@ -36,7 +36,7 @@ Parameters
 :w: Workspace view for temporary calculations
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgMode`` must be one of:

@@ -1,7 +1,7 @@
 KokkosBatched::Eigendecomposition
 #################################
 
-Defined in header `KokkosBatched_Eigendecomposition_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Eigendecomposition_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_Eigendecomposition_Decl.hpp`
 
 .. code:: c++
 

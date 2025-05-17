@@ -1,7 +1,7 @@
 KokkosBatched::Trtri
-##################
+####################
 
-Defined in header `KokkosBatched_Trtri_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Trtri_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_Trtri_Decl.hpp`
 
 .. code:: c++
 
@@ -25,7 +25,7 @@ Parameters
 :A: Input/output view containing triangular matrices to be inverted
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgUplo`` must be one of:
 

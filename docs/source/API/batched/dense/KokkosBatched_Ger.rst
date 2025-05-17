@@ -1,7 +1,7 @@
 KokkosBatched::Ger
 ##################
 
-Defined in header `KokkosBatched_Ger.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Ger.hpp>`_
+Defined in header: :code:`KokkosBatched_Ger.hpp`
 
 .. code:: c++
 

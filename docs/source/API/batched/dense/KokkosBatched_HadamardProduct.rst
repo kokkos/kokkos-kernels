@@ -1,7 +1,7 @@
 KokkosBatched::HadamardProduct
-#########################
+##############################
 
-Defined in header `KokkosBatched_HadamardProduct.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_HadamardProduct.hpp>`_
+Defined in header: :code:`KokkosBatched_HadamardProduct.hpp`
 
 .. code:: c++
 
@@ -61,7 +61,7 @@ Parameters
 :V: Output view for the element-wise product results
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgMode`` must be one of:

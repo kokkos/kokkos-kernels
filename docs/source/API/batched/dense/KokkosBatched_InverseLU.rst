@@ -1,7 +1,7 @@
 KokkosBatched::InverseLU
-##################
+########################
 
-Defined in header `KokkosBatched_InverseLU_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_InverseLU_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_InverseLU_Decl.hpp`
 
 .. code-block:: c++
 
@@ -41,7 +41,7 @@ Parameters
 :w: Workspace view with enough space to hold a copy of A
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgAlgo`` specifies the algorithm to be used for the SolveLU operation
 - ``MemberType`` must be a Kokkos TeamPolicy member type (only for team version)

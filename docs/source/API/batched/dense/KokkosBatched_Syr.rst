@@ -1,7 +1,7 @@
 KokkosBatched::Syr
 ##################
 
-Defined in header `KokkosBatched_Syr.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Syr.hpp>`_
+Defined in header: :code:`KokkosBatched_Syr.hpp`
 
 .. code-block:: c++
 
@@ -47,7 +47,7 @@ Parameters
 :a: Input/output view containing the symmetric/Hermitian matrix A
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgUplo`` must be one of the following:
    - ``KokkosBatched::Uplo::Upper`` to update the upper triangular part of A

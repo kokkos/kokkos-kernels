@@ -1,7 +1,7 @@
 KokkosBatched::Trmm
-##################
+###################
 
-Defined in header `KokkosBatched_Trmm_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Trmm_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_Trmm_Decl.hpp`
 
 .. code:: c++
 
@@ -42,7 +42,7 @@ Parameters
 :B: Input/output view for general matrices (overwritten with result)
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgSide`` must be one of:
 

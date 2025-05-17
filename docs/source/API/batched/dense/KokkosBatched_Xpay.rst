@@ -1,7 +1,7 @@
 KokkosBatched::Xpay
-#################
+###################
 
-Defined in header `KokkosBatched_Xpay.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Xpay.hpp>`_
+Defined in header: :code:`KokkosBatched_Xpay.hpp`
 
 .. code:: c++
 
@@ -53,7 +53,7 @@ Parameters
 :Y: Input/output view containing batch of vectors to be scaled and updated
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ViewType`` must be:

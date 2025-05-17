@@ -1,7 +1,7 @@
 KokkosBatched::Gemm
 ###################
 
-Defined in header `KokkosBatched_Gemm_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Gemm_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_Gemm_Decl.hpp`
 
 .. code:: c++
 

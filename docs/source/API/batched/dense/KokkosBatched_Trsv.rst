@@ -1,7 +1,7 @@
 KokkosBatched::Trsv
-##################
+###################
 
-Defined in header `KokkosBatched_Trsv_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Trsv_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_Trsv_Decl.hpp`
 
 .. code:: c++
 
@@ -65,7 +65,7 @@ Parameters
 :b: Input/output view for the right-hand side vectors and solutions
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgUplo`` must be one of:

@@ -1,7 +1,7 @@
 KokkosBatched::Householder
-########################
+##########################
 
-Defined in header `KokkosBatched_Householder_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Householder_Decl.hpp>`_
+Defined in header: :code:`KokkosBatched_Householder_Decl.hpp`
 
 .. code:: c++
 
@@ -44,7 +44,7 @@ Parameters
 :tau: Output view for Householder scalars
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgSide`` must be one of:
