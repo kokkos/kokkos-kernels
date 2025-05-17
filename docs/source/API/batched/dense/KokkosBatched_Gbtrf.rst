@@ -1,5 +1,5 @@
 KokkosBatched::Gbtrf
-##################
+####################
 
 Defined in header `KokkosBatched_Gbtrf.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Gbtrf.hpp>`_
 
@@ -44,7 +44,7 @@ Parameters
 :m: Optional number of rows of matrix A (default -1, which means m = n)
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgAlgo`` must be ``KokkosBatched::Algo::Gbtrf::Unblocked`` for the unblocked algorithm
 - ``ABViewType`` must be a rank-2 view containing the banded matrix in the appropriate format

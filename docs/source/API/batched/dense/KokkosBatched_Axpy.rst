@@ -53,7 +53,7 @@ Parameters
 :Y: Input/output view containing batch of vectors to be updated
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``XViewType`` and ``YViewType`` must be:

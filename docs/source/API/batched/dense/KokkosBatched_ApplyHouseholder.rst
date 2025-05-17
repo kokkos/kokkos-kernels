@@ -1,5 +1,5 @@
 KokkosBatched::ApplyHouseholder
-######################
+###############################
 
 Defined in header `KokkosBatched_ApplyHouseholder_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_ApplyHouseholder_Decl.hpp>`_
 
@@ -64,7 +64,7 @@ Parameters
 :w: Workspace view for temporary calculations
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgSide`` must be one of:

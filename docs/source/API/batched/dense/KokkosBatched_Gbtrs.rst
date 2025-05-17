@@ -1,5 +1,5 @@
 KokkosBatched::Gbtrs
-##################
+####################
 
 Defined in header `KokkosBatched_Gbtrs.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Gbtrs.hpp>`_
 
@@ -35,7 +35,7 @@ Parameters
 :ku: Number of superdiagonals within the band of A (ku ≥ 0)
 
 Type Requirements
-----------------
+-----------------
 
 - ``ArgTrans`` must be one of the following:
    - ``KokkosBatched::Trans::NoTranspose`` to solve :math:`A \cdot X = B`

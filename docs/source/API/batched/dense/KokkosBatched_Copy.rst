@@ -1,5 +1,5 @@
 KokkosBatched::Copy
-#################
+###################
 
 Defined in header `KokkosBatched_Copy_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Copy_Decl.hpp>`_
 
@@ -57,7 +57,7 @@ Parameters
 :B: Output view for destination matrices or vectors
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgTrans`` must be one of:

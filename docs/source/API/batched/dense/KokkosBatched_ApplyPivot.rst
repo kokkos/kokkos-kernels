@@ -1,5 +1,5 @@
 KokkosBatched::ApplyPivot
-##################
+#########################
 
 Defined in header `KokkosBatched_ApplyPivot_Decl.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_ApplyPivot_Decl.hpp>`_
 
@@ -58,7 +58,7 @@ Parameters
 :A: Input/output matrix view to which the pivoting is applied
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgSide`` must be one of:

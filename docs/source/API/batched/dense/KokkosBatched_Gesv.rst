@@ -1,5 +1,5 @@
 KokkosBatched::Gesv
-##################
+###################
 
 Defined in header `KokkosBatched_Gesv.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/batched/dense/src/KokkosBatched_Gesv.hpp>`_
 
@@ -66,7 +66,7 @@ Parameters
 :tmp: Temporary workspace for certain algorithm variants (only for SerialGesv)
 
 Type Requirements
-----------------
+-----------------
 
 - ``MemberType`` must be a Kokkos TeamPolicy member type
 - ``ArgAlgo`` must be one of:
