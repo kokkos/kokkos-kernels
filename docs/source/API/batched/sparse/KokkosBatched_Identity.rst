@@ -1,7 +1,7 @@
 KokkosBatched::Identity
 #######################
 
-Defined in header `KokkosBatched_Identity.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Identity.hpp>`_
+Defined in header: :code:`KokkosBatched_Identity.hpp`
 
 .. code-block:: c++
 

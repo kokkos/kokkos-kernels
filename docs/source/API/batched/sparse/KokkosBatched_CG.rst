@@ -1,7 +1,7 @@
 KokkosBatched::CG
 #################
 
-Defined in header `KokkosBatched_CG.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_CG.hpp>`_
+Defined in header: :code:`KokkosBatched_CG.hpp`
 
 .. code-block:: c++
 

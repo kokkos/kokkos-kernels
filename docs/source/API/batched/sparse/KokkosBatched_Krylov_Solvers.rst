@@ -1,7 +1,7 @@
 KokkosBatched::Krylov_Solvers
 #############################
 
-Defined in header `KokkosBatched_Krylov_Solvers.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Krylov_Solvers.hpp>`_
+Defined in header`: :code:KokkosBatched_Krylov_Solvers.hpp`
 
 This header provides the core implementation structures for various Krylov subspace methods with different parallelism models. These are the implementations behind the higher-level interfaces like ``KokkosBatched::CG`` and ``KokkosBatched::GMRES``.
 

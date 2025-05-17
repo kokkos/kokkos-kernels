@@ -1,7 +1,7 @@
 KokkosBatched::Spmv
 ###################
 
-Defined in header `KokkosBatched_Spmv.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Spmv.hpp>`_
+Defined in header: :code:`KokkosBatched_Spmv.hpp`
 
 .. code-block:: c++
 

@@ -1,7 +1,7 @@
 KokkosBatched::GMRES
 ####################
 
-Defined in header `KokkosBatched_GMRES.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_GMRES.hpp>`_
+Defined in header: :code:`KokkosBatched_GMRES.hpp`
 
 .. code-block:: c++
 
