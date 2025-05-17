@@ -5,7 +5,13 @@ API: Batched
    :maxdepth: 2
    :hidden:
 
-   batched/dense/KokkosBatched_AddRadial
+   batched/dense-index
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+
+   batched/sparse-index
 
 Overview
 --------
