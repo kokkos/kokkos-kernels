@@ -1,7 +1,7 @@
 KokkosBatched::JacobiPrec
 #########################
 
-Defined in header `KokkosBatched_JacobiPrec.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_JacobiPrec.hpp>`_
+Defined in header: :code:`KokkosBatched_JacobiPrec.hpp`
 
 .. code-block:: c++
 

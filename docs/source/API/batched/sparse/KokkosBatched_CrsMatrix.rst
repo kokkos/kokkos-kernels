@@ -1,7 +1,7 @@
 KokkosBatched::CrsMatrix
 ########################
 
-Defined in header `KokkosBatched_CrsMatrix.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_CrsMatrix.hpp>`_
+Defined in header: :code:`KokkosBatched_CrsMatrix.hpp`
 
 .. code-block:: c++
 

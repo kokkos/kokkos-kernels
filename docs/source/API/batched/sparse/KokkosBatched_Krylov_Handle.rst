@@ -1,7 +1,7 @@
 KokkosBatched::KrylovHandle
 ###########################
 
-Defined in header `KokkosBatched_Krylov_Handle.hpp <https://github.com/kokkos/kokkos-kernels/blob/master/src/batched/KokkosBatched_Krylov_Handle.hpp>`_
+Defined in header: :code:`KokkosBatched_Krylov_Handle.hpp`
 
 .. code-block:: c++
 
