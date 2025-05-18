@@ -106,8 +106,8 @@ Key Methods
 - ``reset()``: Reset the handle for solving new systems
 - ``synchronise_host()``: Update host copies of device data
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -195,7 +195,7 @@ Example
     }
 
 Complete Example with CG Solver
-------------------------------
+-------------------------------
 
 .. code-block:: cpp
 

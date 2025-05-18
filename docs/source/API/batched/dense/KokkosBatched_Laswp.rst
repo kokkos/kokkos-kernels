@@ -35,8 +35,8 @@ Type Requirements
 - ``AViewType`` must be a rank-2 view representing the matrix to be permuted
 - All views must be accessible in the execution space
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -137,7 +137,7 @@ Example
     }
 
 Batched Example
---------------
+---------------
 
 .. code-block:: cpp
 

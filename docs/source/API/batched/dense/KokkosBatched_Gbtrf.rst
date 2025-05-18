@@ -51,8 +51,8 @@ Type Requirements
 - ``PivViewType`` must be a rank-1 view for storing the pivot indices
 - All views must be accessible in the execution space
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -126,7 +126,7 @@ Example
     }
 
 Batched Example
---------------
+---------------
 
 .. code-block:: cpp
 

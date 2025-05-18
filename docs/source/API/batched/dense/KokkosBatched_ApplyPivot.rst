@@ -71,8 +71,8 @@ Type Requirements
 - ``AViewType`` must be a rank-2 view representing the matrix
 - All views must be accessible in the execution space
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -197,7 +197,7 @@ Example
     }
 
 Column Pivoting Example
----------------------
+-----------------------
 
 .. code-block:: cpp
 
@@ -291,7 +291,7 @@ Column Pivoting Example
     }
 
 Batched Example
-------------
+---------------
 
 .. code-block:: cpp
 

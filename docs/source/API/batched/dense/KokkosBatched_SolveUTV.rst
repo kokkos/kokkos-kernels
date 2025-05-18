@@ -53,8 +53,8 @@ Type Requirements
 - ``wViewType`` must be a rank-1 view with enough space for workspace operations
 - All views must be accessible in the execution space
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -192,7 +192,7 @@ Example
     }
 
 Batched Example
---------------
+---------------
 
 .. code-block:: cpp
 

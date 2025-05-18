@@ -190,7 +190,7 @@ Example
     }
 
 Team Vector Version Example
---------------------------
+---------------------------
 
 .. code-block:: cpp
 

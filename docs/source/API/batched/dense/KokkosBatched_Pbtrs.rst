@@ -48,8 +48,8 @@ Type Requirements
 - ``BViewType`` must be a rank-1 view for a single right-hand side, or a rank-2 view for multiple right-hand sides
 - All views must be accessible in the execution space
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -180,7 +180,7 @@ Example
     }
 
 Batched Example
---------------
+---------------
 
 .. code-block:: cpp
 

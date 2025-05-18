@@ -62,8 +62,8 @@ Type Requirements
 - ``AViewType`` must be a rank-2 view representing the symmetric/Hermitian matrix
 - All views must be accessible in the execution space
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -168,7 +168,7 @@ Example
     }
 
 Complex Example
--------------
+---------------
 
 .. code-block:: cpp
 
@@ -277,7 +277,7 @@ Complex Example
     }
 
 Batched Example
---------------
+---------------
 
 .. code-block:: cpp
 

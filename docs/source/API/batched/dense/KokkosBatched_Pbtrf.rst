@@ -53,8 +53,8 @@ In the band storage format:
 - If ``Uplo::Upper``: Element A(i,j) is stored in ab(ku+i-j,j) for max(0,j-ku) <= i <= j, where ku is the number of superdiagonals.
 - If ``Uplo::Lower``: Element A(i,j) is stored in ab(i-j,j) for j <= i <= min(n-1,j+kl), where kl is the number of subdiagonals.
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -177,7 +177,7 @@ Example
     }
 
 Batched Example
---------------
+---------------
 
 .. code-block:: cpp
 

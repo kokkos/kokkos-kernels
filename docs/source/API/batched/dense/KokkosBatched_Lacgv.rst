@@ -35,8 +35,8 @@ Type Requirements
 - For real valued ``XViewType``, this function is a no-op
 - The view must be accessible in the execution space
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -125,7 +125,7 @@ Example
     }
 
 Batched Example
---------------
+---------------
 
 .. code-block:: cpp
 

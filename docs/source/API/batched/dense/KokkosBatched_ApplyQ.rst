@@ -81,8 +81,8 @@ Type Requirements
 - ``vViewType`` must be a rank-2 view containing Householder vectors
 - ``wViewType`` must be a rank-1 workspace view with sufficient size
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -185,7 +185,7 @@ Example
     }
 
 Batched Example with Team Version
---------------------------------
+---------------------------------
 
 .. code-block:: cpp
 

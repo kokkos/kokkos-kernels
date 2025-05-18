@@ -138,7 +138,7 @@ Example
     }
 
 Team Version Example
-------------------
+--------------------
 
 .. code-block:: cpp
 

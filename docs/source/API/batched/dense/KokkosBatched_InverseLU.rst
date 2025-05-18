@@ -49,8 +49,8 @@ Type Requirements
 - ``wViewType`` must be a rank-1 view with enough space to reinterpret as a matrix of the same dimensions as A
 - All views must be accessible in the execution space
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -147,7 +147,7 @@ Example
     }
 
 Team Version Example
-------------------
+--------------------
 
 .. code-block:: cpp
 
