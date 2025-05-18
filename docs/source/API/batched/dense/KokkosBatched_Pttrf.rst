@@ -41,8 +41,8 @@ Type Requirements
 - ``EViewType`` must be a rank-1 view containing the subdiagonal elements (length n-1)
 - All views must be accessible in the execution space
 
-Example
-=======
+Examples
+========
 
 .. code-block:: cpp
 
@@ -182,7 +182,7 @@ Example
     }
 
 Batched Example
---------------
+---------------
 
 .. code-block:: cpp
 
