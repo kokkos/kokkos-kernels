@@ -80,7 +80,7 @@ Type Requirements
 Example
 =======
 
-Note that while the example below uses forward sweeps, calling the backwards sweep API is almost identical.
+Note that while the example below uses forward sweeps, calling the backward sweep API is almost identical.
 
 .. literalinclude:: ../../../../example/wiki/sparse/KokkosSparse_wiki_gauss_seidel.cpp
   :language: c++
