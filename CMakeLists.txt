@@ -86,10 +86,21 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
     include_directories(tpls/rajaperf/src)
     set(KokkosKernels_ENABLE_PERFTESTS ON CACHE BOOL "Whether to build tests including Perfsuite. Default: OFF" FORCE)
   ENDIF()
-  IF(KokkosKernels_ENABLE_BENCHMARK)
-    SET(KOKKOSKERNELS_ENABLE_BENCHMARK ON CACHE BOOL "Benchmark enabled")
+  KOKKOSKERNELS_ADD_OPTION(
+          "ENABLE_BENCHMARKS"
+          OFF
+          BOOL
+          "Whether to build benchmarks. Default: OFF"
+  )
+  IF(KokkosKernels_ENABLE_BENCHMARKS)
     INCLUDE(cmake/kokkoskernels_benchmarks.cmake)
   ENDIF()
+  KOKKOSKERNELS_ADD_OPTION(
+          "RUN_BENCHMARKS"
+          OFF
+          BOOL
+          "Whether to run benchmarks. Default: OFF"
+  )
 ENDIF ()
 
 KOKKOSKERNELS_ADD_OPTION(
@@ -359,7 +370,7 @@ ELSE()
     TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC
       $<INSTALL_INTERFACE:${KOKKOSKERNELS_HEADER_INSTALL_DIR}>)
 
-    IF(KokkosKernels_ENABLE_BENCHMARK)
+    IF(KokkosKernels_ENABLE_BENCHMARKS)
       INCLUDE(cmake/kokkoskernels_version_info.cmake)
       check_version_info()
     ENDIF()
@@ -449,6 +460,10 @@ ELSE()
       MESSAGE(STATUS "Enabling examples.")
       KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
     ENDIF ()
+    IF(KokkosKernels_ENABLE_BENCHMARKS)
+      MESSAGE(STATUS "Enabling benchmarks.")
+      add_subdirectory(benchmarks)
+    ENDIF()
   ELSE ()
     # all components were not enabled, so perftests and examples can't be enabled.
     # Warn if they were requested.
