@@ -472,10 +472,11 @@ void test_QR_batch(const int numMat, const int numRows, const int numCols) {
   // Check that Q*R = A
 
   using ExecutionSpace = typename Device::execution_space;
+  using size_type = typename Kokkos::View<Scalar*, ExecutionSpace>::size_type;
 
   {
     Kokkos::View<Scalar**, ExecutionSpace> tau("tau", numMat, numCols);
-    Kokkos::View<Scalar*, ExecutionSpace> tmp("work buffer", static_cast<long>(numMat) * Kokkos::max(numRows, numCols));
+    Kokkos::View<Scalar*, ExecutionSpace> tmp("work buffer", static_cast<size_type>(numMat) * Kokkos::max(numRows, numCols));
     Kokkos::View<Scalar***, ExecutionSpace> As("A matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Bs("B matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Qs("Q matrices", numMat, numRows, numRows);
