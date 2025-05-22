@@ -13,9 +13,9 @@ on:
         type: string
 
 jobs:
-  PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT:
-    name: PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT
-    runs-on: [kk-env-openblas-0.3.23-hip-5.6.1-latest]
+  PR_VEGA90A_ROCM621_HIP_SERIAL_LEFT:
+    name: PR_VEGA90A_ROCM621_HIP_SERIAL_LEFT
+    runs-on: [rocm-6.2.1_openblas-0.3.28_zen3_gfx90a-latest-latest]
     
     steps:
       - name: checkout_kokkos_kernels
@@ -36,47 +36,40 @@ jobs:
           mkdir "$GITHUB_WORKSPACE/kokkos/build"
           mkdir "$GITHUB_WORKSPACE/kokkos/install"
           cd "$GITHUB_WORKSPACE/kokkos/build"
-          HIPCC=$(which hipcc)
           cmake -S "$GITHUB_WORKSPACE/kokkos" \
             -B "$GITHUB_WORKSPACE/kokkos/build" \
-            -D CMAKE_CXX_COMPILER=$HIPCC \
-            -D CMAKE_CXX_FLAGS="-O3" \
-            -D CMAKE_EXE_LINKER_FLAGS= \
+            -D CMAKE_CXX_COMPILER=hipcc \
+            -D CMAKE_BUILD_TYPE=Release \
             -D CMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/kokkos/install" \
             -D CMAKE_VERBOSE_MAKEFILE=ON \
             -D CMAKE_CXX_EXTENSIONS=OFF \
-            -D CMAKE_CXX_STANDARD=17 \
-            -D BUILD_SHARED_LIBS=OFF \
+            -D CMAKE_CXX_STANDARD=20 \
             -D Kokkos_ENABLE_SERIAL=ON \
             -D Kokkos_ENABLE_HIP=ON \
             -D Kokkos_ARCH_VEGA90A=ON \
             -D Kokkos_ENABLE_TESTS=OFF \
             -D Kokkos_ENABLE_EXAMPLES=OFF \
             -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
-            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF
+            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
-        run: make -j16 install
+        run: cmake --build . --target install --parallel $(nproc)
 
       - name: configure_kokkos_kernels
         run: |
           mkdir "$GITHUB_WORKSPACE/kokkos-kernels/build"
           mkdir "$GITHUB_WORKSPACE/kokkos-kernels/install"
           cd "$GITHUB_WORKSPACE/kokkos-kernels/build"
-          HIPCC=$(which hipcc)
           cmake -S "$GITHUB_WORKSPACE/kokkos-kernels" \
             -B "$GITHUB_WORKSPACE/kokkos-kernels/build" \
-            -D CMAKE_CXX_COMPILER=$HIPCC \
-            -D CMAKE_CXX_FLAGS="-O3 " \
-            -D CMAKE_INSTALL_PREFIX= \
-            -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
-            -D CMAKE_EXE_LINKER_FLAGS="" \
-            -D BUILD_SHARED_LIBS=OFF \
+            -D CMAKE_CXX_COMPILER=hipcc \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D CMAKE_CXX_STANDARD=20 \
             -D Kokkos_ROOT="$GITHUB_WORKSPACE/kokkos/install" \
             -D KokkosKernels_ENABLE_TESTS=ON \
-            -D KokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+            -D KokkosKernels_ENABLE_EXAMPLES=ON \
+            -D KokkosKernels_ENABLE_BENCHMARKS=ON \
             -D KokkosKernels_ENABLE_PERFTESTS=ON \
             -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
             -D KokkosKernels_INST_DOUBLE=ON \
@@ -88,15 +81,15 @@ jobs:
 
       - name: build
         working-directory: kokkos-kernels/build
-        run: make -j12 all
+        run: cmake --build . --parallel $(nproc)
 
       - name: test
         working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
 
-  PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT_TPLS:
-    name: PR_VEGA90A_ROCM561_HIP_SERIAL_LEFT_TPLS
-    runs-on: [kk-env-openblas-0.3.23-hip-5.6.1-latest]
+  PR_VEGA90A_ROCM621_HIP_SERIAL_LEFT_TPLS:
+    name: PR_VEGA90A_ROCM621_HIP_SERIAL_LEFT_TPLS
+    runs-on: [rocm-6.2.1_openblas-0.3.28_zen3_gfx90a-latest-latest]
     
     steps:
       - name: checkout_kokkos_kernels
@@ -115,17 +108,14 @@ jobs:
         run: |
           mkdir -p kokkos/{build,install}
           cd kokkos/build
-          HIPCC=$(which hipcc)
           cmake -S "$GITHUB_WORKSPACE/kokkos" \
             -B "$GITHUB_WORKSPACE/kokkos/build" \
-            -D CMAKE_CXX_COMPILER=$HIPCC \
-            -D CMAKE_CXX_FLAGS=-O3 \
-            -D CMAKE_EXE_LINKER_FLAGS= \
+            -D CMAKE_CXX_COMPILER=hipcc \
+            -D CMAKE_BUILD_TYPE=Release \
             -D CMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/kokkos/install" \
             -D CMAKE_VERBOSE_MAKEFILE=ON \
             -D CMAKE_CXX_EXTENSIONS=OFF \
-            -D CMAKE_CXX_STANDARD=17 \
-            -D BUILD_SHARED_LIBS=OFF \
+            -D CMAKE_CXX_STANDARD=20 \
             -D Kokkos_ENABLE_SERIAL=ON \
             -D Kokkos_ENABLE_HIP=ON \
             -D Kokkos_ARCH_VEGA90A=ON \
@@ -137,21 +127,18 @@ jobs:
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
-        run: make -j16 install
+        run: cmake --build . --target install --parallel $(nproc)
 
       - name: configure_kokkos_kernels
         run: |
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
-          HIPCC=$(which hipcc)
           cmake -S "$GITHUB_WORKSPACE/kokkos-kernels" \
             -B "$GITHUB_WORKSPACE/kokkos-kernels/build" \
-            -D CMAKE_CXX_COMPILER=$HIPCC \
-            -D CMAKE_CXX_FLAGS="-O3 -I$ROCM_CORE_ROOT/include" \
+            -D CMAKE_CXX_COMPILER=hipcc \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D CMAKE_CXX_STANDARD=20 \
             -D CMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/kokkos-kernels/install" \
-            -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
-            -D CMAKE_EXE_LINKER_FLAGS="" \
-            -D BUILD_SHARED_LIBS=OFF \
             -D Kokkos_ROOT="$GITHUB_WORKSPACE/kokkos/install" \
             -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
             -D KokkosKernels_INST_DOUBLE=ON \
@@ -166,12 +153,12 @@ jobs:
             -D KokkosKernels_ENABLE_TESTS=ON \
             -D KokkosKernels_ENABLE_PERFTESTS=ON \
             -D KokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
-            -D KokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+            -D KokkosKernels_ENABLE_BENCHMARKS=ON \
             -D KokkosKernels_ENABLE_DOCS=OFF
 
       - name: build
         working-directory: kokkos-kernels/build
-        run: make -j12 all
+        run: cmake --build . --parallel $(nproc)
 
       - name: test
         working-directory: kokkos-kernels/build
