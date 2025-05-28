@@ -101,37 +101,7 @@ Example
         
         // Copy results back to host
         Kokkos::deep_copy(A_host, A);
-        
-        // Verify results
-        auto A_orig_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_orig);
-        
-        bool test_passed = true;
-        for (int i = 0; i < n; ++i) {
-          for (int j = 0; j < n; ++j) {
-            if (i == j) {
-              // Diagonal elements should have tiny added
-              scalar_type expected = A_orig_host(i, j) + tiny;
-              if (std::abs(A_host(i, j) - expected) > 1e-15) {
-                test_passed = false;
-                std::cout << "Diagonal mismatch at (" << i << ", " << j << "): " 
-                          << A_host(i, j) << " vs expected " << expected << std::endl;
-              }
-            } else {
-              // Off-diagonal elements should remain unchanged
-              if (A_host(i, j) != A_orig_host(i, j)) {
-                test_passed = false;
-                std::cout << "Off-diagonal value changed at (" << i << ", " << j << "): " 
-                          << A_host(i, j) << " vs original " << A_orig_host(i, j) << std::endl;
-              }
-            }
-          }
-        }
-        
-        if (test_passed) {
-          std::cout << "AddRadial test: PASSED" << std::endl;
-        } else {
-          std::cout << "AddRadial test: FAILED" << std::endl;
-        }
+
       }
       Kokkos::finalize();
       return 0;
