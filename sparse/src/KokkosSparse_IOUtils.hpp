@@ -1316,8 +1316,7 @@ crsGraph_t read_kokkos_crst_graph(const char *filename_) {
   delete[] adj;
   delete[] values;
 
-  crsGraph_t static_graph(columns_view, rowmap_view);
-  return static_graph;
+  return crsGraph_t(columns_view, rowmap_view);
 }
 
 template <typename size_type, typename nnz_lno_t>
