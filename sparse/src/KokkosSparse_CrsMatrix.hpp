@@ -156,14 +156,14 @@ struct SparseRowView {
   /// \brief Constructor
   ///
   /// \param values   [in] Array of the row's values.
-  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param colidx [in] Array of the row's column indices.
   /// \param stride   [in] (Constant) stride between matrix entries in
   ///   each of the above arrays.
   /// \param count    [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
-  SparseRowView(value_type* const values, ordinal_type* const colidx__, const ordinal_type& stride,
+  SparseRowView(value_type* const values, ordinal_type* const colidx, const ordinal_type& stride,
                 const ordinal_type& count)
-      : values_(values), colidx_(colidx__), stride_(stride), length(count) {}
+      : values_(values), colidx_(colidx), stride_(stride), length(count) {}
 
   /// \brief Constructor with offset into \c colidx array
   /// \tparam OffsetType The type of \c idx (see above).  Must be a
@@ -172,17 +172,17 @@ struct SparseRowView {
   ///   but a number of entries that does not fit in int.
   ///
   /// \param values   [in] Array of the row's values.
-  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param colidx [in] Array of the row's column indices.
   /// \param stride   [in] (Constant) stride between matrix entries in
   ///                 each of the above arrays.
   /// \param count    [in] Number of entries in the row.
   /// \param idx      [in] Start offset into \c colidx array
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION SparseRowView(
-      const typename MatrixType::values_type& values, const typename MatrixType::index_type& colidx__,
+      const typename MatrixType::values_type& values, const typename MatrixType::index_type& colidx,
       const ordinal_type& stride, const ordinal_type& count, const OffsetType& idx,
       const typename std::enable_if<std::is_integral<OffsetType>::value, int>::type& = 0)
-      : values_(&values(idx)), colidx_(&colidx__(idx)), stride_(stride), length(count) {}
+      : values_(&values(idx)), colidx_(&colidx(idx)), stride_(stride), length(count) {}
 
   /// \brief Number of entries in the row.
   ///
@@ -245,14 +245,14 @@ struct SparseRowViewConst {
   /// \brief Constructor
   ///
   /// \param values   [in] Array of the row's values.
-  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param colidx [in] Array of the row's column indices.
   /// \param stride   [in] (Constant) stride between matrix entries in
   ///                 each of the above arrays.
   /// \param count    [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
-  SparseRowViewConst(value_type* const values, ordinal_type* const colidx__, const ordinal_type& stride,
+  SparseRowViewConst(value_type* const values, ordinal_type* const colidx, const ordinal_type& stride,
                      const ordinal_type& count)
-      : values_(values), colidx_(colidx__), stride_(stride), length(count) {}
+      : values_(values), colidx_(colidx), stride_(stride), length(count) {}
 
   /// \brief Constructor with offset into \c colidx array
   ///
@@ -261,17 +261,17 @@ struct SparseRowViewConst {
   ///   For example, the matrix may have dimensions that fit in int,
   ///   but a number of entries that does not fit in int.
   /// \param values   [in] Array of the row's values.
-  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param colidx [in] Array of the row's column indices.
   /// \param stride   [in] (Constant) stride between matrix entries in
   ///                 each of the above arrays.
   /// \param count    [in] Number of entries in the row.
   /// \param idx      [in] Start offset into \c colidx array
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION SparseRowViewConst(
-      const typename MatrixType::values_type& values, const typename MatrixType::index_type& colidx__,
+      const typename MatrixType::values_type& values, const typename MatrixType::index_type& colidx,
       const ordinal_type& stride, const ordinal_type& count, const OffsetType& idx,
       const typename std::enable_if<std::is_integral<OffsetType>::value, int>::type& = 0)
-      : values_(&values(idx)), colidx_(&colidx__(idx)), stride_(stride), length(count) {}
+      : values_(&values(idx)), colidx_(&colidx(idx)), stride_(stride), length(count) {}
 
   /// \brief Number of entries in the row.
   ///
