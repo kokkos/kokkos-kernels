@@ -10,3 +10,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   team_GMRES
   SOURCES team_GMRES.cpp
   )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  serial_pttrs
+  SOURCES serial_pttrs.cpp
+  )
