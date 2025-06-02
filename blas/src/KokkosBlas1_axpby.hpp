@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOSBLAS1_AXPBY_HPP_
-#define KOKKOSBLAS1_AXPBY_HPP_
+#ifndef KOKKOSBLAS1_AXPBY_HPP
+#define KOKKOSBLAS1_AXPBY_HPP
 
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
 #include <iostream>
@@ -325,4 +325,4 @@ KOKKOS_FUNCTION void serial_axpy(const scalar_type alpha, const XMV X, YMV Y) {
 
 }  // namespace KokkosBlas
 
-#endif
+#endif  // KOKKOSBLAS1_AXPBY_HPP
