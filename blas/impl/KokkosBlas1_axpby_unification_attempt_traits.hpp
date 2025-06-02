@@ -754,8 +754,7 @@ size_t getStrideInCoefficient(T const& coeff) {
 // --------------------------------
 
 template <typename ExecSpace, class T_in, class T_out>
-static void populateRank1Stride1ViewWithScalarOrNonStrideView(const ExecSpace& exec, T_in const& coeff_in,
-                                                              T_out& coeff_out) {
+static void fill_rank1_view(const ExecSpace& exec, T_in const& coeff_in, T_out& coeff_out) {
   // ***********************************************************************
   // 'coeff_out' is assumed to be rank-1, of LayoutLeft or LayoutRight
   //
@@ -785,7 +784,7 @@ static void populateRank1Stride1ViewWithScalarOrNonStrideView(const ExecSpace& e
     // *********************************************************************
     if (coeff_out.extent(0) != coeff_in.extent(0)) {
       std::ostringstream msg;
-      msg << "In populateRank1Stride1ViewWithScalarOrNonStrideView()"
+      msg << "In fill_rank1_view()"
           << ": 'in' and 'out' should have the same extent(0)"
           << ", T_in = " << typeid(T_in).name() << ", coeff_in.label() = " << coeff_in.label()
           << ", coeff_in.extent(0) = " << coeff_in.extent(0) << ", T_out = " << typeid(T_out).name()
@@ -803,7 +802,7 @@ static void populateRank1Stride1ViewWithScalarOrNonStrideView(const ExecSpace& e
       Kokkos::deep_copy(exec, coeff_out, scalarValue);
     } else {
       std::ostringstream msg;
-      msg << "In populateRank1Stride1ViewWithScalarOrNonStrideView()"
+      msg << "In fill_rank1_view()"
           << ": scalar types 'in' and 'out' should be the same"
           << ", T_in = " << typeid(T_in).name() << ", ScalarInType = " << typeid(ScalarInType).name()
           << ", coeff_in.label() = " << coeff_in.label() << ", coeff_in.extent(0) = " << coeff_in.extent(0)
@@ -812,7 +811,7 @@ static void populateRank1Stride1ViewWithScalarOrNonStrideView(const ExecSpace& e
       KokkosKernels::Impl::throw_runtime_exception(msg.str());
     }
   }
-}  // populateRank1Stride1ViewWithScalarOrNonStrideView()
+}  // fill_rank1_view()
 
 }  // namespace Impl
 }  // namespace KokkosBlas

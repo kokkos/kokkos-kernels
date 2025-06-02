@@ -136,7 +136,7 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X, const B
       if constexpr (AxpbyTraits::atInputLayoutA_isStride) {
         Kokkos::deep_copy(exec_space, managed_a, a);
       } else {
-        Impl::populateRank1Stride1ViewWithScalarOrNonStrideView(exec_space, a, managed_a);
+        Impl::fill_rank1_view(exec_space, a, managed_a);
       }
       internal_a = managed_a;
 
@@ -148,7 +148,7 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X, const B
         if constexpr (AxpbyTraits::atInputLayoutB_isStride) {
           Kokkos::deep_copy(exec_space, managed_b, b);
         } else {
-          Impl::populateRank1Stride1ViewWithScalarOrNonStrideView(exec_space, b, managed_b);
+          Impl::fill_rank1_view(exec_space, b, managed_b);
         }
         internal_b = managed_b;
 
@@ -165,7 +165,7 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X, const B
         if constexpr (AxpbyTraits::atInputLayoutB_isStride) {
           Kokkos::deep_copy(exec_space, managed_b, b);
         } else {
-          Impl::populateRank1Stride1ViewWithScalarOrNonStrideView(exec_space, b, managed_b);
+          Impl::fill_rank1_view(exec_space, b, managed_b);
         }
         internal_b = managed_b;
 
@@ -183,7 +183,7 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X, const B
       if constexpr (AxpbyTraits::atInputLayoutA_isStride) {
         Kokkos::deep_copy(exec_space, managed_a, a);
       } else {
-        Impl::populateRank1Stride1ViewWithScalarOrNonStrideView(exec_space, a, managed_a);
+        Impl::fill_rank1_view(exec_space, a, managed_a);
       }
       internal_a = managed_a;
 
@@ -195,7 +195,7 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X, const B
         if constexpr (AxpbyTraits::atInputLayoutB_isStride) {
           Kokkos::deep_copy(exec_space, managed_b, b);
         } else {
-          Impl::populateRank1Stride1ViewWithScalarOrNonStrideView(exec_space, b, managed_b);
+          Impl::fill_rank1_view(exec_space, b, managed_b);
         }
         internal_b = managed_b;
 
@@ -212,7 +212,7 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X, const B
         if constexpr (AxpbyTraits::atInputLayoutB_isStride) {
           Kokkos::deep_copy(exec_space, managed_b, b);
         } else {
-          Impl::populateRank1Stride1ViewWithScalarOrNonStrideView(exec_space, b, managed_b);
+          Impl::fill_rank1_view(exec_space, b, managed_b);
         }
         internal_b = managed_b;
 
