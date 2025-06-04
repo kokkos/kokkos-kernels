@@ -404,6 +404,9 @@ class BsrMatrix {
         dev_config(B.dev_config),
         numCols_(B.numCols()),
         blockDim_(B.blockDim()) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+    graph.row_block_offsets = B.graph.row_block_offsets;
+#endif
   }
 
   /// \brief Construct with a graph that will be shared.
