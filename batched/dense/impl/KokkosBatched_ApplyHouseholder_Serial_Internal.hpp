@@ -43,7 +43,10 @@ struct SerialApplyLeftHouseholderInternal {
 
     // apply a single householder transform H from the left to a row vector a1t
     // and a matrix A2
-    const value_type inv_tau = value_type(1) / (*tau);
+    // const value_type inv_tau = value_type(1) / (*tau);
+    const value_type inv_tau = *tau;
+
+    std::cout << "*** inv_tau=" << inv_tau << std::endl;
 
     // compute the followings:
     // a1t -=    inv(tau)(a1t + u2'A2)
@@ -56,6 +59,8 @@ struct SerialApplyLeftHouseholderInternal {
       for (int i = 0; i < m; ++i) tmp += Kokkos::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
       w1t[j] = tmp * inv_tau;  // /= (*tau);
     }
+
+    std::cout << "*** w1t[0]=" << w1t[0] << std::endl;
 
     // a1t -= w1t    (axpy)
     for (int j = 0; j < n; ++j) a1t[j * a1ts] -= w1t[j];
