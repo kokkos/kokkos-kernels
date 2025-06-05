@@ -775,7 +775,7 @@ KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
     int V_extent_0 = V_rank == 0 ? 1 : v.extent_int(0);
     return V_extent_0;
   } else if (r == 1) {
-    int V_extent_1 = V_rank == 0 || V_rank == 1 ? 1 : v.extent_int(1);
+    int V_extent_1 = (V_rank == 0 || V_rank == 1) ? 1 : v.extent_int(1);
     return V_extent_1;
   } else {
     return 1;
