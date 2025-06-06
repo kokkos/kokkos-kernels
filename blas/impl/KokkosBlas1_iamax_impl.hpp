@@ -62,7 +62,7 @@ struct V_Iamax_Functor {
   }
 
   KOKKOS_INLINE_FUNCTION void init(value_type& update) const {
-    update = Kokkos::reduction_identity<typename RV::value_type>::max() + 1;
+    update = 1;
   }
 
   KOKKOS_INLINE_FUNCTION void join(value_type& update, const value_type& source) const {
