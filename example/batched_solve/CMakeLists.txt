@@ -20,3 +20,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   serial_pbtrs
   SOURCES serial_pbtrs.cpp
   )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  serial_gbtrs
+  SOURCES serial_gbtrs.cpp
+  )
