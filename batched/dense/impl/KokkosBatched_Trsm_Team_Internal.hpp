@@ -127,9 +127,9 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invok
           // Made this non-const in order to WORKAROUND issue #349
           int j = jj * nb, qb = (j + nb) > jb ? np : nb;
           if (use_unit_diag)
-            trsm_u.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+            trsm_u.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Bp + j * bs1);
           else
-            trsm_n.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+            trsm_n.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Bp + j * bs1);
         });
         member.team_barrier();
 
@@ -246,9 +246,9 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invok
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, (jb / nb) + (np > 0)), [&](const int &jj) {
           const int j = jj * nb, qb = (j + nb) > jb ? np : nb;
           if (use_unit_diag)
-            trsm_u.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+            trsm_u.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Bp + j * bs1);
           else
-            trsm_n.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+            trsm_n.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Bp + j * bs1);
         });
         member.team_barrier();
 
