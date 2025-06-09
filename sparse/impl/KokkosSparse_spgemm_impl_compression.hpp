@@ -577,10 +577,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
           while (tmp == NULL) {
             Kokkos::single(
                 Kokkos::PerThread(teamMember),
-                [&](nnz_lno_t *&memptr) {
-                  memptr = (nnz_lno_t *)(memory_space.allocate_chunk(row_ind));
-                },
-                tmp);
+                [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(memory_space.allocate_chunk(row_ind)); }, tmp);
           }
           globally_used_hash_indices = (nnz_lno_t *)tmp;
           hm2.hash_begins            = (nnz_lno_t *)(globally_used_hash_indices + pow2_hash_size);

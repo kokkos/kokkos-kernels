@@ -13,6 +13,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -22,9 +23,9 @@
 namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_iamax(int N) {
-  using ScalarA = typename ViewTypeA::non_const_value_type;
-  using AT = Kokkos::ArithTraits<ScalarA>;
-  using mag_type = typename AT::mag_type;
+  using ScalarA   = typename ViewTypeA::non_const_value_type;
+  using AT        = Kokkos::ArithTraits<ScalarA>;
+  using mag_type  = typename AT::mag_type;
   using size_type = typename ViewTypeA::size_type;
 
   view_stride_adapter<ViewTypeA> a("X", N);
@@ -52,31 +53,31 @@ void impl_test_iamax(int N) {
     expected_max_loc = 0;
   }
 
-  // {
-  //   // printf("impl_test_iamax -- return result as a scalar on host -- N %d\n",
-  //   // N);
-  //   size_type nonconst_max_loc = KokkosBlas::iamax(a.d_view);
-  //   ASSERT_EQ(nonconst_max_loc, expected_max_loc);
+  {
+    // printf("impl_test_iamax -- return result as a scalar on host -- N %d\n",
+    // N);
+    size_type nonconst_max_loc = KokkosBlas::iamax(a.d_view);
+    ASSERT_EQ(nonconst_max_loc, expected_max_loc);
 
-  //   size_type const_max_loc = KokkosBlas::iamax(a.d_view_const);
-  //   ASSERT_EQ(const_max_loc, expected_max_loc);
-  // }
+    size_type const_max_loc = KokkosBlas::iamax(a.d_view_const);
+    ASSERT_EQ(const_max_loc, expected_max_loc);
+  }
 
-  // {
-  //   // printf("impl_test_iamax -- return result as a 0-D View on host -- N
-  //   // %d\n", N);
-  //   typedef Kokkos::View<size_type, typename ViewTypeA::array_layout, Kokkos::HostSpace> ViewType0D;
-  //   ViewType0D r("Iamax::Result 0-D View on host", typename ViewTypeA::array_layout());
+  {
+    // printf("impl_test_iamax -- return result as a 0-D View on host -- N
+    // %d\n", N);
+    typedef Kokkos::View<size_type, typename ViewTypeA::array_layout, Kokkos::HostSpace> ViewType0D;
+    ViewType0D r("Iamax::Result 0-D View on host", typename ViewTypeA::array_layout());
 
-  //   KokkosBlas::iamax(r, a.d_view);
-  //   Kokkos::fence();
-  //   size_type nonconst_max_loc = r();
-  //   ASSERT_EQ(nonconst_max_loc, expected_max_loc);
+    KokkosBlas::iamax(r, a.d_view);
+    Kokkos::fence();
+    size_type nonconst_max_loc = r();
+    ASSERT_EQ(nonconst_max_loc, expected_max_loc);
 
-  //   KokkosBlas::iamax(r, a.d_view_const);
-  //   size_type const_max_loc = r();
-  //   ASSERT_EQ(const_max_loc, expected_max_loc);
-  // }
+    KokkosBlas::iamax(r, a.d_view_const);
+    size_type const_max_loc = r();
+    ASSERT_EQ(const_max_loc, expected_max_loc);
+  }
 
   {
     // printf("impl_test_iamax -- return result as a 0-D View on device -- N

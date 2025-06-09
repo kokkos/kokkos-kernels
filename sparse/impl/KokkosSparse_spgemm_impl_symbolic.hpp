@@ -456,12 +456,11 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
           // printf("row:%d\n", row_index);
           if (!is_global_alloced) {
             nnz_lno_t *tmp = NULL;
-            size_t tid              = get_thread_id(row_index);
+            size_t tid     = get_thread_id(row_index);
             while (tmp == NULL) {
               Kokkos::single(
                   Kokkos::PerThread(teamMember),
-                  [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(m_space.allocate_chunk(tid)); },
-                  tmp);
+                  [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(m_space.allocate_chunk(tid)); }, tmp);
             }
             is_global_alloced = true;
 
@@ -1001,12 +1000,11 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
           // printf("row:%d\n", row_index);
           if (!is_global_alloced) {
             nnz_lno_t *tmp = NULL;
-            size_t tid              = get_thread_id(row_index);
+            size_t tid     = get_thread_id(row_index);
             while (tmp == NULL) {
               Kokkos::single(
                   Kokkos::PerThread(teamMember),
-                  [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(m_space.allocate_chunk(tid)); },
-                  tmp);
+                  [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(m_space.allocate_chunk(tid)); }, tmp);
             }
             is_global_alloced = true;
 
