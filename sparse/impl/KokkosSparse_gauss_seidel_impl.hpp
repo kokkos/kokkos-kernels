@@ -460,8 +460,8 @@ class PointGaussSeidel {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&](const nnz_lno_t& ii) {
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         Kokkos::single(Kokkos::PerThread(teamMember), [&]() {
-          for (nnz_lno_t i = 0; i < block_size; diagonal_positions[i++] = -1)
-            ;
+          for (nnz_lno_t i = 0; i < block_size; diagonal_positions[i++] = -1) {
+          }
         });
 #endif
 
