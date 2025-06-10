@@ -23,17 +23,18 @@
 #define KOKKOSBATCHED_IMPL_PROMOTION 1
 
 #if defined(KOKKOS_COMPILER_MSVC)
-#define __KOKKOSBATCHED_PROMOTION__                                                                                \
+#define __KOKKOSBATCHED_PROMOTION__ /*NOLINT(bugprone-reserved-identifier)*/                                       \
   (__pragma(message("warning: __KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version")) \
        KOKKOSBATCHED_IMPL_PROMOTION)
 #elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define __KOKKOSBATCHED_PROMOTION__                                                                               \
+#define __KOKKOSBATCHED_PROMOTION__ /*NOLINT(bugprone-reserved-identifier)*/                                      \
   (__extension__({                                                                                                \
     _Pragma("GCC warning \"__KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version\""); \
     KOKKOSBATCHED_IMPL_PROMOTION;                                                                                 \
   }))
 #else
-#define __KOKKOSBATCHED_PROMOTION__ KOKKOSBATCHED_IMPL_PROMOTION  // no good way to deprecate?
+// no good way to deprecate
+#define __KOKKOSBATCHED_PROMOTION__ KOKKOSBATCHED_IMPL_PROMOTION  // NOLINT(bugprone-reserved-identifier)
 #endif
 
 #include <iomanip>
