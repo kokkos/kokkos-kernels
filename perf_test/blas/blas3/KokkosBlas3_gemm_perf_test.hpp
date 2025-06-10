@@ -1589,9 +1589,9 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, vo
   vgemm.B_t = toupper(gemm_args.transB) == 'T';
   vgemm.A_c = vgemm.B_c     = false;
   vgemm.batch_size_last_dim = options.blas_args.batch_size_last_dim;
-  vgemm.A                   = A_expected;
-  vgemm.B                   = B_expected;
-  vgemm.C                   = C_expected;
+  vgemm.A_                  = A_expected;
+  vgemm.B_                  = B_expected;
+  vgemm.C_                  = C_expected;
   vgemm.alpha               = gemm_args.alpha;
   vgemm.beta                = gemm_args.beta;
   vgemm.run();  // Compute C_expected

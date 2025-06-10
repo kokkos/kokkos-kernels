@@ -140,9 +140,9 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
   vgemm.B_t                 = std::is_same<transB, Trans::Transpose>::value;
   vgemm.batch_size_last_dim = std::is_same<batchLayout, BatchLayout::Right>::value;
   vgemm.A_c = vgemm.B_c = false;
-  vgemm.A               = a_expected;
-  vgemm.B               = b_expected;
-  vgemm.C               = c_expected;
+  vgemm.A_              = a_expected;
+  vgemm.B_              = b_expected;
+  vgemm.C_              = c_expected;
   vgemm.alpha           = alpha;
   vgemm.beta            = beta;
   vgemm.run();  // Compute c_expected
