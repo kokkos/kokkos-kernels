@@ -657,7 +657,6 @@ class KokkosKernelsHandle {
     auto gs2 = get_twostage_gs_handle();
     gs2->setTwoStage(two_stage);
     if (!two_stage) {
-      using namespace KokkosSparse::Experimental;
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       // NOTE: we call CuSPARSE on GPU, if possible
       if (std::is_same<size_type, int>::value && std::is_same<nnz_lno_t, int>::value &&
@@ -721,13 +720,13 @@ class KokkosKernelsHandle {
   // Handles for Classical GS (inner SpTRSV)
   TwoStageGaussSeidelSPTRSVHandleType *get_gs_sptrsvL_handle() { return this->gs_sptrsvLHandle; }
   TwoStageGaussSeidelSPTRSVHandleType *get_gs_sptrsvU_handle() { return this->gs_sptrsvUHandle; }
-  void create_gs_sptrsvL_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows) {
+  void create_gs_sptrsvL_handle(KokkosSparse::SPTRSVAlgorithm algm, size_type nrows) {
     this->destroy_gs_sptrsvL_handle();
     this->is_owner_of_the_gs_sptrsvL_handle = true;
     this->gs_sptrsvLHandle                  = new TwoStageGaussSeidelSPTRSVHandleType();
     this->gs_sptrsvLHandle->create_sptrsv_handle(algm, nrows, true);
   }
-  void create_gs_sptrsvU_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows) {
+  void create_gs_sptrsvU_handle(KokkosSparse::SPTRSVAlgorithm algm, size_type nrows) {
     this->destroy_gs_sptrsvU_handle();
     this->is_owner_of_the_gs_sptrsvU_handle = true;
     this->gs_sptrsvUHandle                  = new TwoStageGaussSeidelSPTRSVHandleType();
@@ -762,7 +761,7 @@ class KokkosKernelsHandle {
 
   SPTRSVHandleType *get_sptrsv_handle() { return this->sptrsvHandle; }
 
-  void create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows, bool lower_tri,
+  void create_sptrsv_handle(KokkosSparse::SPTRSVAlgorithm algm, size_type nrows, bool lower_tri,
                             size_type block_size = 0) {
     this->destroy_sptrsv_handle();
     this->is_owner_of_the_sptrsv_handle = true;
@@ -773,7 +772,7 @@ class KokkosKernelsHandle {
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     // default SpMV option
-    using namespace KokkosSparse::Experimental;
+    using KokkosSparse::SPTRSVAlgorithm;
     if (algm == SPTRSVAlgorithm::SUPERNODAL_SPMV || algm == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
       this->set_sptrsv_column_major(true);
     }
@@ -800,7 +799,7 @@ class KokkosKernelsHandle {
 
   void set_sptrsv_invert_diagonal(bool flag) {
     auto algo = this->sptrsvHandle->get_algorithm();
-    using namespace KokkosSparse::Experimental;
+    using KokkosSparse::SPTRSVAlgorithm;
     if (!flag && (algo == SPTRSVAlgorithm::SUPERNODAL_SPMV || algo == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)) {
       std::cout << std::endl
                 << " ** Supernodal SpTRSV with SpMV require diagonal inversion **" << std::endl
