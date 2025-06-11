@@ -40,14 +40,13 @@ jobs:
             -B "$PWD" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=icpx \
-            -DCMAKE_CXX_FLAGS="-fp-model=precise" \
+            -DCMAKE_CXX_FLAGS="-fp-model=precise -fsycl-device-code-split=per_kernel" \
             -DCMAKE_INSTALL_PREFIX="$PWD/../install" \
             -DKokkos_ENABLE_SERIAL=ON \
             -DKokkos_ENABLE_SYCL=ON \
             -DKokkos_ARCH_INTEL_PVC=ON \
             -DKokkos_ENABLE_TESTS=OFF \
             -DKokkos_ENABLE_EXAMPLES=OFF \
-            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
             -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
             -DKokkos_ENABLE_ONEDPL=OFF
