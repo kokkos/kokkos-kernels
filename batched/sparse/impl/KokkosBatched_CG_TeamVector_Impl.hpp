@@ -38,7 +38,7 @@ template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename KrylovHandleType, typename TMPViewType,
           typename TMPNormViewType>
 KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& member, const OperatorType& A,
-                                                            const VectorViewType& B, const VectorViewType& _X,
+                                                            const VectorViewType& B, const VectorViewType& X,
                                                             const KrylovHandleType& handle, const TMPViewType& _TMPView,
                                                             const TMPNormViewType& _TMPNormView) {
   typedef int OrdinalType;
@@ -49,8 +49,8 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
 
   using TeamVectorCopy1D = TeamVectorCopy<MemberType, Trans::NoTranspose, 1>;
 
-  const OrdinalType numMatrices = _X.extent(0);
-  const OrdinalType numRows     = _X.extent(1);
+  const OrdinalType numMatrices = X.extent(0);
+  const OrdinalType numRows     = X.extent(1);
 
   int offset_P = 0;
   int offset_Q = offset_P + numRows;
@@ -68,7 +68,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
   auto mask       = Kokkos::subview(_TMPNormView, Kokkos::ALL, 3);
   auto tmp        = Kokkos::subview(_TMPNormView, Kokkos::ALL, 4);
 
-  TeamVectorCopy<MemberType>::invoke(member, _X, X_);
+  TeamVectorCopy<MemberType>::invoke(member, X, X_);
   // Deep copy of b into r_0:
   TeamVectorCopy<MemberType>::invoke(member, B, R);
 
@@ -147,7 +147,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
     member.team_barrier();
   }
 
-  TeamVectorCopy<MemberType>::invoke(member, X_, _X);
+  TeamVectorCopy<MemberType>::invoke(member, X_, X);
   return status;
 }
 
