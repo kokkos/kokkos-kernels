@@ -30,21 +30,18 @@ jobs:
           ref: ${{ inputs.kokkos_version }}
           path: kokkos
 
-      - name: set_oneapi_device_selector_var
-        run: echo "export ONEAPI_DEVICE_SELECTOR=level_zero:gpu" >> $GITHUB_ENV
-
       - name: configure_kokkos
         run: |
           mkdir -p kokkos/{build,install}
           cd kokkos/build
 
           cmake \
+            -S "$PWD/.." \
+            -B "$PWD" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=icpx \
             -DCMAKE_CXX_FLAGS="-fp-model=precise" \
             -DCMAKE_INSTALL_PREFIX="$PWD/../install" \
-            -DCMAKE_VERBOSE_MAKEFILE=ON \
-            -DCMAKE_CXX_EXTENSIONS=OFF \
             -DKokkos_ENABLE_SERIAL=ON \
             -DKokkos_ENABLE_SYCL=ON \
             -DKokkos_ARCH_INTEL_PVC=ON \
@@ -53,12 +50,11 @@ jobs:
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
             -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -DKokkos_ENABLE_ONEDPL=OFF \
-            ..
+            -DKokkos_ENABLE_ONEDPL=OFF
 
       - name: build_and_install_kokkos
         run: |
-          cmake --build "$PWD/kokkos/build" -j 16
+          cmake --build "$PWD/kokkos/build" -j 64
           cmake --install "$PWD/kokkos/build"
 
       - name: configure_kokkos_kernels
@@ -87,7 +83,7 @@ jobs:
           -D KokkosKernels_INST_OFFSET_INT=ON
 
       - name: build_kokkos_kernels
-        run: cmake --build "$PWD/kokkos-kernels/build" -j 16
+        run: cmake --build "$PWD/kokkos-kernels/build" -j 64
 
       - name: test
         working-directory: kokkos-kernels/build
