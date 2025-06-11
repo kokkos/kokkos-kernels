@@ -38,7 +38,7 @@ template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename KrylovHandleType, typename TMPViewType,
           typename TMPNormViewType>
 KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& member, const OperatorType& A,
-                                                            const VectorViewType& _B, const VectorViewType& _X,
+                                                            const VectorViewType& B, const VectorViewType& _X,
                                                             const KrylovHandleType& handle, const TMPViewType& _TMPView,
                                                             const TMPNormViewType& _TMPNormView) {
   typedef int OrdinalType;
@@ -57,10 +57,10 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
   int offset_R = offset_Q + numRows;
   int offset_X = offset_R + numRows;
 
-  auto P = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_P, offset_P + numRows));
-  auto Q = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_Q, offset_Q + numRows));
-  auto R = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_R, offset_R + numRows));
-  auto X = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_X, offset_X + numRows));
+  auto P  = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_P, offset_P + numRows));
+  auto Q  = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_Q, offset_Q + numRows));
+  auto R  = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_R, offset_R + numRows));
+  auto X_ = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_X, offset_X + numRows));
 
   auto sqr_norm_0 = Kokkos::subview(_TMPNormView, Kokkos::ALL, 0);
   auto sqr_norm_j = Kokkos::subview(_TMPNormView, Kokkos::ALL, 1);
@@ -68,13 +68,13 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
   auto mask       = Kokkos::subview(_TMPNormView, Kokkos::ALL, 3);
   auto tmp        = Kokkos::subview(_TMPNormView, Kokkos::ALL, 4);
 
-  TeamVectorCopy<MemberType>::invoke(member, _X, X);
+  TeamVectorCopy<MemberType>::invoke(member, _X, X_);
   // Deep copy of b into r_0:
-  TeamVectorCopy<MemberType>::invoke(member, _B, R);
+  TeamVectorCopy<MemberType>::invoke(member, B, R);
 
   // r_0 := b - A x_0
   member.team_barrier();
-  A.template apply<Trans::NoTranspose, Mode::TeamVector>(member, X, R, -1, 1);
+  A.template apply<Trans::NoTranspose, Mode::TeamVector>(member, X_, R, -1, 1);
   member.team_barrier();
 
   // Deep copy of r_0 into p_0:
@@ -104,7 +104,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
     member.team_barrier();
 
     // x_{j+1} := alpha p_j + x_j
-    TeamVectorAxpy<MemberType>::invoke(member, alpha, P, X);
+    TeamVectorAxpy<MemberType>::invoke(member, alpha, P, X_);
     member.team_barrier();
 
     // r_{j+1} := - alpha q + r_j
@@ -147,7 +147,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
     member.team_barrier();
   }
 
-  TeamVectorCopy<MemberType>::invoke(member, X, _X);
+  TeamVectorCopy<MemberType>::invoke(member, X_, _X);
   return status;
 }
 
