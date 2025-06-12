@@ -35,8 +35,8 @@ An approach using conventional batched BLAS interfaces would be like the followi
 
   batched_dgemm(LL, RR, AA);     /// construct element matrices via batched dgemm
   batched_dgetrf(AA);            /// perform lu decomposition of each instance of A matrix array
-  batched_dtrsv('Lower', AA, BB) /// perform forward substitution
-  batched_dtrsv('Upper', AA, BB) /// perform backward substitution
+  batched_dtrsv("Lower", AA, BB) /// perform forward substitution
+  batched_dtrsv("Upper", AA, BB) /// perform backward substitution
 
 Clearly, a performance problem of the above code comes from the fact that the sequence of batched functions does not exploit temporal locality between DLA functions;
 each batched function sweeps the entire set of batched matrices or vectors in parallel for a single DLA operation.
