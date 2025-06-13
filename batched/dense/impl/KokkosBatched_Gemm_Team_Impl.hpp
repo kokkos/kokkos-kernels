@@ -47,8 +47,8 @@ struct TeamGemm<MemberType, Trans::NoTranspose, Trans::NoTranspose, ArgAlgo> {
     const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
     // Quick return if possible
-    const int m = C_extent_0, n = C_extent_1, k = A_extent_1;
-    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
+    // const int m = C_extent_0, n = C_extent_1, k = A_extent_1;
+    // if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::NoTranspose, Trans::NoTranspose>(A, B, C);
     if (info) return info;
@@ -78,8 +78,8 @@ struct TeamGemm<MemberType, Trans::Transpose, Trans::NoTranspose, ArgAlgo> {
     const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
     // Quick return if possible
-    const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
+    // const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
+    // if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::Transpose, Trans::NoTranspose>(A, B, C);
     if (info) return info;
@@ -109,8 +109,8 @@ struct TeamGemm<MemberType, Trans::ConjTranspose, Trans::NoTranspose, ArgAlgo> {
     const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
     // Quick return if possible
-    const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
+    // const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
+    // if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::ConjTranspose, Trans::NoTranspose>(A, B, C);
     if (info) return info;
@@ -140,8 +140,8 @@ struct TeamGemm<MemberType, Trans::NoTranspose, Trans::Transpose, ArgAlgo> {
     const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
     // Quick return if possible
-    const int m = C_extent_0, n = C_extent_1, k = A_extent_1;
-    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
+    // const int m = C_extent_0, n = C_extent_1, k = A_extent_1;
+    // if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::NoTranspose, Trans::Transpose>(A, B, C);
     if (info) return info;
@@ -171,8 +171,8 @@ struct TeamGemm<MemberType, Trans::Transpose, Trans::Transpose, ArgAlgo> {
     const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
     // Quick return if possible
-    const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
+    // const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
+    // if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::Transpose, Trans::Transpose>(A, B, C);
     if (info) return info;
@@ -202,8 +202,8 @@ struct TeamGemm<MemberType, Trans::ConjTranspose, Trans::Transpose, ArgAlgo> {
     const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
     // Quick return if possible
-    const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
+    // const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
+    // if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::ConjTranspose, Trans::Transpose>(A, B, C);
     if (info) return info;
@@ -233,8 +233,8 @@ struct TeamGemm<MemberType, Trans::NoTranspose, Trans::ConjTranspose, ArgAlgo> {
     const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
     // Quick return if possible
-    const int m = C_extent_0, n = C_extent_1, k = A_extent_1;
-    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
+    // const int m = C_extent_0, n = C_extent_1, k = A_extent_1;
+    // if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::NoTranspose, Trans::ConjTranspose>(A, B, C);
     if (info) return info;
@@ -264,8 +264,8 @@ struct TeamGemm<MemberType, Trans::Transpose, Trans::ConjTranspose, ArgAlgo> {
     const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
     // Quick return if possible
-    const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
+    // const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
+    // if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::Transpose, Trans::ConjTranspose>(A, B, C);
     if (info) return info;
@@ -295,8 +295,8 @@ struct TeamGemm<MemberType, Trans::ConjTranspose, Trans::ConjTranspose, ArgAlgo>
     const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
     // Quick return if possible
-    const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
+    // const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
+    // if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::ConjTranspose, Trans::ConjTranspose>(A, B, C);
     if (info) return info;
