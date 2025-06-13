@@ -439,7 +439,6 @@ void KokkosSPGEMM<
     nnz_lno_t color_upperbound = KOKKOSKERNELS_MACRO_MIN(num_parallel_colors, i + num_multi_colors);
     std::cout << "i:" << i << " color_upperbound:" << color_upperbound << " num_parallel_colors:" << num_parallel_colors
               << " num_multi_colors:" << num_multi_colors << std::endl;
-    ;
 
     nnz_lno_t color_begin = color_xadj(i);
     nnz_lno_t color_end   = color_xadj(color_upperbound);

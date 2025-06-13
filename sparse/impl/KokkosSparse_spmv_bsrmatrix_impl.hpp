@@ -546,7 +546,6 @@ struct BSR_GEMV_Functor {
     auto Y_cur              = Kokkos::subview(m_y, ::Kokkos::make_pair(Y_ptBeg, Y_ptEnd));
 
     const y_value_type val_one = Kokkos::ArithTraits<y_value_type>::one();
-    ;
     if (beta != val_one) {
       KokkosBlas::Impl::TeamVectorScaleInternal::invoke(dev, block_dim, beta, Y_cur.data(),
                                                         static_cast<int>(Y_cur.stride(0)));

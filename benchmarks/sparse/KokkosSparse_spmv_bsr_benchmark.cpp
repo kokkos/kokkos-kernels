@@ -267,8 +267,7 @@ void run(benchmark::State &state, const Bsr &bsr, const size_t k) {
                               + bsr.nnz() * sizeof(ordinal_type)                                 // A col indices
                               + (bsr.numRows() + 1) * sizeof(size_type)                          // A row-map
                               + 2 * bsr.numRows() * bsr.blockDim() * k * sizeof(scalar_type)     // load / store y
-                              + bsr.numCols() * bsr.blockDim() * k * sizeof(scalar_type)         // load x
-      ;
+                              + bsr.numCols() * bsr.blockDim() * k * sizeof(scalar_type);        // load x
 
   state.SetBytesProcessed(bytesPerSpmv * state.iterations());
 }

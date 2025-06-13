@@ -2171,7 +2171,6 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_, in_
         } else {
           // create new worklist
           single_dim_index_view_type new_index = single_dim_index_view_type("recolorListLength");
-          ;
           Kokkos::parallel_for("KokkosGraph::GraphColoring::CreateNewWorkArrayAtomic", my_exec_space(0, num_work_edges),
                                atomic_create_new_work_array(new_index, edge_conflict_indices, edge_conflict_marker,
                                                             new_edge_conflict_indices));
