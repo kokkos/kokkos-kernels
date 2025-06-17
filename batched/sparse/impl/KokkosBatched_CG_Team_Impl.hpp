@@ -37,7 +37,7 @@ template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename KrylovHandle, typename TMPViewType,
           typename TMPNormViewType>
 KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, const OperatorType& A,
-                                                      const VectorViewType& B, const VectorViewType& _X,
+                                                      const VectorViewType& B, const VectorViewType& X,
                                                       const KrylovHandle& handle, const TMPViewType& _TMPView,
                                                       const TMPNormViewType& _TMPNormView) {
   typedef int OrdinalType;
@@ -48,8 +48,8 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
 
   using TeamCopy1D = TeamCopy<MemberType, Trans::NoTranspose, 1>;
 
-  const OrdinalType numMatrices = _X.extent(0);
-  const OrdinalType numRows     = _X.extent(1);
+  const OrdinalType numMatrices = X.extent(0);
+  const OrdinalType numRows     = X.extent(1);
 
   int offset_P = 0;
   int offset_Q = offset_P + numRows;
@@ -67,7 +67,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
   auto mask       = Kokkos::subview(_TMPNormView, Kokkos::ALL, 3);
   auto tmp        = Kokkos::subview(_TMPNormView, Kokkos::ALL, 4);
 
-  TeamCopy<MemberType>::invoke(member, _X, X_);
+  TeamCopy<MemberType>::invoke(member, X, X_);
   // Deep copy of b into r_0:
   TeamCopy<MemberType>::invoke(member, B, R);
 
@@ -146,14 +146,14 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
     member.team_barrier();
   }
 
-  TeamCopy<MemberType>::invoke(member, X_, _X);
+  TeamCopy<MemberType>::invoke(member, X_, X);
   return status;
 }
 
 template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
 KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, const OperatorType& A,
-                                                      const VectorViewType& B, const VectorViewType& _X,
+                                                      const VectorViewType& B, const VectorViewType& X,
                                                       const KrylovHandleType& handle) {
   const int strategy = handle.get_memory_strategy();
   if (strategy == 0) {
@@ -164,14 +164,14 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
         Kokkos::View<typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type**,
                      typename VectorViewType::execution_space::scratch_memory_space>;
 
-    const int numMatrices = _X.extent(0);
-    const int numRows     = _X.extent(1);
+    const int numMatrices = X.extent(0);
+    const int numRows     = X.extent(1);
 
     ScratchPadVectorViewType _TMPView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices, 4 * numRows);
 
     ScratchPadNormViewType _TMPNormView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices, 5);
 
-    return invoke<OperatorType, VectorViewType, KrylovHandleType>(member, A, B, _X, handle, _TMPView, _TMPNormView);
+    return invoke<OperatorType, VectorViewType, KrylovHandleType>(member, A, B, X, handle, _TMPView, _TMPNormView);
   }
   if (strategy == 1) {
     const int first_matrix = handle.first_index(member.league_rank());
@@ -181,13 +181,13 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
         Kokkos::View<typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type**,
                      typename VectorViewType::execution_space::scratch_memory_space>;
 
-    const int numMatrices = _X.extent(0);
+    const int numMatrices = X.extent(0);
 
     auto _TMPView = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
 
     ScratchPadNormViewType _TMPNormView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices, 5);
 
-    return invoke<OperatorType, VectorViewType, KrylovHandleType>(member, A, B, _X, handle, _TMPView, _TMPNormView);
+    return invoke<OperatorType, VectorViewType, KrylovHandleType>(member, A, B, X, handle, _TMPView, _TMPNormView);
   }
   return 0;
 }
