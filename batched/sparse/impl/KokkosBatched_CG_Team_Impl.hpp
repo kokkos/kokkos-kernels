@@ -56,10 +56,10 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
   int offset_R = offset_Q + numRows;
   int offset_X = offset_R + numRows;
 
-  auto P = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_P, offset_P + numRows));
-  auto Q = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_Q, offset_Q + numRows));
-  auto R = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_R, offset_R + numRows));
-  auto X = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_X, offset_X + numRows));
+  auto P  = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_P, offset_P + numRows));
+  auto Q  = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_Q, offset_Q + numRows));
+  auto R  = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_R, offset_R + numRows));
+  auto X_ = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_X, offset_X + numRows));
 
   auto sqr_norm_0 = Kokkos::subview(_TMPNormView, Kokkos::ALL, 0);
   auto sqr_norm_j = Kokkos::subview(_TMPNormView, Kokkos::ALL, 1);
@@ -67,13 +67,13 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
   auto mask       = Kokkos::subview(_TMPNormView, Kokkos::ALL, 3);
   auto tmp        = Kokkos::subview(_TMPNormView, Kokkos::ALL, 4);
 
-  TeamCopy<MemberType>::invoke(member, _X, X);
+  TeamCopy<MemberType>::invoke(member, _X, X_);
   // Deep copy of b into r_0:
   TeamCopy<MemberType>::invoke(member, B, R);
 
   // r_0 := b - A x_0
   member.team_barrier();
-  A.template apply<Trans::NoTranspose, Mode::Team>(member, X, R, -1, 1);
+  A.template apply<Trans::NoTranspose, Mode::Team>(member, X_, R, -1, 1);
   member.team_barrier();
 
   // Deep copy of r_0 into p_0:
@@ -103,7 +103,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
     member.team_barrier();
 
     // x_{j+1} := alpha p_j + x_j
-    TeamAxpy<MemberType>::invoke(member, alpha, P, X);
+    TeamAxpy<MemberType>::invoke(member, alpha, P, X_);
     member.team_barrier();
 
     // r_{j+1} := - alpha q + r_j
@@ -146,7 +146,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
     member.team_barrier();
   }
 
-  TeamCopy<MemberType>::invoke(member, X, _X);
+  TeamCopy<MemberType>::invoke(member, X_, _X);
   return status;
 }
 
