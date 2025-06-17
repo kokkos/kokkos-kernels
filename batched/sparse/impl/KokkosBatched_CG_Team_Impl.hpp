@@ -37,7 +37,7 @@ template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename KrylovHandle, typename TMPViewType,
           typename TMPNormViewType>
 KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, const OperatorType& A,
-                                                      const VectorViewType& _B, const VectorViewType& _X,
+                                                      const VectorViewType& B, const VectorViewType& _X,
                                                       const KrylovHandle& handle, const TMPViewType& _TMPView,
                                                       const TMPNormViewType& _TMPNormView) {
   typedef int OrdinalType;
@@ -69,7 +69,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
 
   TeamCopy<MemberType>::invoke(member, _X, X);
   // Deep copy of b into r_0:
-  TeamCopy<MemberType>::invoke(member, _B, R);
+  TeamCopy<MemberType>::invoke(member, B, R);
 
   // r_0 := b - A x_0
   member.team_barrier();
@@ -153,7 +153,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
 template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
 KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, const OperatorType& A,
-                                                      const VectorViewType& _B, const VectorViewType& _X,
+                                                      const VectorViewType& B, const VectorViewType& _X,
                                                       const KrylovHandleType& handle) {
   const int strategy = handle.get_memory_strategy();
   if (strategy == 0) {
@@ -171,7 +171,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
 
     ScratchPadNormViewType _TMPNormView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices, 5);
 
-    return invoke<OperatorType, VectorViewType, KrylovHandleType>(member, A, _B, _X, handle, _TMPView, _TMPNormView);
+    return invoke<OperatorType, VectorViewType, KrylovHandleType>(member, A, B, _X, handle, _TMPView, _TMPNormView);
   }
   if (strategy == 1) {
     const int first_matrix = handle.first_index(member.league_rank());
@@ -187,7 +187,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
 
     ScratchPadNormViewType _TMPNormView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices, 5);
 
-    return invoke<OperatorType, VectorViewType, KrylovHandleType>(member, A, _B, _X, handle, _TMPView, _TMPNormView);
+    return invoke<OperatorType, VectorViewType, KrylovHandleType>(member, A, B, _X, handle, _TMPView, _TMPNormView);
   }
   return 0;
 }
