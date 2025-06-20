@@ -46,7 +46,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
                                                                const PrecOperatorType& P,
                                                                const KrylovHandleType& handle,
                                                                const ArnoldiViewType& ArnoldiView,
-                                                               const TMPViewType& _TMPView) {
+                                                               const TMPViewType& TMPView) {
   typedef int OrdinalType;
   typedef typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
   typedef Kokkos::ArithTraits<MagnitudeType> ATM;
@@ -82,10 +82,10 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
   int offset_mask = offset_W + n_W;
   int offset_tmp  = offset_mask + n_mask;
 
-  auto G    = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_G, offset_G + n_G));
-  auto W    = Kokkos::subview(_TMPView, Kokkos::ALL, Kokkos::make_pair(offset_W, offset_W + n_W));
-  auto mask = Kokkos::subview(_TMPView, Kokkos::ALL, offset_mask);
-  auto tmp  = Kokkos::subview(_TMPView, Kokkos::ALL, offset_tmp);
+  auto G    = Kokkos::subview(TMPView, Kokkos::ALL, Kokkos::make_pair(offset_G, offset_G + n_G));
+  auto W    = Kokkos::subview(TMPView, Kokkos::ALL, Kokkos::make_pair(offset_W, offset_W + n_W));
+  auto mask = Kokkos::subview(TMPView, Kokkos::ALL, offset_mask);
+  auto tmp  = Kokkos::subview(TMPView, Kokkos::ALL, offset_tmp);
 
   // Deep copy of b into r_0:
   TeamVectorCopy<MemberType>::invoke(member, B, W);
@@ -312,11 +312,11 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
         Kokkos::View<typename VectorViewType::non_const_value_type**, typename VectorViewType::array_layout,
                      typename VectorViewType::execution_space::scratch_memory_space>;
 
-    ScratchPadVectorViewType _TMPView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
-                                      n_G + n_W + n_mask + n_tmp);
+    ScratchPadVectorViewType TMPView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+                                     n_G + n_W + n_mask + n_tmp);
 
     return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, B, X, P, handle,
-                                                                                    ArnoldiView, _TMPView);
+                                                                                    ArnoldiView, TMPView);
   }
   if (strategy == 1) {
     const int first_matrix = handle.first_index(member.league_rank());
@@ -325,10 +325,10 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
     auto ArnoldiView =
         Kokkos::subview(handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL, Kokkos::ALL);
 
-    auto _TMPView = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto TMPView = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
 
     return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, B, X, P, handle,
-                                                                                    ArnoldiView, _TMPView);
+                                                                                    ArnoldiView, TMPView);
   }
   if (strategy == 2) {
     using ScratchPadArnoldiViewType =
@@ -352,11 +352,11 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
     ScratchPadArnoldiViewType ArnoldiView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
                                           maximum_iteration, numRows + maximum_iteration + 3);
 
-    ScratchPadVectorViewType _TMPView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
-                                      n_G + n_W + n_mask + n_tmp);
+    ScratchPadVectorViewType TMPView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+                                     n_G + n_W + n_mask + n_tmp);
 
     return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, B, X, P, handle,
-                                                                                    ArnoldiView, _TMPView);
+                                                                                    ArnoldiView, TMPView);
   }
   return 0;
 }
