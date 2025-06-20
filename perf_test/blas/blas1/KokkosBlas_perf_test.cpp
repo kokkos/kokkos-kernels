@@ -121,7 +121,7 @@ static void print_help_blas_perf_test() {
       DEFAULT_BLAS_ROUTINES);
 }
 
-static void __blas_perf_test_input_error(char **argv, int option_idx) {
+static void blas_perf_test_input_error(char **argv, int option_idx) {
   fprintf(stderr, "ERROR: invalid option \"%s %s\".\n", argv[option_idx], argv[option_idx + 1]);
   print_help_blas_perf_test();
   exit(-EINVAL);
@@ -167,13 +167,13 @@ int main(int argc, char **argv) {
         } else if (!strncasecmp(optarg, "batched", 6)) {
           options.test = BATCHED;
         } else {
-          __blas_perf_test_input_error(argv, option_idx);
+          blas_perf_test_input_error(argv, option_idx);
         }
         break;
       case 'o':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         if (strlen(optarg) != 2) {
-          __blas_perf_test_input_error(argv, option_idx);
+          blas_perf_test_input_error(argv, option_idx);
         }
         options.blas_args.trtri.trtri_args = optarg;
         break;
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
         } else if (!strncasecmp(optarg, "parallel", 8)) {
           options.loop = PARALLEL;
         } else {
-          __blas_perf_test_input_error(argv, option_idx);
+          blas_perf_test_input_error(argv, option_idx);
         }
         break;
       case 'b':
@@ -193,14 +193,14 @@ int main(int argc, char **argv) {
         bdim    = &bdim[1];
 
         n_str = strcasestr(adim, "x");
-        if (n_str == NULL) __blas_perf_test_input_error(argv, option_idx);
+        if (n_str == NULL) blas_perf_test_input_error(argv, option_idx);
 
         n_str[0]          = '\0';
         options.start.a.m = atoi(adim);
         options.start.a.n = atoi(&n_str[1]);
 
         n_str = strcasestr(bdim, "x");
-        if (n_str == NULL) __blas_perf_test_input_error(argv, option_idx);
+        if (n_str == NULL) blas_perf_test_input_error(argv, option_idx);
 
         n_str[0]          = '\0';
         options.start.b.m = atoi(bdim);
@@ -213,14 +213,14 @@ int main(int argc, char **argv) {
         bdim    = &bdim[1];
 
         n_str = strcasestr(adim, "x");
-        if (n_str == NULL) __blas_perf_test_input_error(argv, option_idx);
+        if (n_str == NULL) blas_perf_test_input_error(argv, option_idx);
 
         n_str[0]         = '\0';
         options.stop.a.m = atoi(adim);
         options.stop.a.n = atoi(&n_str[1]);
 
         n_str = strcasestr(bdim, "x");
-        if (n_str == NULL) __blas_perf_test_input_error(argv, option_idx);
+        if (n_str == NULL) blas_perf_test_input_error(argv, option_idx);
 
         n_str[0]         = '\0';
         options.stop.b.m = atoi(bdim);
@@ -236,7 +236,7 @@ int main(int argc, char **argv) {
         break;
       case 'r': options.blas_routines = std::string(optarg); break;
       case '?':
-      default: __blas_perf_test_input_error(argv, option_idx);
+      default: blas_perf_test_input_error(argv, option_idx);
     }
   }
 
@@ -246,7 +246,7 @@ int main(int argc, char **argv) {
     options.out = &out;
   }
 
-  if (options.warm_up_n > options.n) __blas_perf_test_input_error(argv, option_idx);
+  if (options.warm_up_n > options.n) blas_perf_test_input_error(argv, option_idx);
 
   Kokkos::initialize(argc, argv);
 
