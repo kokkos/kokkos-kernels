@@ -69,7 +69,7 @@ struct TeamCG {
             typename TMPNormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& B,
                                            const VectorViewType& X, const KrylovHandleType& handle,
-                                           const TMPViewType& TMPView, const TMPNormViewType& _TMPNormView);
+                                           const TMPViewType& TMPView, const TMPNormViewType& TMPNormView);
   template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& B,
                                            const VectorViewType& X, const KrylovHandleType& handle);
@@ -81,7 +81,7 @@ struct TeamVectorCG {
             typename TMPNormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& B,
                                            const VectorViewType& X, const KrylovHandleType& handle,
-                                           const TMPViewType& TMPView, const TMPNormViewType& _TMPNormView);
+                                           const TMPViewType& TMPView, const TMPNormViewType& TMPNormView);
   template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& B,
                                            const VectorViewType& X, const KrylovHandleType& handle);
