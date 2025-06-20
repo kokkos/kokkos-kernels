@@ -35,7 +35,7 @@ struct TeamGMRES {
             typename ArnoldiViewType, typename TMPViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& B,
                                            const VectorViewType& X, const PrecOperatorType& P,
-                                           const KrylovHandleType& handle, const ArnoldiViewType& _ArnoldiView,
+                                           const KrylovHandleType& handle, const ArnoldiViewType& ArnoldiView,
                                            const TMPViewType& TMPView);
   template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& B,
@@ -52,7 +52,7 @@ struct TeamVectorGMRES {
             typename ArnoldiViewType, typename TMPViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& B,
                                            const VectorViewType& X, const PrecOperatorType& P,
-                                           const KrylovHandleType& handle, const ArnoldiViewType& _ArnoldiView,
+                                           const KrylovHandleType& handle, const ArnoldiViewType& ArnoldiView,
                                            const TMPViewType& TMPView);
   template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const OperatorType& A, const VectorViewType& B,
