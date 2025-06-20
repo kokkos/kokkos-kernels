@@ -80,10 +80,10 @@ class KrylovHandle {
   bool host_synchronised;
 
  public:
-  KrylovHandle(int _batched_size, int _N_team, int _max_iteration = 200, bool _monitor_residual = false)
+  KrylovHandle(int _batched_size, int N_team, int _max_iteration = 200, bool _monitor_residual = false)
       : max_iteration(_max_iteration),
         batched_size(_batched_size),
-        N_team_(_N_team),
+        N_team_(N_team),
         monitor_residual(_monitor_residual) {
     tolerance     = Kokkos::ArithTraits<norm_type>::epsilon();
     max_tolerance = 1e-30;
