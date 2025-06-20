@@ -37,7 +37,7 @@ namespace KokkosBatched {
 ///
 
 template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType>
-KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const VectorViewType& B, const VectorViewType& _X,
+KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const VectorViewType& B, const VectorViewType& X,
                                                const PrecOperatorType& P, const KrylovHandleType& handle,
                                                const int GMRES_id) {
   typedef int OrdinalType;
@@ -47,8 +47,8 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
   using SerialCopy1D = SerialCopy<Trans::NoTranspose, 1>;
   using SerialCopy2D = SerialCopy<Trans::NoTranspose, 2>;
 
-  const OrdinalType numMatrices = _X.extent(0);
-  const OrdinalType numRows     = _X.extent(1);
+  const OrdinalType numMatrices = X.extent(0);
+  const OrdinalType numRows     = X.extent(1);
 
   size_t maximum_iteration          = handle.get_max_iteration() < numRows ? handle.get_max_iteration() : numRows;
   const MagnitudeType tolerance     = handle.get_tolerance();
@@ -92,7 +92,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
   SerialCopy2D::invoke(B, W);
 
   // r_0 := b - A x_0
-  A.template apply<Trans::NoTranspose>(_X, W, -1, 1);
+  A.template apply<Trans::NoTranspose>(X, W, -1, 1);
 
   P.template apply<Trans::NoTranspose, 1>(W, W);
 
@@ -238,18 +238,18 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
     for (OrdinalType l = 0; l < numMatrices; ++l) {
       KokkosBlas::SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
           1, Kokkos::subview(V_view, l, first_indices, Kokkos::ALL), Kokkos::subview(G, l, first_indices), 1,
-          Kokkos::subview(_X, l, Kokkos::ALL));
+          Kokkos::subview(X, l, Kokkos::ALL));
     }
   }
   if (handle.get_ortho_strategy() == 1) {
     for (size_t j = 0; j < maximum_iteration; ++j) {
-      SerialAxpy::invoke(Kokkos::subview(G, Kokkos::ALL, j), Kokkos::subview(V_view, Kokkos::ALL, j, Kokkos::ALL), _X);
+      SerialAxpy::invoke(Kokkos::subview(G, Kokkos::ALL, j), Kokkos::subview(V_view, Kokkos::ALL, j, Kokkos::ALL), X);
     }
   }
 
   if (handle.get_compute_last_residual()) {
     SerialCopy2D::invoke(B, W);
-    A.template apply<Trans::NoTranspose>(_X, W, -1, 1);
+    A.template apply<Trans::NoTranspose>(X, W, -1, 1);
     P.template apply<Trans::NoTranspose, 1>(W, W);
     SerialDot<Trans::NoTranspose>::invoke(W, W, tmp);
 
@@ -262,10 +262,10 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
 }
 
 template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
-KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const VectorViewType& B, const VectorViewType& _X,
+KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const VectorViewType& B, const VectorViewType& X,
                                                const KrylovHandleType& handle) {
   Identity P;
-  return invoke<OperatorType, VectorViewType, Identity>(A, B, _X, P, handle);
+  return invoke<OperatorType, VectorViewType, Identity>(A, B, X, P, handle);
 }
 }  // namespace KokkosBatched
 
