@@ -34,7 +34,7 @@ static struct option long_options[] = {{"help", no_argument, 0, 'h'},
                                        {"trtri_options", required_argument, 0, 'o'},
                                        {0, 0, 0, 0}};
 
-static void __print_help_blas_perf_test() {
+static void print_help_blas_perf_test() {
   printf("Options:\n");
 
   printf("\t-h, --help\n");
@@ -123,7 +123,7 @@ static void __print_help_blas_perf_test() {
 
 static void __blas_perf_test_input_error(char **argv, int option_idx) {
   fprintf(stderr, "ERROR: invalid option \"%s %s\".\n", argv[option_idx], argv[option_idx + 1]);
-  __print_help_blas_perf_test();
+  print_help_blas_perf_test();
   exit(-EINVAL);
 }
 
@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
 
   while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:c:r:k:", long_options, &option_idx)) != -1) {
     switch (ret) {
-      case 'h': __print_help_blas_perf_test(); return 0;
+      case 'h': print_help_blas_perf_test(); return 0;
       case 't':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         if (!strncasecmp(optarg, "blas", 4)) {
