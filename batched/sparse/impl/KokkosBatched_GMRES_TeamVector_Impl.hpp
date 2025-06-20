@@ -45,7 +45,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
                                                                const VectorViewType& B, const VectorViewType& X,
                                                                const PrecOperatorType& P,
                                                                const KrylovHandleType& handle,
-                                                               const ArnoldiViewType& _ArnoldiView,
+                                                               const ArnoldiViewType& ArnoldiView,
                                                                const TMPViewType& _TMPView) {
   typedef int OrdinalType;
   typedef typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
@@ -68,9 +68,9 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
   int offset_H      = offset_V + n_V;
   int offset_Givens = offset_H + n_H;
 
-  auto V_view = Kokkos::subview(_ArnoldiView, Kokkos::ALL, Kokkos::ALL, Kokkos::make_pair(offset_V, offset_V + n_V));
-  auto H_view = Kokkos::subview(_ArnoldiView, Kokkos::ALL, Kokkos::ALL, Kokkos::make_pair(offset_H, offset_H + n_H));
-  auto Givens_view = Kokkos::subview(_ArnoldiView, Kokkos::ALL, Kokkos::ALL,
+  auto V_view = Kokkos::subview(ArnoldiView, Kokkos::ALL, Kokkos::ALL, Kokkos::make_pair(offset_V, offset_V + n_V));
+  auto H_view = Kokkos::subview(ArnoldiView, Kokkos::ALL, Kokkos::ALL, Kokkos::make_pair(offset_H, offset_H + n_H));
+  auto Givens_view = Kokkos::subview(ArnoldiView, Kokkos::ALL, Kokkos::ALL,
                                      Kokkos::make_pair(offset_Givens, offset_Givens + n_Givens));
 
   int n_G    = maximum_iteration + 1;
@@ -295,7 +295,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
     const int first_matrix = handle.first_index(member.league_rank());
     const int last_matrix  = handle.last_index(member.league_rank());
 
-    auto _ArnoldiView =
+    auto ArnoldiView =
         Kokkos::subview(handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL, Kokkos::ALL);
 
     const int numMatrices = X.extent(0);
@@ -316,19 +316,19 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
                                       n_G + n_W + n_mask + n_tmp);
 
     return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, B, X, P, handle,
-                                                                                    _ArnoldiView, _TMPView);
+                                                                                    ArnoldiView, _TMPView);
   }
   if (strategy == 1) {
     const int first_matrix = handle.first_index(member.league_rank());
     const int last_matrix  = handle.last_index(member.league_rank());
 
-    auto _ArnoldiView =
+    auto ArnoldiView =
         Kokkos::subview(handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL, Kokkos::ALL);
 
     auto _TMPView = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
 
     return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, B, X, P, handle,
-                                                                                    _ArnoldiView, _TMPView);
+                                                                                    ArnoldiView, _TMPView);
   }
   if (strategy == 2) {
     using ScratchPadArnoldiViewType =
@@ -349,14 +349,14 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
     int n_mask = 1;
     int n_tmp  = 1;
 
-    ScratchPadArnoldiViewType _ArnoldiView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
-                                           maximum_iteration, numRows + maximum_iteration + 3);
+    ScratchPadArnoldiViewType ArnoldiView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+                                          maximum_iteration, numRows + maximum_iteration + 3);
 
     ScratchPadVectorViewType _TMPView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
                                       n_G + n_W + n_mask + n_tmp);
 
     return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, B, X, P, handle,
-                                                                                    _ArnoldiView, _TMPView);
+                                                                                    ArnoldiView, _TMPView);
   }
   return 0;
 }
