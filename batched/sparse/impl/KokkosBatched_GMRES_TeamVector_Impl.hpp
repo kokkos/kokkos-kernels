@@ -42,7 +42,7 @@ template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType,
           typename ArnoldiViewType, typename TMPViewType>
 KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType& member, const OperatorType& A,
-                                                               const VectorViewType& _B, const VectorViewType& _X,
+                                                               const VectorViewType& B, const VectorViewType& _X,
                                                                const PrecOperatorType& P,
                                                                const KrylovHandleType& handle,
                                                                const ArnoldiViewType& _ArnoldiView,
@@ -88,7 +88,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
   auto tmp  = Kokkos::subview(_TMPView, Kokkos::ALL, offset_tmp);
 
   // Deep copy of b into r_0:
-  TeamVectorCopy<MemberType>::invoke(member, _B, W);
+  TeamVectorCopy<MemberType>::invoke(member, B, W);
 
   // r_0 := b - A x_0
   member.team_barrier();
@@ -267,7 +267,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
   }
 
   if (handle.get_compute_last_residual()) {
-    TeamVectorCopy<MemberType>::invoke(member, _B, W);
+    TeamVectorCopy<MemberType>::invoke(member, B, W);
     member.team_barrier();
     A.template apply<Trans::NoTranspose, Mode::TeamVector>(member, _X, W, -1, 1);
     member.team_barrier();
@@ -287,7 +287,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
 template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename PrecOperatorType, typename KrylovHandleType>
 KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType& member, const OperatorType& A,
-                                                               const VectorViewType& _B, const VectorViewType& _X,
+                                                               const VectorViewType& B, const VectorViewType& _X,
                                                                const PrecOperatorType& P,
                                                                const KrylovHandleType& handle) {
   const int strategy = handle.get_memory_strategy();
@@ -315,7 +315,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
     ScratchPadVectorViewType _TMPView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
                                       n_G + n_W + n_mask + n_tmp);
 
-    return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, _B, _X, P, handle,
+    return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, B, _X, P, handle,
                                                                                     _ArnoldiView, _TMPView);
   }
   if (strategy == 1) {
@@ -327,7 +327,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
 
     auto _TMPView = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
 
-    return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, _B, _X, P, handle,
+    return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, B, _X, P, handle,
                                                                                     _ArnoldiView, _TMPView);
   }
   if (strategy == 2) {
@@ -355,7 +355,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
     ScratchPadVectorViewType _TMPView(member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
                                       n_G + n_W + n_mask + n_tmp);
 
-    return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, _B, _X, P, handle,
+    return invoke<OperatorType, VectorViewType, PrecOperatorType, KrylovHandleType>(member, A, B, _X, P, handle,
                                                                                     _ArnoldiView, _TMPView);
   }
   return 0;
@@ -364,10 +364,10 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
 template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename KrylovHandleType>
 KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType& member, const OperatorType& A,
-                                                               const VectorViewType& _B, const VectorViewType& _X,
+                                                               const VectorViewType& B, const VectorViewType& _X,
                                                                const KrylovHandleType& handle) {
   Identity P;
-  return invoke<OperatorType, VectorViewType, Identity>(member, A, _B, _X, P, handle);
+  return invoke<OperatorType, VectorViewType, Identity>(member, A, B, _X, P, handle);
 }
 
 }  // namespace KokkosBatched
