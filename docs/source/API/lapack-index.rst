@@ -42,11 +42,11 @@ Below are tables summarizing the currently supported function calls and third pa
      - 
    * - gesv
      - :doc:`gesv <lapack/gesv>`
-     - --
-     - X
-     - X
-     - X
-     - --
+     - ❌
+     - ✅
+     - ✅
+     - ✅
+     - ❌
    * - getri
      - 
      - 
@@ -56,11 +56,11 @@ Below are tables summarizing the currently supported function calls and third pa
      - 
    * - trtri
      - :doc:`trtri <lapack/trtri>`
-     - --
-     - X
-     - X
-     - --
-     - --
+     - ❌
+     - ✅
+     - ✅
+     - ❌
+     - ❌
    * - geequ
      - 
      - 
@@ -91,11 +91,11 @@ Below are tables summarizing the currently supported function calls and third pa
      - 
    * - gesvd
      - :doc:`gesvd <lapack/gesvd>`
-     - --
-     - X
-     - X
-     - X
-     - --
+     - ❌
+     - ✅
+     - ✅
+     - ✅
+     - ❌
    * - geev
      - 
      - 
