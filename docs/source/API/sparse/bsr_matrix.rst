@@ -159,6 +159,12 @@ Member Functions
    * - :ref:`blockDim`
      - Returns the dimension of the blocks stored in the matrix.
 
+   * - :ref:`numPointRows <bsrmatrix_numPointRows>`
+     - Returns the number of point rows in the matrix.
+
+   * - :ref:`numPointCols <bsrmatrix_numPointCols>`
+     - Returns the number of point columns in the matrix.
+
    * - :ref:`nnz`
      - Returns the number of structural non-zero values in the matrix (some of these might actually store zero).
 
@@ -230,6 +236,30 @@ blockDim
   KOKKOS_INLINE_FUNCTION ordinal_type blockDim() const;
 
 Returns the dimension of the blocks stored by the matrix.
+
+.. _bsrmatrix_numPointRows:
+
+numPointRows
+^^^^^^^^^^^^
+
+.. code:: cppkokkos
+
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const;
+
+Returns the number of point rows in the matrix. This is the number of (block)
+rows times the block size. It is also the dimension of the matrix's range.
+
+.. _bsrmatrix_numPointCols:
+
+numPointCols
+^^^^^^^^^^^^
+
+.. code:: cppkokkos
+
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const;
+
+Returns the number of point columns in the matrix. This is the number of (block)
+columns times the block size. It is also the dimension of the matrix's domain.
 
 .. _nnz:
 
