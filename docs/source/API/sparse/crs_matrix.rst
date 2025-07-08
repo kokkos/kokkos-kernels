@@ -144,6 +144,9 @@ Member Functions
    * - :ref:`numCols <crsmatrix_numCols>`
      - Returns the number of columns in the matrix.
 
+   * - :ref:`setNumCols <crsmatrix_setNumCols>`
+     - Modify the number of columns in the matrix.
+
    * - :ref:`nnz <crsmatrix_nnz>`
      - Returns the number of structural non-zero values in the matrix (some of these might actually store zero).
 
@@ -186,6 +189,18 @@ numCols
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const;
 
 Returns the number of columns in the matrix.
+
+.. _crsmatrix_setNumCols:
+
+setNumCols
+^^^^^^^^^^
+
+.. code:: cppkokkos
+
+  void setNumCols(ordinal_type c);
+
+Modify the number of columns in the sparse matrix.
+This invalidates any algorithm handles which previously used this matrix.
 
 .. _crsmatrix_nnz:
 
