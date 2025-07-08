@@ -153,6 +153,9 @@ Member Functions
    * - :ref:`numCols`
      - Returns the number of columns in the matrix.
 
+   * - :ref:`setNumCols`
+     - Modify the number of columns in the matrix.
+
    * - :ref:`blockDim`
      - Returns the dimension of the blocks stored in the matrix.
 
@@ -204,6 +207,18 @@ numCols
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const;
 
 Returns the number of columns in the matrix.
+
+.. _setNumCols:
+
+setNumCols
+^^^^^^^^^^
+
+.. code:: cppkokkos
+
+  void setNumCols(ordinal_type c);
+
+Modify the number of columns in the sparse matrix.
+This invalidates any algorithm handles which previously used this matrix.
 
 .. _blockDim:
 
