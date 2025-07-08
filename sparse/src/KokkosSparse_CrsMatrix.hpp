@@ -668,7 +668,7 @@ class CrsMatrix {
   /// \brief Modify the number of columns in the sparse matrix.
   ///
   /// This invalidates any algorithm handles which previously used this matrix.
-  void setNumCols(ordinal_type c) { numCols_ = c; } 
+  void setNumCols(ordinal_type c) { numCols_ = c; }
 
   //! The number of "point" (non-block) rows in the matrix. Since Crs is not
   //! blocked, this is just the number of regular rows.
