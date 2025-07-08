@@ -58,21 +58,7 @@
 
 // TPL macros
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-
-#if defined(KOKKOS_COMPILER_MSVC)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL \
-  (__pragma(                                \
-      message("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL__ is deprecated and will be removed in a future version")) 1)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL                                                                       \
-  (__extension__({                                                                                                \
-    _Pragma("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL__ is deprecated and will be removed in a future version"); \
-    1;                                                                                                            \
-  }))
-#else
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL 1  // no good way to deprecate?
-#endif
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL__ KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL
+#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL 1
 
 #include "mkl_version.h"
 #if __INTEL_MKL__ >= 2018
