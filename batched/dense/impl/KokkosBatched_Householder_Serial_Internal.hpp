@@ -77,9 +77,13 @@ struct SerialLeftHouseholderInternal {
     // SerialScaleInternal::invoke(m_x2, inv_chi1_minus_alpha, x2, x2s);
 
     /// compute tau
+    // Note that in the complex case we have
+    // multiple possible expressions for tau
+    // we chose the same as LAPACK which
+    // guarentees that R is real valued.
     const mag_type chi1_minus_alpha_square = Kokkos::abs(chi1_minus_alpha) * Kokkos::abs(chi1_minus_alpha);
     if constexpr(KAT::is_complex) {
-      *tau = (alpha - Kokkos::conj(*chi1)) / alpha;
+      *tau = alpha / (alpha - Kokkos::conj(*chi1));
     } else {
       *tau = half + half * (norm_x2_square / chi1_minus_alpha_square);
     }

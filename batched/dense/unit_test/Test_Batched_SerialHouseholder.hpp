@@ -57,11 +57,10 @@ void test_Householder_analytic_real() {
   KokkosBatched::SerialApplyHouseholder<KokkosBatched::Side::Left>::invoke(u, tau, vec, workspace);
   
   Kokkos::deep_copy(vec_h, vec);
-  std::cout << "vec: {" << vec_h(0) << ", " << vec_h(1) << ", " << vec_h(2) << ", " << vec_h(3) << "}" << std::endl;
-  // Test::EXPECT_NEAR_KK_REL(vec_h(0), reflector_h(0), tol);
-  // Test::EXPECT_NEAR_KK(vec_h(1),  0.0, tol);
-  // Test::EXPECT_NEAR_KK(vec_h(2),  0.0, tol);
-  // Test::EXPECT_NEAR_KK(vec_h(3),  0.0, tol);
+  Test::EXPECT_NEAR_KK_REL(vec_h(0), reflector_h(0), tol);
+  Test::EXPECT_NEAR_KK(vec_h(1),  0.0, tol);
+  Test::EXPECT_NEAR_KK(vec_h(2),  0.0, tol);
+  Test::EXPECT_NEAR_KK(vec_h(3),  0.0, tol);
 }
 
 template <class Device, class Scalar>
@@ -100,7 +99,7 @@ void test_Householder_analytic_cplx() {
   Test::EXPECT_NEAR_KK_REL(reflector_h(1), Scalar( 43.0, 64.0) / 205.0, tol);
   Test::EXPECT_NEAR_KK_REL(reflector_h(2), Scalar( 43.0, 64.0) / 205.0, tol);
   Test::EXPECT_NEAR_KK_REL(reflector_h(3), Scalar( 26.0, 53.0) / 205.0, tol);
-  Test::EXPECT_NEAR_KK_REL(tau_h(0), 205 / Scalar(140.0, 30.0), tol);
+  Test::EXPECT_NEAR_KK_REL(tau_h(0), Scalar(140.0, 30.0) / 205, tol);
 
   vec_type workspace("workspace", 1);
   auto u = Kokkos::subview(reflector, Kokkos::pair<int, int>(1, 4));
