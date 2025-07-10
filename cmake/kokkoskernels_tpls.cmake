@@ -404,6 +404,7 @@ kokkoskernels_add_tpl_option(MAGMA OFF "Whether to enable MAGMA")
 kokkoskernels_add_tpl_option(CBLAS OFF "Whether to enable CBLAS")
 kokkoskernels_add_tpl_option(LAPACKE OFF "Whether to enable LAPACKE")
 kokkoskernels_add_tpl_option(ARMPL OFF "Whether to enable ARMPL")
+kokkoskernels_add_tpl_option(ACCELERATE   OFF  "Whether to enable ACCELERATE")
 
 # Set F77_BLAS_MANGLE macro based on Fortran-C interface (unless already set
 # by Trilinos or user)
@@ -422,6 +423,11 @@ if("${F77_BLAS_MANGLE}" STREQUAL "")
       set(F77_BLAS_MANGLE "(name,NAME) ${FortranCInterface_GLOBAL_PREFIX}name ## ${FortranCInterface_GLOBAL_SUFFIX}")
     endif()
   endif()
+endif()
+
+if(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+    set(KOKKOSKERNELS_ENABLE_TPL_BLAS ON)
+    set(F77_BLAS_MANGLE "(name,NAME) name ## _")
 endif()
 
 kokkoskernels_add_option("NO_DEFAULT_CUDA_TPLS" OFF BOOL
