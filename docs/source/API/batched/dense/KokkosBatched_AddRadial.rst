@@ -34,7 +34,7 @@ Mathematically, the operation performs:
 Parameters
 ==========
 
-:member: Team execution policy instance (only for team version)
+:member: Team policy member (only for team version)
 :tiny: Scalar value to add to diagonal elements
 :A: Input/output matrix view to which diagonal values are added
 
@@ -70,7 +70,7 @@ Example
         Kokkos::View<scalar_type**, Kokkos::LayoutRight, memory_space> A("A", n, n);
         
         // Initialize matrix on host
-        auto A_host = Kokkos::create_mirror_view(A);
+        auto A_host = Kokkos::create_mirror(A);
         
         for (int i = 0; i < n; ++i) {
           for (int j = 0; j < n; ++j) {
@@ -87,10 +87,6 @@ Example
         // Copy to device
         Kokkos::deep_copy(A, A_host);
         
-        // Save a copy of the original matrix for verification
-        Kokkos::View<scalar_type**, Kokkos::LayoutRight, memory_space> A_orig("A_orig", n, n);
-        Kokkos::deep_copy(A_orig, A);
-        
         // Value to add to diagonal
         scalar_type tiny = 1.0e-2;
         
@@ -101,7 +97,15 @@ Example
         
         // Copy results back to host
         Kokkos::deep_copy(A_host, A);
-
+        
+        // Print results to demonstrate the function worked
+        std::cout << "Matrix after AddRadial operation:" << std::endl;
+        for (int i = 0; i < n; ++i) {
+          for (int j = 0; j < n; ++j) {
+            std::cout << A_host(i, j) << " ";
+          }
+          std::cout << std::endl;
+        }
       }
       Kokkos::finalize();
       return 0;
@@ -133,7 +137,7 @@ Team Version Example
           A("A", batch_size, n, n);
         
         // Initialize on host
-        auto A_host = Kokkos::create_mirror_view(A);
+        auto A_host = Kokkos::create_mirror(A);
         
         for (int b = 0; b < batch_size; ++b) {
           for (int i = 0; i < n; ++i) {
@@ -152,14 +156,9 @@ Team Version Example
         // Copy to device
         Kokkos::deep_copy(A, A_host);
         
-        // Save original for verification
-        Kokkos::View<scalar_type***, Kokkos::LayoutRight, memory_space> 
-          A_orig("A_orig", batch_size, n, n);
-        Kokkos::deep_copy(A_orig, A);
-        
         // Values to add to diagonals (one per batch)
         Kokkos::View<scalar_type*, memory_space> tiny("tiny", batch_size);
-        auto tiny_host = Kokkos::create_mirror_view(tiny);
+        auto tiny_host = Kokkos::create_mirror(tiny);
         
         for (int b = 0; b < batch_size; ++b) {
           tiny_host(b) = 1.0e-2 * (b + 1);
@@ -186,41 +185,13 @@ Team Version Example
         // Copy results back to host
         Kokkos::deep_copy(A_host, A);
         
-        // Verify for each batch
-        auto A_orig_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_orig);
-        
-        bool test_passed = true;
-        for (int b = 0; b < batch_size; ++b) {
-          for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++j) {
-              if (i == j) {
-                // Diagonal elements should have tiny added
-                scalar_type expected = A_orig_host(b, i, j) + tiny_host(b);
-                if (std::abs(A_host(b, i, j) - expected) > 1e-15) {
-                  test_passed = false;
-                  std::cout << "Batch " << b << " diagonal mismatch at (" << i << ", " << j << "): " 
-                            << A_host(b, i, j) << " vs expected " << expected << std::endl;
-                  break;
-                }
-              } else {
-                // Off-diagonal elements should remain unchanged
-                if (A_host(b, i, j) != A_orig_host(b, i, j)) {
-                  test_passed = false;
-                  std::cout << "Batch " << b << " off-diagonal value changed at (" << i << ", " << j << "): " 
-                            << A_host(b, i, j) << " vs original " << A_orig_host(b, i, j) << std::endl;
-                  break;
-                }
-              }
-            }
-            if (!test_passed) break;
+        // Print results for first batch to demonstrate the function worked
+        std::cout << "First batch matrix after AddRadial operation:" << std::endl;
+        for (int i = 0; i < n; ++i) {
+          for (int j = 0; j < n; ++j) {
+            std::cout << A_host(0, i, j) << " ";
           }
-          if (!test_passed) break;
-        }
-        
-        if (test_passed) {
-          std::cout << "Batched TeamAddRadial test: PASSED" << std::endl;
-        } else {
-          std::cout << "Batched TeamAddRadial test: FAILED" << std::endl;
+          std::cout << std::endl;
         }
       }
       Kokkos::finalize();
