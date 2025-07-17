@@ -39,19 +39,20 @@ namespace Impl {
 
 template <typename AlgoType>
 struct SerialTrsvInternalLower {
-  template <typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const bool do_conj, const int m,
-                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
-                                           const int as1,
+  template <typename Op, typename ScalarType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, Op op, const int m, const ScalarType alpha,
+                                           const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT b, const int bs0);
 };
 
 template <>
-template <typename ScalarType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
-    const bool use_unit_diag, const bool do_conj, const int m, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
+template <typename Op, typename ScalarType, typename ValueType>
+KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(const bool use_unit_diag, Op op,
+                                                                                  const int m, const ScalarType alpha,
+                                                                                  const ValueType *KOKKOS_RESTRICT A,
+                                                                                  const int as0, const int as1,
+                                                                                  /**/ ValueType *KOKKOS_RESTRICT b,
+                                                                                  const int bs0) {
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
@@ -70,24 +71,22 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invok
       // with KOKKOS_RESTRICT a compiler assumes that the pointer is not
       // accessed by others op(/=) uses this pointer and changes the associated
       // values, which brings a compiler problem
-      if (!use_unit_diag)
-        *beta1 = (do_conj ? *beta1 / Kokkos::ArithTraits<ValueType>::conj(A[p * as0 + p * as1])
-                          : *beta1 / A[p * as0 + p * as1]);
+      if (!use_unit_diag) *beta1 = *beta1 / op(A[p * as0 + p * as1]);
 
-      for (int i = 0; i < iend; ++i)
-        b2[i * bs0] -=
-            (do_conj ? Kokkos::ArithTraits<ValueType>::conj(a21[i * as0]) * (*beta1) : a21[i * as0] * (*beta1));
+      for (int i = 0; i < iend; ++i) b2[i * bs0] -= op(a21[i * as0]) * (*beta1);
     }
   }
   return 0;
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
-    const bool use_unit_diag, const bool /*do_conj*/, const int m, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
+template <typename Op, typename ScalarType, typename ValueType>
+KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(const bool use_unit_diag, Op op,
+                                                                                const int m, const ScalarType alpha,
+                                                                                const ValueType *KOKKOS_RESTRICT A,
+                                                                                const int as0, const int as1,
+                                                                                /**/ ValueType *KOKKOS_RESTRICT b,
+                                                                                const int bs0) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
   constexpr int mbAlgo = Algo::Trsv::Blocked::mb();
@@ -111,13 +110,13 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
       /**/ ValueType *KOKKOS_RESTRICT bp  = b + p * bs0;
 
       if (use_unit_diag)
-        trsm_u.serial_invoke(Ap, pb, 1, bp);
+        trsm_u.serial_invoke(op, Ap, pb, 1, bp);
       else
-        trsm_n.serial_invoke(Ap, pb, 1, bp);
+        trsm_n.serial_invoke(op, Ap, pb, 1, bp);
 
       // gemv update
-      KokkosBlas::Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(m - p - pb, pb, minus_one, Ap + pb * as0, as0,
-                                                                        as1, bp, bs0, one, bp + pb * bs0, bs0);
+      KokkosBlas::Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(op, m - p - pb, pb, minus_one, Ap + pb * as0,
+                                                                        as0, as1, bp, bs0, one, bp + pb * bs0, bs0);
     }
   }
   return 0;
@@ -129,19 +128,20 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
 
 template <typename AlgoType>
 struct SerialTrsvInternalUpper {
-  template <typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const bool do_conj, const int m,
-                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
-                                           const int as1,
+  template <typename Op, typename ScalarType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, Op op, const int m, const ScalarType alpha,
+                                           const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT b, const int bs0);
 };
 
 template <>
-template <typename ScalarType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
-    const bool use_unit_diag, const bool do_conj, const int m, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
+template <typename Op, typename ScalarType, typename ValueType>
+KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(const bool use_unit_diag, Op op,
+                                                                                  const int m, const ScalarType alpha,
+                                                                                  const ValueType *KOKKOS_RESTRICT A,
+                                                                                  const int as0, const int as1,
+                                                                                  /**/ ValueType *KOKKOS_RESTRICT b,
+                                                                                  const int bs0) {
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
@@ -160,24 +160,22 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invok
       // with KOKKOS_RESTRICT a compiler assumes that the pointer is not
       // accessed by others op(/=) uses this pointer and changes the associated
       // values, which brings a compiler problem
-      if (!use_unit_diag)
-        *beta1 = (do_conj ? *beta1 / Kokkos::ArithTraits<ValueType>::conj(A[p * as0 + p * as1])
-                          : *beta1 / A[p * as0 + p * as1]);
+      if (!use_unit_diag) *beta1 = *beta1 / op(A[p * as0 + p * as1]);
 
-      for (int i = 0; i < iend; ++i)
-        b0[i * bs0] -=
-            (do_conj ? Kokkos::ArithTraits<ValueType>::conj(a01[i * as0]) * (*beta1) : a01[i * as0] * (*beta1));
+      for (int i = 0; i < iend; ++i) b0[i * bs0] -= op(a01[i * as0]) * (*beta1);
     }
   }
   return 0;
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
-    const bool use_unit_diag, const bool /*do_conj*/, const int m, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
+template <typename Op, typename ScalarType, typename ValueType>
+KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(const bool use_unit_diag, Op op,
+                                                                                const int m, const ScalarType alpha,
+                                                                                const ValueType *KOKKOS_RESTRICT A,
+                                                                                const int as0, const int as1,
+                                                                                /**/ ValueType *KOKKOS_RESTRICT b,
+                                                                                const int bs0) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
   constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
@@ -201,13 +199,13 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
       /**/ ValueType *KOKKOS_RESTRICT bp  = b + p * bs0;
 
       if (use_unit_diag)
-        trsm_u.serial_invoke(Ap, pb, 1, bp);
+        trsm_u.serial_invoke(op, Ap, pb, 1, bp);
       else
-        trsm_n.serial_invoke(Ap, pb, 1, bp);
+        trsm_n.serial_invoke(op, Ap, pb, 1, bp);
 
       // gemv update
-      KokkosBlas::Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(p, pb, minus_one, Ap - p * as0, as0, as1, bp,
-                                                                        bs0, one, b, bs0);
+      KokkosBlas::Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(op, p, pb, minus_one, Ap - p * as0, as0, as1,
+                                                                        bp, bs0, one, b, bs0);
     }
   }
   return 0;
@@ -221,7 +219,8 @@ struct [[deprecated("Use KokkosBatched::SerialTrsv instead")]] SerialTrsvInterna
   KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const int m, const ScalarType alpha,
                                            const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
-    return Impl::SerialTrsvInternalLower<AlgoType>::invoke(use_unit_diag, false, m, alpha, A, as0, as1, b, bs0);
+    return Impl::SerialTrsvInternalLower<AlgoType>::invoke(use_unit_diag, KokkosBlas::Impl::OpID(), m, alpha, A, as0,
+                                                           as1, b, bs0);
   }
 };
 
@@ -231,7 +230,8 @@ struct [[deprecated("Use KokkosBatched::SerialTrsv instead")]] SerialTrsvInterna
   KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const int m, const ScalarType alpha,
                                            const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
-    return Impl::SerialTrsvInternalUpper<AlgoType>::invoke(use_unit_diag, false, m, alpha, A, as0, as1, b, bs0);
+    return Impl::SerialTrsvInternalUpper<AlgoType>::invoke(use_unit_diag, KokkosBlas::Impl::OpID(), m, alpha, A, as0,
+                                                           as1, b, bs0);
   }
 };
 
