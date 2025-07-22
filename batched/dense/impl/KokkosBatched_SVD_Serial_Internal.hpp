@@ -213,13 +213,13 @@ struct SerialSVDInternal {
   // are copied to sigma.
   template <typename value_type>
   KOKKOS_INLINE_FUNCTION static int bidiSVD(int m, int n, value_type* B, int Bs0, int Bs1, value_type* U, int Us0,
-                                             int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
-                                             const value_type& tol, int max_iters) {
+                                            int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
+                                            const value_type& tol, int max_iters) {
     using KAT            = Kokkos::ArithTraits<value_type>;
     const value_type eps = Kokkos::ArithTraits<value_type>::epsilon();
     int p                = 0;
     int q                = 0;
-    for(int iters = 0; iters < max_iters; ++iters) {
+    for (int iters = 0; iters < max_iters; ++iters) {
       // Zero out tiny superdiagonal entries
       for (int i = 0; i < n - 1; i++) {
         if (Kokkos::abs(SVDIND(B, i, i + 1)) <
@@ -272,7 +272,7 @@ struct SerialSVDInternal {
       // B22 is nsub * nsub, Usub is m * nsub, and Vtsub is nsub * n
       svdStep(Bsub, Usub, Vtsub, m, n, nsub, Bs0, Bs1, Us0, Us1, Vts0, Vts1);
 
-      if( iters++ == max_iters ) {
+      if (iters++ == max_iters) {
         return -1;
       }
     }

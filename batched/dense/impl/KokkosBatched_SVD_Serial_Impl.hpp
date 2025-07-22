@@ -42,7 +42,8 @@ KOKKOS_INLINE_FUNCTION int SerialSVD::invoke(SVD_USV_Tag, const AViewType &A, co
 // Version which computes only singular values
 template <typename AViewType, typename SViewType, typename WViewType>
 KOKKOS_INLINE_FUNCTION int SerialSVD::invoke(SVD_S_Tag, const AViewType &A, const SViewType &sigma,
-                                             const WViewType &work, typename AViewType::const_value_type tol, int max_iters) {
+                                             const WViewType &work, typename AViewType::const_value_type tol,
+                                             int max_iters) {
   static_assert(Kokkos::is_view_v<AViewType> && AViewType::rank == 2, "SVD: A must be a rank-2 view");
   static_assert(Kokkos::is_view_v<SViewType> && SViewType::rank == 1, "SVD: s must be a rank-1 view");
   static_assert(Kokkos::is_view_v<WViewType> && WViewType::rank == 1, "SVD: W must be a rank-1 view");
