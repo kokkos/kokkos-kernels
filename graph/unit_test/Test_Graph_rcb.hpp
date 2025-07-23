@@ -31,19 +31,19 @@ coors_view_t generate_coordinates_1d() {
   scalar_t x_min = 0;
 
   int n_pts_per_dim = 121;
-  int n_spaces = n_pts_per_dim - 1;
+  int n_spaces      = n_pts_per_dim - 1;
 
   int n_pts = n_pts_per_dim;
 
-  scalar_t dx = (x_max-x_min)/n_spaces;
+  scalar_t dx = (x_max - x_min) / n_spaces;
 
   coors_view_t coordinates(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coordinates"), n_pts, 1);
   auto h_coordinates = Kokkos::create_mirror_view(coordinates);
 
   int cnt = 0;
-  for (int kk = 0; kk < n_pts_per_dim; kk++) { // x
-    scalar_t x = x_min + kk * dx;
-    h_coordinates(cnt,0) = x;
+  for (int kk = 0; kk < n_pts_per_dim; kk++) {  // x
+    scalar_t x            = x_min + kk * dx;
+    h_coordinates(cnt, 0) = x;
     cnt++;
   }
 
@@ -63,23 +63,23 @@ coors_view_t generate_coordinates_2d() {
   scalar_t y_min = 0;
 
   int n_pts_per_dim = 11;
-  int n_spaces = n_pts_per_dim - 1;
+  int n_spaces      = n_pts_per_dim - 1;
 
   int n_pts = n_pts_per_dim * n_pts_per_dim;
 
-  scalar_t dx = (x_max-x_min)/n_spaces;
-  scalar_t dy = (y_max-y_min)/n_spaces;
+  scalar_t dx = (x_max - x_min) / n_spaces;
+  scalar_t dy = (y_max - y_min) / n_spaces;
 
   coors_view_t coordinates(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coordinates"), n_pts, 2);
   auto h_coordinates = Kokkos::create_mirror_view(coordinates);
 
   int cnt = 0;
-  for (int jj = 0; jj < n_pts_per_dim; jj++) { // y
-    scalar_t y = y_min +jj * dy;
-    for (int kk = 0; kk < n_pts_per_dim; kk++) { // x
-      scalar_t x = x_min + kk * dx;
-      h_coordinates(cnt,0) = x;
-      h_coordinates(cnt,1) = y;
+  for (int jj = 0; jj < n_pts_per_dim; jj++) {  // y
+    scalar_t y = y_min + jj * dy;
+    for (int kk = 0; kk < n_pts_per_dim; kk++) {  // x
+      scalar_t x            = x_min + kk * dx;
+      h_coordinates(cnt, 0) = x;
+      h_coordinates(cnt, 1) = y;
       cnt++;
     }
   }
@@ -102,27 +102,27 @@ coors_view_t generate_coordinates_3d() {
   scalar_t z_min = 0;
 
   int n_pts_per_dim = 5;
-  int n_spaces = n_pts_per_dim - 1;
+  int n_spaces      = n_pts_per_dim - 1;
 
   int n_pts = n_pts_per_dim * n_pts_per_dim * n_pts_per_dim;
 
-  scalar_t dx = (x_max-x_min)/n_spaces;
-  scalar_t dy = (y_max-y_min)/n_spaces;
-  scalar_t dz = (z_max-z_min)/n_spaces;
+  scalar_t dx = (x_max - x_min) / n_spaces;
+  scalar_t dy = (y_max - y_min) / n_spaces;
+  scalar_t dz = (z_max - z_min) / n_spaces;
 
   coors_view_t coordinates(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coordinates"), n_pts, 3);
   auto h_coordinates = Kokkos::create_mirror_view(coordinates);
 
   int cnt = 0;
-  for (int ii = 0; ii < n_pts_per_dim; ii++) { // z
+  for (int ii = 0; ii < n_pts_per_dim; ii++) {  // z
     scalar_t z = z_min + ii * dz;
-    for (int jj = 0; jj < n_pts_per_dim; jj++) { // y
-      scalar_t y = y_min +jj * dy;
-      for (int kk = 0; kk < n_pts_per_dim; kk++) { // x
-        scalar_t x = x_min + kk * dx;
-        h_coordinates(cnt,0) = x;
-        h_coordinates(cnt,1) = y;
-        h_coordinates(cnt,2) = z;
+    for (int jj = 0; jj < n_pts_per_dim; jj++) {  // y
+      scalar_t y = y_min + jj * dy;
+      for (int kk = 0; kk < n_pts_per_dim; kk++) {  // x
+        scalar_t x            = x_min + kk * dx;
+        h_coordinates(cnt, 0) = x;
+        h_coordinates(cnt, 1) = y;
+        h_coordinates(cnt, 2) = z;
         cnt++;
       }
     }
@@ -154,7 +154,8 @@ void test_rcb(lno_t ndim, lno_t np) {
   lno_t n_levels = static_cast<lno_t>(std::log2(static_cast<double>(np)) + 1);
 
   // Run RCB
-  std::vector<lno_t> partition_sizes = KokkosGraph::Experimental::recursive_coordinate_bisection(coordinates, perm_rcb, reverse_perm_rcb, n_levels);
+  std::vector<lno_t> partition_sizes =
+      KokkosGraph::Experimental::recursive_coordinate_bisection(coordinates, perm_rcb, reverse_perm_rcb, n_levels);
 
   // Check partition sizes
   lno_t sum_partition_sizes = 0;
@@ -164,7 +165,7 @@ void test_rcb(lno_t ndim, lno_t np) {
   ASSERT_EQ(sum_partition_sizes, n_coordinates);
 
   // Check permutations
-  auto h_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_rcb);
+  auto h_perm_rcb         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_rcb);
   auto h_reverse_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), reverse_perm_rcb);
   auto h_coordinates_perm = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coordinates);
 
@@ -176,19 +177,15 @@ void test_rcb(lno_t ndim, lno_t np) {
   ASSERT_TRUE(dif_flag);
 
   for (lno_t i = 0; i < n_coordinates; i++) {
-    ASSERT_EQ(h_coordinates(i,0), h_coordinates_perm(h_perm_rcb(i),0));
-    if (ndim > 1)
-      ASSERT_EQ(h_coordinates(i,1), h_coordinates_perm(h_perm_rcb(i),1));
-    if (ndim > 2)
-      ASSERT_EQ(h_coordinates(i,2), h_coordinates_perm(h_perm_rcb(i),2));
+    ASSERT_EQ(h_coordinates(i, 0), h_coordinates_perm(h_perm_rcb(i), 0));
+    if (ndim > 1) ASSERT_EQ(h_coordinates(i, 1), h_coordinates_perm(h_perm_rcb(i), 1));
+    if (ndim > 2) ASSERT_EQ(h_coordinates(i, 2), h_coordinates_perm(h_perm_rcb(i), 2));
   }
 
   for (lno_t i = 0; i < n_coordinates; i++) {
-    ASSERT_EQ(h_coordinates_perm(i,0), h_coordinates(h_reverse_perm_rcb(i),0));
-    if (ndim > 1)
-      ASSERT_EQ(h_coordinates_perm(i,1), h_coordinates(h_reverse_perm_rcb(i),1));
-    if (ndim > 2)
-      ASSERT_EQ(h_coordinates_perm(i,2), h_coordinates(h_reverse_perm_rcb(i),2));
+    ASSERT_EQ(h_coordinates_perm(i, 0), h_coordinates(h_reverse_perm_rcb(i), 0));
+    if (ndim > 1) ASSERT_EQ(h_coordinates_perm(i, 1), h_coordinates(h_reverse_perm_rcb(i), 1));
+    if (ndim > 2) ASSERT_EQ(h_coordinates_perm(i, 2), h_coordinates(h_reverse_perm_rcb(i), 2));
   }
 
   // Run RCB on RCB-reordered coordinates. Output permutation and reverse permutation are supposed to be identical
