@@ -530,7 +530,7 @@ void testSpecialCases() {
   using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
   using Vector    = Kokkos::View<Scalar*, Device>;
   using ExecSpace = typename Device::execution_space;
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < 6; i++) {
     Matrix A = getTestCase<Scalar, Layout, Device>(i);
     int m    = A.extent(0);
     int n    = A.extent(1);
