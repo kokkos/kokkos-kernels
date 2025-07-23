@@ -463,7 +463,7 @@ struct TransposeBsrMatrix {
         Avalues(valuesA),
         tArow_map(row_mapAt),
         tAentries(entriesAt),
-        tAvalues(valuesAt) {};
+        tAvalues(valuesAt){};
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int tArowIdx) const {
@@ -2110,8 +2110,8 @@ kk_extract_diagonal_blocks_crsmatrix_sequential(const crsMat_t &A, std::vector<c
 
         blk_row_start += blk_nrows;
       }  // for (ordinal_type i = 0; i < n_blocks; i++)
-    }  // A_nrows >= 1
-  }  // n_blocks > 1
+    }    // A_nrows >= 1
+  }      // n_blocks > 1
   return perm_v;
 }
 
@@ -2262,8 +2262,8 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A,
         // Shift to the next diagonal block
         blk_row_start += blk_nrows;
       }  // for (ordinal_type i = 0; i < n_blocks; i++)
-    }  // A_nrows >= 1
-  }  // n_blocks > 1
+    }    // A_nrows >= 1
+  }      // n_blocks > 1
 }
 
 }  // namespace Impl
