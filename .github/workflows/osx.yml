@@ -118,8 +118,7 @@ jobs:
 
   accelerate:
     needs: check-pr-labels
-    # TODO: allow re-run via retest label if: ${{ github.event.label.name == 'AT: RETEST' }}
-    name: osx-ci
+    name: osx-ci (Accelerate)
     runs-on: [macos-latest]
 
     steps:
