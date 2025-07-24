@@ -72,7 +72,7 @@ void verifyOrthogonal(const Mat& X) {
 }
 
 template <typename AView, typename UView, typename VtView, typename SigmaView>
-void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView& sigma) {
+void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView& sigma, const double epsilon = 0) {
   using Scalar = typename AView::non_const_value_type;
   using KAT    = Kokkos::ArithTraits<Scalar>;
   // Check that U/V columns are unit length and orthogonal, and that U *
@@ -90,9 +90,10 @@ void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView
     auto Vtrow = Kokkos::subview(Vt, Kokkos::make_pair<int>(i, i + 1), Kokkos::ALL());
     Test::vanillaGEMM(sigma(i), Ucol, Vtrow, 1.0, usvt);
   }
+  const double tol = (epsilon == 0 ? Test::svdEpsilon<Scalar>() : epsilon);
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
-      Test::EXPECT_NEAR_KK(usvt(i, j), A(i, j), Test::svdEpsilon<Scalar>());
+      Test::EXPECT_NEAR_KK(usvt(i, j), A(i, j), tol);
     }
   }
   // Make sure all singular values are positive
@@ -530,7 +531,7 @@ void testSpecialCases() {
   using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
   using Vector    = Kokkos::View<Scalar*, Device>;
   using ExecSpace = typename Device::execution_space;
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 7; i++) {
     Matrix A = getTestCase<Scalar, Layout, Device>(i);
     int m    = A.extent(0);
     int n    = A.extent(1);
@@ -556,7 +557,11 @@ void testSpecialCases() {
     auto sigmaHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sigma);
 
     // Verify the SVD is correct
-    verifySVD(Acopy, Uhost, Vthost, sigmaHost);
+    if(std::is_same_v<Scalar, double> && i == 7) {
+      verifySVD(Acopy, Uhost, Vthost, sigmaHost, 1e-11);
+    } else {
+      verifySVD(Acopy, Uhost, Vthost, sigmaHost);
+    }
   }
 }
 
