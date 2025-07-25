@@ -764,41 +764,5 @@ KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
   v(m, n) = fma_alpha(reg_c, alpha, alpha_tag);
 }
 
-namespace Impl {
-template <typename ViewType>
-KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
-  static_assert(Kokkos::is_view_v<ViewType>, "KokkosBatched: ViewType is not a Kokkos::View.");
-  constexpr std::size_t V_rank = ViewType::rank();
-  static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
-
-  if (r == 0) {
-    int V_extent_0 = V_rank == 0 ? 0 : v.extent_int(0);
-    return V_extent_0;
-  } else if (r == 1) {
-    int V_extent_1 = V_rank == 0 ? 0 : V_rank == 1 ? 1 : v.extent_int(1);
-    return V_extent_1;
-  } else {
-    return -1;
-  }
-}
-
-template <typename ViewType>
-KOKKOS_INLINE_FUNCTION std::size_t get_stride(const ViewType &v, const int r) {
-  static_assert(Kokkos::is_view_v<ViewType>, "KokkosBatched: ViewType is not a Kokkos::View.");
-  constexpr std::size_t V_rank = ViewType::rank();
-  static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
-
-  if (r == 0) {
-    std::size_t V_stride_0 = V_rank == 0 ? 0 : v.stride(0);
-    return V_stride_0;
-  } else if (r == 1) {
-    std::size_t V_stride_1 = V_rank == 0 ? 0 : V_rank == 1 ? 1 : v.stride(1);
-    return V_stride_1;
-  } else {
-    return 0;
-  }
-}
-}  // namespace Impl
-
 }  // namespace KokkosBatched
 #endif  // KOKKOSBATCHED_UTIL_HPP
