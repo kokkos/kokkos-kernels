@@ -177,22 +177,14 @@ void test_rcb(lno_t ndim, lno_t np) {
   ASSERT_TRUE(dif_flag);
 
   for (lno_t i = 0; i < n_coordinates; i++) {
-    ASSERT_EQ(h_coordinates(i, 0), h_coordinates_perm(h_perm_rcb(i), 0));
-    if (ndim > 1) {
-      ASSERT_EQ(h_coordinates(i, 1), h_coordinates_perm(h_perm_rcb(i), 1));
-    }
-    if (ndim > 2) {
-      ASSERT_EQ(h_coordinates(i, 2), h_coordinates_perm(h_perm_rcb(i), 2));
+    for (lno_t j = 0; j < ndim; j++) {
+      ASSERT_EQ(h_coordinates(i, j), h_coordinates_perm(h_perm_rcb(i), j));
     }
   }
 
   for (lno_t i = 0; i < n_coordinates; i++) {
-    ASSERT_EQ(h_coordinates_perm(i, 0), h_coordinates(h_reverse_perm_rcb(i), 0));
-    if (ndim > 1) {
-      ASSERT_EQ(h_coordinates_perm(i, 1), h_coordinates(h_reverse_perm_rcb(i), 1));
-    }
-    if (ndim > 2) {
-      ASSERT_EQ(h_coordinates_perm(i, 2), h_coordinates(h_reverse_perm_rcb(i), 2));
+    for (lno_t j = 0; j < ndim; j++) {
+      ASSERT_EQ(h_coordinates_perm(i, j), h_coordinates(h_reverse_perm_rcb(i), j));
     }
   }
 

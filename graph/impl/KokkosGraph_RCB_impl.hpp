@@ -59,6 +59,7 @@ struct UpdatePermAndMeshFunctor {
   ordinal_t p1_size;
   ordinal_t offset;
   ordinal_t N;  // length of reverse_perm_bisect
+  ordinal_t ndim;
 
   UpdatePermAndMeshFunctor(const perm_view_type1 &reverse_perm_bisect_, const perm_view_type1 &prev_reverse_perm_,
                            perm_view_type2 &perm_, perm_view_type2 &reverse_perm_,
@@ -72,7 +73,8 @@ struct UpdatePermAndMeshFunctor {
         coordinates_new(coordinates_new_),
         p1_size(p1_size_),
         offset(offset_) {
-    N = static_cast<ordinal_t>(reverse_perm_bisect.extent(0));
+    N    = static_cast<ordinal_t>(reverse_perm_bisect.extent(0));
+    ndim = static_cast<ordinal_t>(coordinates_orig.extent(1));
   }
   KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i) const {
     // orig_lcl_idx: 0 --> (N-1)
@@ -98,9 +100,9 @@ struct UpdatePermAndMeshFunctor {
     reverse_perm(new_gbl_idx) = gbl_orig_idx;
 
     // Update coordinates with bisecting results
-    coordinates_new(new_lcl_idx, 0) = coordinates_orig(orig_lcl_idx, 0);
-    coordinates_new(new_lcl_idx, 1) = coordinates_orig(orig_lcl_idx, 1);
-    coordinates_new(new_lcl_idx, 2) = coordinates_orig(orig_lcl_idx, 2);
+    for (ordinal_t j = 0; j < ndim; j++) {
+      coordinates_new(new_lcl_idx, j) = coordinates_orig(orig_lcl_idx, j);
+    }
   }
 };
 
