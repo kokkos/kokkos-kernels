@@ -149,7 +149,8 @@ void test_rcb(lno_t ndim, lno_t np) {
   lno_t n_coordinates = static_cast<lno_t>(coordinates.extent(0));
   perm_view_t perm_rcb("perm_rcb", n_coordinates);
   perm_view_t reverse_perm_rcb("reverse_perm_rcb", n_coordinates);
-  auto h_coordinates = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coordinates);
+  auto h_coordinates = Kokkos::create_mirror(coordinates);
+  Kokkos::deep_copy(h_coordinates, coordinates);
 
   lno_t n_levels = static_cast<lno_t>(std::log2(static_cast<double>(np)) + 1);
 
