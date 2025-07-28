@@ -272,7 +272,7 @@ struct SerialSVDInternal {
       // B22 is nsub * nsub, Usub is m * nsub, and Vtsub is nsub * n
       svdStep(Bsub, Usub, Vtsub, m, n, nsub, Bs0, Bs1, Us0, Us1, Vts0, Vts1);
 
-      if (iters++ == max_iters) {
+      if (iters + 1 == max_iters) {
         return -1;
       }
     }
