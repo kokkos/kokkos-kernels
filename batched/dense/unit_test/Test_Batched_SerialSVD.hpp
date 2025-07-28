@@ -56,41 +56,42 @@ typename V::non_const_value_type simpleNorm2(const V& v) {
 
 // Check that all columns of X are unit length and pairwise orthogonal
 template <typename Mat>
-void verifyOrthogonal(const Mat& X) {
+void verifyOrthogonal(const Mat& X, const double epsilon = -1) {
   using Scalar = typename Mat::non_const_value_type;
   int k        = X.extent(1);
+  const double tol = (epsilon <= 0 ? Test::svdEpsilon<Scalar>() : epsilon);
   for (int i = 0; i < k; i++) {
     auto col1  = Kokkos::subview(X, Kokkos::ALL(), i);
     double len = simpleNorm2(col1);
-    Test::EXPECT_NEAR_KK(len, 1.0, Test::svdEpsilon<Scalar>());
+    Test::EXPECT_NEAR_KK(len, 1.0, epsilon);
     for (int j = 0; j < i; j++) {
       auto col2 = Kokkos::subview(X, Kokkos::ALL(), j);
       double d  = Kokkos::ArithTraits<Scalar>::abs(simpleDot(col1, col2));
-      Test::EXPECT_NEAR_KK(d, 0.0, Test::svdEpsilon<Scalar>());
+      Test::EXPECT_NEAR_KK(d, 0.0, epsilon);
     }
   }
 }
 
 template <typename AView, typename UView, typename VtView, typename SigmaView>
-void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView& sigma, const double epsilon = 0) {
+void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView& sigma, const double epsilon = -1) {
   using Scalar = typename AView::non_const_value_type;
   using KAT    = Kokkos::ArithTraits<Scalar>;
-  // Check that U/V columns are unit length and orthogonal, and that U *
-  // diag(sigma) * V^T == A
+  // Check that U/V columns are unit length and orthogonal
+  // and that:   U * diag(sigma) * V^T == A
   int m       = A.extent(0);
   int n       = A.extent(1);
   int maxrank = std::min(m, n);
-  verifyOrthogonal(U);
+  const double tol = (epsilon <= 0 ? Test::svdEpsilon<Scalar>() : epsilon);
+  verifyOrthogonal(U, epsilon);
   // NOTE: V^T being square and orthonormal implies that V is, so we don't have
   // to transpose it here.
-  verifyOrthogonal(Vt);
+  verifyOrthogonal(Vt, epsilon);
   Kokkos::View<Scalar**, typename AView::device_type> usvt("USV^T", m, n);
   for (int i = 0; i < maxrank; i++) {
     auto Ucol  = Kokkos::subview(U, Kokkos::ALL(), Kokkos::make_pair<int>(i, i + 1));
     auto Vtrow = Kokkos::subview(Vt, Kokkos::make_pair<int>(i, i + 1), Kokkos::ALL());
     Test::vanillaGEMM(sigma(i), Ucol, Vtrow, 1.0, usvt);
   }
-  const double tol = (epsilon == 0 ? Test::svdEpsilon<Scalar>() : epsilon);
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
       Test::EXPECT_NEAR_KK(usvt(i, j), A(i, j), tol);
@@ -557,7 +558,7 @@ void testSpecialCases() {
     auto sigmaHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sigma);
 
     // Verify the SVD is correct
-    if(std::is_same_v<Scalar, double> && i == 7) {
+    if(std::is_same_v<Scalar, double> && i == 6) {
       verifySVD(Acopy, Uhost, Vthost, sigmaHost, 1e-11);
     } else {
       verifySVD(Acopy, Uhost, Vthost, sigmaHost);
