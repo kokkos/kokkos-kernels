@@ -53,14 +53,11 @@
 - Stride name fix [\#2634](https://github.com/kokkos/kokkos-kernels/pull/2634)
 - Fix unused variable warning [\#2629](https://github.com/kokkos/kokkos-kernels/pull/2629)
 - Fix team Gemm quick return [\#2626](https://github.com/kokkos/kokkos-kernels/pull/2626)
-- Avoid warning for explicit instantiations with storage class [\#2615](https://github.com/kokkos/kokkos-kernels/pull/2615)
 - Add missing header to KokkosSparse_par_ilut.hpp [\#2613](https://github.com/kokkos/kokkos-kernels/pull/2613)
-- Par_ilut enhancements and fixes [\#2605](https://github.com/kokkos/kokkos-kernels/pull/2605)
 - Fix illegal use of stride [\#2593](https://github.com/kokkos/kokkos-kernels/pull/2593)
 - Fix #2336: in StaticCrsGraph use default_size_type [\#2553](https://github.com/kokkos/kokkos-kernels/pull/2553)
 - Sparse - sptrsv: Adjusting the perf test CUDA guard see issue #2428 [\#2535](https://github.com/kokkos/kokkos-kernels/pull/2535)
 - Batched - dense: Testing and fixing Serial QR [\#2342](https://github.com/kokkos/kokkos-kernels/pull/2342)
-- Fix: constexpr condition to test long double complex type [\#2688](https://github.com/kokkos/kokkos-kernels/pull/2688)
 
 ### Deprecations:
 - Warn about __KOKKOSBATCHED_PROMOTION__ deprecation [\#2657](https://github.com/kokkos/kokkos-kernels/pull/2657)
