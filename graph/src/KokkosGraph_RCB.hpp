@@ -42,8 +42,8 @@ std::vector<ordinal_type> recursive_coordinate_bisection(coors_view_type &coordi
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  ordinal_type N    = static_cast<ordinal_type>(coordinates.extent(0));
-  ordinal_type ndim = static_cast<ordinal_type>(coordinates.extent(1));
+  const ordinal_type N    = static_cast<ordinal_type>(coordinates.extent(0));
+  const ordinal_type ndim = static_cast<ordinal_type>(coordinates.extent(1));
 
   // Allocate coordinates views on device memory
   coors_view_type coordinates_bisect(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coordinates_bisect"), N, ndim);
@@ -61,12 +61,12 @@ std::vector<ordinal_type> recursive_coordinate_bisection(coors_view_type &coordi
 
   // Initialize
   Kokkos::parallel_for(Kokkos::RangePolicy<execution_space, ordinal_type>(0, N),
-                       Impl::FillOneIncrementFunctor<perm_view_type>(perm));
+                       KokkosGraph::Impl::FillOneIncrementFunctor<perm_view_type>(perm));
   Kokkos::deep_copy(reverse_perm, perm);
 
   ordinal_type n_partitions =
       1;  // number of partitions at the previous level (initial value is 1, i.e., starting with the entire mesh points)
-  ordinal_type max_n_partitions = static_cast<ordinal_type>(std::pow(2, n_levels - 1));
+  const ordinal_type max_n_partitions = static_cast<ordinal_type>(std::pow(2, n_levels - 1));
   std::vector<ordinal_type> partition_sizes(
       max_n_partitions);   // contain the number of basis functions (or elements) per partition in the previous level
   partition_sizes[0] = N;  // starting with the entire mesh points
@@ -109,44 +109,42 @@ std::vector<ordinal_type> recursive_coordinate_bisection(coors_view_type &coordi
       scalar_t z_span = 0.0;
 
       auto x_coors = Kokkos::subview(sub_coordinates, Kokkos::ALL(), 0);
-      Impl::find_min_max(x_coors, x_min, x_max);
+      KokkosGraph::Impl::find_min_max(x_coors, x_min, x_max);
       x_span = x_max - x_min;
 
       if (ndim > 1) {
         auto y_coors = Kokkos::subview(sub_coordinates, Kokkos::ALL(), 1);
-        Impl::find_min_max(y_coors, y_min, y_max);
+        KokkosGraph::Impl::find_min_max(y_coors, y_min, y_max);
         y_span = y_max - y_min;
       }
 
       if (ndim > 2) {
         auto z_coors = Kokkos::subview(sub_coordinates, Kokkos::ALL(), 2);
-        Impl::find_min_max(z_coors, z_min, z_max);
+        KokkosGraph::Impl::find_min_max(z_coors, z_min, z_max);
         z_span = z_max - z_min;
       }
 
       // Bisect partition on the most elongated dimension (host execution, for now)
       if ((x_span >= y_span) && (x_span >= z_span)) {
         auto h_x_coors = Kokkos::subview(sub_h_coordinates, Kokkos::ALL(), 0);
-        Impl::bisect(h_x_coors, x_min, x_max, sub_h_reverse_perm_bisect, p1_size, p2_size);
+        KokkosGraph::Impl::bisect(h_x_coors, x_min, x_max, sub_h_reverse_perm_bisect, p1_size, p2_size);
       } else if ((y_span >= x_span) && (y_span >= z_span)) {
         auto h_y_coors = Kokkos::subview(sub_h_coordinates, Kokkos::ALL(), 1);
-        Impl::bisect(h_y_coors, y_min, y_max, sub_h_reverse_perm_bisect, p1_size, p2_size);
+        KokkosGraph::Impl::bisect(h_y_coors, y_min, y_max, sub_h_reverse_perm_bisect, p1_size, p2_size);
       } else {
         auto h_z_coors = Kokkos::subview(sub_h_coordinates, Kokkos::ALL(), 2);
-        Impl::bisect(h_z_coors, z_min, z_max, sub_h_reverse_perm_bisect, p1_size, p2_size);
+        KokkosGraph::Impl::bisect(h_z_coors, z_min, z_max, sub_h_reverse_perm_bisect, p1_size, p2_size);
       }
 
       Kokkos::deep_copy(sub_reverse_perm_bisect, sub_h_reverse_perm_bisect);
 
       // Update global permutation and reverse permutation lists and shuffle coordinates using bisecting results
-      Impl::UpdatePermAndMeshFunctor<decltype(sub_reverse_perm_bisect), perm_view_type, decltype(sub_coordinates)> func(
-          sub_reverse_perm_bisect, sub_prev_reverse_perm, perm, reverse_perm, sub_coordinates, sub_coordinates_bisect,
-          p1_size, coordinates_offset);
+      KokkosGraph::Impl::UpdatePermAndMeshFunctor<decltype(sub_reverse_perm_bisect), perm_view_type,
+                                                  decltype(sub_coordinates)>
+          func(sub_reverse_perm_bisect, sub_prev_reverse_perm, perm, reverse_perm, sub_coordinates,
+               sub_coordinates_bisect, p1_size, coordinates_offset);
       Kokkos::RangePolicy<execution_space, ordinal_type> policy(0, N0);
       Kokkos::parallel_for(policy, func);
-
-      // std::cout << "    Level " << lvl << ", bisecting partition " << p << " (size: " << N0 << ") of level " << (lvl
-      // - 1) << ": 1st sub-partition's size " << p1_size << ", 2nd sub-partition's size " << p2_size << std::endl;
 
       if (p1_size != 0) {
         partition_sizes_tmp[cnt_partitions] = p1_size;

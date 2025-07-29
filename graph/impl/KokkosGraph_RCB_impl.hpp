@@ -23,7 +23,6 @@
 #include <algorithm>
 
 namespace KokkosGraph {
-namespace Experimental {
 namespace Impl {
 
 template <typename perm_view_type>
@@ -171,6 +170,5 @@ inline void bisect(const coors_view_type &coors_1d, const value_type &init_min_v
 }
 
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosGraph
 #endif
