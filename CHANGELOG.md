@@ -11,9 +11,6 @@
 
 ### Enhancements:
 
-#### General
-- Assume independent thread scheduling for Blackwell [\#2558](https://github.com/kokkos/kokkos-kernels/pull/2558)
-
 #### BLAS
 - Uses BLAS1 axpy execution space for internal deep_copy and fill operations [\#2663](https://github.com/kokkos/kokkos-kernels/pull/2663)
 - blas(dot): modernize `DotFunctor` [\#2606](https://github.com/kokkos/kokkos-kernels/pull/2606)
@@ -56,8 +53,6 @@
 - Add missing header to KokkosSparse_par_ilut.hpp [\#2613](https://github.com/kokkos/kokkos-kernels/pull/2613)
 - Fix illegal use of stride [\#2593](https://github.com/kokkos/kokkos-kernels/pull/2593)
 - Fix #2336: in StaticCrsGraph use default_size_type [\#2553](https://github.com/kokkos/kokkos-kernels/pull/2553)
-- Sparse - sptrsv: Adjusting the perf test CUDA guard see issue #2428 [\#2535](https://github.com/kokkos/kokkos-kernels/pull/2535)
-- Batched - dense: Testing and fixing Serial QR [\#2342](https://github.com/kokkos/kokkos-kernels/pull/2342)
 
 ### Deprecations:
 - Warn about __KOKKOSBATCHED_PROMOTION__ deprecation [\#2657](https://github.com/kokkos/kokkos-kernels/pull/2657)
