@@ -15,6 +15,8 @@
 - Uses BLAS1 axpy execution space for internal deep_copy and fill operations [\#2663](https://github.com/kokkos/kokkos-kernels/pull/2663)
 - blas(dot): modernize `DotFunctor` [\#2606](https://github.com/kokkos/kokkos-kernels/pull/2606)
 - Rework dot performance tests [\#2544](https://github.com/kokkos/kokkos-kernels/pull/2544)
+
+#### LAPACK
 - Lapack - SVD: Unifying SVector layout to LayoutLeft [\#2621](https://github.com/kokkos/kokkos-kernels/pull/2621)
 
 #### Batched
