@@ -565,10 +565,10 @@ void testTwoByTwoInternal() {
   Matrix A("A", n, n);
   Vector evs("eigen values", n);
   typename Matrix::host_mirror_type Ahost = Kokkos::create_mirror_view(A);
-  Ahost(0, 0)                       = 0.00062500000000000012;
-  Ahost(0, 1)                       = 6.7220534694101152e-19;
-  Ahost(1, 0)                       = Ahost(0, 1);
-  Ahost(1, 1)                       = 0.00062499999999999763;
+  Ahost(0, 0)                             = 0.00062500000000000012;
+  Ahost(0, 1)                             = 6.7220534694101152e-19;
+  Ahost(1, 0)                             = Ahost(0, 1);
+  Ahost(1, 1)                             = 0.00062499999999999763;
   Kokkos::deep_copy(A, Ahost);
 
   testSymEigen2x2<Matrix, Vector> tester(A, evs);

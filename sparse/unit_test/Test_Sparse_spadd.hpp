@@ -51,8 +51,8 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNN
   // first, populate rowmap
   size_type_view_t rowmap("rowmap", nrows + 1);
   typename size_type_view_t::host_mirror_type h_rowmap = Kokkos::create_mirror_view(rowmap);
-  size_type nnz                                  = 0;
-  size_type maxRowEntries                        = 0;
+  size_type nnz                                        = 0;
+  size_type maxRowEntries                              = 0;
   for (lno_t i = 0; i < nrows; i++) {
     size_type rowEntries = rand() % (maxNNZ - minNNZ + 1) + minNNZ;
     h_rowmap(i)          = nnz;

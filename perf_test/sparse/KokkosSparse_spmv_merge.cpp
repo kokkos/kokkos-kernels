@@ -108,7 +108,7 @@ matrix_type generate_unbalanced_matrix(const typename matrix_type::ordinal_type 
 
   // Copy row map values to view
   typename row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(row_map);
-  row_map_h(0)                                = 0;
+  row_map_h(0)                                      = 0;
   for (lno_t rowIdx = 0; rowIdx < numRows; ++rowIdx) {
     row_map_h(rowIdx + 1) = row_map_vec[rowIdx + 1];
   }
@@ -116,7 +116,7 @@ matrix_type generate_unbalanced_matrix(const typename matrix_type::ordinal_type 
 
   // Copy column indices to view
   typename row_map_type::host_mirror_type entries_h = Kokkos::create_mirror_view(entries);
-  entries_h(0)                                = 0;
+  entries_h(0)                                      = 0;
   for (lno_t entryIdx = 0; entryIdx < numNNZ; ++entryIdx) {
     entries_h(entryIdx) = colind_vec[entryIdx];
   }

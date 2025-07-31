@@ -188,8 +188,8 @@ void test_RK() {
   // create_mirror_view which would not do a copy
   // when y_old is in HostSpace.
   typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
-  y_old_h(0)                            = 1;
-  y_old_h(1)                            = 0;
+  y_old_h(0)                                  = 1;
+  y_old_h(1)                                  = 0;
 
   // First compute analytical solution as reference
   // and to evaluate the error from each RK method.
@@ -357,8 +357,8 @@ void test_convergence_rate() {
   // create_mirror_view which would not do a copy
   // when y_old is in HostSpace.
   typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
-  y_old_h(0)                            = 1;
-  y_old_h(1)                            = 0;
+  y_old_h(0)                                  = 1;
+  y_old_h(1)                                  = 0;
 
   // First compute analytical solution as reference
   // and to evaluate the error from each RK method.
@@ -457,8 +457,8 @@ void test_adaptivity() {
   // create_mirror_view which would not do a copy
   // when y_old is in HostSpace.
   typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
-  y_old_h(0)                            = 1;
-  y_old_h(1)                            = 0;
+  y_old_h(0)                                  = 1;
+  y_old_h(1)                                  = 0;
 
   // First compute analytical solution as reference
   // and to evaluate the error from each RK method.

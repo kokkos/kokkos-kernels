@@ -702,7 +702,7 @@ class BsrMatrix {
     // create_staticcrsgraph takes the frequency of blocks per row
     // and returns the cum sum pointer row_map with nbrows+1 size, and total
     // numBlocks in the final entry
-    graph                                       = create_staticcrsgraph<staticcrsgraph_type>("blockgraph", block_rows);
+    graph = create_staticcrsgraph<staticcrsgraph_type>("blockgraph", block_rows);
     typename row_map_type::host_mirror_type h_row_map = Kokkos::create_mirror_view(graph.row_map);
     Kokkos::deep_copy(h_row_map, graph.row_map);
 

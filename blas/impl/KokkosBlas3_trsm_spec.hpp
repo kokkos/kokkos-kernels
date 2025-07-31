@@ -97,8 +97,8 @@ struct TRSM<execution_space, AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COM
     Kokkos::deep_copy(h_A, A);
     Kokkos::deep_copy(h_B, B);
 
-    SerialTrsm_Invoke<typename AViewType::host_mirror_type, typename BViewType::host_mirror_type>(side, uplo, trans, diag, alpha,
-                                                                                      h_A, h_B);
+    SerialTrsm_Invoke<typename AViewType::host_mirror_type, typename BViewType::host_mirror_type>(
+        side, uplo, trans, diag, alpha, h_A, h_B);
 
     Kokkos::deep_copy(B, h_B);
 

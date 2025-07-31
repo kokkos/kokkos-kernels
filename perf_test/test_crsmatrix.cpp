@@ -242,9 +242,9 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
   mv_type x("X", numCols, numVecs);
   mv_random_read_type t_x(x);
   mv_type y("Y", numRows, numVecs);
-  h_mv_type h_x                                                = Kokkos::create_mirror_view(x);
-  h_mv_type h_y                                                = Kokkos::create_mirror_view(y);
-  h_mv_type h_y_compare                                        = Kokkos::create_mirror(y);
+  h_mv_type h_x                                                      = Kokkos::create_mirror_view(x);
+  h_mv_type h_y                                                      = Kokkos::create_mirror_view(y);
+  h_mv_type h_y_compare                                              = Kokkos::create_mirror(y);
   typename matrix_type::StaticCrsGraphType::host_mirror_type h_graph = Kokkos::create_mirror(A.graph);
   typename matrix_type::values_type::host_mirror_type h_values       = Kokkos::create_mirror_view(A.values);
 
@@ -355,9 +355,9 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
   mv_type x("X", numCols);
   mv_random_read_type t_x(x);
   mv_type y("Y", numRows);
-  h_mv_type h_x                                                = Kokkos::create_mirror_view(x);
-  h_mv_type h_y                                                = Kokkos::create_mirror_view(y);
-  h_mv_type h_y_compare                                        = Kokkos::create_mirror(y);
+  h_mv_type h_x                                                      = Kokkos::create_mirror_view(x);
+  h_mv_type h_y                                                      = Kokkos::create_mirror_view(y);
+  h_mv_type h_y_compare                                              = Kokkos::create_mirror(y);
   typename matrix_type::StaticCrsGraphType::host_mirror_type h_graph = Kokkos::create_mirror(A.graph);
   typename matrix_type::values_type::host_mirror_type h_values       = Kokkos::create_mirror_view(A.values);
 

@@ -93,8 +93,8 @@ struct TRMM<execution_space, AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
     Kokkos::deep_copy(host_A, A);
     Kokkos::deep_copy(host_B, B);
 
-    SerialTrmm_Invoke<typename AVIT::host_mirror_type, typename BVIT::host_mirror_type>(side, uplo, trans, diag, alpha, host_A,
-                                                                            host_B);
+    SerialTrmm_Invoke<typename AVIT::host_mirror_type, typename BVIT::host_mirror_type>(side, uplo, trans, diag, alpha,
+                                                                                        host_A, host_B);
 
     // Copy host_B to B
     // no-op if B's MemorySpace is HostSpace

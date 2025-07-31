@@ -261,11 +261,13 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
     write_type = 1;
   }
 
-  typename row_lno_temp_work_view_t::host_mirror_type h_c_flop_rowmap      = Kokkos::create_mirror_view(c_flop_rowmap);
-  typename row_lno_temp_work_view_t::host_mirror_type h_c_comp_a_net_index = Kokkos::create_mirror_view(c_comp_a_net_index);
-  typename row_lno_temp_work_view_t::host_mirror_type h_c_comp_b_net_index = Kokkos::create_mirror_view(c_comp_b_net_index);
-  typename nnz_lno_temp_work_view_t::host_mirror_type h_c_comp_row_index   = Kokkos::create_mirror_view(c_comp_row_index);
-  typename nnz_lno_temp_work_view_t::host_mirror_type h_c_comp_col_index   = Kokkos::create_mirror_view(c_comp_col_index);
+  typename row_lno_temp_work_view_t::host_mirror_type h_c_flop_rowmap = Kokkos::create_mirror_view(c_flop_rowmap);
+  typename row_lno_temp_work_view_t::host_mirror_type h_c_comp_a_net_index =
+      Kokkos::create_mirror_view(c_comp_a_net_index);
+  typename row_lno_temp_work_view_t::host_mirror_type h_c_comp_b_net_index =
+      Kokkos::create_mirror_view(c_comp_b_net_index);
+  typename nnz_lno_temp_work_view_t::host_mirror_type h_c_comp_row_index = Kokkos::create_mirror_view(c_comp_row_index);
+  typename nnz_lno_temp_work_view_t::host_mirror_type h_c_comp_col_index = Kokkos::create_mirror_view(c_comp_col_index);
 
   Kokkos::deep_copy(h_c_flop_rowmap, c_flop_rowmap);
   Kokkos::deep_copy(h_c_comp_a_net_index, c_comp_a_net_index);

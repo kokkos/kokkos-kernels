@@ -146,7 +146,7 @@ class Coo2Crs {
     arg_capacity_hint = arg_capacity_hint < 16 ? 16 : arg_capacity_hint;
 
     // Record of whether capacity was reached in any unordered map
-    m_capacity_bmap                                          = BmapViewType("m_capacity_bmap", m_nrows);
+    m_capacity_bmap                                                = BmapViewType("m_capacity_bmap", m_nrows);
     typename BmapViewType::host_mirror_type m_capacity_bmap_mirror = Kokkos::create_mirror_view(m_capacity_bmap);
 
     // Track which tuples have been processed

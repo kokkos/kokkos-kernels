@@ -154,7 +154,7 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols, const
   typename ViewType::host_mirror_type A_host          = Kokkos::create_mirror_view(A);
   typename ViewType::host_mirror_type B_actual_host   = Kokkos::create_mirror_view(B_actual);
   typename ViewType::host_mirror_type B_expected_host = Kokkos::create_mirror_view(B_expected);
-  uint64_t seed                                 = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
   using ViewTypeSubA = decltype(Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL()));
   using ViewTypeSubB = decltype(Kokkos::subview(B_actual, 0, Kokkos::ALL(), Kokkos::ALL()));

@@ -108,7 +108,7 @@ class GraphColor {
   virtual void color_graph(color_view_t d_colors, int &num_phases) {
     num_phases = 1;
 
-    color_host_view_t colors                         = Kokkos::create_mirror_view(d_colors);
+    color_host_view_t colors                               = Kokkos::create_mirror_view(d_colors);
     typename const_lno_row_view_t::host_mirror_type h_xadj = Kokkos::create_mirror_view(this->xadj);
     typename const_lno_nnz_view_t::host_mirror_type h_adj  = Kokkos::create_mirror_view(this->adj);
 
@@ -615,7 +615,7 @@ class GraphColor_VB : public GraphColor<HandleType, lno_row_view_t_, lno_nnz_vie
       h_recolor_list = Kokkos::create_mirror_view(current_vertexList_);
       Kokkos::deep_copy(h_recolor_list, current_vertexList_);
     }
-    color_host_view_t h_colors                      = Kokkos::create_mirror_view(vertex_colors_);
+    color_host_view_t h_colors                            = Kokkos::create_mirror_view(vertex_colors_);
     typename const_lno_row_view_t::host_mirror_type h_idx = Kokkos::create_mirror_view(xadj_);
     typename adj_view_t::host_mirror_type h_adj           = Kokkos::create_mirror_view(adj_);
 

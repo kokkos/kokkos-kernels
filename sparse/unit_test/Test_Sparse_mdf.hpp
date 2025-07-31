@@ -68,7 +68,7 @@ void run_test_mdf() {
 
   col_ind_type permutation = handle.get_permutation();
 
-  bool success                                    = true;
+  bool success                                          = true;
   typename col_ind_type::host_mirror_type permutation_h = Kokkos::create_mirror(permutation);
   Kokkos::deep_copy(permutation_h, permutation);
   const ordinal_type permutation_ref[] = {0, 3, 12, 15, 1, 2, 4, 8, 7, 11, 13, 14, 5, 6, 9, 10};

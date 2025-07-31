@@ -188,7 +188,7 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle, const RowMa
     signed_integral_t level = 0;
     size_type node_count    = 0;
 
-    space.fence();                                                      // wait for deep copy write to land
+    space.fence();                                                            // wait for deep copy write to land
     typename DeviceEntriesType::host_mirror_type level_ptr("lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
     for (size_type i = 0; i < nrows; ++i) {
@@ -611,7 +611,7 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle, const Ro
     signed_integral_t level = 0;
     size_type node_count    = 0;
 
-    space.fence();                                                      // Wait for deep copy writes to land
+    space.fence();                                                            // Wait for deep copy writes to land
     typename DeviceEntriesType::host_mirror_type level_ptr("lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
     for (size_type ii = nrows; ii > 0; ii--) {

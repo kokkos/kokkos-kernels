@@ -61,9 +61,9 @@ void RK_Count(const Device, const OdeType myODE, const double relTol, const doub
   vec_type y_new("y new", neqs), y_old("y old", neqs);
   count_type count("time step count", 1);
 
-  auto y_h                              = Kokkos::create_mirror_view(y);
+  auto y_h                                    = Kokkos::create_mirror_view(y);
   typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
-  auto y_ref_h                          = Kokkos::create_mirror(y);
+  auto y_ref_h                                = Kokkos::create_mirror(y);
   for (int dofIdx = 0; dofIdx < neqs; ++dofIdx) {
     y_h(dofIdx)     = myODE.expected_val(tstart, dofIdx);
     y_old_h(dofIdx) = y_h(dofIdx);

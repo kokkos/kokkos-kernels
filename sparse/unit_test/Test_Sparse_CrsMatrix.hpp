@@ -203,7 +203,7 @@ void testCrsMatrixhost_mirror_type() {
     testCrsMatrixRawConstructor<SCALAR, ORDINAL, OFFSET, DEVICE>();                                     \
   }                                                                                                     \
   TEST_F(TestCategory, sparse##_##crsmatrix_host_mirror##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    testCrsMatrixhost_mirror_type<SCALAR, ORDINAL, OFFSET, DEVICE>();                                         \
+    testCrsMatrixhost_mirror_type<SCALAR, ORDINAL, OFFSET, DEVICE>();                                   \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

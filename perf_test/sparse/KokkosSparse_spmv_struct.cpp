@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
     }
 
     if (check_errors) {
-      h_y_compare                                                  = Kokkos::create_mirror(y);
+      h_y_compare                                                        = Kokkos::create_mirror(y);
       typename matrix_type::StaticCrsGraphType::host_mirror_type h_graph = KokkosSparse::create_mirror(A.graph);
       typename matrix_type::values_type::host_mirror_type h_values       = Kokkos::create_mirror_view(A.values);
 

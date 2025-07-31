@@ -88,7 +88,7 @@ bool checkWhetherEvenNumberedRowsWereModified(const CrsMatrixType& A, const bool
   const SC TWO   = ONE + ONE;
   const SC THREE = ONE + ONE + ONE;
 
-  typename CrsMatrixType::values_type val               = A.values;
+  typename CrsMatrixType::values_type val                     = A.values;
   typename CrsMatrixType::values_type::host_mirror_type val_h = Kokkos::create_mirror_view(val);
   Kokkos::deep_copy(val_h, val);
   Kokkos::fence();
@@ -155,7 +155,7 @@ void generalTest(bool& success, std::ostream& out)
   typename matrix_type::row_map_type::non_const_type ptr("ptr", numRows + 1);
   {
     typename matrix_type::row_map_type::host_mirror_type ptr_h = Kokkos::create_mirror_view(ptr);
-    ptr_h[0]                                             = 0;
+    ptr_h[0]                                                   = 0;
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       ptr_h[lclRow + 1] = ptr_h[lclRow] + 1;  // 1 entry in each row
     }

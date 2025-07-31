@@ -67,17 +67,18 @@ class GraphColoringHandle {
   typedef typename color_view_t::device_type color_view_device_t;
   typedef typename color_view_t::memory_traits color_view_memory_traits;
   typedef typename color_view_t::host_mirror_type color_host_view_t;  // Host view
-                                                                // type
+                                                                      // type
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
 
-  typedef
-      typename size_type_persistent_work_view_t::host_mirror_type size_type_persistent_work_host_view_t;  // Host view type
+  typedef typename size_type_persistent_work_view_t::host_mirror_type
+      size_type_persistent_work_host_view_t;  // Host view type
 
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
-  typedef typename nnz_lno_persistent_work_view_t::host_mirror_type nnz_lno_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename nnz_lno_persistent_work_view_t::host_mirror_type nnz_lno_persistent_work_host_view_t;  // Host view type
 
   typedef Kokkos::TeamPolicy<ExecutionSpace> team_policy_t;
   typedef typename team_policy_t::member_type team_member_t;

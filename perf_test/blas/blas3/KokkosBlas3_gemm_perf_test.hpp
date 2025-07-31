@@ -1415,7 +1415,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
   using dst_scalar_type = typename dstViewType::value_type;
   using src_scalar_type = typename view_type_5d::value_type;
   size_t remainder, vector_batch_size, simd_batch_size, last_batch;
-  bool data_layout_same_as_3d_view        = false;
+  bool data_layout_same_as_3d_view              = false;
   typename dstViewType::host_mirror_type h_dst  = Kokkos::create_mirror_view(dst);
   typename view_type_4d::host_mirror_type h_src = Kokkos::create_mirror_view(src.mat_4d);
   Kokkos::deep_copy(h_src, src.mat_4d);
