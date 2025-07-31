@@ -2148,6 +2148,18 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A,
   using ordinal_type = typename crsMat_t::non_const_ordinal_type;
   using size_type    = typename crsMat_t::non_const_size_type;
 
+  static_assert(Kokkos::is_view_v<coor_view_type>,
+                "KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential: coor_view_type must be "
+                "a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<perm_view_type>,
+                "KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential: perm_view_type must be "
+                "a Kokkos::View.");
+
+  static_assert(static_cast<int>(coor_view_type::rank()) == 2,
+                "KokkosSparse::Impl::recursive_coordinate_bisection: coor_view_type must have rank 2.");
+  static_assert(static_cast<int>(perm_view_type::rank()) == 1,
+                "KokkosSparse::Impl::recursive_coordinate_bisection: perm_view_type must have rank 1.");
+
   row_map_type A_row_map = A.graph.row_map;
   entries_type A_entries = A.graph.entries;
   values_type A_values   = A.values;
@@ -2200,7 +2212,7 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A,
       perm_view_type reverse_perm_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb"), A_nrows);
       ordinal_type n_levels = static_cast<ordinal_type>(std::log2(static_cast<double>(n_blocks)) + 1);
       std::vector<ordinal_type> partition_sizes =
-          KokkosGraph::Experimental::recursive_coordinate_bisection<coor_view_type, perm_view_type, ordinal_type>(
+          KokkosGraph::Experimental::recursive_coordinate_bisection<coor_view_type, perm_view_type>(
               coors, perm_rcb, reverse_perm_rcb, n_levels);
 
       auto h_perm_rcb         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_rcb);
