@@ -29,6 +29,10 @@
 #include "mkl_types.h"
 #endif
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+#include <Accelerate/Accelerate.h>
+#endif
+
 namespace KokkosBlas {
 namespace Impl {
 
