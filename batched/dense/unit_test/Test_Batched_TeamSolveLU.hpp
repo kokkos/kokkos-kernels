@@ -190,9 +190,9 @@ void impl_test_batched_solvelu(const int N, const int BlkSize) {
   // Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror x0_host = Kokkos::create_mirror_view(x0);
-  typename ViewType::HostMirror b_host  = Kokkos::create_mirror_view(b);
-  // typename ViewType::HostMirror b_T_host = Kokkos::create_mirror_view(b_T);
+  typename ViewType::host_mirror_type x0_host = Kokkos::create_mirror_view(x0);
+  typename ViewType::host_mirror_type b_host  = Kokkos::create_mirror_view(b);
+  // typename ViewType::host_mirror_type b_T_host = Kokkos::create_mirror_view(b_T);
 
   Kokkos::deep_copy(x0_host, x0);
   Kokkos::deep_copy(b_host, b);

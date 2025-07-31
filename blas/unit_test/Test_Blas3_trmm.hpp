@@ -115,9 +115,9 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans, const
   // %g, ViewType: %s\n",
   // Kokkos::ArithTraits<Scalar>::real(alpha),side[0],uplo[0],trans[0],diag[0],M,N,eps,typeid(ViewTypeA).name());
 
-  typename ViewTypeA::HostMirror host_A          = Kokkos::create_mirror_view(A);
-  typename ViewTypeB::HostMirror host_B_actual   = Kokkos::create_mirror_view(B);
-  typename ViewTypeB::HostMirror host_B_expected = Kokkos::create_mirror_view(B_expected);
+  typename ViewTypeA::host_mirror_type host_A          = Kokkos::create_mirror_view(A);
+  typename ViewTypeB::host_mirror_type host_B_actual   = Kokkos::create_mirror_view(B);
+  typename ViewTypeB::host_mirror_type host_B_expected = Kokkos::create_mirror_view(B_expected);
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 

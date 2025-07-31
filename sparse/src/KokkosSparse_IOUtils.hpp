@@ -199,9 +199,9 @@ crsMat_t kk_generate_diag_matrix(typename crsMat_t::const_ordinal_type n, const 
   values_view_t values_view("values_view", n);
 
   {
-    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view(rowmap_view);
-    typename cols_view_t::HostMirror hc    = Kokkos::create_mirror_view(columns_view);
-    typename values_view_t::HostMirror hv  = Kokkos::create_mirror_view(values_view);
+    typename row_map_view_t::host_mirror_type hr = Kokkos::create_mirror_view(rowmap_view);
+    typename cols_view_t::host_mirror_type hc    = Kokkos::create_mirror_view(columns_view);
+    typename values_view_t::host_mirror_type hv  = Kokkos::create_mirror_view(values_view);
 
     for (lno_t i = 0; i <= n; ++i) {
       hr(i) = size_type(i);
@@ -252,9 +252,9 @@ crsMat_t kk_generate_diagonally_dominant_sparse_matrix(
   values_view_t values_view("values_view", nnz);
 
   {
-    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view(rowmap_view);
-    typename cols_view_t::HostMirror hc    = Kokkos::create_mirror_view(columns_view);
-    typename values_view_t::HostMirror hv  = Kokkos::create_mirror_view(values_view);
+    typename row_map_view_t::host_mirror_type hr = Kokkos::create_mirror_view(rowmap_view);
+    typename cols_view_t::host_mirror_type hc    = Kokkos::create_mirror_view(columns_view);
+    typename values_view_t::host_mirror_type hv  = Kokkos::create_mirror_view(values_view);
 
     for (lno_t i = 0; i <= nrows; ++i) {
       hr(i) = xadj[i];
@@ -303,9 +303,9 @@ crsMat_t kk_generate_triangular_sparse_matrix(char uplo, typename crsMat_t::cons
   values_view_t values_view("values_view", nnz);
 
   {
-    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view(rowmap_view);
-    typename cols_view_t::HostMirror hc    = Kokkos::create_mirror_view(columns_view);
-    typename values_view_t::HostMirror hv  = Kokkos::create_mirror_view(values_view);
+    typename row_map_view_t::host_mirror_type hr = Kokkos::create_mirror_view(rowmap_view);
+    typename cols_view_t::host_mirror_type hc    = Kokkos::create_mirror_view(columns_view);
+    typename values_view_t::host_mirror_type hv  = Kokkos::create_mirror_view(values_view);
 
     for (lno_t i = 0; i <= nrows; ++i) {
       hr(i) = xadj[i];
@@ -355,9 +355,9 @@ crsMat_t kk_generate_sparse_matrix(typename crsMat_t::const_ordinal_type nrows,
   values_view_t values_view("values_view", nnz);
 
   {
-    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view(rowmap_view);
-    typename cols_view_t::HostMirror hc    = Kokkos::create_mirror_view(columns_view);
-    typename values_view_t::HostMirror hv  = Kokkos::create_mirror_view(values_view);
+    typename row_map_view_t::host_mirror_type hr = Kokkos::create_mirror_view(rowmap_view);
+    typename cols_view_t::host_mirror_type hc    = Kokkos::create_mirror_view(columns_view);
+    typename values_view_t::host_mirror_type hv  = Kokkos::create_mirror_view(values_view);
 
     for (lno_t i = 0; i <= nrows; ++i) {
       hr(i) = xadj[i];
@@ -1307,8 +1307,8 @@ crsGraph_t read_kokkos_crst_graph(const char *filename_) {
   row_map_view_t rowmap_view("rowmap_view", nv + 1);
   cols_view_t columns_view("colsmap_view", nnzA);
 
-  typename row_map_view_t::HostMirror hr(xadj, nv + 1);
-  typename cols_view_t::HostMirror hc(adj, nnzA);
+  typename row_map_view_t::host_mirror_type hr(xadj, nv + 1);
+  typename cols_view_t::host_mirror_type hc(adj, nnzA);
   Kokkos::deep_copy(rowmap_view, hr);
   Kokkos::deep_copy(columns_view, hc);
 

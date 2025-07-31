@@ -118,18 +118,18 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   using scalar_t  = typename scalar_view_t::non_const_value_type;
   using KAT       = Kokkos::ArithTraits<scalar_t>;
 
-  typename scalar_view_t::HostMirror h_values = Kokkos::create_mirror_view(input_mat.values);
+  typename scalar_view_t::host_mirror_type h_values = Kokkos::create_mirror_view(input_mat.values);
   Kokkos::deep_copy(h_values, input_mat.values);
 
-  typename lno_view_t::HostMirror h_entries = Kokkos::create_mirror_view(input_mat.graph.entries);
+  typename lno_view_t::host_mirror_type h_entries = Kokkos::create_mirror_view(input_mat.graph.entries);
   Kokkos::deep_copy(h_entries, input_mat.graph.entries);
 
-  typename size_type_view_t::HostMirror h_rowmap = Kokkos::create_mirror_view(input_mat.graph.row_map);
+  typename size_type_view_t::host_mirror_type h_rowmap = Kokkos::create_mirror_view(input_mat.graph.row_map);
   Kokkos::deep_copy(h_rowmap, input_mat.graph.row_map);
   Kokkos::fence();
 
-  typename y_vector_type::HostMirror h_y = Kokkos::create_mirror_view(y);
-  typename x_vector_type::HostMirror h_x = Kokkos::create_mirror_view(x);
+  typename y_vector_type::host_mirror_type h_y = Kokkos::create_mirror_view(y);
+  typename x_vector_type::host_mirror_type h_x = Kokkos::create_mirror_view(x);
 
   KokkosKernels::Impl::safe_device_to_host_deep_copy(x.extent(0), x, h_x);
   KokkosKernels::Impl::safe_device_to_host_deep_copy(y.extent(0), y, h_y);

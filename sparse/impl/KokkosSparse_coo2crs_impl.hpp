@@ -146,8 +146,8 @@ class Coo2Crs {
     arg_capacity_hint = arg_capacity_hint < 16 ? 16 : arg_capacity_hint;
 
     // Record of whether capacity was reached in any unordered map
-    m_capacity_bmap                                          = BmapViewType("m_capacity_bmap", m_nrows);
-    typename BmapViewType::HostMirror m_capacity_bmap_mirror = Kokkos::create_mirror_view(m_capacity_bmap);
+    m_capacity_bmap                                                = BmapViewType("m_capacity_bmap", m_nrows);
+    typename BmapViewType::host_mirror_type m_capacity_bmap_mirror = Kokkos::create_mirror_view(m_capacity_bmap);
 
     // Track which tuples have been processed
     m_tuple_bmap = Bitset(m_n_tuples);
@@ -215,7 +215,7 @@ class Coo2Crs {
       CrsET().fence();
     }
 
-    typename CrsRowMapView::HostMirror m_crs_row_map_h = Kokkos::create_mirror_view(m_crs_row_map);
+    typename CrsRowMapView::host_mirror_type m_crs_row_map_h = Kokkos::create_mirror_view(m_crs_row_map);
 
     // TODO: convert to host-level parallel_for / prefix sum
     m_crs_row_map_h(0) = 0;

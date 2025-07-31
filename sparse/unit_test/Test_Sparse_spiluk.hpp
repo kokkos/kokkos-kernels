@@ -111,9 +111,9 @@ struct SpilukTest {
   using AT          = Kokkos::ArithTraits<scalar_t>;
   using mag_t       = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
-  using RowMapType_hostmirror  = typename RowMapType::HostMirror;
-  using EntriesType_hostmirror = typename EntriesType::HostMirror;
-  using ValuesType_hostmirror  = typename ValuesType::HostMirror;
+  using RowMapType_hostmirror  = typename RowMapType::host_mirror_type;
+  using EntriesType_hostmirror = typename EntriesType::host_mirror_type;
+  using ValuesType_hostmirror  = typename ValuesType::host_mirror_type;
   using execution_space        = typename device::execution_space;
   using memory_space           = typename device::memory_space;
   using range_policy           = Kokkos::RangePolicy<execution_space>;

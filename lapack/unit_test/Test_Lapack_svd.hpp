@@ -49,8 +49,8 @@ void check_triple_product(const AMatrix& A, const SVector& S, const UMatrix& U, 
   // Second compute the right side of the product: M = temp*V = U*S*V
   KokkosBlas::gemm("N", "N", 1, temp, Vt, 0, M);
 
-  typename AMatrix::HostMirror A_h = Kokkos::create_mirror_view(A);
-  typename AMatrix::HostMirror M_h = Kokkos::create_mirror_view(M);
+  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
+  typename AMatrix::host_mirror_type M_h = Kokkos::create_mirror_view(M);
   Kokkos::deep_copy(A_h, A);
   Kokkos::deep_copy(M_h, M);
   for (int rowIdx = 0; rowIdx < A.extent_int(0); ++rowIdx) {
@@ -74,7 +74,7 @@ void check_unitary_orthogonal_matrix(
 
   Matrix I0("M*Mt", M.extent(0), M.extent(0));
   KokkosBlas::gemm("N", "C", 1, M, M, 0, I0);
-  typename Matrix::HostMirror I0_h = Kokkos::create_mirror_view(I0);
+  typename Matrix::host_mirror_type I0_h = Kokkos::create_mirror_view(I0);
   Kokkos::deep_copy(I0_h, I0);
   for (int rowIdx = 0; rowIdx < M.extent_int(0); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(0); ++colIdx) {
@@ -88,7 +88,7 @@ void check_unitary_orthogonal_matrix(
 
   Matrix I1("Mt*M", M.extent(1), M.extent(1));
   KokkosBlas::gemm("C", "N", 1, M, M, 0, I1);
-  typename Matrix::HostMirror I1_h = Kokkos::create_mirror_view(I1);
+  typename Matrix::host_mirror_type I1_h = Kokkos::create_mirror_view(I1);
   Kokkos::deep_copy(I1_h, I1);
   for (int rowIdx = 0; rowIdx < M.extent_int(1); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(1); ++colIdx) {
@@ -113,7 +113,7 @@ int impl_analytic_2x2_svd() {
   AMatrix A("A", 2, 2), U("U", 2, 2), Vt("Vt", 2, 2), Aref("A ref", 2, 2);
   vector_type S("S", 2);
 
-  typename AMatrix::HostMirror A_h = Kokkos::create_mirror_view(A);
+  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
 
   // A = [3  0]
   //     [4  5]
@@ -129,11 +129,11 @@ int impl_analytic_2x2_svd() {
   KokkosLapack::svd("A", "A", A, S, U, Vt);
   // Don't really need to fence here as we deep_copy right after...
 
-  typename vector_type::HostMirror S_h = Kokkos::create_mirror_view(S);
+  typename vector_type::host_mirror_type S_h = Kokkos::create_mirror_view(S);
   Kokkos::deep_copy(S_h, S);
-  typename AMatrix::HostMirror U_h = Kokkos::create_mirror_view(U);
+  typename AMatrix::host_mirror_type U_h = Kokkos::create_mirror_view(U);
   Kokkos::deep_copy(U_h, U);
-  typename AMatrix::HostMirror Vt_h = Kokkos::create_mirror_view(Vt);
+  typename AMatrix::host_mirror_type Vt_h = Kokkos::create_mirror_view(Vt);
   Kokkos::deep_copy(Vt_h, Vt);
 
   // The singular values for this problem
@@ -212,7 +212,7 @@ int impl_analytic_2x3_svd() {
   AMatrix A("A", 2, 3), U("U", 2, 2), Vt("Vt", 3, 3), Aref("A ref", 2, 3);
   vector_type S("S", 2);
 
-  typename AMatrix::HostMirror A_h = Kokkos::create_mirror_view(A);
+  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
 
   // A = [3  2   2]
   //     [2  3  -2]
@@ -246,11 +246,11 @@ int impl_analytic_2x3_svd() {
   }
   // Don't really need to fence here as we deep_copy right after...
 
-  typename vector_type::HostMirror S_h = Kokkos::create_mirror_view(S);
+  typename vector_type::host_mirror_type S_h = Kokkos::create_mirror_view(S);
   Kokkos::deep_copy(S_h, S);
-  typename AMatrix::HostMirror U_h = Kokkos::create_mirror_view(U);
+  typename AMatrix::host_mirror_type U_h = Kokkos::create_mirror_view(U);
   Kokkos::deep_copy(U_h, U);
-  typename AMatrix::HostMirror Vt_h = Kokkos::create_mirror_view(Vt);
+  typename AMatrix::host_mirror_type Vt_h = Kokkos::create_mirror_view(Vt);
   Kokkos::deep_copy(Vt_h, Vt);
 
   // The singular values for this problem
@@ -341,7 +341,7 @@ int impl_analytic_3x2_svd() {
   AMatrix A("A", 3, 2), U("U", 3, 3), Vt("Vt", 2, 2), Aref("A ref", 3, 2);
   vector_type S("S", 2);
 
-  typename AMatrix::HostMirror A_h = Kokkos::create_mirror_view(A);
+  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
 
   // Note this is simply the transpose of the 2x3 matrix in the test above
   // A = [3  2]
@@ -363,11 +363,11 @@ int impl_analytic_3x2_svd() {
   KokkosLapack::svd("A", "A", A, S, U, Vt);
   // Don't really need to fence here as we deep_copy right after...
 
-  typename vector_type::HostMirror S_h = Kokkos::create_mirror_view(S);
+  typename vector_type::host_mirror_type S_h = Kokkos::create_mirror_view(S);
   Kokkos::deep_copy(S_h, S);
-  typename AMatrix::HostMirror U_h = Kokkos::create_mirror_view(U);
+  typename AMatrix::host_mirror_type U_h = Kokkos::create_mirror_view(U);
   Kokkos::deep_copy(U_h, U);
-  typename AMatrix::HostMirror Vt_h = Kokkos::create_mirror_view(Vt);
+  typename AMatrix::host_mirror_type Vt_h = Kokkos::create_mirror_view(Vt);
   Kokkos::deep_copy(Vt_h, Vt);
 
   // The singular values for this problem

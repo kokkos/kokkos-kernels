@@ -542,7 +542,7 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
-  typename vta::HostMirror host_A;
+  typename vta::host_mirror_type host_A;
   STATUS;
 
   trmm_args.side  = options.blas_args.trmm.trmm_args.c_str()[0];

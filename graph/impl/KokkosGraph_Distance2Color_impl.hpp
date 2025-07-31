@@ -935,7 +935,7 @@ class GraphColorDistance2 {
     lno_t vid = 0;
     lno_t end = nr;
 
-    typename lno_view_t::HostMirror h_recolor_list;
+    typename lno_view_t::host_mirror_type h_recolor_list;
 
     end            = current_vertexListLength_;
     h_recolor_list = Kokkos::create_mirror_view(current_vertexList_);

@@ -133,7 +133,7 @@ void buildEdgeListFromBinSrcTarg_undirected(const char *fnameSrc, const char *fn
 
 template <typename idx_array_type>
 inline void kk_write_1Dview_to_file(idx_array_type view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
@@ -147,7 +147,7 @@ inline void kk_write_1Dview_to_file(idx_array_type view, const char *filename) {
 
 template <typename idx_array_type>
 inline void kk_read_1Dview_from_file(idx_array_type &view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   std::ifstream myFile(filename, std::ios::in);
@@ -162,7 +162,7 @@ inline void kk_read_1Dview_from_file(idx_array_type &view, const char *filename)
 
 template <typename idx_array_type>
 inline void kk_write_2Dview_to_file(idx_array_type view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
@@ -179,7 +179,7 @@ inline void kk_write_2Dview_to_file(idx_array_type view, const char *filename) {
 
 template <typename idx_array_type>
 inline void kk_read_2Dview_from_file(idx_array_type &view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   std::ifstream myFile(filename, std::ios::in);
@@ -196,7 +196,7 @@ inline void kk_read_2Dview_from_file(idx_array_type &view, const char *filename)
 
 template <typename idx_array_type>
 inline void kk_write_3Dview_to_file(idx_array_type view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
@@ -216,7 +216,7 @@ inline void kk_write_3Dview_to_file(idx_array_type view, const char *filename) {
 
 template <typename idx_array_type>
 inline void kk_read_3Dview_from_file(idx_array_type &view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   std::ifstream myFile(filename, std::ios::in);

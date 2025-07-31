@@ -50,9 +50,9 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNN
   static_assert(std::is_same<ordinal_type, lno_t>::value, "ordinal_type should be same as lno_t from crsMat_t");
   // first, populate rowmap
   size_type_view_t rowmap("rowmap", nrows + 1);
-  typename size_type_view_t::HostMirror h_rowmap = Kokkos::create_mirror_view(rowmap);
-  size_type nnz                                  = 0;
-  size_type maxRowEntries                        = 0;
+  typename size_type_view_t::host_mirror_type h_rowmap = Kokkos::create_mirror_view(rowmap);
+  size_type nnz                                        = 0;
+  size_type maxRowEntries                              = 0;
   for (lno_t i = 0; i < nrows; i++) {
     size_type rowEntries = rand() % (maxNNZ - minNNZ + 1) + minNNZ;
     h_rowmap(i)          = nnz;
@@ -64,14 +64,14 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNN
   // allocate values and entries
   scalar_view_t values("values", nnz);
   // populate values
-  typename scalar_view_t::HostMirror h_values = Kokkos::create_mirror_view(values);
+  typename scalar_view_t::host_mirror_type h_values = Kokkos::create_mirror_view(values);
   for (size_type i = 0; i < nnz; i++) {
     h_values(i) = KAT::one() * (((typename KAT::mag_type)rand()) / static_cast<typename KAT::mag_type>(RAND_MAX));
   }
   Kokkos::deep_copy(values, h_values);
   // populate entries (make sure no entry is repeated within a row)
   lno_view_t entries("entries", nnz);
-  typename lno_view_t::HostMirror h_entries = Kokkos::create_mirror_view(entries);
+  typename lno_view_t::host_mirror_type h_entries = Kokkos::create_mirror_view(entries);
   std::vector<lno_t> indices(std::max((size_type)ncols, maxRowEntries));
   auto re = std::mt19937(rand());
   for (lno_t i = 0; i < nrows; i++) {

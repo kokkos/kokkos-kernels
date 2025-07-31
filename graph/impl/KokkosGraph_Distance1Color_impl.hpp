@@ -48,9 +48,9 @@ class GraphColor {
   typedef typename HandleType::size_type size_type;
   typedef typename HandleType::nnz_lno_t nnz_lno_t;
 
-  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t;  // Host view type
+  typedef typename in_lno_row_view_t::host_mirror_type row_lno_host_view_t;  // Host view type
 
-  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t;  // Host view type
+  typedef typename in_lno_nnz_view_t::host_mirror_type nnz_lno_host_view_t;  // Host view type
 
   typedef typename HandleType::color_host_view_t color_host_view_t;  // Host view type
 
@@ -108,11 +108,11 @@ class GraphColor {
   virtual void color_graph(color_view_t d_colors, int &num_phases) {
     num_phases = 1;
 
-    color_host_view_t colors                         = Kokkos::create_mirror_view(d_colors);
-    typename const_lno_row_view_t::HostMirror h_xadj = Kokkos::create_mirror_view(this->xadj);
-    typename const_lno_nnz_view_t::HostMirror h_adj  = Kokkos::create_mirror_view(this->adj);
+    color_host_view_t colors                               = Kokkos::create_mirror_view(d_colors);
+    typename const_lno_row_view_t::host_mirror_type h_xadj = Kokkos::create_mirror_view(this->xadj);
+    typename const_lno_nnz_view_t::host_mirror_type h_adj  = Kokkos::create_mirror_view(this->adj);
 
-    // typename nnz_lno_host_view_t::HostMirror::HostMirror::HostMirror h_adj =
+    // typename nnz_lno_host_view_t::host_mirror_type::host_mirror_type::host_mirror_type h_adj =
     // tmp;
 
     Kokkos::deep_copy(h_xadj, this->xadj);
@@ -190,7 +190,7 @@ class GraphColor_VB : public GraphColor<HandleType, lno_row_view_t_, lno_nnz_vie
   typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
   // typedef typename Kokkos::View<row_index_type, Kokkos::MemoryUnmanaged>
   // um_array_type;
-  typedef typename single_dim_index_view_type::HostMirror single_dim_index_host_view_type;  // Host view type
+  typedef typename single_dim_index_view_type::host_mirror_type single_dim_index_host_view_type;  // Host view type
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
@@ -608,16 +608,16 @@ class GraphColor_VB : public GraphColor<HandleType, lno_row_view_t_, lno_nnz_vie
     color_t *forbidden = new color_t[_nv];
     nnz_lno_t i        = 0;
     nnz_lno_t end      = _nv;
-    typename nnz_lno_temp_work_view_t::HostMirror h_recolor_list;
+    typename nnz_lno_temp_work_view_t::host_mirror_type h_recolor_list;
 
     if (this->_conflict_scheme != COLORING_NOCONFLICT) {
       end            = current_vertexListLength_;
       h_recolor_list = Kokkos::create_mirror_view(current_vertexList_);
       Kokkos::deep_copy(h_recolor_list, current_vertexList_);
     }
-    color_host_view_t h_colors                      = Kokkos::create_mirror_view(vertex_colors_);
-    typename const_lno_row_view_t::HostMirror h_idx = Kokkos::create_mirror_view(xadj_);
-    typename adj_view_t::HostMirror h_adj           = Kokkos::create_mirror_view(adj_);
+    color_host_view_t h_colors                            = Kokkos::create_mirror_view(vertex_colors_);
+    typename const_lno_row_view_t::host_mirror_type h_idx = Kokkos::create_mirror_view(xadj_);
+    typename adj_view_t::host_mirror_type h_adj           = Kokkos::create_mirror_view(adj_);
 
     Kokkos::deep_copy(h_colors, vertex_colors_);
     Kokkos::deep_copy(h_idx, xadj_);
@@ -1609,7 +1609,7 @@ class GraphColor_VBD : public GraphColor<HandleType, lno_row_view_t_, lno_nnz_vi
   typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
 
   typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
-  typedef typename single_dim_index_view_type::HostMirror single_dim_index_host_view_type;  // Host view type
+  typedef typename single_dim_index_view_type::host_mirror_type single_dim_index_host_view_type;  // Host view type
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
@@ -1694,10 +1694,10 @@ class GraphColor_VBD : public GraphColor<HandleType, lno_row_view_t_, lno_nnz_vi
     // Create the dependency list of the graph
     nnz_lno_persistent_work_view_t dependency("dependency", numVertices);
     Kokkos::View<size_type, MyTempMemorySpace> frontierSize("frontierSize");
-    typename Kokkos::View<size_type, MyTempMemorySpace>::HostMirror host_frontierSize =
+    typename Kokkos::View<size_type, MyTempMemorySpace>::host_mirror_type host_frontierSize =
         Kokkos::create_mirror_view(frontierSize);
     Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize("newFrontierSize");
-    typename Kokkos::View<size_type, MyTempMemorySpace>::HostMirror host_newFrontierSize =
+    typename Kokkos::View<size_type, MyTempMemorySpace>::host_mirror_type host_newFrontierSize =
         Kokkos::create_mirror_view(newFrontierSize);
     nnz_lno_temp_work_view_t frontier("frontier", numVertices);
     nnz_lno_temp_work_view_t newFrontier("newFrontier", numVertices);
@@ -1994,7 +1994,7 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_, in_
 
   typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
 
-  typedef typename single_dim_index_view_type::HostMirror single_dim_index_host_view_type;  // Host view type
+  typedef typename single_dim_index_view_type::host_mirror_type single_dim_index_host_view_type;  // Host view type
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
   typedef typename HandleType::size_type_temp_work_view_t size_type_temp_work_view_t;
@@ -2006,7 +2006,7 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_, in_
   typedef typename Kokkos::View<color_t *, MyTempMemorySpace> color_temp_work_view_type;
 
   typedef Kokkos::View<char *, MyTempMemorySpace> char_temp_work_view_type;
-  typedef typename char_temp_work_view_type::HostMirror char_temp_work_host_view_type;  // Host view type
+  typedef typename char_temp_work_view_type::host_mirror_type char_temp_work_host_view_type;  // Host view type
 
   typedef typename in_row_index_view_type::const_type const_lno_row_view_t;
   typedef typename in_nonzero_index_view_type::const_type const_nonzero_index_view_type;

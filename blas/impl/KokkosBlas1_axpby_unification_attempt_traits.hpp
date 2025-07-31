@@ -774,7 +774,7 @@ static void fill_rank1_view(const ExecSpace& exec, T_in const& coeff_in, T_out& 
     // *********************************************************************
     // 'coeff_in' is rank-0
     // *********************************************************************
-    typename T_in::HostMirror h_coeff_in("h_coeff_in");
+    typename T_in::host_mirror_type h_coeff_in("h_coeff_in");
     Kokkos::deep_copy(h_coeff_in, coeff_in);  // fence before accessing h_coeff_in
     ScalarOutType scalarValue(h_coeff_in());
     Kokkos::deep_copy(exec, coeff_out, scalarValue);
@@ -796,7 +796,7 @@ static void fill_rank1_view(const ExecSpace& exec, T_in const& coeff_in, T_out& 
     if constexpr (std::is_same_v<ScalarInType, ScalarOutType>) {
       coeff_out = coeff_in;
     } else if (coeff_out.extent(0) == 1) {
-      typename T_in::HostMirror h_coeff_in("h_coeff_in");
+      typename T_in::host_mirror_type h_coeff_in("h_coeff_in");
       Kokkos::deep_copy(h_coeff_in, coeff_in);  // fence before accessing h_coeff_in[0]
       ScalarOutType scalarValue(h_coeff_in[0]);
       Kokkos::deep_copy(exec, coeff_out, scalarValue);

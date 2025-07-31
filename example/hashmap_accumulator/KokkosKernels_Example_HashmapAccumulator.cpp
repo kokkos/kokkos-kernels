@@ -173,7 +173,7 @@ template <typename execution_space, typename scalar_t = int>
 void experiment(const parameters_t& params) {
   typedef typename KokkosKernels::Impl::UniformMemoryPool<execution_space, scalar_t> uniform_memory_pool_t;
   typedef typename Kokkos::View<scalar_t*> data_view_t;
-  typedef typename data_view_t::HostMirror data_view_hostmirror_t;
+  typedef typename data_view_t::host_mirror_type data_view_hostmirror_t;
 
   size_t num_entries = params.problem_size;
 

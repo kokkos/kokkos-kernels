@@ -25,9 +25,9 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
   using RowMapType     = Kokkos::View<size_type *, device>;
   using EntriesType    = Kokkos::View<lno_t *, device>;
   using ValuesType     = Kokkos::View<scalar_t *, device>;
-  using RowMapType_hm  = typename RowMapType::HostMirror;
-  using EntriesType_hm = typename EntriesType::HostMirror;
-  using ValuesType_hm  = typename ValuesType::HostMirror;
+  using RowMapType_hm  = typename RowMapType::host_mirror_type;
+  using EntriesType_hm = typename EntriesType::host_mirror_type;
+  using ValuesType_hm  = typename ValuesType::host_mirror_type;
   using crsMat_t       = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 
   crsMat_t A;

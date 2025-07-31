@@ -342,7 +342,12 @@ class CrsMatrix {
   typedef SizeType size_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
-  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> HostMirror;
+  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> host_mirror_type;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+  [[deprecated(
+      "KokkosSparse::CrsMatrix::HostMirror is deprecated please use KokkosSparse::CrsMatrix::host_mirror_type "
+      "instead.")]] typedef host_mirror_type HostMirror;
+#endif
   //! Type of the graph structure of the sparse matrix.
   typedef StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
       StaticCrsGraphType;

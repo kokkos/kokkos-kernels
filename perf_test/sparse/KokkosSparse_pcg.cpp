@@ -30,7 +30,7 @@ template <typename scalar_view_t>
 scalar_view_t create_x_vector(KokkosKernels::default_lno_t nv, KokkosKernels::default_scalar max_value = 1.0) {
   scalar_view_t kok_x("X", nv);
 
-  typename scalar_view_t::HostMirror h_x = Kokkos::create_mirror_view(kok_x);
+  typename scalar_view_t::host_mirror_type h_x = Kokkos::create_mirror_view(kok_x);
 
   for (KokkosKernels::default_lno_t i = 0; i < nv; ++i) {
     KokkosKernels::default_scalar r = static_cast<KokkosKernels::default_scalar>(rand()) /
@@ -242,9 +242,9 @@ void run_pcg(int *cmdline, const char *mtx_file) {
   values_view_t values_view("values_view", ne);
 
   {
-    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view(rowmap_view);
-    typename cols_view_t::HostMirror hc    = Kokkos::create_mirror_view(columns_view);
-    typename values_view_t::HostMirror hv  = Kokkos::create_mirror_view(values_view);
+    typename row_map_view_t::host_mirror_type hr = Kokkos::create_mirror_view(rowmap_view);
+    typename cols_view_t::host_mirror_type hc    = Kokkos::create_mirror_view(columns_view);
+    typename values_view_t::host_mirror_type hv  = Kokkos::create_mirror_view(values_view);
 
     for (lno_t i = 0; i <= nv; ++i) {
       hr(i) = xadj[i];

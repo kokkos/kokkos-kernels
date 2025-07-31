@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 
     ViewType x("X", N);
 
-    typename ViewType::HostMirror h_x = Kokkos::create_mirror_view(x);
+    typename ViewType::host_mirror_type h_x = Kokkos::create_mirror_view(x);
 
     Kokkos::Random_XorShift64_Pool<typename ViewType::device_type::execution_space> rand_pool(13718);
     Kokkos::fill_random(x, rand_pool, Scalar(10));

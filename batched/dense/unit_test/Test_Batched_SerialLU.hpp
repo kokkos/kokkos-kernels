@@ -80,8 +80,8 @@ void impl_test_batched_lu(const int N, const int BlkSize) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror a0_host = Kokkos::create_mirror_view(a0);
-  typename ViewType::HostMirror a1_host = Kokkos::create_mirror_view(a1);
+  typename ViewType::host_mirror_type a0_host = Kokkos::create_mirror_view(a0);
+  typename ViewType::host_mirror_type a1_host = Kokkos::create_mirror_view(a1);
 
   Kokkos::deep_copy(a0_host, a0);
   Kokkos::deep_copy(a1_host, a1);

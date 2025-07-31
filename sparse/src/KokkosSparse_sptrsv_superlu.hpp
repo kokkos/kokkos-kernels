@@ -68,7 +68,7 @@ template <typename graph_t, typename KernelHandle>
 graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L, SuperMatrix *U) {
   using row_map_view_t      = typename graph_t::row_map_type::non_const_type;
   using cols_view_t         = typename graph_t::entries_type::non_const_type;
-  using host_cols_view_t    = typename cols_view_t::HostMirror;
+  using host_cols_view_t    = typename cols_view_t::host_mirror_type;
   using integer_view_host_t = Kokkos::View<int *, Kokkos::HostSpace>;
 
   /* load options */

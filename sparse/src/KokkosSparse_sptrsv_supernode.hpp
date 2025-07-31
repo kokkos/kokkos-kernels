@@ -1880,9 +1880,9 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   using cols_view_t    = typename graph_t::entries_type::non_const_type;
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
 
-  using row_map_view_host_t = typename row_map_view_t::HostMirror;
-  using cols_view_host_t    = typename cols_view_t::HostMirror;
-  using values_view_host_t  = typename values_view_t::HostMirror;
+  using row_map_view_host_t = typename row_map_view_t::host_mirror_type;
+  using cols_view_host_t    = typename cols_view_t::host_mirror_type;
+  using values_view_host_t  = typename values_view_t::host_mirror_type;
 
   using scalar_t  = typename KernelHandle::nnz_scalar_t;
   using size_type = typename KernelHandle::size_type;

@@ -19,7 +19,7 @@ void writeArrayToMM(std::string name, const XType x) {
   std::ofstream myfile;
   myfile.open(name);
 
-  typename XType::HostMirror x_h = Kokkos::create_mirror_view(x);
+  typename XType::host_mirror_type x_h = Kokkos::create_mirror_view(x);
 
   Kokkos::deep_copy(x_h, x);
 
@@ -68,7 +68,7 @@ void readArrayFromMM(std::string name, const XType &x) {
   while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-  typename XType::HostMirror x_h = Kokkos::create_mirror_view(x);
+  typename XType::host_mirror_type x_h = Kokkos::create_mirror_view(x);
 
   for (size_t i = 0; i < x_h.extent(0); ++i)
     for (size_t j = 0; j < x_h.extent(1); ++j) input >> x_h(i, j);
@@ -85,7 +85,7 @@ void readDenseFromMM(std::string name, const AType &A) {
   while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-  typename AType::HostMirror A_h = Kokkos::create_mirror_view(A);
+  typename AType::host_mirror_type A_h = Kokkos::create_mirror_view(A);
 
   Kokkos::deep_copy(A_h, 0.);
 
@@ -115,9 +115,9 @@ void readCRSFromMM(std::string name, const VType &V, const IntType &r, const Int
   while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-  typename VType::HostMirror V_h   = Kokkos::create_mirror_view(V);
-  typename IntType::HostMirror r_h = Kokkos::create_mirror_view(r);
-  typename IntType::HostMirror c_h = Kokkos::create_mirror_view(c);
+  typename VType::host_mirror_type V_h   = Kokkos::create_mirror_view(V);
+  typename IntType::host_mirror_type r_h = Kokkos::create_mirror_view(r);
+  typename IntType::host_mirror_type c_h = Kokkos::create_mirror_view(c);
 
   int current_row = 0;
   int read_row;

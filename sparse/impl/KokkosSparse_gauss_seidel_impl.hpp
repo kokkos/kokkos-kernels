@@ -753,7 +753,7 @@ class PointGaussSeidel {
     KokkosKernels::Impl::print_1Dview(colors);
     std::cout << "numCol:" << numColors << " numRows:" << num_rows << " cols:" << num_cols << " nnz:" << adj.extent(0)
               << std::endl;
-    typename HandleType::GraphColoringHandleType::color_view_t::HostMirror h_colors =
+    typename HandleType::GraphColoringHandleType::color_view_t::host_mirror_type h_colors =
         Kokkos::create_mirror_view(colors);
     for (int i = 0; i < num_rows; ++i) {
       h_colors(i) = i + 1;

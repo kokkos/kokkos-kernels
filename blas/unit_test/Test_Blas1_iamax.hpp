@@ -84,7 +84,7 @@ void impl_test_iamax(int N) {
     // %d\n", N);
     typedef Kokkos::View<size_type, typename ViewTypeA::array_layout, Device> ViewType0D;
     ViewType0D r("Iamax::Result 0-D View on device", typename ViewTypeA::array_layout());
-    typename ViewType0D::HostMirror h_r = Kokkos::create_mirror_view(r);
+    typename ViewType0D::host_mirror_type h_r = Kokkos::create_mirror_view(r);
 
     size_type nonconst_max_loc, const_max_loc;
 
@@ -169,7 +169,7 @@ void impl_test_iamax_mv(int N, int K) {
     // %d\n", N);
     Kokkos::View<size_type*, Device> rcontig("Iamax::Result View on host", K);
     Kokkos::View<size_type*, typename ViewTypeA::array_layout, Device> r = rcontig;
-    typename Kokkos::View<size_type*, typename ViewTypeA::array_layout, Device>::HostMirror h_r =
+    typename Kokkos::View<size_type*, typename ViewTypeA::array_layout, Device>::host_mirror_type h_r =
         Kokkos::create_mirror_view(rcontig);
 
     KokkosBlas::iamax(r, a.d_view);
