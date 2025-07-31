@@ -266,6 +266,9 @@ class StaticCrsGraph {
   using staticcrsgraph_type = StaticCrsGraph<DataType, Arg1Type, Arg2Type, Arg3Type, SizeType>;
   using host_mirror_type =
       StaticCrsGraph<data_type, array_layout, typename traits::host_mirror_space, memory_traits, size_type>;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+  using HostMirror = host_mirror_type;
+#endif
 
   using row_map_type   = Kokkos::View<const size_type*, array_layout, device_type, memory_traits>;
   using entries_type   = Kokkos::View<data_type*, array_layout, device_type, memory_traits>;
