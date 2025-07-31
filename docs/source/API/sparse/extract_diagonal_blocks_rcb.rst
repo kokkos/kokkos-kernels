@@ -1,5 +1,5 @@
 KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential
-##################################
+############################################################################
 
 Defined in header: :code:`KokkosSparse_Utils.hpp`
 

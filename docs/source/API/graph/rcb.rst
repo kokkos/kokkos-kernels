@@ -1,5 +1,5 @@
 KokkosGraph::Experimental::recursive_coordinate_bisection
-##################################
+#########################################################
 
 Defined in header: :code:`KokkosGraph_RCB.hpp`
 
