@@ -81,9 +81,9 @@ void makeSparseMatrix(typename crsMat_t::StaticCrsGraphType::row_map_type::non_c
     val = val_type("val", nnz);
 
     // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-    typename ptr_type::HostMirror::const_type ptrIn(ptrRaw, numRows + 1);
-    typename ind_type::HostMirror::const_type indIn(indRaw, nnz);
-    typename val_type::HostMirror::const_type valIn(valRaw, nnz);
+    typename ptr_type::host_mirror_type::const_type ptrIn(ptrRaw, numRows + 1);
+    typename ind_type::host_mirror_type::const_type indIn(indRaw, nnz);
+    typename val_type::host_mirror_type::const_type valIn(valRaw, nnz);
 
     Kokkos::deep_copy(ptr, ptrIn);
     Kokkos::deep_copy(ind, indIn);
@@ -166,16 +166,16 @@ void testCrsMatrixRawConstructor() {
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void testCrsMatrixHostMirror() {
+void testCrsMatrixhost_mirror_type() {
   using namespace Test;
   using crs_matrix      = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
-  using crs_matrix_host = typename crs_matrix::HostMirror;
+  using crs_matrix_host = typename crs_matrix::host_mirror_type;
   using crs_graph       = typename crs_matrix::StaticCrsGraphType;
-  using crs_graph_host  = typename crs_graph::HostMirror;
+  using crs_graph_host  = typename crs_graph::host_mirror_type;
   crs_matrix A          = makeCrsMatrix<crs_matrix>();
-  typename crs_matrix::values_type::HostMirror valuesHost("values host", A.nnz());
-  typename crs_matrix::row_map_type::HostMirror rowmapHost("rowmap host", A.numRows() + 1);
-  typename crs_matrix::index_type::HostMirror entriesHost("entries host", A.nnz());
+  typename crs_matrix::values_type::host_mirror_type valuesHost("values host", A.nnz());
+  typename crs_matrix::row_map_type::host_mirror_type rowmapHost("rowmap host", A.numRows() + 1);
+  typename crs_matrix::index_type::host_mirror_type entriesHost("entries host", A.nnz());
   crs_graph_host graphHost(entriesHost, rowmapHost);
   // Test the two CrsMatrix constructors that take the StaticCrsGraph
   crs_matrix_host Ahost1("Ahost1", graphHost, A.numCols());
@@ -203,7 +203,7 @@ void testCrsMatrixHostMirror() {
     testCrsMatrixRawConstructor<SCALAR, ORDINAL, OFFSET, DEVICE>();                                     \
   }                                                                                                     \
   TEST_F(TestCategory, sparse##_##crsmatrix_host_mirror##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    testCrsMatrixHostMirror<SCALAR, ORDINAL, OFFSET, DEVICE>();                                         \
+    testCrsMatrixhost_mirror_type<SCALAR, ORDINAL, OFFSET, DEVICE>();                                         \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

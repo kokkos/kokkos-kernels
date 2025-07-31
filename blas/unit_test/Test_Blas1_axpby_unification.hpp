@@ -118,7 +118,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -132,7 +132,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
     if constexpr (std::is_same_v<typename tA::array_layout, Kokkos::LayoutStride>) {
       valueA = inputValueA;
     } else {
-      typename tA::HostMirror h_a("h_A");
+      typename tA::host_mirror_type h_a("h_A");
       Kokkos::deep_copy(h_a, a);
       valueA = h_a();
     }
@@ -143,7 +143,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -163,7 +163,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -270,7 +270,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -283,7 +283,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
     if constexpr (std::is_same_v<typename tA::array_layout, Kokkos::LayoutStride>) {
       valueA = inputValueA;
     } else {
-      typename tA::HostMirror h_a("h_A");
+      typename tA::host_mirror_type h_a("h_A");
       Kokkos::deep_copy(h_a, a);
       valueA = h_a();
     }
@@ -294,7 +294,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -312,7 +312,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }

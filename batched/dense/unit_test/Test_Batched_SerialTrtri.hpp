@@ -153,8 +153,8 @@ void impl_test_batched_trtri(const int N, const int K) {
   ViewType A_original("A_original", N, K, K);
   ViewType A_I("A_I", N, K, K);
 
-  typename ViewType::HostMirror I_host = Kokkos::create_mirror_view(A_I);
-  typename ViewType::HostMirror A_host = Kokkos::create_mirror_view(A);
+  typename ViewType::host_mirror_type I_host = Kokkos::create_mirror_view(A_I);
+  typename ViewType::host_mirror_type A_host = Kokkos::create_mirror_view(A);
 
   uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 

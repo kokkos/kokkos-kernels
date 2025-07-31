@@ -218,16 +218,16 @@ class KokkosKernelsHandle {
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
-  typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t;  // Host view type
+  typedef typename row_lno_persistent_work_view_t::host_mirror_type row_lno_persistent_work_host_view_t;  // Host view type
   typedef
-      typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t;  // Host view type
+      typename size_type_persistent_work_view_t::host_mirror_type size_type_persistent_work_host_view_t;  // Host view type
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t **, KokkosKernels::default_layout, HandlePersistentMemorySpace>
       scalar_persistent_work_view2d_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
-  typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t;  // Host view type
+  typedef typename nnz_lno_persistent_work_view_t::host_mirror_type nnz_lno_persistent_work_host_view_t;  // Host view type
   typedef typename Kokkos::View<bool *, HandlePersistentMemorySpace> bool_persistent_view_t;
   typedef typename Kokkos::View<bool *, HandleTempMemorySpace> bool_temp_view_t;
 

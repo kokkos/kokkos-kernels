@@ -190,8 +190,8 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   KrylovHandleType handle(N, N_team, n_iterations);
 
   KokkosBatched::SerialSpmv<Trans::NoTranspose>::template invoke<
-      typename ValuesViewType::HostMirror, typename IntView::HostMirror, typename VectorViewType::HostMirror,
-      typename VectorViewType::HostMirror, 1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
+      typename ValuesViewType::host_mirror_type, typename IntView::host_mirror_type, typename VectorViewType::host_mirror_type,
+      typename VectorViewType::host_mirror_type, 1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
   KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host, sqr_norm_0_host);
   Functor_TestBatchedTeamGMRES<DeviceType, ValuesViewType, IntView, VectorViewType, KrylovHandleType>(
       D, r, c, X, B, Diag, N_team, handle)
@@ -204,8 +204,8 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   Kokkos::deep_copy(X_host, X);
 
   KokkosBatched::SerialSpmv<Trans::NoTranspose>::template invoke<
-      typename ValuesViewType::HostMirror, typename IntView::HostMirror, typename VectorViewType::HostMirror,
-      typename VectorViewType::HostMirror, 1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
+      typename ValuesViewType::host_mirror_type, typename IntView::host_mirror_type, typename VectorViewType::host_mirror_type,
+      typename VectorViewType::host_mirror_type, 1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
   KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host, sqr_norm_j_host);
 
   const MagnitudeType eps = 1.0e5 * ats::epsilon();

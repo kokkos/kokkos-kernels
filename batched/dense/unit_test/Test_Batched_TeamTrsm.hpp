@@ -108,8 +108,8 @@ void impl_test_batched_trsm(const int N, const int BlkSize, const int NumCols) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror b0_host = Kokkos::create_mirror_view(b0);
-  typename ViewType::HostMirror b1_host = Kokkos::create_mirror_view(b1);
+  typename ViewType::host_mirror_type b0_host = Kokkos::create_mirror_view(b0);
+  typename ViewType::host_mirror_type b1_host = Kokkos::create_mirror_view(b1);
 
   Kokkos::deep_copy(b0_host, b0);
   Kokkos::deep_copy(b1_host, b1);

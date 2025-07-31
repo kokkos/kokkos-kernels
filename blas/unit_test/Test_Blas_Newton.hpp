@@ -151,7 +151,7 @@ int test_intersection() {
   system_type intersection;
   vec_type x("solution vector", 2), rhs("right hand side vector", 2);
   {
-    typename vec_type::HostMirror x_h = Kokkos::create_mirror_view(x);
+    typename vec_type::host_mirror_type x_h = Kokkos::create_mirror_view(x);
     x_h(0)                            = 2.5;
     x_h(1)                            = 3.0;
     Kokkos::deep_copy(x, x_h);

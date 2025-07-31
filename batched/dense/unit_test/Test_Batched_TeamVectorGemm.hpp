@@ -118,8 +118,8 @@ void impl_test_batched_teamvectorgemm(const int N, const int matAdim1, const int
 
   Kokkos::fence();
 
-  typename ViewType::HostMirror c_expected_host = Kokkos::create_mirror_view(c_expected);
-  typename ViewType::HostMirror c_actual_host   = Kokkos::create_mirror_view(c_actual);
+  typename ViewType::host_mirror_type c_expected_host = Kokkos::create_mirror_view(c_expected);
+  typename ViewType::host_mirror_type c_actual_host   = Kokkos::create_mirror_view(c_actual);
 
   // Copy to host for comparison
   Kokkos::deep_copy(c_expected_host, c_expected);

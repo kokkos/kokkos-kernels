@@ -58,8 +58,8 @@ class KrylovHandle {
  public:
   NormViewType residual_norms;
   IntViewType iteration_numbers;
-  typename NormViewType::HostMirror residual_norms_host;
-  typename IntViewType::HostMirror iteration_numbers_host;
+  typename NormViewType::host_mirror_type residual_norms_host;
+  typename IntViewType::host_mirror_type iteration_numbers_host;
   IntViewType first_index;
   IntViewType last_index;
   ArnoldiViewType Arnoldi_view;

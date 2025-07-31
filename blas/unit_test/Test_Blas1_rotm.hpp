@@ -21,8 +21,8 @@ template <class vector_view_type, class param_view_type, class vector_ref_type>
 void set_rotm_inputs(const int &test_case, vector_view_type &X, vector_view_type &Y, param_view_type &param,
                      vector_ref_type &Xref, vector_ref_type &Yref) {
   // Initialize X and Y inputs
-  typename vector_view_type::HostMirror X_h = Kokkos::create_mirror_view(X);
-  typename vector_view_type::HostMirror Y_h = Kokkos::create_mirror_view(Y);
+  typename vector_view_type::host_mirror_type X_h = Kokkos::create_mirror_view(X);
+  typename vector_view_type::host_mirror_type Y_h = Kokkos::create_mirror_view(Y);
 
   X_h(0) = 0.6;
   X_h(1) = 0.1;
@@ -36,7 +36,7 @@ void set_rotm_inputs(const int &test_case, vector_view_type &X, vector_view_type
   Kokkos::deep_copy(Y, Y_h);
 
   // Initialize Xref, Yref and param (test case dependent)
-  typename param_view_type::HostMirror param_h = Kokkos::create_mirror_view(param);
+  typename param_view_type::host_mirror_type param_h = Kokkos::create_mirror_view(param);
   switch (test_case) {
     case 0:
       param_h(0) = -2.0;
@@ -117,8 +117,8 @@ template <class vector_view_type, class vector_ref_type>
 void check_results(vector_view_type &X, vector_view_type &Y, vector_ref_type &Xref, vector_ref_type &Yref) {
   using Scalar = typename vector_view_type::value_type;
 
-  typename vector_view_type::HostMirror X_h = Kokkos::create_mirror_view(X);
-  typename vector_view_type::HostMirror Y_h = Kokkos::create_mirror_view(Y);
+  typename vector_view_type::host_mirror_type X_h = Kokkos::create_mirror_view(X);
+  typename vector_view_type::host_mirror_type Y_h = Kokkos::create_mirror_view(Y);
   Kokkos::deep_copy(X_h, X);
   Kokkos::deep_copy(Y_h, Y);
 

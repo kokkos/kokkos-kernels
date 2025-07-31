@@ -329,7 +329,7 @@ class BsrMatrix {
   typedef SizeType size_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
-  typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, size_type> HostMirror;
+  typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, size_type> host_mirror_type;
   //! Type of the graph structure of the sparse matrix.
   typedef StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
@@ -682,9 +682,9 @@ class BsrMatrix {
     // row_map with cum sum!!
     std::vector<OrdinalType> block_rows(nbrows, 0);
 
-    typename crs_graph_row_map_type::HostMirror h_crs_row_map = Kokkos::create_mirror_view(crs_mtx.graph.row_map);
+    typename crs_graph_row_map_type::host_mirror_type h_crs_row_map = Kokkos::create_mirror_view(crs_mtx.graph.row_map);
     Kokkos::deep_copy(h_crs_row_map, crs_mtx.graph.row_map);
-    typename crs_graph_entries_type::HostMirror h_crs_entries = Kokkos::create_mirror_view(crs_mtx.graph.entries);
+    typename crs_graph_entries_type::host_mirror_type h_crs_entries = Kokkos::create_mirror_view(crs_mtx.graph.entries);
     Kokkos::deep_copy(h_crs_entries, crs_mtx.graph.entries);
 
     // determine size of block cols indices == number of blocks,
@@ -703,10 +703,10 @@ class BsrMatrix {
     // and returns the cum sum pointer row_map with nbrows+1 size, and total
     // numBlocks in the final entry
     graph                                       = create_staticcrsgraph<staticcrsgraph_type>("blockgraph", block_rows);
-    typename row_map_type::HostMirror h_row_map = Kokkos::create_mirror_view(graph.row_map);
+    typename row_map_type::host_mirror_type h_row_map = Kokkos::create_mirror_view(graph.row_map);
     Kokkos::deep_copy(h_row_map, graph.row_map);
 
-    typename index_type::HostMirror h_entries = Kokkos::create_mirror_view(graph.entries);
+    typename index_type::host_mirror_type h_entries = Kokkos::create_mirror_view(graph.entries);
 
     OrdinalType ientry = 0;
     for (OrdinalType ib = 0; ib < nbrows; ++ib) {
@@ -724,10 +724,10 @@ class BsrMatrix {
 
     // Copy the numerical values
 
-    typename values_type::HostMirror h_crs_values = Kokkos::create_mirror_view(crs_mtx.values);
+    typename values_type::host_mirror_type h_crs_values = Kokkos::create_mirror_view(crs_mtx.values);
     Kokkos::deep_copy(h_crs_values, crs_mtx.values);
 
-    typename values_type::HostMirror h_values = Kokkos::create_mirror_view(values);
+    typename values_type::host_mirror_type h_values = Kokkos::create_mirror_view(values);
     if (h_values.extent(0) < static_cast<size_t>(numBlocks) * blockDim_ * blockDim_) {
       Kokkos::resize(h_values, static_cast<size_t>(numBlocks) * blockDim_ * blockDim_);
       Kokkos::resize(values, static_cast<size_t>(numBlocks) * blockDim_ * blockDim_);

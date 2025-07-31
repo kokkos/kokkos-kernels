@@ -60,8 +60,8 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
   ViewTypeB B("B", lddb);
 
   // Create host mirrors of device views.
-  typename ViewTypeB::HostMirror h_X0 = Kokkos::create_mirror_view(X0);
-  typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror(B);
+  typename ViewTypeB::host_mirror_type h_X0 = Kokkos::create_mirror_view(X0);
+  typename ViewTypeB::host_mirror_type h_B  = Kokkos::create_mirror(B);
 
   // Initialize data.
   Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
@@ -168,8 +168,8 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
   ViewTypeB B("B", lddb, nrhs);
 
   // Create host mirrors of device views.
-  typename ViewTypeB::HostMirror h_X0 = Kokkos::create_mirror_view(X0);
-  typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror(B);
+  typename ViewTypeB::host_mirror_type h_X0 = Kokkos::create_mirror_view(X0);
+  typename ViewTypeB::host_mirror_type h_B  = Kokkos::create_mirror(B);
 
   // Initialize data.
   Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());

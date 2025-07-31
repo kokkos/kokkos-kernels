@@ -98,8 +98,8 @@ void impl_test_blas_serial_axpy(const int N, const int BlkSize) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror Y_host    = Kokkos::create_mirror_view(Y);
-  typename ViewType::HostMirror Yref_host = Kokkos::create_mirror_view(Yref);
+  typename ViewType::host_mirror_type Y_host    = Kokkos::create_mirror_view(Y);
+  typename ViewType::host_mirror_type Yref_host = Kokkos::create_mirror_view(Yref);
 
   Kokkos::deep_copy(Y_host, Y);
   Kokkos::deep_copy(Yref_host, Yref);

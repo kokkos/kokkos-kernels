@@ -74,12 +74,12 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosLapack::trtri[ETI]"
                                                                      : "KokkosLapack::trtri[noETI]");
 
-    typename AVIT::HostMirror host_A = Kokkos::create_mirror_view(A);
-    typename RVIT::HostMirror host_R = Kokkos::create_mirror_view(R);
+    typename AVIT::host_mirror_type host_A = Kokkos::create_mirror_view(A);
+    typename RVIT::host_mirror_type host_R = Kokkos::create_mirror_view(R);
 
     Kokkos::deep_copy(host_A, A);
 
-    SerialTrtri_Invoke<typename RVIT::HostMirror, typename AVIT::HostMirror>(R, uplo, diag, host_A);
+    SerialTrtri_Invoke<typename RVIT::host_mirror_type, typename AVIT::host_mirror_type>(R, uplo, diag, host_A);
 
     Kokkos::deep_copy(A, host_A);
 

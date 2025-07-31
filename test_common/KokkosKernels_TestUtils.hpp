@@ -87,13 +87,13 @@ struct view_stride_adapter {
   static constexpr int rank     = ViewType::rank;
 
   using DView = ViewType;
-  using HView = typename DView::HostMirror;
+  using HView = typename DView::host_mirror_type;
   // If not strided, the base view types are the same as DView/HView.
   // But if strided, the base views have one additional dimension, so that
   // d_view/h_view have stride > 1 between consecutive elements.
   using DViewBase = std::conditional_t<
       strided, Kokkos::View<typename ViewType::data_type*, Kokkos::LayoutRight, typename ViewType::device_type>, DView>;
-  using HViewBase = typename DViewBase::HostMirror;
+  using HViewBase = typename DViewBase::host_mirror_type;
 
   view_stride_adapter(const std::string& label, int m, int n = 1) {
     if constexpr (rank == 1) {
@@ -165,8 +165,8 @@ void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   size_t v2_size = v2.extent(0);
   EXPECT_EQ(v1_size, v2_size);
 
-  typename ViewType1::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
-  typename ViewType2::HostMirror h_v2 = Kokkos::create_mirror_view(v2);
+  typename ViewType1::host_mirror_type h_v1 = Kokkos::create_mirror_view(v1);
+  typename ViewType2::host_mirror_type h_v2 = Kokkos::create_mirror_view(v2);
 
   KokkosKernels::Impl::safe_device_to_host_deep_copy(v1.extent(0), v1, h_v1);
   KokkosKernels::Impl::safe_device_to_host_deep_copy(v2.extent(0), v2, h_v2);
@@ -182,8 +182,8 @@ void EXPECT_NEAR_KK_REL_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   size_t v2_size = v2.extent(0);
   EXPECT_EQ(v1_size, v2_size);
 
-  typename ViewType1::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
-  typename ViewType2::HostMirror h_v2 = Kokkos::create_mirror_view(v2);
+  typename ViewType1::host_mirror_type h_v1 = Kokkos::create_mirror_view(v1);
+  typename ViewType2::host_mirror_type h_v2 = Kokkos::create_mirror_view(v2);
 
   KokkosKernels::Impl::safe_device_to_host_deep_copy(v1.extent(0), v1, h_v1);
   KokkosKernels::Impl::safe_device_to_host_deep_copy(v2.extent(0), v2, h_v2);
@@ -365,9 +365,9 @@ class RandCsMatrix {
   MapViewTypeD map_d_;
   IdViewTypeD ids_d_;
   ValViewTypeD vals_d_;
-  using MapViewTypeH = typename MapViewTypeD::HostMirror;
-  using IdViewTypeH  = typename IdViewTypeD::HostMirror;
-  using ValViewTypeH = typename ValViewTypeD::HostMirror;
+  using MapViewTypeH = typename MapViewTypeD::host_mirror_type;
+  using IdViewTypeH  = typename IdViewTypeD::host_mirror_type;
+  using ValViewTypeH = typename ValViewTypeD::host_mirror_type;
   MapViewTypeH map_;
   IdViewTypeH ids_;
   ValViewTypeH vals_;

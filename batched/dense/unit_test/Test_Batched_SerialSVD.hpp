@@ -149,7 +149,7 @@ Matrix randomMatrixWithRank(int m, int n, int rank) {
     Kokkos::fill_random(A, rand_pool, -1.0, 1.0);
   } else {
     // A is rank-deficient, so compute it as a product of two random matrices
-    using MatrixHost = typename Matrix::HostMirror;
+    using MatrixHost = typename Matrix::host_mirror_type;
     auto Ahost       = Kokkos::create_mirror_view(A);
     Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> rand_pool(13318);
     MatrixHost U("U", m, rank);
@@ -188,7 +188,7 @@ void testSerialSVD(int m, int n, int rank) {
   Kokkos::deep_copy(work, -5.0);
   // Make a copy of A (before SVD) for verification, since the original will be
   // overwritten
-  typename Matrix::HostMirror Acopy("Acopy", m, n);
+  typename Matrix::host_mirror_type Acopy("Acopy", m, n);
   Kokkos::deep_copy(Acopy, A);
   // Run the SVD
   Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1),
@@ -227,7 +227,7 @@ void testSerialSVDSingularValuesOnly(int m, int n) {
   Kokkos::deep_copy(work, -5.0);
   // Make a copy of A (before SVD) for verification, since the original will be
   // overwritten
-  typename Matrix::HostMirror Acopy("Acopy", m, n);
+  typename Matrix::host_mirror_type Acopy("Acopy", m, n);
   Kokkos::deep_copy(Acopy, A);
   // Run the SVD (full mode)
   Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1),
@@ -524,7 +524,7 @@ void testSpecialCases() {
     Kokkos::deep_copy(work, -5.0);
     // Make a copy of A (before SVD) for verification, since the original will be
     // overwritten
-    typename Matrix::HostMirror Acopy("Acopy", m, n);
+    typename Matrix::host_mirror_type Acopy("Acopy", m, n);
     Kokkos::deep_copy(Acopy, A);
     // Run the SVD
     Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1),
@@ -564,7 +564,7 @@ void testTwoByTwoInternal() {
   int n = 2;
   Matrix A("A", n, n);
   Vector evs("eigen values", n);
-  typename Matrix::HostMirror Ahost = Kokkos::create_mirror_view(A);
+  typename Matrix::host_mirror_type Ahost = Kokkos::create_mirror_view(A);
   Ahost(0, 0)                       = 0.00062500000000000012;
   Ahost(0, 1)                       = 6.7220534694101152e-19;
   Ahost(1, 0)                       = Ahost(0, 1);
@@ -573,7 +573,7 @@ void testTwoByTwoInternal() {
 
   testSymEigen2x2<Matrix, Vector> tester(A, evs);
   Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1), tester);
-  typename Vector::HostMirror evs_host = Kokkos::create_mirror_view(evs);
+  typename Vector::host_mirror_type evs_host = Kokkos::create_mirror_view(evs);
   Kokkos::deep_copy(evs_host, evs);
   Test::EXPECT_NEAR_KK(evs_host(0), 0.000625, Test::svdEpsilon<Scalar>());
   Test::EXPECT_NEAR_KK(evs_host(1), 0.000625, Test::svdEpsilon<Scalar>());

@@ -41,10 +41,10 @@ void do_xpy(size_t n, bool time_only = false) {
 
   View<ReferenceScalarType *, LayoutType, HostSpace> expected("expected", n);
   View<ReferenceScalarType *, LayoutType, HostSpace> relative_error("relative_error", n);
-  typename ViewType::HostMirror x_host = create_mirror_view(x);
-  typename ViewType::HostMirror y_host = create_mirror_view(y);
+  typename ViewType::host_mirror_type x_host = create_mirror_view(x);
+  typename ViewType::host_mirror_type y_host = create_mirror_view(y);
   // TODO: Report segfault in random_pool creation with:
-  // typename ViewType::HostMirror y_host = create_mirror_view(y_host);
+  // typename ViewType::host_mirror_type y_host = create_mirror_view(y_host);
 
   Random_XorShift64_Pool<ExecutionSpace> random_pool(12345);
   fill_random(x_rand, random_pool, ReferenceScalarType(1.0), ReferenceScalarType(2.0));

@@ -38,10 +38,10 @@ typedef double FLOAT;
 #define EPSILON 1e-10
 
 typedef MultiVectorDynamic<FLOAT, execution_space>::type mv_type;
-typedef mv_type::HostMirror h_mv_type;
+typedef mv_type::host_mirror_type h_mv_type;
 typedef Kokkos::View<FLOAT*, Kokkos::LayoutLeft, execution_space> vector_type;
 typedef Kokkos::View<FLOAT*, Kokkos::LayoutLeft, Kokkos::Threads> h2_vector_type;
-typedef vector_type::HostMirror h_vector_type;
+typedef vector_type::host_mirror_type h_vector_type;
 typedef mv_type::size_type size_type;
 
 void test_mv_dot(int size, int numVecs, int loop) {

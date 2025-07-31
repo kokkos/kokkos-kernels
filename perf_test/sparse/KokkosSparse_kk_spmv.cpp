@@ -56,7 +56,7 @@ struct SPMVBenchmarking {
   void run() {
     using matrix_type = KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset>;
     using mv_type     = Kokkos::View<Scalar**, Layout>;
-    using h_mv_type   = typename mv_type::HostMirror;
+    using h_mv_type   = typename mv_type::host_mirror_type;
 
     srand(17312837);
     matrix_type A;

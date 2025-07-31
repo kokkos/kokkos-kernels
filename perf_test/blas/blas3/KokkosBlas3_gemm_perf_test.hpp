@@ -1373,8 +1373,8 @@ static inline bool __gemm_do_compare(view_type_3d expected, view_type_3d actual)
 
   STATUS;
 
-  typename view_type_3d::HostMirror h_expected = Kokkos::create_mirror_view(expected);
-  typename view_type_3d::HostMirror h_actual   = Kokkos::create_mirror_view(actual);
+  typename view_type_3d::host_mirror_type h_expected = Kokkos::create_mirror_view(expected);
+  typename view_type_3d::host_mirror_type h_actual   = Kokkos::create_mirror_view(actual);
 
   // Copy to host for comparision
   Kokkos::deep_copy(h_expected, expected);
@@ -1416,8 +1416,8 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
   using src_scalar_type = typename view_type_5d::value_type;
   size_t remainder, vector_batch_size, simd_batch_size, last_batch;
   bool data_layout_same_as_3d_view        = false;
-  typename dstViewType::HostMirror h_dst  = Kokkos::create_mirror_view(dst);
-  typename view_type_4d::HostMirror h_src = Kokkos::create_mirror_view(src.mat_4d);
+  typename dstViewType::host_mirror_type h_dst  = Kokkos::create_mirror_view(dst);
+  typename view_type_4d::host_mirror_type h_src = Kokkos::create_mirror_view(src.mat_4d);
   Kokkos::deep_copy(h_src, src.mat_4d);
   Kokkos::fence();
 

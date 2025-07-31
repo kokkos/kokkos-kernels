@@ -14,8 +14,8 @@ void test_swap(int const vector_length) {
   // Note that Xref and Yref need to always be copies of X and Y
   // hence the use of create_mirror instead of create_mirror_view.
   vector_type X("X", vector_length), Y("Y", vector_length);
-  typename vector_type::HostMirror Xref = Kokkos::create_mirror(Y);
-  typename vector_type::HostMirror Yref = Kokkos::create_mirror(X);
+  typename vector_type::host_mirror_type Xref = Kokkos::create_mirror(Y);
+  typename vector_type::host_mirror_type Yref = Kokkos::create_mirror(X);
 
   // Setup values in X, Y and copy them to Xref and Yref
   const scalar_type range = 10 * Kokkos::ArithTraits<scalar_type>::one();
@@ -29,8 +29,8 @@ void test_swap(int const vector_length) {
   KokkosBlas::swap(X, Y);
   Kokkos::fence();
 
-  typename vector_type::HostMirror Xtest = Kokkos::create_mirror_view(X);
-  typename vector_type::HostMirror Ytest = Kokkos::create_mirror_view(Y);
+  typename vector_type::host_mirror_type Xtest = Kokkos::create_mirror_view(X);
+  typename vector_type::host_mirror_type Ytest = Kokkos::create_mirror_view(Y);
   Kokkos::deep_copy(Xtest, X);
   Kokkos::deep_copy(Ytest, Y);
 

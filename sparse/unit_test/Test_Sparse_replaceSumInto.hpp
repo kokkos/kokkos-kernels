@@ -89,7 +89,7 @@ bool checkWhetherEvenNumberedRowsWereModified(const CrsMatrixType& A, const bool
   const SC THREE = ONE + ONE + ONE;
 
   typename CrsMatrixType::values_type val               = A.values;
-  typename CrsMatrixType::values_type::HostMirror val_h = Kokkos::create_mirror_view(val);
+  typename CrsMatrixType::values_type::host_mirror_type val_h = Kokkos::create_mirror_view(val);
   Kokkos::deep_copy(val_h, val);
   Kokkos::fence();
   const LO numRows = A.numRows();
@@ -154,7 +154,7 @@ void generalTest(bool& success, std::ostream& out)
   typename matrix_type::size_type numEnt = 0;  // to be updated below
   typename matrix_type::row_map_type::non_const_type ptr("ptr", numRows + 1);
   {
-    typename matrix_type::row_map_type::HostMirror ptr_h = Kokkos::create_mirror_view(ptr);
+    typename matrix_type::row_map_type::host_mirror_type ptr_h = Kokkos::create_mirror_view(ptr);
     ptr_h[0]                                             = 0;
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       ptr_h[lclRow + 1] = ptr_h[lclRow] + 1;  // 1 entry in each row
@@ -165,7 +165,7 @@ void generalTest(bool& success, std::ostream& out)
 
   typename matrix_type::index_type::non_const_type ind("ind", numEnt);
   {
-    typename matrix_type::index_type::HostMirror ind_h = Kokkos::create_mirror_view(ind);
+    typename matrix_type::index_type::host_mirror_type ind_h = Kokkos::create_mirror_view(ind);
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       ind_h[lclRow] = lclRow;  // diagonal matrix
     }
@@ -174,7 +174,7 @@ void generalTest(bool& success, std::ostream& out)
 
   typename matrix_type::values_type val("val", numEnt);
   {
-    typename matrix_type::values_type::HostMirror val_h = Kokkos::create_mirror_view(val);
+    typename matrix_type::values_type::host_mirror_type val_h = Kokkos::create_mirror_view(val);
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       val_h[lclRow] = 1.0;  // diagonal matrix
     }

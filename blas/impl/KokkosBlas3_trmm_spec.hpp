@@ -85,15 +85,15 @@ struct TRMM<execution_space, AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::trmm[ETI]"
                                                                      : "KokkosBlas::trmm[noETI]");
 
-    typename AVIT::HostMirror host_A = Kokkos::create_mirror_view(A);
-    typename BVIT::HostMirror host_B = Kokkos::create_mirror_view(B);
+    typename AVIT::host_mirror_type host_A = Kokkos::create_mirror_view(A);
+    typename BVIT::host_mirror_type host_B = Kokkos::create_mirror_view(B);
 
     // Copy A to host_A and B to host_B
     // no-op if A and B MemorySpace is HostSpace
     Kokkos::deep_copy(host_A, A);
     Kokkos::deep_copy(host_B, B);
 
-    SerialTrmm_Invoke<typename AVIT::HostMirror, typename BVIT::HostMirror>(side, uplo, trans, diag, alpha, host_A,
+    SerialTrmm_Invoke<typename AVIT::host_mirror_type, typename BVIT::host_mirror_type>(side, uplo, trans, diag, alpha, host_A,
                                                                             host_B);
 
     // Copy host_B to B
