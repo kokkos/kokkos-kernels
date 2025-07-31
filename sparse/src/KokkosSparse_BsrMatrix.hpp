@@ -331,7 +331,9 @@ class BsrMatrix {
   //! Type of a host-memory mirror of the sparse matrix.
   typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, size_type> host_mirror_type;
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  [[deprecated("KokkosSparse::BsrMatrix::HostMirror is deprecated please use KokkosSparse::BsrMatrix::host_mirror_type instead.")]] typedef host_mirror_type HostMirror;
+  [[deprecated(
+      "KokkosSparse::BsrMatrix::HostMirror is deprecated please use KokkosSparse::BsrMatrix::host_mirror_type "
+      "instead.")]] typedef host_mirror_type HostMirror;
 #endif
   //! Type of the graph structure of the sparse matrix.
   typedef StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> StaticCrsGraphType;
