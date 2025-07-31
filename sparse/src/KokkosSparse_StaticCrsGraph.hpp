@@ -267,7 +267,7 @@ class StaticCrsGraph {
   using host_mirror_type =
       StaticCrsGraph<data_type, array_layout, typename traits::host_mirror_space, memory_traits, size_type>;
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  using HostMirror = host_mirror_type;
+  [[deprecated("KokkosSparse::StaticCrsGraph::HostMirror is deprecated please use KokkosSparse::StaticCrsGraph::host_mirror_type instead.")]] using HostMirror = host_mirror_type;
 #endif
 
   using row_map_type   = Kokkos::View<const size_type*, array_layout, device_type, memory_traits>;
