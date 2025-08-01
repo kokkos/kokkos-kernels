@@ -36,13 +36,22 @@ namespace KokkosSparse {
 // duplicated entries in A, A is sorted and returned (instead of a newly
 // allocated matrix).
 
+enum class SortType {
+  DEFAULT,
+  PARALLEL_THREAD_LEVEL,
+#ifndef KK_DISABLE_BULK_SORT_BY_KEY
+  BULK_SORT
+#endif
+};
+
 // Sort a CRS matrix: within each row, sort entries ascending by column.
 // At the same time, permute the values.
 template <typename execution_space, typename rowmap_t, typename entries_t, typename values_t>
 void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const entries_t& entries,
                      const values_t& values,
                      typename entries_t::non_const_value_type numCols =
-                         Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
+                         Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                     SortType option = SortType::DEFAULT) {
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename rowmap_t::memory_space>::accessible,
                 "sort_crs_matrix: rowmap_t is not accessible from the given execution "
                 "space");
@@ -75,16 +84,18 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
     //   using one Kokkos thread per row.
     Ordinal avgDeg = (entries.extent(0) + numRows - 1) / numRows;
 #ifndef KK_DISABLE_BULK_SORT_BY_KEY
-    Ordinal maxDeg   = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
     bool useBulkSort = false;
-    if (KokkosSparse::Impl::useBulkSortHeuristic<execution_space>(avgDeg, maxDeg)) {
-      // Calculate the true number of columns if user didn't pass it in
-      if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
-        KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0), entries, numCols);
-        numCols++;
+    if (option != SortType::PARALLEL_THREAD_LEVEL) {
+      Ordinal maxDeg = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
+      if (KokkosSparse::Impl::useBulkSortHeuristic<execution_space>(avgDeg, maxDeg)) {
+        // Calculate the true number of columns if user didn't pass it in
+        if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
+          KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0), entries, numCols);
+          numCols++;
+        }
+        uint64_t maxBulkKey = (uint64_t)numRows * (uint64_t)numCols;
+        useBulkSort         = maxBulkKey / numRows == (uint64_t)numCols;
       }
-      uint64_t maxBulkKey = (uint64_t)numRows * (uint64_t)numCols;
-      useBulkSort         = maxBulkKey / numRows == (uint64_t)numCols;
     }
     if (useBulkSort) {
       auto permutation = KokkosSparse::Impl::computeEntryPermutation(exec, rowmap, entries, numCols);
@@ -120,27 +131,31 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
 }
 
 template <typename execution_space, typename rowmap_t, typename entries_t, typename values_t>
-void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const values_t& values,
-                     typename entries_t::const_value_type numCols =
-                         Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
-  sort_crs_matrix(execution_space(), rowmap, entries, values, numCols);
+void sort_crs_matrix(
+    const rowmap_t& rowmap, const entries_t& entries, const values_t& values,
+    typename entries_t::const_value_type numCols = Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+    SortType option                              = SortType::DEFAULT) {
+  sort_crs_matrix(execution_space(), rowmap, entries, values, numCols, option);
 }
 
 template <typename rowmap_t, typename entries_t, typename values_t>
-void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const values_t& values,
-                     typename entries_t::const_value_type numCols =
-                         Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
-  sort_crs_matrix(typename entries_t::execution_space(), rowmap, entries, values, numCols);
+void sort_crs_matrix(
+    const rowmap_t& rowmap, const entries_t& entries, const values_t& values,
+    typename entries_t::const_value_type numCols = Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+    SortType option                              = SortType::DEFAULT) {
+  sort_crs_matrix(typename entries_t::execution_space(), rowmap, entries, values, numCols, option);
 }
 
 template <typename crsMat_t>
-void sort_crs_matrix(const typename crsMat_t::execution_space& exec, const crsMat_t& A) {
-  sort_crs_matrix(exec, A.graph.row_map, A.graph.entries, A.values, A.numCols());
+void sort_crs_matrix(const typename crsMat_t::execution_space& exec, const crsMat_t& A,
+                     SortType option = SortType::DEFAULT) {
+  sort_crs_matrix(exec, A.graph.row_map, A.graph.entries, A.values, A.numCols(), option);
 }
 
 template <typename crsMat_t>
-void sort_crs_matrix(const crsMat_t& A) {
-  sort_crs_matrix(typename crsMat_t::execution_space(), A.graph.row_map, A.graph.entries, A.values, A.numCols());
+void sort_crs_matrix(const crsMat_t& A, SortType option = SortType::DEFAULT) {
+  sort_crs_matrix(typename crsMat_t::execution_space(), A.graph.row_map, A.graph.entries, A.values, A.numCols(),
+                  option);
 }
 
 // Sort a BRS matrix: within each row, sort entries ascending by column and
@@ -227,7 +242,8 @@ void sort_bsr_matrix(const bsrMat_t& A) {
 template <typename execution_space, typename rowmap_t, typename entries_t>
 void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const entries_t& entries,
                     typename entries_t::non_const_value_type numCols =
-                        Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
+                        Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                    SortType option = SortType::DEFAULT) {
   using Ordinal = typename entries_t::non_const_value_type;
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename rowmap_t::memory_space>::accessible,
                 "sort_crs_graph: rowmap_t is not accessible from the given execution "
@@ -253,16 +269,18 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
     //   thread per row.
     Ordinal avgDeg = (entries.extent(0) + numRows - 1) / numRows;
 #ifndef KK_DISABLE_BULK_SORT_BY_KEY
-    Ordinal maxDeg   = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
     bool useBulkSort = false;
-    if (KokkosSparse::Impl::useBulkSortHeuristic<execution_space>(avgDeg, maxDeg)) {
-      // Calculate the true number of columns if user didn't pass it in
-      if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
-        KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0), entries, numCols);
-        numCols++;
+    if (option != SortType::PARALLEL_THREAD_LEVEL) {
+      Ordinal maxDeg = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
+      if (KokkosSparse::Impl::useBulkSortHeuristic<execution_space>(avgDeg, maxDeg)) {
+        // Calculate the true number of columns if user didn't pass it in
+        if (numCols == Kokkos::ArithTraits<Ordinal>::max()) {
+          KokkosKernels::Impl::kk_view_reduce_max(exec, entries.extent(0), entries, numCols);
+          numCols++;
+        }
+        uint64_t maxBulkKey = (uint64_t)numRows * (uint64_t)numCols;
+        useBulkSort         = maxBulkKey / numRows == (uint64_t)numCols;
       }
-      uint64_t maxBulkKey = (uint64_t)numRows * (uint64_t)numCols;
-      useBulkSort         = maxBulkKey / numRows == (uint64_t)numCols;
     }
     if (useBulkSort) {
       auto keys = KokkosSparse::Impl::generateBulkCrsKeys(exec, rowmap, entries, numCols);
@@ -289,31 +307,34 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
 }
 
 template <typename execution_space, typename rowmap_t, typename entries_t>
-void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries) {
-  sort_crs_graph(execution_space(), rowmap, entries);
+void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries, SortType option = SortType::DEFAULT) {
+  sort_crs_graph(execution_space(), rowmap, entries, Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(), option);
 }
 
 template <typename rowmap_t, typename entries_t>
 typename std::enable_if_t<Kokkos::is_view_v<rowmap_t>> sort_crs_graph(
     const rowmap_t& rowmap, const entries_t& entries,
     typename entries_t::const_value_type& numCols =
-        Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
-  sort_crs_graph(typename entries_t::execution_space(), rowmap, entries, numCols);
+        Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+    SortType option = SortType::DEFAULT) {
+  sort_crs_graph(typename entries_t::execution_space(), rowmap, entries, numCols, option);
 }
 
 template <typename execution_space, typename crsGraph_t>
 typename std::enable_if_t<Kokkos::is_execution_space_v<execution_space>> sort_crs_graph(
     const execution_space& exec, const crsGraph_t& G,
     typename crsGraph_t::entries_type::const_value_type& numCols =
-        Kokkos::ArithTraits<typename crsGraph_t::entries_type::non_const_value_type>::max()) {
-  sort_crs_graph(exec, G.row_map, G.entries, numCols);
+        Kokkos::ArithTraits<typename crsGraph_t::entries_type::non_const_value_type>::max(),
+    SortType option = SortType::DEFAULT) {
+  sort_crs_graph(exec, G.row_map, G.entries, numCols, option);
 }
 
 template <typename crsGraph_t>
 void sort_crs_graph(const crsGraph_t& G,
                     typename crsGraph_t::entries_type::const_value_type& numCols =
-                        Kokkos::ArithTraits<typename crsGraph_t::entries_type::non_const_value_type>::max()) {
-  sort_crs_graph(typename crsGraph_t::execution_space(), G, numCols);
+                        Kokkos::ArithTraits<typename crsGraph_t::entries_type::non_const_value_type>::max(),
+                    SortType option = SortType::DEFAULT) {
+  sort_crs_graph(typename crsGraph_t::execution_space(), G, numCols, option);
 }
 
 template <typename exec_space, typename rowmap_t, typename entries_t, typename values_t>
@@ -321,7 +342,8 @@ void sort_and_merge_matrix(const exec_space& exec, const typename rowmap_t::cons
                            const entries_t& entries_in, const values_t& values_in, rowmap_t& rowmap_out,
                            entries_t& entries_out, values_t& values_out,
                            typename entries_t::const_value_type& numCols =
-                               Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
+                               Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                           SortType option = SortType::DEFAULT) {
   using nc_rowmap_t = typename rowmap_t::non_const_type;
   using Offset      = typename nc_rowmap_t::value_type;
   using Ordinal     = typename entries_t::value_type;
@@ -350,7 +372,7 @@ void sort_and_merge_matrix(const exec_space& exec, const typename rowmap_t::cons
     return;
   }
 
-  sort_crs_matrix(exec, rowmap_in, entries_in, values_in, numCols);
+  sort_crs_matrix(exec, rowmap_in, entries_in, values_in, numCols, option);
 
   // Count entries per row into a new rowmap, in terms of merges that can be
   // done
@@ -395,7 +417,8 @@ void sort_and_merge_matrix(const exec_space& exec, const typename rowmap_t::cons
 
 // Sort the rows of matrix, and merge duplicate entries.
 template <typename crsMat_t>
-crsMat_t sort_and_merge_matrix(const typename crsMat_t::execution_space& exec, const crsMat_t& A) {
+crsMat_t sort_and_merge_matrix(const typename crsMat_t::execution_space& exec, const crsMat_t& A,
+                               SortType option = SortType::DEFAULT) {
   using rowmap_t  = typename crsMat_t::row_map_type;
   using entries_t = typename crsMat_t::index_type;
   using values_t  = typename crsMat_t::values_type;
@@ -405,14 +428,14 @@ crsMat_t sort_and_merge_matrix(const typename crsMat_t::execution_space& exec, c
   values_t values_out;
 
   sort_and_merge_matrix(exec, A.graph.row_map, A.graph.entries, A.values, rowmap_out, entries_out, values_out,
-                        A.numCols());
+                        A.numCols(), option);
 
   return crsMat_t("SortedMerged", A.numRows(), A.numCols(), values_out.extent(0), values_out, rowmap_out, entries_out);
 }
 
 template <typename crsMat_t>
-crsMat_t sort_and_merge_matrix(const crsMat_t& A) {
-  return sort_and_merge_matrix(typename crsMat_t::execution_space(), A);
+crsMat_t sort_and_merge_matrix(const crsMat_t& A, SortType option = SortType::DEFAULT) {
+  return sort_and_merge_matrix(typename crsMat_t::execution_space(), A, option);
 }
 
 template <typename exec_space, typename rowmap_t, typename entries_t, typename values_t>
@@ -420,8 +443,10 @@ void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in, const
                            const values_t& values_in, rowmap_t& rowmap_out, entries_t& entries_out,
                            values_t& values_out,
                            typename entries_t::const_value_type& numCols =
-                               Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
-  sort_and_merge_matrix(exec_space(), rowmap_in, entries_in, values_in, rowmap_out, entries_out, values_out, numCols);
+                               Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                           SortType option = SortType::DEFAULT) {
+  sort_and_merge_matrix(exec_space(), rowmap_in, entries_in, values_in, rowmap_out, entries_out, values_out, numCols,
+                        option);
 }
 
 template <typename rowmap_t, typename entries_t, typename values_t>
@@ -429,16 +454,18 @@ void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in, const
                            const values_t& values_in, rowmap_t& rowmap_out, entries_t& entries_out,
                            values_t& values_out,
                            typename entries_t::const_value_type& numCols =
-                               Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
+                               Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                           SortType option = SortType::DEFAULT) {
   sort_and_merge_matrix(typename entries_t::execution_space(), rowmap_in, entries_in, values_in, rowmap_out,
-                        entries_out, values_out, numCols);
+                        entries_out, values_out, numCols, option);
 }
 
 template <typename exec_space, typename rowmap_t, typename entries_t>
 void sort_and_merge_graph(const exec_space& exec, const typename rowmap_t::const_type& rowmap_in,
                           const entries_t& entries_in, rowmap_t& rowmap_out, entries_t& entries_out,
                           typename entries_t::const_value_type& numCols =
-                              Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
+                              Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                          SortType option = SortType::DEFAULT) {
   using Offset      = typename rowmap_t::non_const_value_type;
   using Ordinal     = typename entries_t::value_type;
   using range_t     = Kokkos::RangePolicy<exec_space>;
@@ -459,7 +486,7 @@ void sort_and_merge_graph(const exec_space& exec, const typename rowmap_t::const
     return;
   }
   // Sort in place
-  sort_crs_graph(exec, rowmap_in, entries_in, numCols);
+  sort_crs_graph(exec, rowmap_in, entries_in, numCols, option);
   // Count entries per row into a new rowmap, in terms of merges that can be
   // done
   nc_rowmap_t nc_rowmap_out(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing, "SortedMerged rowmap"), numRows + 1);
@@ -504,39 +531,42 @@ template <typename exec_space, typename rowmap_t, typename entries_t>
 void sort_and_merge_graph(const typename rowmap_t::const_type& rowmap_in, const entries_t& entries_in,
                           rowmap_t& rowmap_out, entries_t& entries_out,
                           typename entries_t::const_value_type& numCols =
-                              Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
-  return sort_and_merge_graph(exec_space(), rowmap_in, entries_in, rowmap_out, entries_out, numCols);
+                              Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                          SortType option = SortType::DEFAULT) {
+  return sort_and_merge_graph(exec_space(), rowmap_in, entries_in, rowmap_out, entries_out, numCols, option);
 }
 
 template <typename rowmap_t, typename entries_t>
 void sort_and_merge_graph(const typename rowmap_t::const_type& rowmap_in, const entries_t& entries_in,
                           rowmap_t& rowmap_out, entries_t& entries_out,
                           typename entries_t::const_value_type& numCols =
-                              Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max()) {
+                              Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                          SortType option = SortType::DEFAULT) {
   return sort_and_merge_graph(typename entries_t::execution_space(), rowmap_in, entries_in, rowmap_out, entries_out,
-                              numCols);
+                              numCols, option);
 }
 
 template <typename crsGraph_t>
-crsGraph_t sort_and_merge_graph(
-    const typename crsGraph_t::execution_space& exec, const crsGraph_t& G,
-    typename crsGraph_t::entries_type::const_value_type& numCols =
-        Kokkos::ArithTraits<typename crsGraph_t::entries_type::non_const_value_type>::max()) {
+crsGraph_t sort_and_merge_graph(const typename crsGraph_t::execution_space& exec, const crsGraph_t& G,
+                                typename crsGraph_t::entries_type::const_value_type& numCols =
+                                    Kokkos::ArithTraits<typename crsGraph_t::entries_type::non_const_value_type>::max(),
+                                SortType option = SortType::DEFAULT) {
   using rowmap_t  = typename crsGraph_t::row_map_type::non_const_type;
   using entries_t = typename crsGraph_t::entries_type;
   static_assert(!std::is_const<typename entries_t::value_type>::value,
                 "sort_and_merge_graph requires StaticCrsGraph entries to be non-const.");
   rowmap_t mergedRowmap;
   entries_t mergedEntries;
-  sort_and_merge_graph(exec, G.row_map, G.entries, mergedRowmap, mergedEntries, numCols);
+  sort_and_merge_graph(exec, G.row_map, G.entries, mergedRowmap, mergedEntries, numCols, option);
   return crsGraph_t(mergedEntries, mergedRowmap);
 }
 
 template <typename crsGraph_t>
-crsGraph_t sort_and_merge_graph(
-    const crsGraph_t& G, typename crsGraph_t::entries_type::const_value_type& numCols =
-                             Kokkos::ArithTraits<typename crsGraph_t::entries_type::non_const_value_type>::max()) {
-  return sort_and_merge_graph(typename crsGraph_t::execution_space(), G, numCols);
+crsGraph_t sort_and_merge_graph(const crsGraph_t& G,
+                                typename crsGraph_t::entries_type::const_value_type& numCols =
+                                    Kokkos::ArithTraits<typename crsGraph_t::entries_type::non_const_value_type>::max(),
+                                SortType option = SortType::DEFAULT) {
+  return sort_and_merge_graph(typename crsGraph_t::execution_space(), G, numCols, option);
 }
 
 }  // namespace KokkosSparse
