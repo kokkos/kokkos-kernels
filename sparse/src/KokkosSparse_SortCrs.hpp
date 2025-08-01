@@ -308,7 +308,8 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
 
 template <typename execution_space, typename rowmap_t, typename entries_t>
 void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries, SortType option = SortType::DEFAULT) {
-  sort_crs_graph(execution_space(), rowmap, entries, Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(), option);
+  sort_crs_graph(execution_space(), rowmap, entries,
+                 Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(), option);
 }
 
 template <typename rowmap_t, typename entries_t>
