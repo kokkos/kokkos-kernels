@@ -57,8 +57,8 @@ typename V::non_const_value_type simpleNorm2(const V& v) {
 // Check that all columns of X are unit length and pairwise orthogonal
 template <typename Mat>
 void verifyOrthogonal(const Mat& X, const double epsilon = -1) {
-  using Scalar = typename Mat::non_const_value_type;
-  int k        = X.extent(1);
+  using Scalar     = typename Mat::non_const_value_type;
+  int k            = X.extent(1);
   const double tol = (epsilon <= 0 ? Test::svdEpsilon<Scalar>() : epsilon);
   for (int i = 0; i < k; i++) {
     auto col1  = Kokkos::subview(X, Kokkos::ALL(), i);
@@ -78,9 +78,9 @@ void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView
   using KAT    = Kokkos::ArithTraits<Scalar>;
   // Check that U/V columns are unit length and orthogonal
   // and that:   U * diag(sigma) * V^T == A
-  int m       = A.extent(0);
-  int n       = A.extent(1);
-  int maxrank = std::min(m, n);
+  int m            = A.extent(0);
+  int n            = A.extent(1);
+  int maxrank      = std::min(m, n);
   const double tol = (epsilon <= 0 ? Test::svdEpsilon<Scalar>() : epsilon);
   verifyOrthogonal(U, epsilon);
   // NOTE: V^T being square and orthonormal implies that V is, so we don't have
@@ -558,7 +558,7 @@ void testSpecialCases() {
     auto sigmaHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sigma);
 
     // Verify the SVD is correct
-    if(std::is_same_v<Scalar, double> && i == 6) {
+    if (std::is_same_v<Scalar, double> && i == 6) {
       verifySVD(Acopy, Uhost, Vthost, sigmaHost, 1e-11);
     } else {
       verifySVD(Acopy, Uhost, Vthost, sigmaHost);
