@@ -1,24 +1,24 @@
 KokkosSparse::SortCRS
 #####################
 
-Defined in header :code:``KokkosSparse_sort_crs.hpp``
+Defined in header ``KokkosSparse_sort_crs.hpp``
 
-SortType Enum
+SortAlgorithm Enum
 =============
 
 .. code:: cppkokkos
 
-  enum class SortType {
+  enum class SortAlgorithm {
     DEFAULT,
     PARALLEL_THREAD_LEVEL,
     BULK_SORT
   };
 
-The `SortType` enum specifies the sorting strategy to use for CRS matrices and graphs. The available options are:
+The `SortAlgorithm` enum specifies the sorting strategy to use for CRS matrices and graphs. The available options are:
 
 - `DEFAULT`: Automatically selects the best sorting strategy based on the execution space and matrix properties.
 - `PARALLEL_THREAD_LEVEL`: Forces parallel thread-level sorting within each row.
-- `BULK_SORT`: (Optional, if enabled) Uses bulk sorting for highly imbalanced matrices or graphs.
+- `BULK_SORT`: Order all entries in the matrix/graph using a single sort-by-key. This is the default algorithm for highly imbalanced matrices or graphs.
 
 Functions
 =========
@@ -58,7 +58,7 @@ sort_crs_matrix
                        const values_t& values,
                        typename entries_t::non_const_value_type numCols =
                            Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
-                       SortType option = SortType::DEFAULT);
+                       SortAlgorithm option = SortAlgorithm::DEFAULT);
 
 Sorts the adjacent column list for each row of a CRS matrix into ascending order. Permutes the values accordingly.
 
@@ -78,7 +78,7 @@ Parameters
 :entries: Entries view of the CRS matrix.
 :values: Values view of the CRS matrix.
 :numCols: Number of columns in the matrix (optional).
-:option: Sorting strategy (optional, defaults to `SortType::DEFAULT`).
+:option: Sorting strategy (optional, defaults to `SortAlgorithm::DEFAULT`).
 
 .. _sort_bsr_matrix:
 
@@ -125,7 +125,7 @@ sort_crs_graph
   void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const entries_t& entries,
                       typename entries_t::non_const_value_type numCols =
                           Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
-                      SortType option = SortType::DEFAULT);
+                      SortAlgorithm option = SortAlgorithm::DEFAULT);
 
 Sorts the adjacent column list for each row of a CRS graph into ascending order.
 
@@ -143,7 +143,7 @@ Parameters
 :rowmap: Row map view of the CRS graph.
 :entries: Entries view of the CRS graph.
 :numCols: Number of columns in the graph (optional).
-:option: Sorting strategy (optional, defaults to `SortType::DEFAULT`).
+:option: Sorting strategy (optional, defaults to `SortAlgorithm::DEFAULT`).
 
 .. _sort_and_merge_matrix:
 
@@ -158,7 +158,7 @@ sort_and_merge_matrix
                              entries_t& entries_out, values_t& values_out,
                              typename entries_t::const_value_type& numCols =
                                  Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
-                             SortType option = SortType::DEFAULT);
+                             SortAlgorithm option = SortAlgorithm::DEFAULT);
 
 Produces a new CRS matrix that is sorted and has no duplicate entries. Values for duplicate entries are summed.
 
@@ -181,7 +181,7 @@ Parameters
 :entries_out: Output entries view of the CRS matrix.
 :values_out: Output values view of the CRS matrix.
 :numCols: Number of columns in the matrix (optional).
-:option: Sorting strategy (optional, defaults to `SortType::DEFAULT`).
+:option: Sorting strategy (optional, defaults to `SortAlgorithm::DEFAULT`).
 
 .. _sort_and_merge_graph:
 
@@ -195,7 +195,7 @@ sort_and_merge_graph
                             const entries_t& entries_in, rowmap_t& rowmap_out, entries_t& entries_out,
                             typename entries_t::const_value_type& numCols =
                                 Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
-                            SortType option = SortType::DEFAULT);
+                            SortAlgorithm option = SortAlgorithm::DEFAULT);
 
 Produces a new CRS graph that is sorted and has no duplicate entries.
 
@@ -215,4 +215,4 @@ Parameters
 :rowmap_out: Output row map view of the CRS graph.
 :entries_out: Output entries view of the CRS graph.
 :numCols: Number of columns in the graph (optional).
-:option: Sorting strategy (optional, defaults to `SortType::DEFAULT`).
+:option: Sorting strategy (optional, defaults to `SortAlgorithm::DEFAULT`).
