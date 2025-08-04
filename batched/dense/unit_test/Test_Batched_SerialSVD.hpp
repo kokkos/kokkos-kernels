@@ -63,11 +63,11 @@ void verifyOrthogonal(const Mat& X, const double epsilon = -1) {
   for (int i = 0; i < k; i++) {
     auto col1  = Kokkos::subview(X, Kokkos::ALL(), i);
     double len = simpleNorm2(col1);
-    Test::EXPECT_NEAR_KK(len, 1.0, epsilon);
+    Test::EXPECT_NEAR_KK(len, 1.0, tol);
     for (int j = 0; j < i; j++) {
       auto col2 = Kokkos::subview(X, Kokkos::ALL(), j);
       double d  = Kokkos::ArithTraits<Scalar>::abs(simpleDot(col1, col2));
-      Test::EXPECT_NEAR_KK(d, 0.0, epsilon);
+      Test::EXPECT_NEAR_KK(d, 0.0, tol);
     }
   }
 }
