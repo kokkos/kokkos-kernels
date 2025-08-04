@@ -85,7 +85,7 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
     //   using one Kokkos thread per row.
     Ordinal avgDeg = (entries.extent(0) + numRows - 1) / numRows;
 #ifndef KK_DISABLE_BULK_SORT_BY_KEY
-    bool useBulkSort = option == SortType::BULK_SORT;
+    bool useBulkSort = option == SortAlgorithm::BULK_SORT;
     if (option == SortAlgorithm::DEFAULT) {
       Ordinal maxDeg = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
       if (KokkosSparse::Impl::useBulkSortHeuristic<execution_space>(avgDeg, maxDeg)) {
@@ -270,7 +270,7 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
     //   thread per row.
     Ordinal avgDeg = (entries.extent(0) + numRows - 1) / numRows;
 #ifndef KK_DISABLE_BULK_SORT_BY_KEY
-    bool useBulkSort = option == SortType::BULK_SORT;
+    bool useBulkSort = option == SortAlgorithm::BULK_SORT;
     if (option == SortAlgorithm::DEFAULT) {
       Ordinal maxDeg = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
       if (KokkosSparse::Impl::useBulkSortHeuristic<execution_space>(avgDeg, maxDeg)) {
