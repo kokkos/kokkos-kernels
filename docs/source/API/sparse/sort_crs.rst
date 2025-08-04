@@ -1,25 +1,7 @@
 KokkosSparse::SortCRS
 #####################
 
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-
-   sort_crs_matrix
-   sort_bsr_matrix
-   sort_crs_graph
-   sort_and_merge_matrix
-   sort_and_merge_graph
-
-Defined in header ``KokkosSparse_sort_crs.hpp``
-
-.. code:: cppkokkos
-
-  namespace KokkosSparse {
-    // CRS matrix/graph sorting utilities
-  }
-
-The `KokkosSparse` namespace provides utilities for sorting and merging compressed row storage (CRS) matrices and graphs. These functions are designed to work efficiently on both CPU and GPU architectures, leveraging Kokkos' parallel execution capabilities.
+Defined in header :code:``KokkosSparse_sort_crs.hpp``
 
 SortType Enum
 =============
@@ -29,9 +11,7 @@ SortType Enum
   enum class SortType {
     DEFAULT,
     PARALLEL_THREAD_LEVEL,
-#ifndef KK_DISABLE_BULK_SORT_BY_KEY
     BULK_SORT
-#endif
   };
 
 The `SortType` enum specifies the sorting strategy to use for CRS matrices and graphs. The available options are:
