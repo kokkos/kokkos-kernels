@@ -4,7 +4,7 @@ KokkosSparse::SortCRS
 Defined in header ``KokkosSparse_sort_crs.hpp``
 
 SortAlgorithm Enum
-=============
+==================
 
 .. code:: cppkokkos
 
