@@ -86,7 +86,7 @@ src_doc_mapping = dict([
                         # ('sparse/src/KokkosSparse_MatrixPrec.hpp', []),
                         # ('sparse/src/KokkosSparse_OrdinalTraits.hpp', []),
                         # ('sparse/src/KokkosSparse_Preconditioner.hpp', []),
-                        # ('sparse/src/KokkosSparse_SortCrs.hpp', []),
+                        ('sparse/src/KokkosSparse_SortCrs.hpp', ['docs/source/API/sparse/sort_crs.rst']),
                         # ('sparse/src/KokkosSparse_StaticCcsGraph.hpp', []),
                         # ('sparse/src/KokkosSparse_StaticCrsGraph.hpp', []),
                         # ('sparse/src/KokkosSparse_Utils.hpp', []),
