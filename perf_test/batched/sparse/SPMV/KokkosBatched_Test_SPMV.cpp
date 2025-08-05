@@ -36,12 +36,12 @@ template <typename PolicyType, typename DViewType, typename IntView, typename xV
 struct Functor_TestBatchedTeamVectorSpmv {
   PolicyType _policy;
   const alphaViewType _alpha;
-  const DViewType _D;
+  const DViewType D_;
   const IntView _r;
   const IntView _c;
-  const xViewType _X;
+  const xViewType X_;
   const betaViewType _beta;
-  const yViewType _Y;
+  const yViewType Y_;
   int _matrices_per_team;
 
   KOKKOS_INLINE_FUNCTION
@@ -50,27 +50,27 @@ struct Functor_TestBatchedTeamVectorSpmv {
                                     const int matrices_per_team)
       : _policy(policy),
         _alpha(alpha),
-        _D(D),
+        D_(D),
         _r(r),
         _c(c),
-        _X(X),
+        X_(X),
         _beta(beta),
-        _Y(Y),
+        Y_(Y),
         _matrices_per_team(matrices_per_team) {}
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     const int first_matrix = static_cast<int>(member.league_rank()) * _matrices_per_team;
-    const int N            = _D.extent(0);
+    const int N            = D_.extent(0);
     const int last_matrix  = (static_cast<int>(member.league_rank() + 1) * _matrices_per_team < N
                                   ? static_cast<int>(member.league_rank() + 1) * _matrices_per_team
                                   : N);
 
     auto alpha_team = Kokkos::subview(_alpha, Kokkos::make_pair(first_matrix, last_matrix));
-    auto D_team     = Kokkos::subview(_D, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
-    auto X_team     = Kokkos::subview(_X, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto D_team     = Kokkos::subview(D_, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto X_team     = Kokkos::subview(X_, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
     auto beta_team  = Kokkos::subview(_beta, Kokkos::make_pair(first_matrix, last_matrix));
-    auto Y_team     = Kokkos::subview(_Y, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto Y_team     = Kokkos::subview(Y_, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
 
     using ScratchPadIntView = Kokkos::View<int *, Kokkos::DefaultExecutionSpace::scratch_memory_space>;
 
