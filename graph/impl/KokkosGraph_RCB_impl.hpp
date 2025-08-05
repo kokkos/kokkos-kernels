@@ -188,10 +188,10 @@ std::vector<typename perm_view_type::value_type> rcb(coors_view_type &coordinate
   perm_view_type prev_reverse_perm(Kokkos::view_alloc(Kokkos::WithoutInitializing, "prev_reverse_perm"), N);
 
   // Create host mirrors of device views
-  typename coors_view_type::HostMirror h_coordinates        = Kokkos::create_mirror_view(coordinates);
-  typename perm_view_type::HostMirror h_perm                = Kokkos::create_mirror_view(perm);
-  typename perm_view_type::HostMirror h_reverse_perm        = Kokkos::create_mirror_view(reverse_perm);
-  typename perm_view_type::HostMirror h_reverse_perm_bisect = Kokkos::create_mirror_view(reverse_perm_bisect);
+  typename coors_view_type::host_mirror_type h_coordinates        = Kokkos::create_mirror_view(coordinates);
+  typename perm_view_type::host_mirror_type h_perm                = Kokkos::create_mirror_view(perm);
+  typename perm_view_type::host_mirror_type h_reverse_perm        = Kokkos::create_mirror_view(reverse_perm);
+  typename perm_view_type::host_mirror_type h_reverse_perm_bisect = Kokkos::create_mirror_view(reverse_perm_bisect);
 
   // Copy coordinates from device memory to host memory because bisecting is currently executed on host
   Kokkos::deep_copy(h_coordinates, coordinates);

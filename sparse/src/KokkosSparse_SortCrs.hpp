@@ -36,14 +36,7 @@ namespace KokkosSparse {
 // duplicated entries in A, A is sorted and returned (instead of a newly
 // allocated matrix).
 
-enum class SortAlgorithm {
-  DEFAULT,
-  PARALLEL_THREAD_LEVEL
-#ifndef KK_DISABLE_BULK_SORT_BY_KEY
-  ,
-  BULK_SORT
-#endif
-};
+enum class SortAlgorithm { DEFAULT, PARALLEL_THREAD_LEVEL, BULK_SORT };
 
 // Sort a CRS matrix: within each row, sort entries ascending by column.
 // At the same time, permute the values.
@@ -83,8 +76,7 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
     //   If the matrix is highly imbalanced, or has long rows AND the dimensions
     //   are not too large to do one large bulk sort, do that. Otherwise, sort
     //   using one Kokkos thread per row.
-    Ordinal avgDeg = (entries.extent(0) + numRows - 1) / numRows;
-#ifndef KK_DISABLE_BULK_SORT_BY_KEY
+    Ordinal avgDeg   = (entries.extent(0) + numRows - 1) / numRows;
     bool useBulkSort = option == SortAlgorithm::BULK_SORT;
     if (option == SortAlgorithm::DEFAULT) {
       Ordinal maxDeg = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
@@ -109,11 +101,7 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
       Kokkos::deep_copy(exec, origEntries, entries);
       KokkosSparse::Impl::applyPermutation(exec, permutation, origEntries, entries);
       KokkosSparse::Impl::applyPermutation(exec, permutation, origValues, values);
-    } else
-#else
-    (void)numCols;
-#endif
-    {
+    } else {
       using TeamPol = Kokkos::TeamPolicy<execution_space>;
       // Can't use bulk sort approach as matrix dimensions are too large.
       // Fall back to parallel thread-level sort within each row.
@@ -183,29 +171,7 @@ void sort_bsr_matrix(const execution_space& exec, Ordinal blockSize, const rowma
     throw std::invalid_argument(
         "sort_bsr_matrix: implementation requires that numRows * numCols is "
         "representable in uint64_t");
-#ifdef KK_DISABLE_BULK_SORT_BY_KEY
-  using TeamPol = Kokkos::TeamPolicy<execution_space>;
-  using Offset  = typename rowmap_t::non_const_value_type;
-  // Temporary workaround: do not use Kokkos::Experimental::sort_by_key, instead
-  // sort bulk keys one row at a time
-  auto keys = Impl::generateBulkCrsKeys(exec, rowmap, entries, numCols);
-  Kokkos::View<Offset*, execution_space> permutation(Kokkos::view_alloc(Kokkos::WithoutInitializing, "permutation"),
-                                                     entries.extent(0));
-  KokkosKernels::Impl::sequential_fill(exec, permutation);
-  Ordinal vectorLength = 1;
-  Ordinal avgDeg       = (entries.extent(0) + numRows - 1) / numRows;
-  while (vectorLength < avgDeg / 2) {
-    vectorLength *= 2;
-  }
-  if (vectorLength > TeamPol ::vector_length_max()) vectorLength = TeamPol ::vector_length_max();
-  Impl::MatrixThreadSortFunctor<TeamPol, Ordinal, rowmap_t, decltype(keys), decltype(permutation)> funct(
-      numRows, rowmap, keys, permutation);
-  Ordinal teamSize = TeamPol(exec, 1, 1, vectorLength).team_size_recommended(funct, Kokkos::ParallelForTag());
-  Kokkos::parallel_for("sort_bulk_keys_by_row[GPU,bitonic]",
-                       TeamPol(exec, (numRows + teamSize - 1) / teamSize, teamSize, vectorLength), funct);
-#else
   auto permutation = KokkosSparse::Impl::computeEntryPermutation(exec, rowmap, entries, numCols);
-#endif
   // Permutations cannot be done in-place
   Kokkos::View<typename values_t::value_type*, execution_space> origValues(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "origValues"), values.extent(0));
@@ -268,8 +234,7 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
     //   If the graph is highly imbalanced AND the dimensions are not too large
     //   to do one large bulk sort, do that. Otherwise, sort using one Kokkos
     //   thread per row.
-    Ordinal avgDeg = (entries.extent(0) + numRows - 1) / numRows;
-#ifndef KK_DISABLE_BULK_SORT_BY_KEY
+    Ordinal avgDeg   = (entries.extent(0) + numRows - 1) / numRows;
     bool useBulkSort = option == SortAlgorithm::BULK_SORT;
     if (option == SortAlgorithm::DEFAULT) {
       Ordinal maxDeg = KokkosSparse::Impl::graph_max_degree(exec, rowmap);
@@ -286,11 +251,7 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
     if (useBulkSort) {
       auto keys = KokkosSparse::Impl::generateBulkCrsKeys(exec, rowmap, entries, numCols);
       Kokkos::Experimental::sort_by_key(exec, keys, entries);
-    } else
-#else
-    (void)numCols;
-#endif
-    {
+    } else {
       using TeamPol = Kokkos::TeamPolicy<execution_space>;
       // Fall back to thread-level sort within each row
       Ordinal vectorLength = 1;
