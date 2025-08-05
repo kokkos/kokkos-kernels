@@ -40,7 +40,6 @@ class Ccs2Crs {
   SizeType nnz_;
   ValViewType vals_;
   ColMapViewType col_map_;
-  RowIdViewType row_ids;
 
   CrsValsViewType crs_vals_;
   CrsRowMapViewType crs_row_map_;
@@ -49,7 +48,7 @@ class Ccs2Crs {
  public:
   Ccs2Crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals, ColMapViewType col_map,
           RowIdViewType row_ids)
-      : nrows_(nrows), ncols_(ncols), nnz_(nnz), vals_(vals), col_map_(col_map), row_ids(row_ids) {
+      : nrows_(nrows), ncols_(ncols), nnz_(nnz), vals_(vals), col_map_(col_map) {
     crs_vals_    = CrsValsViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "crs_vals_"), nnz);
     crs_row_map_ = CrsRowMapViewType(Kokkos::view_alloc("crs_row_map_"), nrows + 1);
     crs_col_ids_ = CrsColIdViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "crs_col_ids_"), nnz);
