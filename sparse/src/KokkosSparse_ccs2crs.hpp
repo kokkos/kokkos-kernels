@@ -42,8 +42,6 @@ class Ccs2Crs {
   ColMapViewType __col_map;
   RowIdViewType __row_ids;
 
-  RowIdViewType __crs_row_cnt;
-
   CrsValsViewType __crs_vals;
   CrsRowMapViewType __crs_row_map;
   CrsColIdViewType __crs_col_ids;
