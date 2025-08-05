@@ -27,6 +27,8 @@ API: Sparse
    sparse/spiluk_numeric
    sparse/par_ilut
 
+   sparse/extract_diagonal_blocks_rcb.rst
+
 Containers
 ==========
 
@@ -85,3 +87,10 @@ Linear Solver / Preconditioners
   - :doc:`spiluk_symbolic <sparse/spiluk_symbolic>`
   - :doc:`spiluk_numeric <sparse/spiluk_numeric>`
   - :doc:`par_ilut <sparse/par_ilut>`
+
+Utility Functions
+=================
+
+- Apply RCB to the coordinates associated with rows/columns of a crs matrix then extract the diagonal blocks corresponding to the RCB partitions
+
+  - :doc:`extract_diagonal_blocks_rcb <sparse/extract_diagonal_blocks_rcb>`
