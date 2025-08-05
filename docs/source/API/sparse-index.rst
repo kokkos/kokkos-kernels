@@ -10,6 +10,7 @@ API: Sparse
    sparse/ccs_matrix
    sparse/coo_matrix
    sparse/kokkoskernelshandle
+   sparse/sort_crs
 
    sparse/spmv
    sparse/spadd_symbolic
@@ -40,6 +41,17 @@ Sparse containers are data structures that store indices and values associated w
 - :doc:`CcsMatrix <sparse/ccs_matrix>`
 - :doc:`CooMatrix <sparse/coo_matrix>`
 - :doc:`KokkosKernelsHandle <sparse/kokkoskernelshandle>`
+
+Sorting
+=========================
+
+- Sort sparse data structures
+
+  - :doc:`sort_crs_matrix <sparse/sort_crs>`
+  - :doc:`sort_brs_matrix <sparse/sort_crs>`
+  - :doc:`sort_and_merge_matrix <sparse/sort_crs>`
+  - :doc:`sort_crs_graph <sparse/sort_crs>`
+  - :doc:`sort_and_merge_graph <sparse/sort_crs>`
 
 Linear Algebra Operations
 =========================
