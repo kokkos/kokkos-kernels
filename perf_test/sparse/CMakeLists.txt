@@ -23,6 +23,13 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         SOURCES KokkosSparse_spgemm_jacobi.cpp
 )
 
+#Utility to benchmark spmv on TAMU SuiteSparse Matrix Collection, etc.
+KOKKOSKERNELS_ADD_EXECUTABLE(
+        sparse_spmv_benchmark
+        SOURCES KokkosSparse_spmv_benchmark.cpp
+)
+
+
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/spmv)
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
