@@ -1,0 +1,228 @@
+# The jobs show up in the github actions UI like this:
+# name: (1) / (2) / (3)
+# e.g.: github-AT2 / lychee / PR_LYCHEE_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL
+# (1) is set by the `name:` field in at2.yaml
+# (2) is set by the name of this file
+# (3) is set by the job name
+
+name: Reusable H100 workflow
+
+permissions:
+  contents: none
+
+on:
+  workflow_call:
+    inputs:
+      kokkos_version:
+        description: 'The Kokkos Core version to build'
+        default: ''
+        required: true
+        type: string
+
+jobs:
+  PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL:
+    name: PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL
+    runs-on: [lychee-kk-env-cuda-11.8.0-gcc-11.3.0-latest]
+    
+    steps:
+      - name: nvidia-smi
+        run: nvidia-smi
+
+      - name: cuda-visible-devices
+        run: echo $CUDA_VISIBLE_DEVICES
+
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ inputs.kokkos_version }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cmake -S kokkos -B kokkos/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
+            -DCMAKE_INSTALL_PREFIX=kokkos/install \
+            -DKokkos_ENABLE_CUDA=ON \
+            -DKokkos_ARCH_HOPPER90=ON \
+            -DKokkos_ENABLE_TESTS=OFF \
+            -DKokkos_ENABLE_EXAMPLES=OFF \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j56 install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
+            -DKokkos_ROOT=kokkos/install \
+            -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+            -DKokkosKernels_ENABLE_TESTS=ON \
+            -DKokkosKernels_ENABLE_PERFTESTS=ON \
+            -DKokkosKernels_ENABLE_EXAMPLES=ON \
+            -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
+            -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
+            -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
+            -DKokkosKernels_INST_LAYOUTRIGHT=ON \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DKokkosKernels_ENABLE_DOCS=OFF
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        # lychee has 224 CPUs
+        run: make -j56 all
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest --output-on-failure -V --timeout 3600
+
+  PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_TPLS_REL:
+    name: PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_TPLS_REL
+    runs-on: [lychee-kk-env-cuda-11.8.0-gcc-11.3.0-latest]
+    
+    steps:
+      - name: nvidia-smi
+        run: nvidia-smi
+
+      - name: cuda-visible-devices
+        run: echo $CUDA_VISIBLE_DEVICES
+
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ inputs.kokkos_version }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cmake -S kokkos -B kokkos/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
+            -DCMAKE_INSTALL_PREFIX=kokkos/install \
+            -DKokkos_ENABLE_CUDA=ON \
+            -DKokkos_ARCH_HOPPER90=ON \
+            -DKokkos_ENABLE_TESTS=OFF \
+            -DKokkos_ENABLE_EXAMPLES=OFF \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j56 install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
+            -DKokkos_ROOT=kokkos/install \
+            -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+            -DKokkosKernels_ENABLE_TESTS=ON \
+            -DKokkosKernels_ENABLE_PERFTESTS=ON \
+            -DKokkosKernels_ENABLE_EXAMPLES=ON \
+            -DKokkosKernels_ENABLE_TPL_CUSOLVER=ON \
+            -DKokkosKernels_ENABLE_TPL_CUSPARSE=ON \
+            -DKokkosKernels_ENABLE_TPL_CUBLAS=ON \
+            -DKokkosKernels_INST_LAYOUTRIGHT=ON \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DKokkosKernels_ENABLE_DOCS=OFF
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        # lychee has 224 CPUs
+        run: make -j56 all
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest --output-on-failure -V --timeout 3600
+  PR_HOPPER90_CUDA1262_CUDA_LEFT_REL:
+    name: PR_HOPPER90_CUDA1262_CUDA_LEFT_REL
+    runs-on: [lychee-cuda-12.6.2-openblas-0.3.28]
+
+    steps:
+      - name: nvidia-smi
+        run: nvidia-smi
+
+      - name: cuda-visible-devices
+        run: echo $CUDA_VISIBLE_DEVICES
+
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ inputs.kokkos_version }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cmake -S kokkos -B kokkos/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
+            -DCMAKE_INSTALL_PREFIX=kokkos/install \
+            -DKokkos_ENABLE_CUDA=ON \
+            -DKokkos_ARCH_HOPPER90=ON \
+            -DKokkos_ENABLE_TESTS=OFF \
+            -DKokkos_ENABLE_EXAMPLES=OFF \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j56 install
+
+      # turn off serial instantiation -> only run CUDA tests
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
+            -DKokkos_ROOT=kokkos/install \
+            -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+            -DKokkosKernels_ENABLE_TESTS=ON \
+            -DKokkosKernels_ENABLE_PERFTESTS=ON \
+            -DKokkosKernels_ENABLE_EXAMPLES=ON \
+            -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
+            -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
+            -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DKokkosKernels_ENABLE_DOCS=OFF
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        # lychee has 224 CPUs
+        run: make -j56 all
+
+      # individual ODE tests (e.g. Cuda.RK_Count) were taking more than 3600s
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: compute-sanitizer --tool=memcheck --target-processes=all ctest --output-on-failure -V --timeout 3600 -E 'ode'
