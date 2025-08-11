@@ -226,6 +226,8 @@ jobs:
           cd kokkos-kernels/build
 
           cmake \
+            -S "$PWD/.." \
+            -B "$PWD" \
             -DCMAKE_CXX_COMPILER=g++ \
             -DKokkos_ROOT=$PWD/../../kokkos/install \
             -DCMAKE_CXX_FLAGS="-O3 " \
