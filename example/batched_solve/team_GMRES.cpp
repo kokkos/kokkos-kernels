@@ -47,8 +47,8 @@ struct Functor_TestBatchedTeamVectorGMRES {
   const ValuesViewType _diag;
   const IntView _r;
   const IntView _c;
-  const VectorViewType _X;
-  const VectorViewType _B;
+  const VectorViewType X_;
+  const VectorViewType B_;
   const int _team_size, _vector_length;
   KrylovHandleType _handle;
 
@@ -59,8 +59,8 @@ struct Functor_TestBatchedTeamVectorGMRES {
       : _values(values),
         _r(r),
         _c(c),
-        _X(X),
-        _B(B),
+        X_(X),
+        B_(B),
         _team_size(team_size),
         _vector_length(vector_length),
         _handle(handle) {}
@@ -73,8 +73,8 @@ struct Functor_TestBatchedTeamVectorGMRES {
         _diag(diag),
         _r(r),
         _c(c),
-        _X(X),
-        _B(B),
+        X_(X),
+        B_(B),
         _team_size(team_size),
         _vector_length(vector_length),
         _handle(handle) {}
@@ -86,8 +86,8 @@ struct Functor_TestBatchedTeamVectorGMRES {
     using TeamVectorCopy1D = KokkosBatched::TeamVectorCopy<MemberType, KokkosBatched::Trans::NoTranspose, 1>;
 
     auto d = Kokkos::subview(_values, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
-    auto x = Kokkos::subview(_X, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
-    auto b = Kokkos::subview(_B, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto x = Kokkos::subview(X_, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto b = Kokkos::subview(B_, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
 
     using ScratchPadIntViewType = Kokkos::View<typename IntView::non_const_value_type *, typename IntView::array_layout,
                                                typename IntView::execution_space::scratch_memory_space>;
@@ -147,7 +147,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
     size_t bytes_1D      = ViewType2D::shmem_size(_handle.get_number_of_systems_per_team(), 1);
     size_t bytes_row_ptr = IntView::shmem_size(_r.extent(0));
     size_t bytes_col_idc = IntView::shmem_size(_c.extent(0));
-    size_t bytes_2D_1    = ViewType2D::shmem_size(_handle.get_number_of_systems_per_team(), _X.extent(1));
+    size_t bytes_2D_1    = ViewType2D::shmem_size(_handle.get_number_of_systems_per_team(), X_.extent(1));
     size_t bytes_2D_2    = ViewType2D::shmem_size(_handle.get_number_of_systems_per_team(), maximum_iteration + 1);
 
     size_t bytes_int  = bytes_row_ptr + bytes_col_idc;
@@ -176,7 +176,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     using XYType           = Kokkos::View<double **, layout, exec_space>;
 
     std::string name_A = "mat.mm";
-    std::string name_B = "rhs.mm";
+    std::string nameB_ = "rhs.mm";
 
     int N, Blk, nnz;
 
