@@ -244,7 +244,6 @@ jobs:
             -DKokkosKernels_ENABLE_TPL_BLAS=ON \
             -DBUILD_SHARED_LIBS=OFF \
             -DKokkosKernels_ENABLE_DOCS=OFF
-            ..
 
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
