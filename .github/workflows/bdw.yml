@@ -233,7 +233,6 @@ jobs:
             -DCMAKE_CXX_FLAGS="-O3 " \
             -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
             -DKokkosKernels_ENABLE_TESTS=ON \
-            -DKokkosKernels_ENABLE_PERFTESTS=OFF \
             -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
             -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
             -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
