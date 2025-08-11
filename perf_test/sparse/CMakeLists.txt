@@ -123,8 +123,7 @@ if (KokkosKernels_ENABLE_SORT_CRS_PERFTEST)
     SOURCES KokkosSparse_sort_crs.cpp
 )
 endif ()
-
-if (KokkosKernels_ENABLE_BENCHMARK)
+if (KokkosKernels_ENABLE_BENCHMARKS)
   KOKKOSKERNELS_ADD_BENCHMARK(
     sparse_par_ilut
     SOURCES KokkosSparse_par_ilut.cpp
