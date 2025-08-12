@@ -175,9 +175,6 @@ int main(int /*argc*/, char ** /*argv*/) {
     using AMatrixValueView = Kokkos::View<double **, layout, exec_space>;
     using XYType           = Kokkos::View<double **, layout, exec_space>;
 
-    std::string name_A = "mat.mm";
-    std::string nameB_ = "rhs.mm";
-
     int N, Blk, nnz;
 
     Blk = 10;
