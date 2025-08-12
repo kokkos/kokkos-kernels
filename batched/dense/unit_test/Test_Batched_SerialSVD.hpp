@@ -56,34 +56,36 @@ typename V::non_const_value_type simpleNorm2(const V& v) {
 
 // Check that all columns of X are unit length and pairwise orthogonal
 template <typename Mat>
-void verifyOrthogonal(const Mat& X) {
-  using Scalar = typename Mat::non_const_value_type;
-  int k        = X.extent(1);
+void verifyOrthogonal(const Mat& X, const double epsilon = -1) {
+  using Scalar     = typename Mat::non_const_value_type;
+  int k            = X.extent(1);
+  const double tol = (epsilon <= 0 ? Test::svdEpsilon<Scalar>() : epsilon);
   for (int i = 0; i < k; i++) {
     auto col1  = Kokkos::subview(X, Kokkos::ALL(), i);
     double len = simpleNorm2(col1);
-    Test::EXPECT_NEAR_KK(len, 1.0, Test::svdEpsilon<Scalar>());
+    Test::EXPECT_NEAR_KK(len, 1.0, tol);
     for (int j = 0; j < i; j++) {
       auto col2 = Kokkos::subview(X, Kokkos::ALL(), j);
       double d  = Kokkos::ArithTraits<Scalar>::abs(simpleDot(col1, col2));
-      Test::EXPECT_NEAR_KK(d, 0.0, Test::svdEpsilon<Scalar>());
+      Test::EXPECT_NEAR_KK(d, 0.0, tol);
     }
   }
 }
 
 template <typename AView, typename UView, typename VtView, typename SigmaView>
-void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView& sigma) {
+void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView& sigma, const double epsilon = -1) {
   using Scalar = typename AView::non_const_value_type;
   using KAT    = Kokkos::ArithTraits<Scalar>;
-  // Check that U/V columns are unit length and orthogonal, and that U *
-  // diag(sigma) * V^T == A
-  int m       = A.extent(0);
-  int n       = A.extent(1);
-  int maxrank = std::min(m, n);
-  verifyOrthogonal(U);
+  // Check that U/V columns are unit length and orthogonal
+  // and that:   U * diag(sigma) * V^T == A
+  int m            = A.extent(0);
+  int n            = A.extent(1);
+  int maxrank      = std::min(m, n);
+  const double tol = (epsilon <= 0 ? Test::svdEpsilon<Scalar>() : epsilon);
+  verifyOrthogonal(U, epsilon);
   // NOTE: V^T being square and orthonormal implies that V is, so we don't have
   // to transpose it here.
-  verifyOrthogonal(Vt);
+  verifyOrthogonal(Vt, epsilon);
   Kokkos::View<Scalar**, typename AView::device_type> usvt("USV^T", m, n);
   for (int i = 0; i < maxrank; i++) {
     auto Ucol  = Kokkos::subview(U, Kokkos::ALL(), Kokkos::make_pair<int>(i, i + 1));
@@ -92,7 +94,7 @@ void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView
   }
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
-      Test::EXPECT_NEAR_KK(usvt(i, j), A(i, j), Test::svdEpsilon<Scalar>());
+      Test::EXPECT_NEAR_KK(usvt(i, j), A(i, j), tol);
     }
   }
   // Make sure all singular values are positive
@@ -497,6 +499,27 @@ Kokkos::View<Scalar**, Layout, Device> getTestCase(int testCase) {
       Ahost = MatrixHost("A5", m, n);
       break;
     }
+    case 6: {
+      m           = 3;
+      n           = 6;
+      Ahost       = MatrixHost("A6", m, n);
+      Ahost(0, 0) = -2.3588494081694974e-03;
+      Ahost(0, 1) = -2.3602176428346553e-03;
+      Ahost(0, 2) = -3.3360574050870077e-03;
+      Ahost(0, 3) = -2.3589487578561312e-03;
+      Ahost(0, 4) = -3.3359167956075490e-03;
+      Ahost(0, 5) = -3.3378517656821728e-03;
+      Ahost(1, 0) = 3.3359168246290603e-03;
+      Ahost(1, 1) = 3.3378518006490351e-03;
+      Ahost(1, 3) = 3.3360573263032968e-03;
+      Ahost(2, 0) = -2.3588494081695022e-03;
+      Ahost(2, 1) = -2.3602176428346587e-03;
+      Ahost(2, 2) = 3.3360574050869769e-03;
+      Ahost(2, 3) = -2.3589487578561286e-03;
+      Ahost(2, 4) = 3.3359167956075399e-03;
+      Ahost(2, 5) = 3.3378517656821581e-03;
+      break;
+    }
     default: throw std::runtime_error("Test case out of bounds.");
   }
   Kokkos::View<Scalar**, Layout, Device> A(Ahost.label(), m, n);
@@ -509,7 +532,7 @@ void testSpecialCases() {
   using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
   using Vector    = Kokkos::View<Scalar*, Device>;
   using ExecSpace = typename Device::execution_space;
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 7; i++) {
     Matrix A = getTestCase<Scalar, Layout, Device>(i);
     int m    = A.extent(0);
     int n    = A.extent(1);
@@ -535,7 +558,11 @@ void testSpecialCases() {
     auto sigmaHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sigma);
 
     // Verify the SVD is correct
-    verifySVD(Acopy, Uhost, Vthost, sigmaHost);
+    if (std::is_same_v<Scalar, double> && i == 6) {
+      verifySVD(Acopy, Uhost, Vthost, sigmaHost, 1e-11);
+    } else {
+      verifySVD(Acopy, Uhost, Vthost, sigmaHost);
+    }
   }
 }
 
