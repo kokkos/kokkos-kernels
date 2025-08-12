@@ -46,7 +46,7 @@ static struct option long_options[] = {{"help", no_argument, 0, 'h'},
                                        {"use_simd", required_argument, 0, 'f'},
                                        {0, 0, 0, 0}};
 
-static void __print_help_blas3_perf_test() {
+static void print_help_blas3_perf_test() {
   printf("Options:\n");
 
   printf("\t-h, --help\n");
@@ -208,7 +208,7 @@ static void __print_help_blas3_perf_test() {
       DEFAULT_USE_SIMD);
 }
 
-static void __blas3_perf_test_input_error(char ** /*argv*/, char short_opt, char *getopt_optarg) {
+static void blas3_perf_test_input_error(char ** /*argv*/, char short_opt, char *getopt_optarg) {
   fprintf(stderr, "ERROR: invalid option \"-%c %s\". Try --help.\n", short_opt, getopt_optarg);
   exit(-EINVAL);
 }
@@ -270,7 +270,7 @@ int main(int argc, char **argv) {
   while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:j:f:", long_options, &option_idx)) !=
          -1) {
     switch (ret) {
-      case 'h': __print_help_blas3_perf_test(); return 0;
+      case 'h': print_help_blas3_perf_test(); return 0;
       case 't':
         for (i = 0; i < TEST_N; i++) {
           if (!test_e_str[i].compare(optarg)) {
@@ -279,27 +279,27 @@ int main(int argc, char **argv) {
           }
         }
         if (i == TEST_N) {
-          __blas3_perf_test_input_error(argv, ret, optarg);
+          blas3_perf_test_input_error(argv, ret, optarg);
         }
         break;
       case 'o':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         if (strlen(optarg) != 4) {
-          __blas3_perf_test_input_error(argv, ret, optarg);
+          blas3_perf_test_input_error(argv, ret, optarg);
         }
         options.blas_args.trmm.trmm_args = optarg;
         break;
       case 'g':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         if (strlen(optarg) != 2) {
-          __blas3_perf_test_input_error(argv, ret, optarg);
+          blas3_perf_test_input_error(argv, ret, optarg);
         }
         options.blas_args.gemm.gemm_args = optarg;
         break;
       case 'p':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         double alpha, beta;
-        if (sscanf(optarg, "%lf,%lf", &alpha, &beta) != 2) __blas3_perf_test_input_error(argv, ret, optarg);
+        if (sscanf(optarg, "%lf,%lf", &alpha, &beta) != 2) blas3_perf_test_input_error(argv, ret, optarg);
 
         options.blas_args.gemm.alpha = static_cast<KokkosKernels::default_scalar>(alpha);
         options.blas_args.gemm.beta  = static_cast<KokkosKernels::default_scalar>(beta);
@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
           }
         }
         if (i == LOOP_N) {
-          __blas3_perf_test_input_error(argv, ret, optarg);
+          blas3_perf_test_input_error(argv, ret, optarg);
         }
         break;
       case 'b':
@@ -329,21 +329,21 @@ int main(int argc, char **argv) {
         cdim    = &cdim[1];
 
         n_str = strcasestr(adim, "x");
-        if (n_str == NULL) __blas3_perf_test_input_error(argv, ret, optarg);
+        if (n_str == NULL) blas3_perf_test_input_error(argv, ret, optarg);
 
         n_str[0]          = '\0';
         options.start.a.m = atoi(adim);
         options.start.a.n = atoi(&n_str[1]);
 
         n_str = strcasestr(bdim, "x");
-        if (n_str == NULL) __blas3_perf_test_input_error(argv, ret, optarg);
+        if (n_str == NULL) blas3_perf_test_input_error(argv, ret, optarg);
 
         n_str[0]          = '\0';
         options.start.b.m = atoi(bdim);
         options.start.b.n = atoi(&n_str[1]);
 
         n_str = strcasestr(cdim, "x");
-        if (n_str == NULL) __blas3_perf_test_input_error(argv, ret, optarg);
+        if (n_str == NULL) blas3_perf_test_input_error(argv, ret, optarg);
 
         n_str[0]          = '\0';
         options.start.c.m = atoi(cdim);
@@ -359,21 +359,21 @@ int main(int argc, char **argv) {
         cdim    = &cdim[1];
 
         n_str = strcasestr(adim, "x");
-        if (n_str == NULL) __blas3_perf_test_input_error(argv, ret, optarg);
+        if (n_str == NULL) blas3_perf_test_input_error(argv, ret, optarg);
 
         n_str[0]         = '\0';
         options.stop.a.m = atoi(adim);
         options.stop.a.n = atoi(&n_str[1]);
 
         n_str = strcasestr(bdim, "x");
-        if (n_str == NULL) __blas3_perf_test_input_error(argv, ret, optarg);
+        if (n_str == NULL) blas3_perf_test_input_error(argv, ret, optarg);
 
         n_str[0]         = '\0';
         options.stop.b.m = atoi(bdim);
         options.stop.b.n = atoi(&n_str[1]);
 
         n_str = strcasestr(cdim, "x");
-        if (n_str == NULL) __blas3_perf_test_input_error(argv, ret, optarg);
+        if (n_str == NULL) blas3_perf_test_input_error(argv, ret, optarg);
 
         n_str[0]         = '\0';
         options.stop.c.m = atoi(cdim);
@@ -399,7 +399,7 @@ int main(int argc, char **argv) {
         break;
       case 'r': options.blas_routines = optarg; break;
       case '?':
-      default: __blas3_perf_test_input_error(argv, ret, optarg);
+      default: blas3_perf_test_input_error(argv, ret, optarg);
     }
   }
 
