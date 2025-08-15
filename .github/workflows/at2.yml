@@ -30,6 +30,10 @@ jobs:
     uses: ./.github/workflows/h100_lychee.yml
     with:
       kokkos_version: 4.7.00
+  v100_kumquat:
+    uses: ./.github/workflows/v100_kumquat.yml
+    with:
+      kokkos_version: 4.7.00
   bdw:
     uses: ./.github/workflows/bdw.yml
     with:
