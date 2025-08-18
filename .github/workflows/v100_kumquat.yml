@@ -18,6 +18,11 @@ on:
         default: ''
         required: true
         type: string
+      kokkos_previous_version:
+        description: 'The last release of the previous minor series'
+        default: ''
+        required: true
+        type: string
 
 jobs:
   PR_VOLTA70_CUDA1262_CUDA_LEFT_REL:
