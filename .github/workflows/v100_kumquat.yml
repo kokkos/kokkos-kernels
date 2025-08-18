@@ -209,11 +209,11 @@ jobs:
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
-	    -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_CXX_STANDARD=20 \
             -DKokkos_ROOT=kokkos/install \
             -DKokkosKernels_ENABLE_TESTS=ON \
             -DKokkosKernels_ENABLE_EXAMPLES=ON \
-	    -DKokkosKernels_ENABLE_BENCHMARKS=ON \
+            -DKokkosKernels_ENABLE_BENCHMARKS=ON \
             -DKokkosKernels_ENABLE_DOCS=OFF
 
       - name: build_kokkos_kernels
