@@ -25,13 +25,16 @@ on:
         type: string
 
 jobs:
-  PR_VOLTA70_CUDA1262_CUDA_LEFT_REL:
+  PR_VOLTA70_CUDA1262_CUDA_LEFT_RIGHT_TPLS_REL:
     name: PR_VOLTA70_CUDA1262_CUDA_LEFT_REL
     runs-on: [kumquat-cuda-12.6.2-openblas-0.3.28]
 
     steps:
       - name: nvidia-smi
         run: nvidia-smi
+
+      - name: nvcc
+        run: nvcc --version
 
       - name: cuda-visible-devices
         run: echo $CUDA_VISIBLE_DEVICES
@@ -80,9 +83,18 @@ jobs:
             -DKokkosKernels_ENABLE_TESTS=ON \
             -DKokkosKernels_ENABLE_PERFTESTS=ON \
             -DKokkosKernels_ENABLE_EXAMPLES=ON \
-            -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
-            -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
-            -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
+            -DKokkosKernels_ENABLE_TPL_CUSOLVER=ON \
+            -DKokkosKernels_ENABLE_TPL_CUSPARSE=ON \
+            -DKokkosKernels_ENABLE_TPL_CUBLAS=ON \
+            -DKokkosKernels_ENABLE_TPL_BLAS=ON \
+            -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
+            -DKokkosKernels_INST_DOUBLE=ON \
+            -DKokkosKernels_INST_ORDINAL_INT=ON \
+            -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
+            -DKokkosKernels_INST_OFFSET_INT=ON \
+            -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
+            -DKokkosKernels_INST_LAYOUTRIGHT=ON \
+            -DKokkosKernels_INST_LAYOUTLEFT=ON \
             -DBUILD_SHARED_LIBS=OFF \
             -DKokkosKernels_ENABLE_DOCS=OFF
 
@@ -91,10 +103,9 @@ jobs:
         # kumquat has 96 CPUs
         run: make -j24 all
 
-      # individual ODE tests (e.g. Cuda.RK_Count) were taking more than 3600s
       - name: test
         working-directory: kokkos-kernels/build
-        run: compute-sanitizer --tool=memcheck --target-processes=all ctest --output-on-failure -V --timeout 3600 -E 'ode'
+        run: ctest --output-on-failure -V --timeout 3600
 
   PR_VOLTA70_CUDA1200_CUDA_LEFT_REL:
     name: PR_VOLTA70_CUDA1200_CUDA_LEFT_REL
@@ -103,6 +114,9 @@ jobs:
     steps:
       - name: nvidia-smi
         run: nvidia-smi
+
+      - name: nvcc
+        run: nvcc --version
 
       - name: cuda-visible-devices
         run: echo $CUDA_VISIBLE_DEVICES
@@ -153,6 +167,8 @@ jobs:
             -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
             -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
             -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
+            -DKokkosKernels_ENABLE_TPL_BLAS=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
             -DKokkosKernels_ENABLE_DOCS=OFF
 
       - name: build_kokkos_kernels
