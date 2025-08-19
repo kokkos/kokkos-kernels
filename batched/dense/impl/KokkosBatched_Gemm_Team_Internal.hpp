@@ -62,6 +62,8 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
     KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
 
   if (alpha != ScalarType(0.0)) {
+    if (m <= 0 || n <= 0 || k <= 0) return 0;
+
     if (beta != one) member.team_barrier();
 
     // assume layout right for batched computation
@@ -98,6 +100,8 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
     KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
 
   if (alpha != ScalarType(0.0)) {
+    if (m <= 0 || n <= 0 || k <= 0) return 0;
+
     if (beta != one) member.team_barrier();
 
     ///
