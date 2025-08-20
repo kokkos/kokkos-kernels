@@ -7,6 +7,8 @@ API: Sparse
 
    sparse/bsr_matrix
    sparse/crs_matrix
+   sparse/ccs_matrix
+   sparse/coo_matrix
    sparse/kokkoskernelshandle
    sparse/sort_crs
 
@@ -36,6 +38,8 @@ Sparse containers are data structures that store indices and values associated w
 
 - :doc:`CrsMatrix <sparse/crs_matrix>`
 - :doc:`BsrMatrix <sparse/bsr_matrix>`
+- :doc:`CcsMatrix <sparse/ccs_matrix>`
+- :doc:`CooMatrix <sparse/coo_matrix>`
 - :doc:`KokkosKernelsHandle <sparse/kokkoskernelshandle>`
 
 Sorting
