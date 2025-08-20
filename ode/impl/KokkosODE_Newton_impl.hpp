@@ -32,7 +32,7 @@ namespace Impl {
 
 template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_type, class update_type,
           class scale_type>
-KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
+KOKKOS_ATTRIBUTE_NODISCARD KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     system_type& sys, const KokkosODE::Experimental::Newton_params& params, mat_type& J, mat_type& tmp,
     ini_vec_type& y0, rhs_vec_type& rhs, update_type& update, const scale_type& scale) {
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
