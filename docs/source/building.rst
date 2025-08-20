@@ -163,3 +163,66 @@ To run a specific test in the executable use the ``--gtest_filter`` flag:
 
   > ./KokkosKernels_UnitTest_OpenMP --gtest_filter=openmp.dot_double`
 
+Explicit Template Instantiation (ETI) in KokkosKernels
+======================================================
+
+Explicit Template Instantiation (ETI) in KokkosKernels is a performance and compile-time optimization strategy. It controls where and how much template code gets instantiated—especially important given that KokkosKernels is a heavily templated C++ library where kernels depend on execution space, memory space, and scalar type.
+
+Why ETI matters
+---------------
+
+1. Avoids redundant instantiations across translation units, which otherwise leads to:
+   - Long compile times
+   - Excessive object file sizes
+   - Link-time bloat
+
+2. Improves performance by instantiating only specific kernels for combinations of ``ExecutionSpace``, ``MemorySpace``, ``ScalarType``, etc., that you actually use.
+
+How it works
+------------
+
+ETI splits compilation into:
+
+- **Library mode**: Precompile and explicitly instantiate selected template combinations in the KokkosKernels library itself (using ``.cpp`` files). These go into the final ``.a`` or ``.so`` library.
+- **Non-ETI (Header-only) mode**: Templates are instantiated wherever they are used. This works but explodes compile/link time.
+
+In ETI mode:
+
+- You tell CMake which combinations (e.g., ``Kokkos::CudaSpace + float``, ``Kokkos::OpenMP + double``) you want pre-instantiated.
+- Those combinations are explicitly instantiated in special ``.cpp`` files like::
+
+    template struct KokkosSparse::spmv_struct<Kokkos::CudaSpace, float>;
+
+- CMake compiles only these ``.cpp`` files for your platform.
+- Your app reuses the precompiled kernels, skipping redundant template instantiation.
+
+How to use it in CMake
+----------------------
+
+Relevant flags:
+
+- ``KokkosKernels_ENABLE_EXPLICIT_INSTANTIATION=ON``
+- ``KokkosKernels_INST_DOUBLE=ON``, ``KokkosKernels_INST_FLOAT=OFF``, etc.
+- ``KokkosKernels_INST_CUDA=ON``, ``KokkosKernels_INST_OPENMP=OFF``, etc.
+
+These together tell the build system:
+
+    *"Only explicitly instantiate KokkosKernels templates for combinations of (execution space × scalar type × layout) that I need."*
+
+When to disable ETI?
+--------------------
+
+Set ``KokkosKernels_ENABLE_EXPLICIT_INSTANTIATION=OFF`` if:
+
+- You’re experimenting with types or devices that aren’t in the prebuilt list
+- You want to keep everything header-only for simplicity or portability
+- You’re on an exotic architecture or compiler and want to test things locally
+
+How ETI appears in the code
+---------------------------
+
+You’ll see files like::
+
+    src/impl/generated_specializations_cpp/spmv_double_int_int_execspace_MemSpace.cpp
+
+Each file contains template declarations for the pre-instantiated types.
