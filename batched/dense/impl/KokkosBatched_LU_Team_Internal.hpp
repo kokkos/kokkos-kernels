@@ -130,10 +130,10 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, mq_abr + nq_abr), [&](const int &ij) {
         if (ij < nq_abr) {
           const int j = (ij)*nb, qb = (j + nb) > n_abr ? np_abr : nb;
-          trsm_llu.serial_invoke(Ap, pb, qb, Ap + (j + mb) * as1);
+          trsm_llu.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Ap + (j + mb) * as1);
         } else {
           const int i = (ij - nq_abr) * nb, qb = (i + nb) > m_abr ? mp_abr : nb;
-          trsm_run.serial_invoke(Ap, pb, qb, Ap + (i + mb) * as0);
+          trsm_run.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Ap + (i + mb) * as0);
         }
       });
       member.team_barrier();
