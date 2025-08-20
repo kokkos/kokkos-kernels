@@ -207,17 +207,6 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>:
   _useAnalyticalResults = useAnalyticalResults;
   _useHermitianOption   = useHermitianOption;
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-  _kkGerShouldThrowException = false;
-  if (_A_is_complex && _useHermitianOption) {
-    if ((_testIsGpu == false) && (_A_is_ll == false)) {
-      _kkGerShouldThrowException = true;
-    } else if ((_testIsGpu == true) && (_A_is_ll == false)) {
-      _kkGerShouldThrowException = true;
-    }
-  }
-#endif
-
   bool test_x_y(false);
   bool test_cx_y(false);
   bool test_x_cy(false);
