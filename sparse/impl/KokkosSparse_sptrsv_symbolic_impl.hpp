@@ -148,7 +148,7 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle, const RowMa
   Kokkos::Timer timer;
 #endif
 
-  using namespace KokkosSparse::Experimental;
+  using KokkosSparse::SPTRSVAlgorithm;
   if (thandle.get_algorithm() == SPTRSVAlgorithm::SEQLVLSCHD_RP ||
       thandle.get_algorithm() == SPTRSVAlgorithm::SEQLVLSCHD_TP1 ||
       /*thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
@@ -573,7 +573,7 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle, const Ro
   Kokkos::Timer timer;
 #endif
 
-  using namespace KokkosSparse::Experimental;
+  using KokkosSparse::SPTRSVAlgorithm;
   if (thandle.get_algorithm() == SPTRSVAlgorithm::SEQLVLSCHD_RP ||
       thandle.get_algorithm() == SPTRSVAlgorithm::SEQLVLSCHD_TP1 ||
       /*thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHED_TP2*/

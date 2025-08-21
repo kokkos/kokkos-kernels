@@ -111,7 +111,7 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType, Value
       if (sptrsv_handle->is_symbolic_complete() == false) {
         Experimental::lower_tri_symbolic(space, *sptrsv_handle, row_map, entries);
       }
-      if (sptrsv_handle->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
+      if (sptrsv_handle->get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
         Sptrsv::template tri_solve_chain<true>(space, *sptrsv_handle, row_map, entries, values, b, x);
       } else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
@@ -133,7 +133,7 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType, Value
       if (sptrsv_handle->is_symbolic_complete() == false) {
         Experimental::upper_tri_symbolic(space, *sptrsv_handle, row_map, entries);
       }
-      if (sptrsv_handle->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
+      if (sptrsv_handle->get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) {
         Sptrsv::template tri_solve_chain<false>(space, *sptrsv_handle, row_map, entries, values, b, x);
       } else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
