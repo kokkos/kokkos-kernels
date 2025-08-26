@@ -48,7 +48,7 @@ struct TeamVectorQR_WithColumnPivoting {
 
 }  // namespace KokkosBatched
 
-#include "KokkosBatched_QR_WithColumnPivoting_TeamVector_Serial.hpp"
+#include "KokkosBatched_QR_WithColumnPivoting_Serial_Impl.hpp"
 #include "KokkosBatched_QR_WithColumnPivoting_TeamVector_Impl.hpp"
 
 #endif
