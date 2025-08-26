@@ -24,6 +24,136 @@
 namespace KokkosBatched {
 
 ///
+/// Serial Internal Impl
+/// ========================
+
+///
+/// Forward pivot apply
+///
+
+/// row swap
+template<>
+struct SerialApplyPivot<Side::Left, Direct::Forward> {
+  template <typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const int piv, const AViewType &A) {
+    if (AViewType::rank == 1) {
+      const int as0 = A.stride(0);
+      SerialApplyPivotVectorForwardInternal::invoke(piv, A.data(), as0);
+    } else if (AViewType::rank == 2) {
+      const int n = A.extent(1), as0 = A.stride(0), as1 = A.stride(1);
+      SerialPivotMatrixForwardInternal::invoke(n, piv, A.data(), as0, as1);
+    }
+    return 0;
+  }
+
+  template <typename PivViewType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const PivViewType piv, const AViewType &A) {
+    if (AViewType::rank == 1) {
+      const int plen = piv.extent(0), ps0 = piv.stride(0), as0 = A.stride(0);
+      SerialApplyPivotVectorForwardInternal::invoke(plen, piv.data(), ps0, A.data(), as0);
+    } else if (AViewType::rank == 2) {
+      // row permutation
+      const int plen = piv.extent(0), ps0 = piv.stride(0), n = A.extent(1), as0 = A.stride(0), as1 = A.stride(1);
+      SerialApplyPivotMatrixForwardInternal::invoke(n, plen, piv.data(), ps0, A.data(), as0, as1);
+    }
+    return 0;
+  }
+};
+
+/// column swap
+template <>
+struct SerialApplyPivot<Side::Right, Direct::Forward> {
+  template <typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const int piv, const AViewType &A) {
+    if (AViewType::rank == 1) {
+      const int as0 = A.stride(0);
+      SerialApplyPivotVectorForwardInternal::invoke(piv, A.data(), as0);
+    } else if (AViewType::rank == 2) {
+      const int m = A.extent(0), as0 = A.stride(0), as1 = A.stride(1);
+      SerialApplyPivotMatrixForwardInternal::invoke(m, piv, A.data(), as1, as0);
+    }
+    return 0;
+  }
+
+  template <typename PivViewType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const PivViewType &piv, const AViewType &A) {
+    if (AViewType::rank == 1) {
+      const int plen = piv.extent(0), as0 = A.stride(0);
+      SerialApplyPivotVectorForwardInternal ::invoke(plen, piv.data(), A.data(), as0);
+    } else if (AViewType::rank == 2) {
+      // column permutation
+      const int plen = piv.extent(0), ps = piv.stride(0), m = A.extent(0), as0 = A.stride(0), as1 = A.stride(1);
+      SerialApplyPivotMatrixForwardInternal ::invoke(m, plen, piv.data(), ps, A.data(), as1, as0);
+    }
+    return 0;
+  }
+};
+
+
+///
+/// Backward pivot apply
+///
+
+/// row swap
+template <>
+struct SerialApplyPivot<Side::Left, Direct::Backward> {
+  template <typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const int piv, const AViewType &A) {
+    if (AViewType::rank == 1) {
+      const int as0 = A.stride(0);
+      SerialApplyPivotVectorBackwardInternal::invoke(piv, A.data(), as0);
+    } else if (AViewType::rank == 2) {
+      const int n = A.extent(1), as0 = A.stride(0), as1 = A.stride(1);
+      SerialApplyPivotMatrixBackwardInternal::invoke(n, piv, A.data(), as0, as1);
+    }
+    return 0;
+  }
+
+  template <typename PivViewType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const PivViewType piv, const AViewType &A) {
+    if (AViewType::rank == 1) {
+      const int plen = piv.extent(0), ps0 = piv.stride(0), as0 = A.stride(0);
+      SerialApplyPivotVectorBackwardInternal::invoke(plen, piv.data(), ps0, A.data(), as0);
+    } else if (AViewType::rank == 2) {
+      // row permutation
+      const int plen = piv.extent(0), ps0 = piv.stride(0), n = A.extent(1), as0 = A.stride(0), as1 = A.stride(1);
+      SerialApplyPivotMatrixBackwardInternal::invoke(n, plen, piv.data(), ps0, A.data(), as0, as1);
+    }
+    return 0;
+  }
+};
+
+/// column swap
+template <>
+struct SerialApplyPivot<MemberType, Side::Right, Direct::Backward> {
+  template <typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const int piv, const AViewType &A) {
+    if (AViewType::rank == 1) {
+      const int as0 = A.stride(0);
+      SerialApplyPivotVectorBackwardInternal::invoke(piv, A.data(), as0);
+    } else if (AViewType::rank == 2) {
+      const int m = A.extent(0), as0 = A.stride(0), as1 = A.stride(1);
+      SerialApplyPivotMatrixBackwardInternal::invoke(m, piv, A.data(), as1, as0);
+    }
+    return 0;
+  }
+
+  template <typename PivViewType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const PivViewType &piv, const AViewType &A) {
+    if (AViewType::rank == 1) {
+      const int plen = piv.extent(0), as0 = A.stride(0);
+      SerialApplyPivotVectorBackwardInternal ::invoke(plen, piv.data(), A.data(), as0);
+    } else if (AViewType::rank == 2) {
+      // column permutation
+      const int plen = piv.extent(0), ps = piv.stride(0), m = A.extent(0), as0 = A.stride(0), as1 = A.stride(1);
+      SerialApplyPivotMatrixBackwardInternal ::invoke(m, plen, piv.data(), ps, A.data(), as1, as0);
+    }
+    return 0;
+  }
+};
+
+
+///
 /// TeamVector Internal Impl
 /// ========================
 

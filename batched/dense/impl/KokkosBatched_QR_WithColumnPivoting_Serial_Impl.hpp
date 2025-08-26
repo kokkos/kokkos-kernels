@@ -13,42 +13,31 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOSBATCHED_QR_WITH_COLUMNPIVOTING_DECL_HPP
-#define KOKKOSBATCHED_QR_WITH_COLUMNPIVOTING_DECL_HPP
+#ifndef KOKKOSBATCHED_QR_WITH_COLUMNPIVOTING_SERIAL_IMPL_HPP
+#define KOKKOSBATCHED_QR_WITH_COLUMNPIVOTING_SERIAL_IMPL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_QR_WithColumnPivoting_Serial_Internal.hpp"
 
 namespace KokkosBatched {
 
 ///
-/// Serial QR
-///
+/// Serial Impl
+/// ===============
 
-template <typename ArgAlgo>
-struct SerialQR_WithColumnPivoting {
+struct SerialQR_WithColumnPivoting<Algo::QR::Unblocked> {
   template <typename AViewType, typename tViewType, typename pViewType, typename wViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const tViewType &t, const pViewType &p,
                                            const wViewType &w,
-                                           /* */ int &matrix_rank);
-};
-
-///
-/// TeamVector QR
-///
-
-template <typename MemberType, typename ArgAlgo>
-struct TeamVectorQR_WithColumnPivoting {
-  template <typename AViewType, typename tViewType, typename pViewType, typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const tViewType &t,
-                                           const pViewType &p, const wViewType &w,
-                                           /* */ int &matrix_rank);
+                                           /* */ int &matrix_rank) {
+    return SerialQR_WithColumnPivotingInternal::invoke(A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1),
+                                                       t.data(), t.stride(0), p.data(), p.stride(0), w.data(),
+                                                       matrix_rank);
+  }
 };
 
 }  // namespace KokkosBatched
-
-#include "KokkosBatched_QR_WithColumnPivoting_TeamVector_Serial.hpp"
-#include "KokkosBatched_QR_WithColumnPivoting_TeamVector_Impl.hpp"
 
 #endif
