@@ -45,7 +45,7 @@ jobs:
 #            -DKokkos_ENABLE_EXAMPLES=OFF \
 #            -DCMAKE_VERBOSE_MAKEFILE=ON \
 #            -DCMAKE_CXX_EXTENSIONS=OFF \
-#            -DCMAKE_CXX_STANDARD=17 \
+#            -DCMAKE_CXX_STANDARD=20 \
 #            -DBUILD_SHARED_LIBS=OFF \
 #            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
 #            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
@@ -127,7 +127,7 @@ jobs:
 #            -DKokkos_ENABLE_EXAMPLES=OFF \
 #            -DCMAKE_VERBOSE_MAKEFILE=ON \
 #            -DCMAKE_CXX_EXTENSIONS=OFF \
-#            -DCMAKE_CXX_STANDARD=17 \
+#            -DCMAKE_CXX_STANDARD=20 \
 #            -DBUILD_SHARED_LIBS=OFF \
 #            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
 #            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
@@ -209,7 +209,7 @@ jobs:
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_VERBOSE_MAKEFILE=ON \
             -DCMAKE_CXX_EXTENSIONS=OFF \
-            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_STANDARD=20 \
             -DBUILD_SHARED_LIBS=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
             -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
