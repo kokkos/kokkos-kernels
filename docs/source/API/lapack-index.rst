@@ -19,7 +19,7 @@ Below are tables summarizing the currently supported function calls and third pa
    :widths: 12 26 10 10 10 10 10
    :header-rows: 1
 
-   * - BLAS Call
+   * - LAPACK Call
      - API Call
      - Reference
      - BLAS
