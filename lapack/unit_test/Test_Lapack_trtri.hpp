@@ -117,8 +117,8 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag, const 
   // START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name(), As0, As1, Ae0,
   // Ae1); fflush(stdout);
 
-  typename ViewTypeA::HostMirror host_A = Kokkos::create_mirror_view(A);
-  typename ViewTypeA::HostMirror host_I = Kokkos::create_mirror_view(A);
+  typename ViewTypeA::host_mirror_type host_A = Kokkos::create_mirror_view(A);
+  typename ViewTypeA::host_mirror_type host_I = Kokkos::create_mirror_view(A);
 
   if (M != N || bad_diag_idx > 0) {
     if (bad_diag_idx > 0) {

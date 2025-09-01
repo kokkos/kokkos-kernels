@@ -329,7 +329,12 @@ class BsrMatrix {
   typedef SizeType size_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
-  typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, size_type> HostMirror;
+  typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, size_type> host_mirror_type;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+  [[deprecated(
+      "KokkosSparse::BsrMatrix::HostMirror is deprecated please use KokkosSparse::BsrMatrix::host_mirror_type "
+      "instead.")]] typedef host_mirror_type HostMirror;
+#endif
   //! Type of the graph structure of the sparse matrix.
   typedef StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
@@ -393,15 +398,20 @@ class BsrMatrix {
   //! Copy constructor (shallow copy).
   template <typename SType, typename OType, class DType, class MTType, typename IType>
   explicit BsrMatrix(const BsrMatrix<SType, OType, DType, MTType, IType>& B)
-      : graph(B.graph.entries, B.graph.row_map),
+      :
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+        graph(B.graph.entries, B.graph.row_map),
+#else
+        graph(B.graph),
+#endif
+
         values(B.values),
         dev_config(B.dev_config),
         numCols_(B.numCols()),
         blockDim_(B.blockDim()) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
     graph.row_block_offsets = B.graph.row_block_offsets;
-    // MD: Changed the copy constructor of graph
-    // as the constructor of StaticCrsGraph does not allow copy from non const
-    // version.
+#endif
   }
 
   /// \brief Construct with a graph that will be shared.
@@ -677,9 +687,9 @@ class BsrMatrix {
     // row_map with cum sum!!
     std::vector<OrdinalType> block_rows(nbrows, 0);
 
-    typename crs_graph_row_map_type::HostMirror h_crs_row_map = Kokkos::create_mirror_view(crs_mtx.graph.row_map);
+    typename crs_graph_row_map_type::host_mirror_type h_crs_row_map = Kokkos::create_mirror_view(crs_mtx.graph.row_map);
     Kokkos::deep_copy(h_crs_row_map, crs_mtx.graph.row_map);
-    typename crs_graph_entries_type::HostMirror h_crs_entries = Kokkos::create_mirror_view(crs_mtx.graph.entries);
+    typename crs_graph_entries_type::host_mirror_type h_crs_entries = Kokkos::create_mirror_view(crs_mtx.graph.entries);
     Kokkos::deep_copy(h_crs_entries, crs_mtx.graph.entries);
 
     // determine size of block cols indices == number of blocks,
@@ -697,11 +707,11 @@ class BsrMatrix {
     // create_staticcrsgraph takes the frequency of blocks per row
     // and returns the cum sum pointer row_map with nbrows+1 size, and total
     // numBlocks in the final entry
-    graph                                       = create_staticcrsgraph<staticcrsgraph_type>("blockgraph", block_rows);
-    typename row_map_type::HostMirror h_row_map = Kokkos::create_mirror_view(graph.row_map);
+    graph = create_staticcrsgraph<staticcrsgraph_type>("blockgraph", block_rows);
+    typename row_map_type::host_mirror_type h_row_map = Kokkos::create_mirror_view(graph.row_map);
     Kokkos::deep_copy(h_row_map, graph.row_map);
 
-    typename index_type::HostMirror h_entries = Kokkos::create_mirror_view(graph.entries);
+    typename index_type::host_mirror_type h_entries = Kokkos::create_mirror_view(graph.entries);
 
     OrdinalType ientry = 0;
     for (OrdinalType ib = 0; ib < nbrows; ++ib) {
@@ -719,10 +729,10 @@ class BsrMatrix {
 
     // Copy the numerical values
 
-    typename values_type::HostMirror h_crs_values = Kokkos::create_mirror_view(crs_mtx.values);
+    typename values_type::host_mirror_type h_crs_values = Kokkos::create_mirror_view(crs_mtx.values);
     Kokkos::deep_copy(h_crs_values, crs_mtx.values);
 
-    typename values_type::HostMirror h_values = Kokkos::create_mirror_view(values);
+    typename values_type::host_mirror_type h_values = Kokkos::create_mirror_view(values);
     if (h_values.extent(0) < static_cast<size_t>(numBlocks) * blockDim_ * blockDim_) {
       Kokkos::resize(h_values, static_cast<size_t>(numBlocks) * blockDim_ * blockDim_);
       Kokkos::resize(values, static_cast<size_t>(numBlocks) * blockDim_ * blockDim_);

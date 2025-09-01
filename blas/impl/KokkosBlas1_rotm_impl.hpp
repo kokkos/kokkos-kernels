@@ -71,7 +71,7 @@ void Rotm_Invoke(execution_space const& space, VectorView const& X, VectorView c
 
   rotm_functor myFunc(X, Y, param);
 
-  typename ParamView::HostMirror param_h = Kokkos::create_mirror_view(param);
+  typename ParamView::host_mirror_type param_h = Kokkos::create_mirror_view(param);
   Kokkos::deep_copy(param_h, param);
   Scalar const flag = param_h(0);
 

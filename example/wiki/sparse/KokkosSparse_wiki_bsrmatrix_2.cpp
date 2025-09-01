@@ -142,8 +142,8 @@ int main(int argc, char* argv[]) {
                                                     numRows + 1);
       typename entries_type::non_const_type entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "column indices"),
                                                     numNNZ);
-      typename row_map_type::HostMirror row_map_h = Kokkos::create_mirror_view(row_map);
-      typename entries_type::HostMirror entries_h = Kokkos::create_mirror_view(entries);
+      typename row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(row_map);
+      typename entries_type::host_mirror_type entries_h = Kokkos::create_mirror_view(entries);
 
       // First Step: build the CrsGraph
       {

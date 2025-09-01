@@ -310,7 +310,7 @@ int main(int argc, char** argv) {
   {
     using matrix_type = KokkosSparse::CrsMatrix<Scalar, int, Kokkos::DefaultExecutionSpace, void, int>;
     using mv_type     = typename Kokkos::View<Scalar*, Kokkos::LayoutLeft>;
-    using h_mv_type   = typename mv_type::HostMirror;
+    using h_mv_type   = typename mv_type::host_mirror_type;
 
     int leftBC = 1, rightBC = 1, frontBC = 1, backBC = 1, bottomBC = 1, topBC = 1;
 
@@ -394,9 +394,9 @@ int main(int argc, char** argv) {
     }
 
     if (check_errors) {
-      h_y_compare                                                  = Kokkos::create_mirror(y);
-      typename matrix_type::StaticCrsGraphType::HostMirror h_graph = KokkosSparse::create_mirror(A.graph);
-      typename matrix_type::values_type::HostMirror h_values       = Kokkos::create_mirror_view(A.values);
+      h_y_compare                                                        = Kokkos::create_mirror(y);
+      typename matrix_type::StaticCrsGraphType::host_mirror_type h_graph = KokkosSparse::create_mirror(A.graph);
+      typename matrix_type::values_type::host_mirror_type h_values       = Kokkos::create_mirror_view(A.values);
 
       // Error Check Gold Values
       for (int rowIdx = 0; rowIdx < A.numRows(); ++rowIdx) {

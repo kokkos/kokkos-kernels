@@ -150,8 +150,8 @@ void impl_test_blas_serial_nrm2(const int N, const int BlkSize) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename norm_view_type::HostMirror norms_host     = Kokkos::create_mirror_view(norms);
-  typename norm_view_type::HostMirror norms_ref_host = Kokkos::create_mirror_view(norms_ref);
+  typename norm_view_type::host_mirror_type norms_host     = Kokkos::create_mirror_view(norms);
+  typename norm_view_type::host_mirror_type norms_ref_host = Kokkos::create_mirror_view(norms_ref);
 
   Kokkos::deep_copy(norms_host, norms);
   Kokkos::deep_copy(norms_ref_host, norms_ref);
@@ -187,8 +187,8 @@ void impl_test_blas_serial_nrm2mv(const int N, const int vecLength, const int nu
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename norm_view_type::HostMirror norms_host     = Kokkos::create_mirror_view(norms);
-  typename norm_view_type::HostMirror norms_ref_host = Kokkos::create_mirror_view(norms_ref);
+  typename norm_view_type::host_mirror_type norms_host     = Kokkos::create_mirror_view(norms);
+  typename norm_view_type::host_mirror_type norms_ref_host = Kokkos::create_mirror_view(norms_ref);
 
   Kokkos::deep_copy(norms_host, norms);
   Kokkos::deep_copy(norms_ref_host, norms_ref);

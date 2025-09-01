@@ -61,7 +61,7 @@ struct GmresWrap {
     using ST = typename karith::val_type;  // So this code will run with
                                            // scalar_t = std::complex<T>.
     using MT                  = typename karith::mag_type;
-    using HandleHostValueType = typename HandleDeviceValueType::HostMirror;
+    using HandleHostValueType = typename HandleDeviceValueType::host_mirror_type;
 
     ST one  = karith::one();
     ST zero = karith::zero();

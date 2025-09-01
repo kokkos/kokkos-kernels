@@ -29,27 +29,27 @@ if(ROCBLAS_FOUND)
   )
 
 elseif(ROCBLAS_LIBRARIES AND ROCBLAS_LIBRARY_DIRS AND ROCBLAS_INCLUDE_DIRS)
-  message(WARNING "ROCBLAS_LIBRARIES AND ROCBLAS_LIBRARY_DIRS AND ROCBLAS_INCLUDE_DIRS are deprecated please use ROCBLAS_DIR or ROCBLAS_ROOT so find_packge logic can be used instead.")
+  message(WARNING "ROCBLAS_LIBRARIES AND ROCBLAS_LIBRARY_DIRS AND ROCBLAS_INCLUDE_DIRS are deprecated please use ROCBLAS_DIR or ROCBLAS_ROOT so find_package logic can be used instead.")
   kokkoskernels_find_imported(ROCBLAS INTERFACE
     LIBRARIES ${ROCBLAS_LIBRARIES}
     LIBRARY_PATHS ${ROCBLAS_LIBRARY_DIRS}
     HEADER_PATHS ${ROCBLAS_INCLUDE_DIRS}
   )
 elseif(ROCBLAS_LIBRARIES AND ROCBLAS_LIBRARY_DIRS)
-  message(WARNING "ROCBLAS_LIBRARIES AND ROCBLAS_LIBRARY_DIRS are deprecated please use ROCBLAS_DIR or ROCBLAS_ROOT so find_packge logic can be used instead.")
+  message(WARNING "ROCBLAS_LIBRARIES AND ROCBLAS_LIBRARY_DIRS are deprecated please use ROCBLAS_DIR or ROCBLAS_ROOT so find_package logic can be used instead.")
   kokkoskernels_find_imported(ROCBLAS INTERFACE
     LIBRARIES ${ROCBLAS_LIBRARIES}
     LIBRARY_PATHS ${ROCBLAS_LIBRARY_DIRS}
     HEADER rocblas.h
   )
 elseif(ROCBLAS_LIBRARIES)
-  message(WARNING "ROCBLAS_LIBRARIES are deprecated please use ROCBLAS_DIR or ROCBLAS_ROOT so find_packge logic can be used instead.")
+  message(WARNING "ROCBLAS_LIBRARIES are deprecated please use ROCBLAS_DIR or ROCBLAS_ROOT so find_package logic can be used instead.")
   kokkoskernels_find_imported(ROCBLAS INTERFACE
     LIBRARIES ${ROCBLAS_LIBRARIES}
     HEADER rocblas.h
   )
 elseif(ROCBLAS_LIBRARY_DIRS)
-  message(WARNING "ROCBLAS_LIBRARY_DIRS are deprecated please use ROCBLAS_DIR or ROCBLAS_ROOT so find_packge logic can be used instead.")
+  message(WARNING "ROCBLAS_LIBRARY_DIRS are deprecated please use ROCBLAS_DIR or ROCBLAS_ROOT so find_package logic can be used instead.")
   kokkoskernels_find_imported(ROCBLAS INTERFACE
     LIBRARIES rocblas
     LIBRARY_PATHS ${ROCBLAS_LIBRARY_DIRS}

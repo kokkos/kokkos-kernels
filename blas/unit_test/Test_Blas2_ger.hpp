@@ -68,9 +68,9 @@ class GerTester {
   using _ViewTypeY = Kokkos::View<ScalarY*, tLayoutY, Device>;
   using _ViewTypeA = Kokkos::View<ScalarA**, tLayoutA, Device>;
 
-  using _HostViewTypeX    = typename _ViewTypeX::HostMirror;
-  using _HostViewTypeY    = typename _ViewTypeY::HostMirror;
-  using _HostViewTypeA    = typename _ViewTypeA::HostMirror;
+  using _HostViewTypeX    = typename _ViewTypeX::host_mirror_type;
+  using _HostViewTypeY    = typename _ViewTypeY::host_mirror_type;
+  using _HostViewTypeA    = typename _ViewTypeA::host_mirror_type;
   using _ViewTypeExpected = Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
 
   using _KAT_A   = Kokkos::ArithTraits<ScalarA>;
@@ -206,17 +206,6 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>:
   _N                    = N;
   _useAnalyticalResults = useAnalyticalResults;
   _useHermitianOption   = useHermitianOption;
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-  _kkGerShouldThrowException = false;
-  if (_A_is_complex && _useHermitianOption) {
-    if ((_testIsGpu == false) && (_A_is_ll == false)) {
-      _kkGerShouldThrowException = true;
-    } else if ((_testIsGpu == true) && (_A_is_ll == false)) {
-      _kkGerShouldThrowException = true;
-    }
-  }
-#endif
 
   bool test_x_y(false);
   bool test_cx_y(false);

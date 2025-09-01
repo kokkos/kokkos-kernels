@@ -261,11 +261,13 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
     write_type = 1;
   }
 
-  typename row_lno_temp_work_view_t::HostMirror h_c_flop_rowmap      = Kokkos::create_mirror_view(c_flop_rowmap);
-  typename row_lno_temp_work_view_t::HostMirror h_c_comp_a_net_index = Kokkos::create_mirror_view(c_comp_a_net_index);
-  typename row_lno_temp_work_view_t::HostMirror h_c_comp_b_net_index = Kokkos::create_mirror_view(c_comp_b_net_index);
-  typename nnz_lno_temp_work_view_t::HostMirror h_c_comp_row_index   = Kokkos::create_mirror_view(c_comp_row_index);
-  typename nnz_lno_temp_work_view_t::HostMirror h_c_comp_col_index   = Kokkos::create_mirror_view(c_comp_col_index);
+  typename row_lno_temp_work_view_t::host_mirror_type h_c_flop_rowmap = Kokkos::create_mirror_view(c_flop_rowmap);
+  typename row_lno_temp_work_view_t::host_mirror_type h_c_comp_a_net_index =
+      Kokkos::create_mirror_view(c_comp_a_net_index);
+  typename row_lno_temp_work_view_t::host_mirror_type h_c_comp_b_net_index =
+      Kokkos::create_mirror_view(c_comp_b_net_index);
+  typename nnz_lno_temp_work_view_t::host_mirror_type h_c_comp_row_index = Kokkos::create_mirror_view(c_comp_row_index);
+  typename nnz_lno_temp_work_view_t::host_mirror_type h_c_comp_col_index = Kokkos::create_mirror_view(c_comp_col_index);
 
   Kokkos::deep_copy(h_c_flop_rowmap, c_flop_rowmap);
   Kokkos::deep_copy(h_c_comp_a_net_index, c_comp_a_net_index);
@@ -330,7 +332,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_colors
             << " num_used_colors:" << num_used_colors_steps << std::endl;
 
-  typename c_row_view_t::HostMirror h_c_rowmap = Kokkos::create_mirror_view(rowmapC);
+  typename c_row_view_t::host_mirror_type h_c_rowmap = Kokkos::create_mirror_view(rowmapC);
   Kokkos::deep_copy(h_c_rowmap, rowmapC);
 
   /*
@@ -373,15 +375,15 @@ void KokkosSPGEMM<
                                            const int cache_size,
 
                                            nnz_lno_persistent_work_host_view_t color_xadj,
-                                           typename nnz_lno_persistent_work_view_t::HostMirror color_adj,
-                                           typename nnz_lno_persistent_work_view_t::HostMirror vertex_colors,
+                                           typename nnz_lno_persistent_work_view_t::host_mirror_type color_adj,
+                                           typename nnz_lno_persistent_work_view_t::host_mirror_type vertex_colors,
 
                                            size_t overall_flops,
-                                           typename row_lno_temp_work_view_t::HostMirror c_flop_rowmap,
-                                           typename row_lno_temp_work_view_t::HostMirror c_comp_a_net_index,
-                                           typename row_lno_temp_work_view_t::HostMirror c_comp_b_net_index,
-                                           typename nnz_lno_temp_work_view_t::HostMirror c_comp_row_index,
-                                           typename nnz_lno_temp_work_view_t::HostMirror c_comp_col_index,
+                                           typename row_lno_temp_work_view_t::host_mirror_type c_flop_rowmap,
+                                           typename row_lno_temp_work_view_t::host_mirror_type c_comp_a_net_index,
+                                           typename row_lno_temp_work_view_t::host_mirror_type c_comp_b_net_index,
+                                           typename nnz_lno_temp_work_view_t::host_mirror_type c_comp_row_index,
+                                           typename nnz_lno_temp_work_view_t::host_mirror_type c_comp_col_index,
                                            c_row_view_t rowmapC,
                                            int write_type  // 0 -- KKMEM, 1-KKSPEED, 2- KKCOLOR 3-KKMULTICOLOR
                                                            // 4-KKMULTICOLOR2
@@ -395,8 +397,8 @@ void KokkosSPGEMM<
   size_t a_line_size = entriesA.extent(0) / cache_line_size + 1;
   size_t b_line_size = entriesB.extent(0) / cache_line_size + 1;
 
-  typename nnz_lno_temp_work_view_t::HostMirror tester("t", overall_flops);
-  typename c_row_view_t::HostMirror h_rowmapC = Kokkos::create_mirror_view(rowmapC);
+  typename nnz_lno_temp_work_view_t::host_mirror_type tester("t", overall_flops);
+  typename c_row_view_t::host_mirror_type h_rowmapC = Kokkos::create_mirror_view(rowmapC);
   Kokkos::deep_copy(h_rowmapC, rowmapC);
 
   size_t overall_a_l1_missread = 0;
@@ -439,7 +441,6 @@ void KokkosSPGEMM<
     nnz_lno_t color_upperbound = KOKKOSKERNELS_MACRO_MIN(num_parallel_colors, i + num_multi_colors);
     std::cout << "i:" << i << " color_upperbound:" << color_upperbound << " num_parallel_colors:" << num_parallel_colors
               << " num_multi_colors:" << num_multi_colors << std::endl;
-    ;
 
     nnz_lno_t color_begin = color_xadj(i);
     nnz_lno_t color_end   = color_xadj(color_upperbound);

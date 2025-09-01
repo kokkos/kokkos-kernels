@@ -118,8 +118,8 @@ void impl_test_blas_matutil(const int N, const int BlkSize) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror a_host = Kokkos::create_mirror_view(a);
-  typename ViewType::HostMirror b_host = Kokkos::create_mirror_view(b);
+  typename ViewType::host_mirror_type a_host = Kokkos::create_mirror_view(a);
+  typename ViewType::host_mirror_type b_host = Kokkos::create_mirror_view(b);
 
   Kokkos::deep_copy(a_host, a);
   Kokkos::deep_copy(b_host, b);

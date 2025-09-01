@@ -1087,7 +1087,7 @@ class ArithTraits<std::complex<RealFloatType>> {
 #ifdef KOKKOS_ENABLE_SYCL
   template <typename Dummy = RealFloatType>
   static bool isInf(const std::complex<Dummy>& x) {
-    if constexpr (std::is_same_v<Dummy, std::complex<long double>>) {
+    if constexpr (std::is_same_v<Dummy, long double>) {
       Kokkos::abort("isInf not available for std::complex<long double>!\n");
       return true;
     } else {
@@ -1106,7 +1106,7 @@ class ArithTraits<std::complex<RealFloatType>> {
 #ifdef KOKKOS_ENABLE_SYCL
   template <typename Dummy = RealFloatType>
   static bool isNan(const std::complex<Dummy>& x) {
-    if constexpr (std::is_same_v<Dummy, std::complex<long double>>) {
+    if constexpr (std::is_same_v<Dummy, long double>) {
       Kokkos::abort("isNan not available for std::complex<long double>!\n");
       return true;
     } else {

@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  kokkos_version: 4.6.01
+  kokkos_version: 4.7.00
 
 jobs:
   check-pr-labels:
@@ -53,12 +53,12 @@ jobs:
 
     steps:
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: kokkos/kokkos
           ref: ${{ env.kokkos_version }}

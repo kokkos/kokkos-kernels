@@ -130,6 +130,7 @@ void sptrsvcuSPARSE_symbolic(ExecutionSpace &space, KernelHandle *sptrsv_handle,
                                                                  h->vecBDescr_dummy, h->vecXDescr_dummy, cudaValueType,
                                                                  CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr, h->pBuffer));
     } else {
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
 #if (CUDA_VERSION >= 12010)
       // Otherwise cusparse would error out: "On entry to cusparseSpSV_updateMatrix() parameter number 3 (newValues) had
       // an illegal value: NULL pointer"
@@ -458,13 +459,18 @@ void sptrsvcuSPARSE_solve_streams(const std::vector<ExecutionSpace> &execspace_v
 
       int64_t nrows = static_cast<int64_t>(sptrsv_handle->get_nrows());
 
-      // Create dense vector B (RHS)
-      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
-          cusparseCreateDnVec(&(h_v[i]->vecBDescr), nrows, (void *)rhs_v[i].data(), cudaValueType));
+      if (!h_v[i]->vecBDescr) {  // first time
+        // Create dense vector B (RHS)
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+            cusparseCreateDnVec(&(h_v[i]->vecBDescr), nrows, (void *)rhs_v[i].data(), cudaValueType));
 
-      // Create dense vector X (LHS)
-      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
-          cusparseCreateDnVec(&(h_v[i]->vecXDescr), nrows, (void *)lhs_v[i].data(), cudaValueType));
+        // Create dense vector X (LHS)
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+            cusparseCreateDnVec(&(h_v[i]->vecXDescr), nrows, (void *)lhs_v[i].data(), cudaValueType));
+      } else {
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDnVecSetValues(h_v[i]->vecBDescr, (void *)rhs_v[i].data()));
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDnVecSetValues(h_v[i]->vecXDescr, (void *)lhs_v[i].data()));
+      }
     }
 
     // Solve
@@ -472,12 +478,6 @@ void sptrsvcuSPARSE_solve_streams(const std::vector<ExecutionSpace> &execspace_v
       KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
           cusparseSpSV_solve(h_v[i]->handle, h_v[i]->transpose, &alpha, h_v[i]->matDescr, h_v[i]->vecBDescr,
                              h_v[i]->vecXDescr, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h_v[i]->spsvDescr));
-    }
-
-    // Destroy dense vector descriptors
-    for (int i = 0; i < nstreams; i++) {
-      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h_v[i]->vecBDescr));
-      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h_v[i]->vecXDescr));
     }
   }
 #else  // CUDA_VERSION < 11030

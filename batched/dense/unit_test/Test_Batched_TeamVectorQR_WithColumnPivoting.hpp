@@ -139,7 +139,7 @@ void impl_test_batched_qr_with_columnpivoting(const int N, const int BlkSize) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename VectorViewType::HostMirror x_host = Kokkos::create_mirror_view(x);
+  typename VectorViewType::host_mirror_type x_host = Kokkos::create_mirror_view(x);
   Kokkos::deep_copy(x_host, x);
 
   /// check x = 1; this eps is about 1e-14

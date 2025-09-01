@@ -32,7 +32,7 @@ namespace KokkosBatched {
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename AViewType>
 KOKKOS_INLINE_FUNCTION int SerialLU<Algo::LU::CompactMKL>::invoke(

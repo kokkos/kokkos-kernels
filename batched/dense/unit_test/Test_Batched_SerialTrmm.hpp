@@ -151,10 +151,10 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols, const
   const bool is_A_lower    = std::is_same<typename ParamTagType::uplo, Uplo::Lower>::value;
   const int K              = is_side_right ? nCols : nRows;
   ViewType A("A", N, K, K), B_actual("B_actual", N, nRows, nCols), B_expected("B_expected", N, nRows, nCols);
-  typename ViewType::HostMirror A_host          = Kokkos::create_mirror_view(A);
-  typename ViewType::HostMirror B_actual_host   = Kokkos::create_mirror_view(B_actual);
-  typename ViewType::HostMirror B_expected_host = Kokkos::create_mirror_view(B_expected);
-  uint64_t seed                                 = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  typename ViewType::host_mirror_type A_host          = Kokkos::create_mirror_view(A);
+  typename ViewType::host_mirror_type B_actual_host   = Kokkos::create_mirror_view(B_actual);
+  typename ViewType::host_mirror_type B_expected_host = Kokkos::create_mirror_view(B_expected);
+  uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
   using ViewTypeSubA = decltype(Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL()));
   using ViewTypeSubB = decltype(Kokkos::subview(B_actual, 0, Kokkos::ALL(), Kokkos::ALL()));
@@ -214,9 +214,7 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols, const
     for (int i = 0; i < N; i++) {
       vgemm.A = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
       vgemm.B = Kokkos::subview(B_actual, i, Kokkos::ALL(), Kokkos::ALL());
-      ;
       vgemm.C = Kokkos::subview(B_expected, i, Kokkos::ALL(), Kokkos::ALL());
-      ;
       Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM",
                            Kokkos::TeamPolicy<execution_space>(nRows, Kokkos::AUTO, 16), vgemm);
     }
@@ -234,9 +232,7 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols, const
     for (int i = 0; i < N; i++) {
       vgemm.A = Kokkos::subview(B_actual, i, Kokkos::ALL(), Kokkos::ALL());
       vgemm.B = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-      ;
       vgemm.C = Kokkos::subview(B_expected, i, Kokkos::ALL(), Kokkos::ALL());
-      ;
       Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM",
                            Kokkos::TeamPolicy<execution_space>(nRows, Kokkos::AUTO, 16), vgemm);
     }

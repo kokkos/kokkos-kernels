@@ -29,16 +29,16 @@ int test_rot() {
   scalar_type s("s");
 
   // Initialize inputs
-  typename vector_type::HostMirror X_h = Kokkos::create_mirror_view(X);
-  typename vector_type::HostMirror Y_h = Kokkos::create_mirror_view(Y);
-  X_h(0)                               = 0.6;
-  X_h(1)                               = 0.1;
-  X_h(2)                               = -0.5;
-  X_h(3)                               = 0.8;
-  Y_h(0)                               = 0.5;
-  Y_h(1)                               = -0.9;
-  Y_h(2)                               = 0.3;
-  Y_h(3)                               = 0.7;
+  typename vector_type::host_mirror_type X_h = Kokkos::create_mirror_view(X);
+  typename vector_type::host_mirror_type Y_h = Kokkos::create_mirror_view(Y);
+  X_h(0)                                     = 0.6;
+  X_h(1)                                     = 0.1;
+  X_h(2)                                     = -0.5;
+  X_h(3)                                     = 0.8;
+  Y_h(0)                                     = 0.5;
+  Y_h(1)                                     = -0.9;
+  Y_h(2)                                     = 0.3;
+  Y_h(3)                                     = 0.7;
   Kokkos::deep_copy(X, X_h);
   Kokkos::deep_copy(Y, Y_h);
 

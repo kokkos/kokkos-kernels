@@ -137,7 +137,6 @@ void symbolic_chain_phase(TriSolveHandle& thandle, const NPLViewType& nodes_per_
 
 #ifdef TRISOLVE_SYMB_TIMERS
   std::cout << "  Symbolic Chain Phase Total Time: " << timer_sym_chain_total.seconds() << std::endl;
-  ;
 #endif
 }  // end symbolic_chain_phase
 
@@ -161,7 +160,7 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle, const RowMa
     typedef typename TriSolveHandle::nnz_lno_view_t DeviceEntriesType;
 
     typedef typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
-    typedef typename TriSolveHandle::signed_nnz_lno_view_t::HostMirror HostSignedEntriesType;
+    typedef typename TriSolveHandle::signed_nnz_lno_view_t::host_mirror_type HostSignedEntriesType;
 
     typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
 
@@ -189,8 +188,8 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle, const RowMa
     signed_integral_t level = 0;
     size_type node_count    = 0;
 
-    space.fence();                                                      // wait for deep copy write to land
-    typename DeviceEntriesType::HostMirror level_ptr("lp", nrows + 1);  // temp View used for index bookkeeping
+    space.fence();                                                            // wait for deep copy write to land
+    typename DeviceEntriesType::host_mirror_type level_ptr("lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
     for (size_type i = 0; i < nrows; ++i) {
       signed_integral_t l = 0;
@@ -279,7 +278,7 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle, const RowMa
     using size_type           = typename TriSolveHandle::size_type;
     using signed_integral_t   = typename TriSolveHandle::signed_integral_t;
     using integer_view_t      = typename TriSolveHandle::integer_view_t;
-    using integer_view_host_t = typename integer_view_t::HostMirror;
+    using integer_view_host_t = typename integer_view_t::host_mirror_type;
 
     // rowptr: pointer to begining of each row (CRS)
     auto row_map = Kokkos::create_mirror_view(drow_map);
@@ -563,7 +562,6 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle, const RowMa
 
 #ifdef TRISOLVE_SYMB_TIMERS
   std::cout << "  Symbolic (lower tri) Total Time: " << timer_sym_lowertri_total.seconds() << std::endl;
-  ;
 #endif
 }  // end lower_tri_symbolic
 
@@ -585,7 +583,7 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle, const Ro
     typedef typename TriSolveHandle::size_type size_type;
     typedef typename TriSolveHandle::nnz_lno_view_t DeviceEntriesType;
     typedef typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
-    typedef typename TriSolveHandle::signed_nnz_lno_view_t::HostMirror HostSignedEntriesType;
+    typedef typename TriSolveHandle::signed_nnz_lno_view_t::host_mirror_type HostSignedEntriesType;
     typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
 
     //  size_type nrows = thandle.get_nrows();
@@ -613,8 +611,8 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle, const Ro
     signed_integral_t level = 0;
     size_type node_count    = 0;
 
-    space.fence();                                                      // Wait for deep copy writes to land
-    typename DeviceEntriesType::HostMirror level_ptr("lp", nrows + 1);  // temp View used for index bookkeeping
+    space.fence();                                                            // Wait for deep copy writes to land
+    typename DeviceEntriesType::host_mirror_type level_ptr("lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
     for (size_type ii = nrows; ii > 0; ii--) {
       size_type i = ii - 1;  // Avoid >= 0 comparison in for-loop to prevent
@@ -706,7 +704,7 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle, const Ro
 
     using signed_integral_t   = typename TriSolveHandle::signed_integral_t;
     using integer_view_t      = typename TriSolveHandle::integer_view_t;
-    using integer_view_host_t = typename integer_view_t::HostMirror;
+    using integer_view_host_t = typename integer_view_t::host_mirror_type;
 
     // rowptr: pointer to begining of each row (CRS)
     auto row_map = Kokkos::create_mirror_view(drow_map);
@@ -1008,7 +1006,6 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle, const Ro
 
 #ifdef TRISOLVE_SYMB_TIMERS
   std::cout << "  Symbolic (upper tri) Total Time: " << timer_sym_uppertri_total.seconds() << std::endl;
-  ;
 #endif
 }  // end upper_tri_symbolic
 

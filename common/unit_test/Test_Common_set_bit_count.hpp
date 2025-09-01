@@ -149,7 +149,7 @@ void test_set_bit_count() {
 
   nonconstview count_bit_view("count_bit_view", array_size);
 
-  typename nonconstview::HostMirror hview = Kokkos::create_mirror_view(count_bit_view);
+  typename nonconstview::host_mirror_type hview = Kokkos::create_mirror_view(count_bit_view);
 
   for (int i = 0; i < array_size; ++i) {
     hview(i) = lno_t(rand()) * lno_t(rand());
@@ -177,7 +177,7 @@ void test_ffs() {
 
   nonconstview count_bit_view("count_bit_view", array_size);
 
-  typename nonconstview::HostMirror hview = Kokkos::create_mirror_view(count_bit_view);
+  typename nonconstview::host_mirror_type hview = Kokkos::create_mirror_view(count_bit_view);
 
   for (int i = 0; i < array_size; ++i) {
     hview(i) = lno_t(rand()) * lno_t(rand());

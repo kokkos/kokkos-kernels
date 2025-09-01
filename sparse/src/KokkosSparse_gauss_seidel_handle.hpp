@@ -64,15 +64,18 @@ class GaussSeidelHandle {
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
-  typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename row_lno_persistent_work_view_t::host_mirror_type row_lno_persistent_work_host_view_t;  // Host view type
 
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
-  typedef typename scalar_persistent_work_view_t::HostMirror scalar_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename scalar_persistent_work_view_t::host_mirror_type scalar_persistent_work_host_view_t;  // Host view type
 
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
-  typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename nnz_lno_persistent_work_view_t::host_mirror_type nnz_lno_persistent_work_host_view_t;  // Host view type
 
  protected:
   HandleExecSpace execution_space;
@@ -204,17 +207,20 @@ class PointGaussSeidelHandle : public GaussSeidelHandle<size_type_, lno_t_, scal
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
-  typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename row_lno_persistent_work_view_t::host_mirror_type row_lno_persistent_work_host_view_t;  // Host view type
 
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t **, KokkosKernels::default_layout, HandlePersistentMemorySpace>
       scalar_persistent_work_view2d_t;
-  typedef typename scalar_persistent_work_view_t::HostMirror scalar_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename scalar_persistent_work_view_t::host_mirror_type scalar_persistent_work_host_view_t;  // Host view type
 
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
-  typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename nnz_lno_persistent_work_view_t::host_mirror_type nnz_lno_persistent_work_host_view_t;  // Host view type
 
  private:
   row_lno_persistent_work_view_t permuted_xadj;
@@ -408,15 +414,18 @@ class ClusterGaussSeidelHandle : public GaussSeidelHandle<size_type_, lno_t_, sc
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
-  typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename row_lno_persistent_work_view_t::host_mirror_type row_lno_persistent_work_host_view_t;  // Host view type
 
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
-  typedef typename scalar_persistent_work_view_t::HostMirror scalar_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename scalar_persistent_work_view_t::host_mirror_type scalar_persistent_work_host_view_t;  // Host view type
 
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
-  typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename nnz_lno_persistent_work_view_t::host_mirror_type nnz_lno_persistent_work_host_view_t;  // Host view type
 
  private:
   ClusteringAlgorithm cluster_algo;

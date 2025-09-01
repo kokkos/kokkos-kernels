@@ -455,13 +455,12 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
         if (overall_num_unsuccess) {
           // printf("row:%d\n", row_index);
           if (!is_global_alloced) {
-            volatile nnz_lno_t *tmp = NULL;
-            size_t tid              = get_thread_id(row_index);
+            nnz_lno_t *tmp = NULL;
+            size_t tid     = get_thread_id(row_index);
             while (tmp == NULL) {
               Kokkos::single(
                   Kokkos::PerThread(teamMember),
-                  [&](volatile nnz_lno_t *&memptr) { memptr = (volatile nnz_lno_t *)(m_space.allocate_chunk(tid)); },
-                  tmp);
+                  [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(m_space.allocate_chunk(tid)); }, tmp);
             }
             is_global_alloced = true;
 
@@ -1000,13 +999,12 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
         if (overall_num_unsuccess) {
           // printf("row:%d\n", row_index);
           if (!is_global_alloced) {
-            volatile nnz_lno_t *tmp = NULL;
-            size_t tid              = get_thread_id(row_index);
+            nnz_lno_t *tmp = NULL;
+            size_t tid     = get_thread_id(row_index);
             while (tmp == NULL) {
               Kokkos::single(
                   Kokkos::PerThread(teamMember),
-                  [&](volatile nnz_lno_t *&memptr) { memptr = (volatile nnz_lno_t *)(m_space.allocate_chunk(tid)); },
-                  tmp);
+                  [&](nnz_lno_t *&memptr) { memptr = (nnz_lno_t *)(m_space.allocate_chunk(tid)); }, tmp);
             }
             is_global_alloced = true;
 
@@ -1796,17 +1794,17 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
 	  nnz_lno_t r_maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, old_row_mapB,row_mapB_ /*,flops_per_row.data()*/);
 	  std::cout << "compressed r_maxNumRoughZeros:" << r_maxNumRoughZeros << std::endl;
 
-	  typename const_a_lno_row_view_t::HostMirror h_row_mapA =  Kokkos::create_mirror_view (row_mapA);
+	  typename const_a_lno_row_view_t::host_mirror_type h_row_mapA =  Kokkos::create_mirror_view (row_mapA);
 	  Kokkos::deep_copy(h_row_mapA, row_mapA);
-	  typename const_a_lno_row_view_t::HostMirror h_entriesA =  Kokkos::create_mirror_view (entriesA);
+	  typename const_a_lno_row_view_t::host_mirror_type h_entriesA =  Kokkos::create_mirror_view (entriesA);
 	  Kokkos::deep_copy(h_entriesA, entriesA);
-	  typename const_a_lno_row_view_t::HostMirror h_row_mapB_ =  Kokkos::create_mirror_view (row_mapB_);
+	  typename const_a_lno_row_view_t::host_mirror_type h_row_mapB_ =  Kokkos::create_mirror_view (row_mapB_);
 	  Kokkos::deep_copy(h_row_mapB_, row_mapB_);
-	  typename const_a_lno_row_view_t::HostMirror h_old_row_mapB =  Kokkos::create_mirror_view (old_row_mapB);
+	  typename const_a_lno_row_view_t::host_mirror_type h_old_row_mapB =  Kokkos::create_mirror_view (old_row_mapB);
 	  Kokkos::deep_copy(h_old_row_mapB, old_row_mapB);
-	  typename const_a_lno_row_view_t::HostMirror h_row_mapB =  Kokkos::create_mirror_view (row_mapB);
+	  typename const_a_lno_row_view_t::host_mirror_type h_row_mapB =  Kokkos::create_mirror_view (row_mapB);
 	  Kokkos::deep_copy(h_row_mapB, row_mapB);
-	  typename c_row_view_t::HostMirror h_rowmapC = Kokkos::create_mirror_view (rowmapC);
+	  typename c_row_view_t::host_mirror_type h_rowmapC = Kokkos::create_mirror_view (rowmapC);
 	  Kokkos::deep_copy(h_rowmapC, rowmapC);
 
 	  MyExecSpace().fence();

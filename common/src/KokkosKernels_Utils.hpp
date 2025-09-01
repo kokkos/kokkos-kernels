@@ -863,7 +863,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
   Kokkos::deep_copy(h_sym_edge_size, d_sym_edge_size);
   num_symmetric_edges = h_sym_edge_size();
   /*
-  typename out_lno_nnz_view_t::HostMirror h_sym_edge_size =
+  typename out_lno_nnz_view_t::host_mirror_type h_sym_edge_size =
   Kokkos::create_mirror_view (pre_pps_);
 
   Kokkos::deep_copy (h_sym_edge_size , pre_pps_);
@@ -941,7 +941,7 @@ void symmetrize_graph_symbolic_hashmap(typename in_lno_row_view_t::value_type nu
 
   // out_lno_row_view_t d_sym_edge_size = Kokkos::subview(pre_pps_,
   // num_rows_to_symmetrize, num_rows_to_symmetrize );
-  typename out_lno_row_view_t::HostMirror h_sym_edge_size = Kokkos::create_mirror_view(pre_pps_);
+  typename out_lno_row_view_t::host_mirror_type h_sym_edge_size = Kokkos::create_mirror_view(pre_pps_);
 
   Kokkos::deep_copy(h_sym_edge_size, pre_pps_);
   num_symmetric_edges = h_sym_edge_size(h_sym_edge_size.extent(0) - 1);
@@ -995,7 +995,7 @@ void copy_view(size_t num_elements, from_vector from, to_vector to) {
 }
 
 template <typename from_view>
-void safe_device_to_host_deep_copy(size_t num_elements, from_view from, typename from_view::HostMirror to) {
+void safe_device_to_host_deep_copy(size_t num_elements, from_view from, typename from_view::host_mirror_type to) {
   typedef typename from_view::value_type scalar_t;
   typedef typename from_view::device_type device_t;
 
@@ -1006,24 +1006,24 @@ void safe_device_to_host_deep_copy(size_t num_elements, from_view from, typename
 
   Kokkos::fence();
 
-  typedef typename unstrided_from_view_t::HostMirror host_unstrided_from_view_t;
+  typedef typename unstrided_from_view_t::host_mirror_type host_unstrided_from_view_t;
   host_unstrided_from_view_t h_unstrided_from = Kokkos::create_mirror_view(unstrided_from);
 
   Kokkos::deep_copy(h_unstrided_from, unstrided_from);
   Kokkos::fence();
 
-  copy_view<host_unstrided_from_view_t, typename from_view::HostMirror,
+  copy_view<host_unstrided_from_view_t, typename from_view::host_mirror_type,
             typename host_unstrided_from_view_t::device_type::execution_space>(num_elements, h_unstrided_from, to);
 
   Kokkos::fence();
 }
 
 template <typename to_view>
-void safe_host_to_device_deep_copy(size_t num_elements, typename to_view::HostMirror from, to_view to) {
+void safe_host_to_device_deep_copy(size_t num_elements, typename to_view::host_mirror_type from, to_view to) {
   typedef typename to_view::value_type scalar_t;
   typedef typename to_view::device_type device_t;
 
-  typedef typename to_view::HostMirror::device_type h_device_t;
+  typedef typename to_view::host_mirror_type::device_type h_device_t;
 
   typedef Kokkos::View<scalar_t *, h_device_t> host_unstrided_view_t;
   typedef Kokkos::View<scalar_t *, device_t> device_unstrided_view_t;
@@ -1031,7 +1031,7 @@ void safe_host_to_device_deep_copy(size_t num_elements, typename to_view::HostMi
   host_unstrided_view_t host_unstrided_from("unstrided", num_elements);
   device_unstrided_view_t device_unstrided_to("unstrided", num_elements);
 
-  copy_view<typename to_view::HostMirror, host_unstrided_view_t, typename h_device_t::execution_space>(
+  copy_view<typename to_view::host_mirror_type, host_unstrided_view_t, typename h_device_t::execution_space>(
       num_elements, from, host_unstrided_from);
 
   Kokkos::fence();

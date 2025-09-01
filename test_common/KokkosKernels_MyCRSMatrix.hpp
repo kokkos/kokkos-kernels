@@ -85,7 +85,7 @@ class CrsMatrix {
   typedef typename index_type::non_const_value_type non_const_ordinal_type;
   typedef typename StaticCrsGraphType::row_map_type row_map_type;
   typedef Kokkos::View<value_type*, Kokkos::LayoutRight, device_type, MemoryTraits> values_type;
-  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> HostMirror;
+  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> host_mirror_type;
 
   StaticCrsGraphType graph;
   values_type values;

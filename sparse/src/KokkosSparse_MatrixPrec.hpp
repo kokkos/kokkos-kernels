@@ -45,7 +45,7 @@ namespace Experimental {
 template <class CRS>
 class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  private:
-  CRS _A;
+  CRS A_;
 
  public:
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
@@ -55,7 +55,7 @@ class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
 
   //! Constructor:
   template <class CRSArg>
-  MatrixPrec(const CRSArg &mat) : _A(mat) {}
+  MatrixPrec(const CRSArg &mat) : A_(mat) {}
 
   //! Destructor.
   virtual ~MatrixPrec() {}
@@ -79,7 +79,7 @@ class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   virtual void apply(const Kokkos::View<const ScalarType *, Kokkos::Device<EXSP, MEMSP>> &X,
                      const Kokkos::View<ScalarType *, Kokkos::Device<EXSP, MEMSP>> &Y, const char transM[] = "N",
                      ScalarType alpha = karith::one(), ScalarType beta = karith::zero()) const {
-    KokkosSparse::spmv(transM, alpha, _A, X, beta, Y);
+    KokkosSparse::spmv(transM, alpha, A_, X, beta, Y);
   }
   //@}
 

@@ -71,9 +71,9 @@ class Syr2Tester {
   using _ViewTypeY = Kokkos::View<ScalarY*, tLayoutY, Device>;
   using _ViewTypeA = Kokkos::View<ScalarA**, tLayoutA, Device>;
 
-  using _HostViewTypeX    = typename _ViewTypeX::HostMirror;
-  using _HostViewTypeY    = typename _ViewTypeY::HostMirror;
-  using _HostViewTypeA    = typename _ViewTypeA::HostMirror;
+  using _HostViewTypeX    = typename _ViewTypeX::host_mirror_type;
+  using _HostViewTypeY    = typename _ViewTypeY::host_mirror_type;
+  using _HostViewTypeA    = typename _ViewTypeA::host_mirror_type;
   using _ViewTypeExpected = Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
 
   using _KAT_A   = Kokkos::ArithTraits<ScalarA>;

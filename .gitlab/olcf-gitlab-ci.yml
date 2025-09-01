@@ -31,6 +31,6 @@ hipcc:
       -DKokkosKernels_ENABLE_TESTS=ON 
       -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON 
       -DKokkosKernels_ENABLE_PERFTESTS=OFF 
-      -DKokkosKernels_ENABLE_BENCHMARK:BOOL=OFF 
+      -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=OFF 
       -DKokkosKernels_INST_COMPLEX_DOUBLE=ON
     - ctest -V --test-dir ${PWD}/kokkos-kernels/build -D Nightly

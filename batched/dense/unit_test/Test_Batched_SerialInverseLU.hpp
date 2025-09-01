@@ -166,7 +166,7 @@ void impl_test_batched_inverselu(const int N, const int BlkSize) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename AViewType::HostMirror c0_host = Kokkos::create_mirror_view(c0);
+  typename AViewType::host_mirror_type c0_host = Kokkos::create_mirror_view(c0);
 
   Kokkos::deep_copy(c0_host, c0);
 

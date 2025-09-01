@@ -203,9 +203,9 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
   vgemm.B_t   = !std::is_same<transB, KokkosBatched::Trans::NoTranspose>::value;
   vgemm.A_c   = std::is_same_v<transA, KokkosBatched::Trans::ConjTranspose>;
   vgemm.B_c   = std::is_same_v<transB, KokkosBatched::Trans::ConjTranspose>;
-  vgemm.A     = A_fp64;
-  vgemm.B     = B_fp64;
-  vgemm.C     = C_fp64;
+  vgemm.A_    = A_fp64;
+  vgemm.B_    = B_fp64;
+  vgemm.C_    = C_fp64;
   vgemm.alpha = alpha_fp64;
   vgemm.beta  = beta_fp64;
   vgemm.run();  // Compute C_fp64 (reference)
