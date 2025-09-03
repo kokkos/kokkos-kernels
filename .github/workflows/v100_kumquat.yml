@@ -181,7 +181,7 @@ jobs:
         run: ctest --output-on-failure -V --timeout 3600
 
   PR_VOLTA70_CUDA1222_CUDA_LEFT_PREVIOUS_MINOR_REL:
-    name: PR_VOLTA70_CUDA1222_CUDA_LEFT_REL
+    name: PR_VOLTA70_CUDA1222_CUDA_LEFT_REL_PREVIOUS_MINOR_REL
     runs-on: [kumquat-cuda-12.2.2-openblas-0.3.29]
 
     steps:
