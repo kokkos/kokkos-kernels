@@ -37,8 +37,8 @@ using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 int main(int /*argc*/, char** /*argv*/) {
   Kokkos::initialize();
   {
-    using View2DType  = Kokkos::View<double**, ExecutionSpace>;
-    using View3DType  = Kokkos::View<double***, ExecutionSpace>;
+    using View2DType = Kokkos::View<double**, ExecutionSpace>;
+    using View3DType = Kokkos::View<double***, ExecutionSpace>;
     const int Nb = 10, m = 3, n = 4;
 
     // Matrix A
@@ -49,9 +49,9 @@ int main(int /*argc*/, char** /*argv*/) {
 
     // Initialize A and x
     Kokkos::deep_copy(x, 1.0);
-    auto h_A = Kokkos::create_mirror_view(A);
-    auto h_x = Kokkos::create_mirror_view(x);
-    auto h_y = Kokkos::create_mirror_view(y);
+    auto h_A   = Kokkos::create_mirror_view(A);
+    auto h_x   = Kokkos::create_mirror_view(x);
+    auto h_y   = Kokkos::create_mirror_view(y);
     auto h_Ref = Kokkos::create_mirror_view(Ref);
 
     // Upper triangular matrix
