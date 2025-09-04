@@ -72,7 +72,7 @@ which allows users to choose (or customize) the batched routines for their appli
 BLAS support
 ============
 
-Below are tables summarizing the currently supported function calls in Kokkos Kernels. The tables are updated with each release of the library to reflect recently added support.
+Below are tables summarizing the currently supported function calls in Kokkos Kernels.
 
 BLAS 1
 ------
@@ -277,7 +277,7 @@ BLAS 3
 LAPACK support
 ==============
 
-Below are tables summarizing the currently supported function calls in Kokkos Kernels. The tables are updated with each release of the library to reflect recently added support.
+Below are tables summarizing the currently supported function calls in Kokkos Kernels.
 
 .. list-table::
    :widths: 12 10 10 10
