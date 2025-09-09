@@ -22,10 +22,6 @@ env:
   KOKKOS_VERSION: 4.7.00
 
 jobs:
-  h100:
-    uses: ./.github/workflows/h100.yml
-    with:
-      kokkos_version: 4.7.00
   h100_lychee:
     uses: ./.github/workflows/h100_lychee.yml
     with:
