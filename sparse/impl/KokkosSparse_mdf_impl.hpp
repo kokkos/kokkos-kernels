@@ -144,8 +144,8 @@ struct MDF_discarded_fill_norm {
 
     KOKKOS_INLINE_FUNCTION
     static void init(value_type& val) {
-      val.discarded_norm = Kokkos::reduction_identity<scalar_mag_type>::sum();
-      val.numFillEntries = Kokkos::reduction_identity<ordinal_type>::sum();
+      val.discarded_norm = 0;
+      val.numFillEntries = 0;
       val.diag_val       = KAS::zero();
     }
 
