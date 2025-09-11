@@ -22,7 +22,7 @@ namespace KokkosBatched {
 template <typename MatrixViewType, typename VectorViewType>
 void create_tridiagonal_batched_matrices(const MatrixViewType& A, const VectorViewType& B) {
   Kokkos::Random_XorShift64_Pool<typename VectorViewType::device_type::execution_space> random(13718);
-  Kokkos::fill_random(B, random, Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+  Kokkos::fill_random(B, random, 1);
 
   auto A_host = Kokkos::create_mirror_view(A);
 
