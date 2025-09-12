@@ -133,11 +133,11 @@ inline void bisect(const coors_view_type &coors_1d, const value_type &init_min_v
   value_type max_val   = init_max_val;
   value_type p1_weight, p2_weight;
   value_type weight_ratio;
-  int cnt = 0;
+  const int max_bisection_steps = 11;
   // For now, limit the number of times finding mid point to ten to make RCB work with Sierra T/F coordinates
-  // TODO: switch to use the median is probably a better solution
-  while (cnt <= 10) {
-    cnt++;
+  // TODO: - allow users to pass max_bisection_steps as an input parameter
+  //       - or switch to use the median, which is probably a better solution
+  for (int bisection_step = 0; bisection_step < max_bisection_steps; ++bisection_step) {
     value_type mid_point = (max_val + min_val) / 2.0;
     p1_size              = 0;
     p2_size              = 0;
