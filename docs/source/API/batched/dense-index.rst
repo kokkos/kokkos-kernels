@@ -5,6 +5,8 @@ API: Batched Dense (DLA)
    :maxdepth: 2
    :hidden:
 
+   dense/batched_getrf
+   dense/batched_getrs
    dense/batched_pbtrf
    dense/batched_pbtrs
    dense/batched_pttrf
@@ -288,11 +290,11 @@ Below are tables summarizing the currently supported function calls in Kokkos Ke
      - Team
      - TeamVector
    * - getrf
-     - `SerialGetrf`
+     - :doc:`SerialGetrf <dense/batched_getrf>`
      - --
      - --
    * - getrs
-     - `SerialGetrs`
+     - :doc:`SerialGetrs <dense/batched_getrs>`
      - --
      - --
    * - gesv
