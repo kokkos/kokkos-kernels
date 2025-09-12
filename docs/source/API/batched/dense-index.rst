@@ -7,6 +7,8 @@ API: Batched Dense (DLA)
 
    dense/batched_getrf
    dense/batched_getrs
+   dense/batched_gbtrf
+   dense/batched_gbtrs
    dense/batched_pbtrf
    dense/batched_pbtrs
    dense/batched_pttrf
@@ -302,11 +304,11 @@ Below are tables summarizing the currently supported function calls in Kokkos Ke
      - `TeamGesv`
      - `TeamVectorGesv`
    * - gbtrf
-     - `SerialGbtrf`
+     - :doc:`SerialGbtrf <dense/batched_gbtrf>`
      - --
      - --
    * - gbtrs
-     - `SerialGbtrs`
+     - :doc:`SerialGbtrs <dense/batched_gbtrs>`
      - --
      - --
    * - pbtrf
