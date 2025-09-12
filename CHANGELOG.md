@@ -5,6 +5,7 @@
 
 ### New Features and Enhancements
 - First implementation of recursive coordinate bisection (RCB) in graph [\#2708](https://github.com/kokkos/kokkos-kernels/pull/2708)
+- Update the bisect break condition in RCB [\#2766](https://github.com/kokkos/kokkos-kernels/pull/2766)
 - Add setNumRows, setNumCols to sparse matrix structures [\#2700](https://github.com/kokkos/kokkos-kernels/pull/2700)
 - Add optional argument to configure sorting algorithm used in KokkosSparse:sort_crs_matrix [\#2714](https://github.com/kokkos/kokkos-kernels/pull/2714)
 
