@@ -13,7 +13,7 @@ Defined in header: :code:`KokkosBatched_Getrf.hpp`
       invoke(const AViewType &A, const PivViewType &piv);
     };
 
-Computes an LU factorization of a general m-by-n matrix :math:`A` using partial pivoting with row interchanges. The factorization has the format
+Computes a LU factorization of a general m-by-n matrix :math:`A` using partial pivoting with row interchanges. The factorization has the format
 :math:`A = P \cdot L \cdot U`
 
 where 
