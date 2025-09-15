@@ -187,7 +187,7 @@ KOKKOS_FORCEINLINE_FUNCTION IntType intPowUnsigned(const IntType x, const IntTyp
 
 }  // namespace
 
-namespace Kokkos {
+namespace KokkosKernels {
 
 // Macro to automate the wrapping of Kokkos Mathematical Functions
 #define KOKKOSKERNELS_ARITHTRAITS_REAL_FP(FUNC_QUAL)                                               \
@@ -1644,9 +1644,15 @@ struct [[deprecated]] ArithTraits<qd_real> {
 };
 #endif  // HAVE_KOKKOS_QD
 
+}  // namespace KokkosKernels
+
+namespace Kokkos {
+template <typename T>
+using ArithTraits [[deprecated("Use KokkosKernels::ArithTraits instead")]] = ::KokkosKernels::ArithTraits<T>;
+
 namespace Details {
 template <typename T>
-using ArithTraits [[deprecated("Use Kokkos::ArithTraits instead")]] = ::Kokkos::ArithTraits<T>;
+using ArithTraits [[deprecated("Use KokkosKernels::ArithTraits instead")]] = ::KokkosKernels::ArithTraits<T>;
 
 }  // namespace Details
 }  // namespace Kokkos
