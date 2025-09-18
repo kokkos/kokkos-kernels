@@ -35,3 +35,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   serial_ger
   SOURCES serial_ger.cpp
   )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  serial_syr
+  SOURCES serial_syr.cpp
+  )
