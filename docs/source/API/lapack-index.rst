@@ -13,7 +13,7 @@ API: LAPACK
 LAPACK support
 ==============
 
-Below are tables summarizing the currently supported function calls and third party libraries in Kokkos Kernels. The tables are updated with each release of the library to reflect recently added support.
+Below are tables summarizing the currently supported function calls and third party libraries in Kokkos Kernels.
 
 .. list-table::
    :widths: 12 26 10 10 10 10 10

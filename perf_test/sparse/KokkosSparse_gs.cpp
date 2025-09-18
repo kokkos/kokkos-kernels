@@ -106,7 +106,7 @@ crsMat_t generateLongRowMatrix(const GS_Parameters& params) {
   // head)
   std::vector<lno_t> longRowEntries(numRows);
   for (lno_t i = 0; i < numRows; i++) longRowEntries[i] = i;
-  const scalar_t one = Kokkos::reduction_identity<scalar_t>::prod();
+  const scalar_t one = 1;
   for (lno_t i = 0; i < numRows; i++) {
     shortRowEntries.clear();
     bool rowIsLong = rowLengths[i] > params.nnzPerRow;
@@ -302,7 +302,7 @@ void runGS(const GS_Parameters& params) {
     scalar_view_t res("Ax-b", blk_nrows);
     Kokkos::deep_copy(instances[i], res, b[i]);
     double bnorm   = KokkosBlas::nrm2(instances[i], b[i]);
-    scalar_t alpha = Kokkos::reduction_identity<scalar_t>::prod();
+    scalar_t alpha = 1;
     scalar_t beta  = -alpha;
     KokkosSparse::spmv<exec_space, scalar_t, crsMat_t, scalar_view_t, scalar_t, scalar_view_t>(instances[i], "N", alpha,
                                                                                                blk_A, x[i], beta, res);
