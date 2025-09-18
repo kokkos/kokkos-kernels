@@ -5,6 +5,7 @@ API: Batched Dense (DLA)
    :maxdepth: 2
    :hidden:
 
+   dense/batched_ger
    dense/batched_getrf
    dense/batched_getrs
    dense/batched_gbtrf
@@ -202,15 +203,15 @@ BLAS 2
      - --
      - --
    * - GER
-     - `SerialGer`
+     - :doc:`SerialGer <dense/batched_ger>`
      - --
      - --
    * - GERU
-     - --
+     - :doc:`SerialGer <dense/batched_ger>`
      - --
      - --
    * - GERC
-     - --
+     - :doc:`SerialGer <dense/batched_ger>`
      - --
      - --
    * - SYR
