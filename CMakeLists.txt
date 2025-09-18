@@ -82,9 +82,19 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
     set(BLT_CODE_CHECK_TARGET_NAME "fix-for-blt" CACHE STRING "Docstring")
     set(INFRASTRUCTURE_ONLY ON CACHE BOOL "Only build the RAJAPerf infrastructure, no builtin kernels")
     add_definitions("-DRAJAPERF_INFRASTRUCTURE_ONLY")
-    add_subdirectory(tpls/rajaperf)
-    include_directories(tpls/rajaperf/src)
-    set(KokkosKernels_ENABLE_PERFTESTS ON CACHE BOOL "Whether to build tests including Perfsuite. Default: OFF" FORCE)
+    # Check if this directory is empty,
+    # Populate submodule if possible - Fail gracefully otherwise
+    file(GLOB_RECURSE FILE_LIST "tpls/rajaperf/*.*")
+    list(LENGTH FILE_LIST RES_LEN)
+    IF(RES_LEN EQUAL 0)
+    # directory is empty - cannot find the submodule
+    # throw an error to the user so they know, and do not build tests
+      message(SEND_ERROR "Perftools submodule not found -- run `git submodule update --init --recursive` in a terminal to update submodules, then try again. ")
+      set(KokkosKernels_ENABLE_PERFTESTS OFF CACHE BOOL "Building tests and Perfsuite switched off." FORCE)
+    ELSE()
+      add_subdirectory(tpls/rajaperf)
+      include_directories(tpls/rajaperf/src)
+      set(KokkosKernels_ENABLE_PERFTESTS ON CACHE BOOL "Whether to build tests including Perfsuite. Default: OFF" FORCE)
   ENDIF()
   KOKKOSKERNELS_ADD_OPTION(
           "ENABLE_BENCHMARKS"
