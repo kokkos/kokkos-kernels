@@ -40,3 +40,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   serial_syr
   SOURCES serial_syr.cpp
   )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  serial_tbsv
+  SOURCES serial_tbsv.cpp
+  )
