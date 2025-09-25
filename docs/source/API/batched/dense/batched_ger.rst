@@ -5,7 +5,7 @@ Defined in header: :code:`KokkosBatched_Ger.hpp`
 
 .. code:: c++
 
-    template <typename ArgAlgo>
+    template <typename ArgTrans>
     struct SerialGer {
       template <typename ScalarType, typename XViewType, typename YViewType, typename AViewType>
       KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const XViewType &x, const YViewType &y,
@@ -44,7 +44,7 @@ Type Requirements
 - ``ScalarType`` must be a built-in floating point type (``float``, ``double``, ``Kokkos::complex<float>``, ``Kokkos::complex<double>``)
 - ``XViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 containing a vector :math:`X`
 - ``YViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 containing a vector :math:`Y`
-- ``AViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 2 containing a matrix :math:`A`
+- ``AViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 2 containing a matrix :math:`A` that satisfies ``std::is_same_v<typename AViewType::value_type, typename AViewType::non_const_value_type>``
 
 Example
 =======
