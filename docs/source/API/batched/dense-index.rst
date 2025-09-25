@@ -6,6 +6,7 @@ API: Batched Dense (DLA)
    :hidden:
 
    dense/batched_ger
+   dense/batched_syr
    dense/batched_getrf
    dense/batched_getrs
    dense/batched_gbtrf
@@ -215,11 +216,11 @@ BLAS 2
      - --
      - --
    * - SYR
-     - `SerialSyr`
+     - :doc:`SerialSyr <dense/batched_syr>`
      - --
      - --
    * - HER
-     - `SerialSyr`
+     - :doc:`SerialSyr <dense/batched_syr>`
      - --
      - --
    * - SPR
