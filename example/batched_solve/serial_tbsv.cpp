@@ -72,7 +72,6 @@ int main(int /*argc*/, char** /*argv*/) {
     Kokkos::deep_copy(Ab, h_Ab);
 
     // solve A * x = b with tbsv
-    const double alpha = 1.5;
     ExecutionSpace exec;
     using policy_type = Kokkos::RangePolicy<ExecutionSpace, Kokkos::IndexType<int>>;
     policy_type policy{exec, 0, Nb};
