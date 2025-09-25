@@ -18,18 +18,17 @@
 #define KOKKOSKERNELS_BITUTILS_HPP
 #include "Kokkos_Core.hpp"
 
-#include <concepts>
 #include <type_traits>
 
 namespace KokkosKernels::Impl {
 
-template <std::integral T>
-KOKKOS_FUNCTION int pop_count(T x) {
+template <class T>
+KOKKOS_FUNCTION std::enable_if_t<std::is_integral_v<T> && !std::is_same_v<T, bool>, int> pop_count(T x) {
   return Kokkos::Experimental::popcount_builtin<std::make_unsigned_t<T>>(x);
 }
 
-template <std::integral T>
-KOKKOS_FUNCTION int least_set_bit(T x) {
+template <class T>
+KOKKOS_FUNCTION std::enable_if_t<std::is_integral_v<T> && !std::is_same_v<T, bool>, int> least_set_bit(T x) {
   return Kokkos::Experimental::countr_zero_builtin<std::make_unsigned_t<T>>(x) + 1;
 }
 
