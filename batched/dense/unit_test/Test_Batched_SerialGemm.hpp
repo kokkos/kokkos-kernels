@@ -85,7 +85,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   using execution_space = typename DeviceType::execution_space;
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
-  using ats             = Kokkos::ArithTraits<ValueType>;
+  using ats             = KokkosKernels::ArithTraits<ValueType>;
   using ViewType        = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
 
   /// randomized input testing views

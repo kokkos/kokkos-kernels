@@ -65,7 +65,7 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Unblocked>::invoke(
     if (tiny != 0) {
       if (member.team_rank() == 0) {
         ValueType &alpha11_reference = A[p * as0 + p * as1];
-        const auto alpha11_real      = Kokkos::ArithTraits<ValueType>::real(alpha11_reference);
+        const auto alpha11_real      = KokkosKernels::ArithTraits<ValueType>::real(alpha11_reference);
         alpha11_reference += minus_abs_tiny * ValueType(alpha11_real < 0);
         alpha11_reference += abs_tiny * ValueType(alpha11_real >= 0);
       }

@@ -179,19 +179,19 @@ namespace Impl {
                                               ETI_SPEC_AVAIL)                                                          \
   template <>                                                                                                          \
   struct Nrm2<EXECSPACE,                                                                                               \
-              Kokkos::View<Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type, LAYOUT, Kokkos::HostSpace,                      \
+              Kokkos::View<KokkosKernels::ArithTraits<KOKKOS_TYPE>::mag_type, LAYOUT, Kokkos::HostSpace,                      \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
               Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
               1, true, ETI_SPEC_AVAIL> {                                                                               \
-    using RT        = Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type;                                                      \
+    using RT        = KokkosKernels::ArithTraits<KOKKOS_TYPE>::mag_type;                                                      \
     using RV        = Kokkos::View<RT, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;           \
     using XV        = Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                    \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >;                                          \
     using size_type = typename XV::size_type;                                                                          \
                                                                                                                        \
     static void nrm2(const EXECSPACE& space, RV& R, const XV& X, const bool& take_sqrt) {                              \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_CUBLAS," + Kokkos::ArithTraits<KOKKOS_TYPE>::name() + "]");  \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_CUBLAS," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + "]");  \
       const size_type numElems = X.extent(0);                                                                          \
       if (numElems <= static_cast<size_type>(std::numeric_limits<int>::max())) {                                       \
         nrm2_print_specialization<RV, XV>();                                                                           \
@@ -236,19 +236,19 @@ namespace Impl {
                                                ETI_SPEC_AVAIL)                                                         \
   template <>                                                                                                          \
   struct Nrm2<EXECSPACE,                                                                                               \
-              Kokkos::View<Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type, LAYOUT, Kokkos::HostSpace,                      \
+              Kokkos::View<KokkosKernels::ArithTraits<KOKKOS_TYPE>::mag_type, LAYOUT, Kokkos::HostSpace,                      \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
               Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
               1, true, ETI_SPEC_AVAIL> {                                                                               \
-    using RT        = Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type;                                                      \
+    using RT        = KokkosKernels::ArithTraits<KOKKOS_TYPE>::mag_type;                                                      \
     using RV        = Kokkos::View<RT, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;           \
     using XV        = Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                    \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >;                                          \
     using size_type = typename XV::size_type;                                                                          \
                                                                                                                        \
     static void nrm2(const EXECSPACE& space, RV& R, const XV& X, const bool& take_sqrt) {                              \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_ROCBLAS," + Kokkos::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_ROCBLAS," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
       const size_type numElems = X.extent(0);                                                                          \
       if (numElems <= static_cast<size_type>(std::numeric_limits<rocblas_int>::max())) {                               \
         nrm2_print_specialization<RV, XV>();                                                                           \
@@ -296,19 +296,19 @@ namespace Impl {
                                               ETI_SPEC_AVAIL)                                                         \
   template <>                                                                                                         \
   struct Nrm2<EXECSPACE,                                                                                              \
-              Kokkos::View<Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type, LAYOUT, Kokkos::HostSpace,                     \
+              Kokkos::View<KokkosKernels::ArithTraits<KOKKOS_TYPE>::mag_type, LAYOUT, Kokkos::HostSpace,                     \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                 \
               Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                           \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                 \
               1, true, ETI_SPEC_AVAIL> {                                                                              \
-    using RT        = Kokkos::ArithTraits<KOKKOS_TYPE>::mag_type;                                                     \
+    using RT        = KokkosKernels::ArithTraits<KOKKOS_TYPE>::mag_type;                                                     \
     using RV        = Kokkos::View<RT, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;          \
     using XV        = Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                   \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >;                                         \
     using size_type = typename XV::size_type;                                                                         \
                                                                                                                       \
     static void nrm2(const EXECSPACE& space, RV& R, const XV& X, const bool& take_sqrt) {                             \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_ONEMKL," + Kokkos::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_ONEMKL," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
       const size_type numElems = X.extent(0);                                                                         \
       if (numElems <= static_cast<size_type>(std::numeric_limits<std::int64_t>::max())) {                             \
         nrm2_print_specialization<RV, XV>();                                                                          \

@@ -25,7 +25,7 @@ void test_rotmg_impl(View0& d1, View0& d2, View0& x1, View0& y1, PView& param, R
 
   KokkosBlas::rotmg(d1, d2, x1, y1_const, param);
 
-  const scalar_type eps = Kokkos::ArithTraits<scalar_type>::eps();
+  const scalar_type eps = KokkosKernels::ArithTraits<scalar_type>::eps();
   const scalar_type tol =
 #if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
       100 * eps;  // Guessing MKL implements sin/cos differently so need larger tol

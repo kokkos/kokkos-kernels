@@ -37,9 +37,9 @@ template <class RV, class XV, class SizeType = typename XV::size_type>
 struct V_Nrm1_Functor {
   using size_type   = SizeType;
   using xvalue_type = typename XV::non_const_value_type;
-  using XAT         = Kokkos::ArithTraits<xvalue_type>;
+  using XAT         = KokkosKernels::ArithTraits<xvalue_type>;
   using value_type  = typename XAT::mag_type;
-  using MAT         = Kokkos::ArithTraits<value_type>;
+  using MAT         = KokkosKernels::ArithTraits<value_type>;
 
   typename XV::const_type m_x;
 
@@ -70,9 +70,9 @@ template <class ExecSpace, class RV, class XV, class size_type>
 struct Nrm1_MV_Functor {
   using rvalue_type = typename RV::non_const_value_type;
   using xvalue_type = typename XV::non_const_value_type;
-  using XAT         = Kokkos::ArithTraits<xvalue_type>;
+  using XAT         = KokkosKernels::ArithTraits<xvalue_type>;
   using value_type  = typename XAT::mag_type;
-  using MAT         = Kokkos::ArithTraits<value_type>;
+  using MAT         = KokkosKernels::ArithTraits<value_type>;
 
   using TeamMem = typename Kokkos::TeamPolicy<ExecSpace>::member_type;
 
@@ -132,7 +132,7 @@ void MV_Nrm1_Invoke(
     throw std::runtime_error(oss.str());
   }
   // Zero out the result vector
-  Kokkos::deep_copy(space, r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+  Kokkos::deep_copy(space, r, KokkosKernels::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerVec;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space, size_type>(x.extent(0), x.extent(1),
                                                                                   teamsPerVec);

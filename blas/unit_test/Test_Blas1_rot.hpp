@@ -17,7 +17,7 @@
 
 template <class Scalar, class ExecutionSpace>
 int test_rot() {
-  using mag_type        = typename Kokkos::ArithTraits<Scalar>::mag_type;
+  using mag_type        = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
   using vector_type     = Kokkos::View<Scalar*, ExecutionSpace>;
   using magnitude_type  = Kokkos::View<mag_type, ExecutionSpace>;
   using scalar_type     = Kokkos::View<Scalar, ExecutionSpace>;
@@ -63,7 +63,7 @@ int test_rot() {
   Yref(2) = 0.54;
   Yref(3) = 0.08;
 
-  Scalar const tol = 10 * Kokkos::ArithTraits<Scalar>::eps();
+  Scalar const tol = 10 * KokkosKernels::ArithTraits<Scalar>::eps();
   for (int idx = 0; idx < 4; ++idx) {
     Test::EXPECT_NEAR_KK_REL(X_h(idx), Xref(idx), tol);
     Test::EXPECT_NEAR_KK_REL(Y_h(idx), Yref(idx), tol);

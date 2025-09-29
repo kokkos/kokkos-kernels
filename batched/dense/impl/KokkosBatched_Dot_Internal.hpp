@@ -34,7 +34,7 @@ struct SerialDotInternal {
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const int m, const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     C[0]      = ValueType(0);
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -70,7 +70,7 @@ struct TeamDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     ValueType t(0);
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(member, m),
@@ -90,7 +90,7 @@ struct TeamDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C, const int cs) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
       ValueType t(0);
       const ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
@@ -117,7 +117,7 @@ struct TeamVectorDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     ValueType t(0);
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, m),
@@ -137,7 +137,7 @@ struct TeamVectorDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C, const int cs) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
       ValueType t(0);
       const ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;

@@ -40,7 +40,7 @@ struct V_Nrm2w_Functor {
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
+  typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 
   typename XV::const_type m_x, m_w;
@@ -73,7 +73,7 @@ struct V_Nrm2w_Functor {
   KOKKOS_INLINE_FUNCTION void join(value_type& update, const value_type& source) const { update += source; }
 
   KOKKOS_INLINE_FUNCTION void final(value_type& update) const {
-    if (m_take_sqrt) update = Kokkos::ArithTraits<typename RV::non_const_value_type>::sqrt(update);
+    if (m_take_sqrt) update = KokkosKernels::ArithTraits<typename RV::non_const_value_type>::sqrt(update);
   }
 };
 
@@ -82,7 +82,7 @@ struct Nrm2w_MV_Functor {
   typedef typename RV::non_const_value_type rvalue_type;
   typedef typename XV::non_const_value_type xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
+  typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 
   using TeamMem = typename Kokkos::TeamPolicy<ExecSpace>::member_type;
@@ -146,7 +146,7 @@ void MV_Nrm2w_Invoke(
     throw std::runtime_error(oss.str());
   }
   // Zero out the result vector
-  Kokkos::deep_copy(space, r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+  Kokkos::deep_copy(space, r, KokkosKernels::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerVec;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space, size_type>(x.extent(0), x.extent(1),
                                                                                   teamsPerVec);

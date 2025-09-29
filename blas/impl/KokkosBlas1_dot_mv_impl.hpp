@@ -30,7 +30,7 @@ struct Dot_MV_Functor {
   using Scalar   = typename RV::non_const_value_type;
   using IPT      = Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>;
   using dot_type = typename IPT::dot_type;
-  using KAT      = Kokkos::ArithTraits<dot_type>;
+  using KAT      = KokkosKernels::ArithTraits<dot_type>;
 
   using TeamMem = typename Kokkos::TeamPolicy<ExecSpace>::member_type;
 
@@ -94,7 +94,7 @@ void MV_Dot_Invoke(
     throw std::runtime_error(oss.str());
   }
   // Zero out the result vector
-  Kokkos::deep_copy(space, r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+  Kokkos::deep_copy(space, r, KokkosKernels::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerDot;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space, size_type>(x.extent(0), numDots, teamsPerDot);
   size_type numTeams = numDots * teamsPerDot;

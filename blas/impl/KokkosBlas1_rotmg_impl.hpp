@@ -29,8 +29,8 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView const& d1, DXView const& d2, DXVie
                                        PView const& param) {
   using Scalar = typename DXView::non_const_value_type;
 
-  const Scalar one  = Kokkos::ArithTraits<Scalar>::one();
-  const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
+  const Scalar one  = KokkosKernels::ArithTraits<Scalar>::one();
+  const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
 
   const Scalar gamma      = 4096;
   const Scalar gammasq    = 4096 * 4096;
@@ -191,7 +191,7 @@ template <class execution_space, class DXView, class YView, class PView>
 void Rotmg_Invoke(execution_space const& space, DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1,
                   PView const& param) {
   using Scalar = typename DXView::value_type;
-  static_assert(!Kokkos::ArithTraits<Scalar>::is_complex, "rotmg is not defined for complex types!");
+  static_assert(!KokkosKernels::ArithTraits<Scalar>::is_complex, "rotmg is not defined for complex types!");
 
   rotmg_functor myFunc(d1, d2, x1, y1, param);
   Kokkos::RangePolicy<execution_space> rotmg_policy(space, 0, 1);

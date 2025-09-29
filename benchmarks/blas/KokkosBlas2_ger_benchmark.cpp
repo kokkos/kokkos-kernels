@@ -114,12 +114,12 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   const auto m            = state.range(1);
   const auto n            = state.range(2);
   const auto yIsTranspose = state.range(3);
-  tScalar a(Kokkos::ArithTraits<tScalar>::zero());
+  tScalar a(KokkosKernels::ArithTraits<tScalar>::zero());
 
   if (verbosity > 0) {
     std::cout << "Entering KokkosBlas2_GER()"
               << ": m = " << m << ", n = " << n << ", yIsTranspose = " << yIsTranspose
-              << ", tScalar = " << Kokkos::ArithTraits<tScalar>::name() << ", tLayout = " << typeid(tLayout).name()
+              << ", tScalar = " << KokkosKernels::ArithTraits<tScalar>::name() << ", tLayout = " << typeid(tLayout).name()
               << std::endl;
   }
 
@@ -135,11 +135,11 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   char yMode('t');
   if (!yIsTranspose) yMode = 'H';
 
-  tScalar rangeValue(Kokkos::ArithTraits<tScalar>::zero());
-  if constexpr (Kokkos::ArithTraits<tScalar>::isOrdinal) {
+  tScalar rangeValue(KokkosKernels::ArithTraits<tScalar>::zero());
+  if constexpr (KokkosKernels::ArithTraits<tScalar>::isOrdinal) {
     rangeValue = 10;
     a          = 3;
-  } else if constexpr (Kokkos::ArithTraits<tScalar>::is_complex) {
+  } else if constexpr (KokkosKernels::ArithTraits<tScalar>::is_complex) {
     rangeValue.real() = 10.;
     rangeValue.imag() = 10.;
     a                 = tScalar(2.5, 3.6);

@@ -55,7 +55,7 @@ namespace Impl {
     typedef typename XV::size_type size_type;                                                                      \
                                                                                                                    \
     static void dot(const ExecSpace& space, RV& R, const XV& X, const XV& Y) {                                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_BLAS," + Kokkos::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
+      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_BLAS," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
       const size_type numElems = X.extent(0);                                                                      \
       if (numElems < static_cast<size_type>(INT_MAX)) {                                                            \
         dot_print_specialization<RV, XV, XV>();                                                                    \
@@ -110,7 +110,7 @@ namespace Impl {
     typedef typename XV::size_type size_type;                                                                        \
                                                                                                                      \
     static void dot(const EXECSPACE& space, RV& R, const XV& X, const XV& Y) {                                       \
-      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_CUBLAS," + Kokkos::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
+      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_CUBLAS," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
       const size_type numElems = X.extent(0);                                                                        \
       /* TODO: CUDA-12's 64-bit indices allow larger numElems */                                                     \
       if (numElems <= static_cast<size_type>(std::numeric_limits<int>::max())) {                                     \
@@ -169,7 +169,7 @@ namespace Impl {
     typedef typename XV::size_type size_type;                                                                         \
                                                                                                                       \
     static void dot(const EXECSPACE& space, RV& R, const XV& X, const XV& Y) {                                        \
-      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_ROCBLAS," + Kokkos::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
+      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_ROCBLAS," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
       const size_type numElems = X.extent(0);                                                                         \
       if (numElems <= static_cast<size_type>(std::numeric_limits<rocblas_int>::max())) {                              \
         dot_print_specialization<RV, XV, XV>();                                                                       \
@@ -228,7 +228,7 @@ namespace Impl {
     typedef typename XV::size_type size_type;                                                                        \
                                                                                                                      \
     static void dot(const EXECSPACE& exec, RV& R, const XV& X, const XV& Y) {                                        \
-      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_ONEMKL," + Kokkos::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
+      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_ONEMKL," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + "]"); \
       const size_type numElems = X.extent(0);                                                                        \
       if (numElems <= static_cast<size_type>(std::numeric_limits<std::int64_t>::max())) {                            \
         dot_print_specialization<RV, XV, XV>();                                                                      \

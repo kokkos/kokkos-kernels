@@ -24,7 +24,7 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_iamax(int N) {
   using ScalarA   = typename ViewTypeA::non_const_value_type;
-  using AT        = Kokkos::ArithTraits<ScalarA>;
+  using AT        = KokkosKernels::ArithTraits<ScalarA>;
   using mag_type  = typename AT::mag_type;
   using size_type = typename ViewTypeA::size_type;
 
@@ -38,7 +38,7 @@ void impl_test_iamax(int N) {
 
   Kokkos::deep_copy(a.h_base, a.d_base);
 
-  mag_type expected_result   = Kokkos::ArithTraits<mag_type>::min();
+  mag_type expected_result   = KokkosKernels::ArithTraits<mag_type>::min();
   size_type expected_max_loc = 0;
   for (int i = 0; i < N; i++) {
     mag_type val = AT::abs(a.h_view(i));
@@ -107,7 +107,7 @@ void impl_test_iamax(int N) {
 template <class ViewTypeA, class Device>
 void impl_test_iamax_mv(int N, int K) {
   typedef typename ViewTypeA::non_const_value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
   typedef typename AT::mag_type mag_type;
   typedef typename ViewTypeA::size_type size_type;
 
@@ -125,7 +125,7 @@ void impl_test_iamax_mv(int N, int K) {
   size_type* expected_max_loc = new size_type[K];
 
   for (int j = 0; j < K; j++) {
-    expected_result[j] = Kokkos::ArithTraits<mag_type>::min();
+    expected_result[j] = KokkosKernels::ArithTraits<mag_type>::min();
     for (int i = 0; i < N; i++) {
       mag_type val = AT::abs(a.h_view(i, j));
       if (val > expected_result[j]) {

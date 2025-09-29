@@ -75,7 +75,7 @@ struct V_Iamax_Functor {
 ///   View) X, and store the result in the 0-D View r.
 template <class execution_space, class RV, class XV, class SizeType>
 void V_Iamax_Invoke(const execution_space& space, const RV& r, const XV& X) {
-  using AT       = Kokkos::ArithTraits<typename XV::non_const_value_type>;
+  using AT       = KokkosKernels::ArithTraits<typename XV::non_const_value_type>;
   using mag_type = typename AT::mag_type;
 
   const SizeType numRows = static_cast<SizeType>(X.extent(0));

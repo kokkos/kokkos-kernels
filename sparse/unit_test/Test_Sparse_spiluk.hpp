@@ -108,8 +108,8 @@ struct SpilukTest {
   using RowMapType  = Kokkos::View<size_type*, device>;
   using EntriesType = Kokkos::View<lno_t*, device>;
   using ValuesType  = Kokkos::View<scalar_t*, device>;
-  using AT          = Kokkos::ArithTraits<scalar_t>;
-  using mag_t       = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using AT          = KokkosKernels::ArithTraits<scalar_t>;
+  using mag_t       = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   using RowMapType_hostmirror  = typename RowMapType::host_mirror_type;
   using EntriesType_hostmirror = typename EntriesType::host_mirror_type;

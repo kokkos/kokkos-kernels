@@ -48,7 +48,7 @@ struct rot_eti_spec_avail {
   struct rot_eti_spec_avail<                                                                                        \
       EXECSPACE,                                                                                                    \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
     enum : bool { value = true };                                                                                   \
@@ -107,7 +107,7 @@ struct Rot<ExecutionSpace, VectorView, MagnitudeView, ScalarView, false, KOKKOSK
   extern template struct Rot<                                                                                      \
       EXECSPACE,                                                                                                   \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
       false, true>;
@@ -121,7 +121,7 @@ struct Rot<ExecutionSpace, VectorView, MagnitudeView, ScalarView, false, KOKKOSK
   template struct Rot<                                                                                             \
       EXECSPACE,                                                                                                   \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
       false, true>;

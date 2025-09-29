@@ -175,8 +175,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
                               const ConstEntriesType &entriesB, const RowMapType &row_mapC, bool computeRowptrs) {
   using scalar_type      = typename KernelHandle::nnz_scalar_t;
   using ordinal_type     = typename KernelHandle::nnz_lno_t;
-  const auto alpha       = Kokkos::ArithTraits<scalar_type>::one();
-  const auto beta        = Kokkos::ArithTraits<scalar_type>::zero();
+  const auto alpha       = KokkosKernels::ArithTraits<scalar_type>::one();
+  const auto beta        = KokkosKernels::ArithTraits<scalar_type>::zero();
   void *dummyValues_AB   = nullptr;
   bool firstSymbolicCall = false;
   if (!handle->is_symbolic_called()) {
@@ -340,7 +340,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
                                 typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,                \
                                 c_int_view_t row_mapA, c_int_view_t entriesA, bool, c_int_view_t row_mapB,             \
                                 c_int_view_t entriesB, bool, int_view_t row_mapC, bool computeRowptrs) {               \
-      std::string label = "KokkosSparse::spgemm_symbolic[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]";   \
+      std::string label = "KokkosSparse::spgemm_symbolic[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";   \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spgemm_symbolic_cusparse(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, row_mapB, entriesB, row_mapC, \
                                computeRowptrs);                                                                        \
@@ -409,8 +409,8 @@ void spgemm_symbolic_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_
   // alpha, beta are on host, but since we use singleton on the rocsparse
   // handle, we save/restore the pointer mode to not interference with
   // others' use
-  const auto alpha = Kokkos::ArithTraits<scalar_type>::one();
-  const auto beta  = Kokkos::ArithTraits<scalar_type>::zero();
+  const auto alpha = KokkosKernels::ArithTraits<scalar_type>::one();
+  const auto beta  = KokkosKernels::ArithTraits<scalar_type>::zero();
   rocsparse_pointer_mode oldPtrMode;
 
   KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_get_pointer_mode(h->rocsparseHandle, &oldPtrMode));
@@ -471,7 +471,7 @@ void spgemm_symbolic_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_
                                 typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,               \
                                 c_int_view_t row_mapA, c_int_view_t entriesA, bool, c_int_view_t row_mapB,            \
                                 c_int_view_t entriesB, bool, int_view_t row_mapC, bool) {                             \
-      std::string label = "KokkosSparse::spgemm_symbolic[TPL_ROCSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
+      std::string label = "KokkosSparse::spgemm_symbolic[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                           \
       spgemm_symbolic_rocsparse(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, row_mapB, entriesB,         \
                                 row_mapC);                                                                            \
@@ -561,7 +561,7 @@ void spgemm_symbolic_mkl(KernelHandle *handle, typename KernelHandle::nnz_lno_t 
                                 typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,                \
                                 c_int_view_t row_mapA, c_int_view_t entriesA, bool, c_int_view_t row_mapB,             \
                                 c_int_view_t entriesB, bool, int_view_t row_mapC, bool) {                              \
-      std::string label = "KokkosSparse::spgemm_symbolic[TPL_MKL," + Kokkos::ArithTraits<SCALAR>::name() + "]";        \
+      std::string label = "KokkosSparse::spgemm_symbolic[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";        \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spgemm_symbolic_mkl(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, row_mapB, entriesB, row_mapC);     \
       Kokkos::Profiling::popRegion();                                                                                  \

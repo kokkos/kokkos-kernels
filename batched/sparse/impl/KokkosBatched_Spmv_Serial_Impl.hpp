@@ -173,9 +173,9 @@ struct SerialSpmv<Trans::NoTranspose> {
 
   template <typename ValuesViewType, typename IntView, typename xViewType, typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& alpha,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& alpha,
       const ValuesViewType& values, const IntView& row_ptr, const IntView& colIndices, const xViewType& X,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& beta,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& beta,
       const yViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<ValuesViewType>::value, "KokkosBatched::spmv: ValuesViewType is not a Kokkos::View.");
@@ -221,7 +221,7 @@ struct SerialSpmv<Trans::NoTranspose> {
 #endif
 
     return SerialSpmvInternal::template invoke<
-        typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type,
+        typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type,
         typename ValuesViewType::non_const_value_type, typename IntView::non_const_value_type,
         typename ValuesViewType::array_layout, dobeta>(X.extent(0), X.extent(1), alpha, values.data(), values.stride(0),
                                                        values.stride(1), row_ptr.data(), row_ptr.stride(0),

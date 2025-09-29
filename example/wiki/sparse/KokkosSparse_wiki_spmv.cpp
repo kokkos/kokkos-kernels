@@ -29,7 +29,7 @@ using Layout  = KokkosKernels::default_layout;
 template <class Yvector>
 struct check_spmv_functor {
   Yvector y;
-  const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
+  const Scalar SC_ONE = KokkosKernels::ArithTraits<Scalar>::one();
 
   check_spmv_functor(Yvector y_) : y(y_){};
 
@@ -52,7 +52,7 @@ int main() {
   int return_value = 0;
 
   {
-    const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
+    const Scalar SC_ONE = KokkosKernels::ArithTraits<Scalar>::one();
 
     // The mat_structure view is used to generate a matrix using
     // finite difference (FD) or finite element (FE) discretization

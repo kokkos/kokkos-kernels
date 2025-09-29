@@ -147,7 +147,7 @@ void testCrsMatrixRawConstructor() {
   std::vector<lno_t> entries = {3, 4, 0, 1, 2, 2, 0, 3, 4};
   std::vector<scalar_t> values;
   for (size_type i = 0; i < nnz; i++)
-    values.push_back(Kokkos::ArithTraits<scalar_t>::one() * (1.0 * rand() / RAND_MAX));
+    values.push_back(KokkosKernels::ArithTraits<scalar_t>::one() * (1.0 * rand() / RAND_MAX));
   KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> A("A", nrows, ncols, nnz, values.data(),
                                                                       rowmap.data(), entries.data());
   EXPECT_EQ(A.numRows(), nrows);

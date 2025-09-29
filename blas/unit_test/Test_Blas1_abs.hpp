@@ -24,7 +24,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_abs(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   typename AT::mag_type eps = AT::epsilon() * 10;
 
@@ -70,7 +70,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_abs_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   view_stride_adapter<ViewTypeA> x("X", N, K);
   view_stride_adapter<ViewTypeB> y("Y", N, K);

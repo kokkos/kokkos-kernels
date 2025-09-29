@@ -43,8 +43,8 @@ struct DotBasedGEMM {
   using size_A   = typename AV::size_type;
   using scalar_C = typename CV::non_const_value_type;
   using size_C   = typename CV::size_type;
-  using AVT      = Kokkos::ArithTraits<scalar_A>;
-  using CVT      = Kokkos::ArithTraits<scalar_C>;
+  using AVT      = KokkosKernels::ArithTraits<scalar_A>;
+  using CVT      = KokkosKernels::ArithTraits<scalar_C>;
 
   const scalar_A alpha;
   const scalar_C beta;

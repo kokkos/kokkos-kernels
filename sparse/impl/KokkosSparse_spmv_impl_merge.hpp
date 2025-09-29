@@ -59,7 +59,7 @@ struct SpmvMergeHierarchical {
 
   using DSR = typename KokkosSparse::Impl::MergeMatrixDiagonal<um_row_map_type, iota_type>::position_type;
 
-  using KAT = Kokkos::ArithTraits<A_value_type>;
+  using KAT = KokkosKernels::ArithTraits<A_value_type>;
 
   // results of a lower-bound and upper-bound diagonal search
   struct Chunk {

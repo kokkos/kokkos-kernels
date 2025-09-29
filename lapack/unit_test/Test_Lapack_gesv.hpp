@@ -38,7 +38,7 @@ template <class ViewTypeA, class ViewTypeB, class Device, bool MAGMA>
 void impl_test_gesv(const char* mode, const char* padding, int N) {
   using execution_space = typename Device::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using ats             = Kokkos::ArithTraits<ScalarA>;
+  using ats             = KokkosKernels::ArithTraits<ScalarA>;
 
   execution_space space{};
 
@@ -146,7 +146,7 @@ template <class ViewTypeA, class ViewTypeB, class Device, bool MAGMA>
 void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs) {
   using execution_space = typename Device::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using ats             = Kokkos::ArithTraits<ScalarA>;
+  using ats             = KokkosKernels::ArithTraits<ScalarA>;
 
   execution_space space{};
 

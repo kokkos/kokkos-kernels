@@ -56,7 +56,7 @@ struct SerialPttrf<Algo::Pttrf::Unblocked> {
     using ScalarType = typename DViewType::non_const_value_type;
     // Quick return if possible
     if (d.extent(0) == 0) return 0;
-    if (d.extent(0) == 1) return (d(0) < Kokkos::ArithTraits<ScalarType>::zero() ? 1 : 0);
+    if (d.extent(0) == 1) return (d(0) < KokkosKernels::ArithTraits<ScalarType>::zero() ? 1 : 0);
 
     auto info = Impl::checkPttrfInput(d, e);
     if (info) return info;

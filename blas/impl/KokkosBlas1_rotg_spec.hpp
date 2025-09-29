@@ -47,7 +47,7 @@ struct rotg_eti_spec_avail {
   struct rotg_eti_spec_avail<                                                                                     \
       EXECSPACE,                                                                                                  \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                    \
     enum : bool { value = true };                                                                                 \
   };
@@ -105,7 +105,7 @@ struct Rotg<ExecutionSpace, SViewType, MViewType, false, KOKKOSKERNELS_IMPL_COMP
   extern template struct Rotg<                                                                                    \
       EXECSPACE,                                                                                                  \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
       false, true>;
 
@@ -118,7 +118,7 @@ struct Rotg<ExecutionSpace, SViewType, MViewType, false, KOKKOSKERNELS_IMPL_COMP
   template struct Rotg<                                                                                           \
       EXECSPACE,                                                                                                  \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
       false, true>;
 

@@ -44,7 +44,7 @@ struct SortedCountEntriesRange {
         Crowcounts(Crowcounts_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const {
-    const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();
+    const ordinal_type ORDINAL_MAX = KokkosKernels::ArithTraits<ordinal_type>::max();
 
     // count the union of nonzeros in Arow and Brow
     size_type numEntries = 0;
@@ -93,7 +93,7 @@ struct SortedCountEntriesTeam {
   using TeamMem = typename TeamPol::member_type;
 
   KOKKOS_INLINE_FUNCTION void longRowFallback(const ordinal_type i) const {
-    const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();
+    const ordinal_type ORDINAL_MAX = KokkosKernels::ArithTraits<ordinal_type>::max();
 
     // count the union of nonzeros in Arow and Brow
     size_type numEntries = 0;
@@ -151,7 +151,7 @@ struct SortedCountEntriesTeam {
     // Fill space between A and B with ORDINAL_MAX,
     // to maintain a valid bitonic sequence of power-of-two length
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, npot - n),
-                         [&](ordinal_type j) { scratch[Arowlen + j] = Kokkos::ArithTraits<ordinal_type>::max(); });
+                         [&](ordinal_type j) { scratch[Arowlen + j] = KokkosKernels::ArithTraits<ordinal_type>::max(); });
     // npot = 2^levels
     for (ordinal_type level = 0; level < levels; level++) {
       // npot/2 pairs of items are compared in parallel

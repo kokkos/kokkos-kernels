@@ -42,8 +42,8 @@ namespace Impl {
 // For complex, both real and imaginary parts will have interval (-mag, mag)
 template <typename Scalar>
 inline void getRandomBounds(double mag, Scalar &start, Scalar &end) {
-  start = -mag * Kokkos::ArithTraits<Scalar>::one();
-  end   = mag * Kokkos::ArithTraits<Scalar>::one();
+  start = -mag * KokkosKernels::ArithTraits<Scalar>::one();
+  end   = mag * KokkosKernels::ArithTraits<Scalar>::one();
 }
 
 template <>

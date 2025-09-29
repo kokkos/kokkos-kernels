@@ -122,7 +122,7 @@ void check_results(vector_view_type &X, vector_view_type &Y, vector_ref_type &Xr
   Kokkos::deep_copy(X_h, X);
   Kokkos::deep_copy(Y_h, Y);
 
-  Scalar const tol = 10 * Kokkos::ArithTraits<Scalar>::eps();
+  Scalar const tol = 10 * KokkosKernels::ArithTraits<Scalar>::eps();
   for (int idx = 0; idx < 4; ++idx) {
     Test::EXPECT_NEAR_KK_REL(X_h(idx), Xref(idx), tol);
     Test::EXPECT_NEAR_KK_REL(Y_h(idx), Yref(idx), tol);

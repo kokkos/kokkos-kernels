@@ -90,7 +90,7 @@ template <class CrsType, class RowType, class ColType, class DataType>
 void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data,
                       std::string failure_info = "no failure information!") {
   using value_type = typename DataType::value_type;
-  using ats        = Kokkos::ArithTraits<value_type>;
+  using ats        = KokkosKernels::ArithTraits<value_type>;
 
   // Copy coo to host
   typename RowType::host_mirror_type row_h = Kokkos::create_mirror_view(row);

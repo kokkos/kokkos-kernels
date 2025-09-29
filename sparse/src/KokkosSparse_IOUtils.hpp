@@ -114,7 +114,7 @@ void kk_diagonally_dominant_sparseMatrix_generate(OrdinalType nrows, OrdinalType
                                                   OrdinalType row_size_variance, OrdinalType bandwidth,
                                                   ScalarType *&values, SizeType *&rowPtr, OrdinalType *&colInd,
                                                   ScalarType diagDominance = 10 *
-                                                                             Kokkos::ArithTraits<ScalarType>::one()) {
+                                                                             KokkosKernels::ArithTraits<ScalarType>::one()) {
   rowPtr                       = new SizeType[nrows + 1];
   OrdinalType elements_per_row = nnz / nrows;
   // Set a hard limit to the actual entries in any one row, so that the
@@ -168,7 +168,7 @@ void kk_diagonally_dominant_sparseMatrix_generate(OrdinalType nrows, OrdinalType
           entriesInRow.insert(pos);
           colInd[k] = pos;
           values[k] = 100.0 * rand() / RAND_MAX - 50.0;
-          total_values += Kokkos::ArithTraits<ScalarType>::abs(values[k]);
+          total_values += KokkosKernels::ArithTraits<ScalarType>::abs(values[k]);
           break;
         }
       }
@@ -231,7 +231,7 @@ crsMat_t kk_generate_diagonally_dominant_sparse_matrix(
     typename crsMat_t::non_const_size_type &nnz, typename crsMat_t::const_ordinal_type row_size_variance,
     typename crsMat_t::const_ordinal_type bandwidth,
     typename crsMat_t::const_value_type diagDominance = 10 *
-                                                        Kokkos::ArithTraits<typename crsMat_t::value_type>::one()) {
+                                                        KokkosKernels::ArithTraits<typename crsMat_t::value_type>::one()) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type cols_view_t;
@@ -1138,7 +1138,7 @@ int read_hb(const char *fileName, lno_t &nrows, lno_t &ncols, size_type &ne, siz
   } else {
     // Initialize to one
     for (size_type i = 0; i < nnz_raw; ++i) {
-      raw_vals[i] = Kokkos::ArithTraits<scalar_t>::one();
+      raw_vals[i] = KokkosKernels::ArithTraits<scalar_t>::one();
     }
   }
 

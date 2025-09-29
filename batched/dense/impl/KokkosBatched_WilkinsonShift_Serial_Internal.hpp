@@ -50,13 +50,13 @@ struct SerialWilkinsonShiftInternal {
 
     if (v < 0) {
       // complex
-      const value_type sqrt_v = Kokkos::ArithTraits<value_type>::sqrt(-v);
+      const value_type sqrt_v = KokkosKernels::ArithTraits<value_type>::sqrt(-v);
       *lambda1                = Kokkos::complex<value_type>(p, sqrt_v);
       *lambda2                = Kokkos::complex<value_type>(p, -sqrt_v);
       *is_complex             = true;
     } else {
       // real
-      const value_type sqrt_v = Kokkos::ArithTraits<value_type>::sqrt(v);
+      const value_type sqrt_v = KokkosKernels::ArithTraits<value_type>::sqrt(v);
       *lambda1                = Kokkos::complex<value_type>(p + sqrt_v);
       *lambda2                = Kokkos::complex<value_type>(p - sqrt_v);
       *is_complex             = false;

@@ -149,7 +149,7 @@ struct Functor_TestBatchedTeamSolveLU {
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 void impl_test_batched_solvelu(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ViewType a0("a0", N, BlkSize, BlkSize);

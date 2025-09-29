@@ -72,9 +72,9 @@ struct SerialSpmv {
 
   template <typename ValuesViewType, typename IntView, typename xViewType, typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &alpha,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &alpha,
       const ValuesViewType &values, const IntView &row_ptr, const IntView &colIndices, const xViewType &X,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &beta,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &Y);
 };
 
@@ -130,9 +130,9 @@ struct TeamSpmv {
   template <typename ValuesViewType, typename IntView, typename xViewType, typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &alpha,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &alpha,
       const ValuesViewType &values, const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &beta,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &y);
 };
 
@@ -189,9 +189,9 @@ struct TeamVectorSpmv {
   template <typename ValuesViewType, typename IntView, typename xViewType, typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &alpha,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &alpha,
       const ValuesViewType &values, const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &beta,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &y);
 };
 
@@ -252,9 +252,9 @@ struct Spmv {
   template <typename ValuesViewType, typename IntView, typename xViewType, typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &alpha,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &alpha,
       const ValuesViewType &values, const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &beta,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &y) {
     int r_val = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {

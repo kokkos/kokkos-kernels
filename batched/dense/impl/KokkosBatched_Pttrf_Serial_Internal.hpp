@@ -50,7 +50,7 @@ KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
   };
 
   auto check_positive_definitiveness = [&](const int i) {
-    return (d[i] <= Kokkos::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
+    return (d[i] <= KokkosKernels::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
   };
 
   // Compute the L*D*L' (or U'*D*U) factorization of A.
@@ -123,7 +123,7 @@ KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
   };
 
   auto check_positive_definitiveness = [&](const int i) {
-    return (d[i] <= Kokkos::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
+    return (d[i] <= KokkosKernels::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
   };
 
   // Compute the L*D*L' (or U'*D*U) factorization of A.

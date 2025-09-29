@@ -34,7 +34,7 @@ Matrix removeMatrixZerosReference(const Matrix& A) {
   using Offset     = typename Matrix::non_const_size_type;
   using Ordinal    = typename Matrix::ordinal_type;
   using Scalar     = typename Matrix::value_type;
-  using KAT        = Kokkos::ArithTraits<Scalar>;
+  using KAT        = KokkosKernels::ArithTraits<Scalar>;
   auto rowmapHost  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
   auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
   auto valuesHost  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);

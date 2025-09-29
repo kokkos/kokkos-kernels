@@ -620,7 +620,7 @@ struct kokkos_to_std_type_map {
 // e.g., map Kokkos::complex<float> to std::complex<float>
 template <typename T>
 struct kokkos_to_std_type_map<T, true> {
-  using type = std::complex<typename Kokkos::ArithTraits<T>::mag_type>;
+  using type = std::complex<typename KokkosKernels::ArithTraits<T>::mag_type>;
 };
 
 #define KOKKOSBLAS2_GEMV_ONEMKL(SCALAR, LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                                       \
@@ -642,8 +642,8 @@ struct kokkos_to_std_type_map<T, true> {
     static void gemv(const ExecSpace& exec, const char kk_trans[], typename AViewType::const_value_type& alpha,  \
                      const AViewType& A, const XViewType& X, typename YViewType::const_value_type& beta,         \
                      const YViewType& Y) {                                                                       \
-      if (beta == Kokkos::ArithTraits<SCALAR>::zero()) {                                                         \
-        Kokkos::deep_copy(Y, Kokkos::ArithTraits<SCALAR>::zero());                                               \
+      if (beta == KokkosKernels::ArithTraits<SCALAR>::zero()) {                                                         \
+        Kokkos::deep_copy(Y, KokkosKernels::ArithTraits<SCALAR>::zero());                                               \
       }                                                                                                          \
                                                                                                                  \
       bool row_major               = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                           \
@@ -651,10 +651,10 @@ struct kokkos_to_std_type_map<T, true> {
       const std::int64_t N         = A.extent(1);                                                                \
       oneapi::mkl::transpose trans = mode_kk_to_onemkl(kk_trans[0]);                                             \
       const std::int64_t LDA       = row_major ? A.stride(0) : A.stride(1);                                      \
-      std::string label            = "KokkosBlas::gemv[TPL_ONEMKL," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
+      std::string label            = "KokkosBlas::gemv[TPL_ONEMKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
                                                                                                                  \
       Kokkos::Profiling::pushRegion(label);                                                                      \
-      using mag_type    = kokkos_to_std_type_map<SCALAR, Kokkos::ArithTraits<SCALAR>::is_complex>::type;         \
+      using mag_type    = kokkos_to_std_type_map<SCALAR, KokkosKernels::ArithTraits<SCALAR>::is_complex>::type;         \
       const mag_type* a = reinterpret_cast<const mag_type*>(A.data());                                           \
       const mag_type* x = reinterpret_cast<const mag_type*>(X.data());                                           \
       mag_type* y       = reinterpret_cast<mag_type*>(Y.data());                                                 \

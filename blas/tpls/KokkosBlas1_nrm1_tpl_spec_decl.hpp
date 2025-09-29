@@ -41,17 +41,17 @@ namespace Impl {
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                     \
   template <>                                                                                                        \
   struct Nrm1<EXECSPACE,                                                                                             \
-              Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,                \
+              Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,                \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
               Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                               \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
               1, true,                                                                                               \
               nrm1_eti_spec_avail<EXECSPACE,                                                                         \
-                                  Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,               \
+                                  Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT,               \
                                                Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,          \
                                   Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,           \
                                                Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                   \
-    using mag_type  = typename Kokkos::ArithTraits<SCALAR>::mag_type;                                                \
+    using mag_type  = typename KokkosKernels::ArithTraits<SCALAR>::mag_type;                                                \
     using RV        = Kokkos::View<mag_type, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;    \
     using XV        = Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                       \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
@@ -64,7 +64,7 @@ namespace Impl {
         nrm1_print_specialization<RV, XV>();                                                                         \
         int N   = numElems;                                                                                          \
         int one = 1;                                                                                                 \
-        if constexpr (Kokkos::ArithTraits<SCALAR>::is_complex) {                                                     \
+        if constexpr (KokkosKernels::ArithTraits<SCALAR>::is_complex) {                                                     \
           R() = HostBlas<std::complex<mag_type>>::asum(N, reinterpret_cast<const std::complex<mag_type>*>(X.data()), \
                                                        one);                                                         \
         } else {                                                                                                     \
@@ -140,18 +140,18 @@ void cublasAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTyp
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(SCALAR, LAYOUT, MEMSPACE)                                               \
   template <>                                                                                                         \
   struct Nrm1<Kokkos::Cuda,                                                                                           \
-              Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,                 \
+              Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,                 \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
               Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                             \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
               1, true,                                                                                                \
               nrm1_eti_spec_avail<Kokkos::Cuda,                                                                       \
-                                  Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,                \
+                                  Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT,                \
                                                Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
                                   Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,         \
                                                Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                    \
     using execution_space = Kokkos::Cuda;                                                                             \
-    using RV              = Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,   \
+    using RV              = Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,   \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                    \
     using XV              = Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,               \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                    \
@@ -222,17 +222,17 @@ void rocblasAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTy
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE)                                         \
   template <>                                                                                                    \
   struct Nrm1<Kokkos::HIP,                                                                                       \
-              Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,            \
+              Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,            \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                             \
               Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,                         \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                             \
               1, true,                                                                                           \
               nrm1_eti_spec_avail<Kokkos::HIP,                                                                   \
-                                  Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,           \
+                                  Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT,           \
                                                Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,      \
                                   Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,     \
                                                Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {               \
-    using RV        = Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,    \
+    using RV        = Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,    \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                     \
     using XV        = Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,                 \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                     \
@@ -274,13 +274,13 @@ namespace Impl {
 template <class ExecutionSpace, class XViewType, class RViewType>
 void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewType& X) {
   using XScalar  = typename XViewType::non_const_value_type;
-  using KAT_X    = Kokkos::ArithTraits<XScalar>;
+  using KAT_X    = KokkosKernels::ArithTraits<XScalar>;
   using layout_t = typename XViewType::array_layout;
 
   const std::int64_t N = static_cast<std::int64_t>(X.extent(0));
 
   // Create temp view on device to store the result
-  Kokkos::View<typename Kokkos::ArithTraits<XScalar>::mag_type, typename XViewType::memory_space> res(
+  Kokkos::View<typename KokkosKernels::ArithTraits<XScalar>::mag_type, typename XViewType::memory_space> res(
       "sycl asum result");
 
   // Decide to call row_major or column_major function
@@ -309,18 +309,18 @@ void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTyp
   template <>                                                                                                          \
   struct Nrm1<                                                                                                         \
       Kokkos::Experimental::SYCL,                                                                                      \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,                          \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,                          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,                        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       1, true,                                                                                                         \
       nrm1_eti_spec_avail<Kokkos::Experimental::SYCL,                                                                  \
-                          Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,      \
+                          Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,      \
                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                       \
                           Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,    \
                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                             \
     using execution_space = Kokkos::Experimental::SYCL;                                                                \
-    using RV              = Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,    \
+    using RV              = Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,    \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                     \
     using XV              = Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,  \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                     \

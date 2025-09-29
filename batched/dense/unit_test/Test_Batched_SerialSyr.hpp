@@ -93,7 +93,7 @@ struct Functor_BatchedSerialSyr {
 /// \param Nb [in] Batch size of matrices
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType>
 void impl_test_batched_syr_analytical(const std::size_t Nb) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
@@ -219,7 +219,7 @@ void impl_test_batched_syr_analytical(const std::size_t Nb) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType>
 void impl_test_batched_syr(const std::size_t Nb, const std::size_t BlkSize) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
@@ -285,7 +285,7 @@ void impl_test_batched_syr(const std::size_t Nb, const std::size_t BlkSize) {
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t j = 0; j < BlkSize; j++) {
       if (h_x(ib, j) != 0) {
-        auto temp = is_conj ? alpha * Kokkos::ArithTraits<ScalarType>::conj(h_x(ib, j)) : alpha * h_x(ib, j);
+        auto temp = is_conj ? alpha * KokkosKernels::ArithTraits<ScalarType>::conj(h_x(ib, j)) : alpha * h_x(ib, j);
 
         if (std::is_same_v<ArgUplo, KokkosBatched::Uplo::Upper>) {
           for (std::size_t i = 0; i < j + 1; i++) {
@@ -298,8 +298,8 @@ void impl_test_batched_syr(const std::size_t Nb, const std::size_t BlkSize) {
             h_A0_ref(ib, i, j) = h_x(ib, i) * temp;
           }
         }
-        h_A_ref(ib, j, j)  = is_conj ? Kokkos::ArithTraits<ScalarType>::real(h_A_ref(ib, j, j)) : h_A_ref(ib, j, j);
-        h_A0_ref(ib, j, j) = is_conj ? Kokkos::ArithTraits<ScalarType>::real(h_A0_ref(ib, j, j)) : h_A0_ref(ib, j, j);
+        h_A_ref(ib, j, j)  = is_conj ? KokkosKernels::ArithTraits<ScalarType>::real(h_A_ref(ib, j, j)) : h_A_ref(ib, j, j);
+        h_A0_ref(ib, j, j) = is_conj ? KokkosKernels::ArithTraits<ScalarType>::real(h_A0_ref(ib, j, j)) : h_A0_ref(ib, j, j);
       }
     }
   }

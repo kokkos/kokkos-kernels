@@ -25,7 +25,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_scal(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   ScalarA a(3);
   typename AT::mag_type eps = AT::epsilon() * 1000;
@@ -50,7 +50,7 @@ void impl_test_scal(int N) {
   }
 
   // Zero out y again and run with const input
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
   KokkosBlas::scal(y.d_view, a, x.d_view_const);
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
@@ -62,7 +62,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_scal_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   view_stride_adapter<ViewTypeA> x("X", N, K);
   view_stride_adapter<ViewTypeB> y("Y", N, K);
@@ -92,7 +92,7 @@ void impl_test_scal_mv(int N, int K) {
   }
 
   // Zero out y again, and run again with const input
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
   KokkosBlas::scal(y.d_view, a, x.d_view_const);
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
@@ -111,7 +111,7 @@ void impl_test_scal_mv(int N, int K) {
 
   auto h_params = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), params);
 
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
   KokkosBlas::scal(y.d_view, params, x.d_view);
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
@@ -120,7 +120,7 @@ void impl_test_scal_mv(int N, int K) {
     }
   }
 
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
   KokkosBlas::scal(y.d_view, params, x.d_view_const);
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {

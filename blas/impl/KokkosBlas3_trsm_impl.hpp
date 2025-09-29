@@ -37,7 +37,7 @@ template <typename ScalarType, typename ValueType>
 int SerialTrsmInternalLeftLowerConj(const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
                                     const ValueType* KOKKOS_RESTRICT A, const int as0, const int as1,
                                     /**/ ValueType* KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
 
   const ScalarType one(1.0), zero(0.0);
 
@@ -70,7 +70,7 @@ template <typename ScalarType, typename ValueType>
 int SerialTrsmInternalLeftUpperConj(const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
                                     const ValueType* KOKKOS_RESTRICT A, const int as0, const int as1,
                                     /**/ ValueType* KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
 
   const ScalarType one(1.0), zero(0.0);
 

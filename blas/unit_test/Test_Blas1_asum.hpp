@@ -23,8 +23,8 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_asum(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
-  typedef Kokkos::ArithTraits<typename AT::mag_type> MAT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<typename AT::mag_type> MAT;
 
   view_stride_adapter<ViewTypeA> a("A", N);
 

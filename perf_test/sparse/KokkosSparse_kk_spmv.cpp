@@ -35,7 +35,7 @@
 using Scalar  = KokkosKernels::default_scalar;
 using Ordinal = KokkosKernels::default_lno_t;
 using Offset  = KokkosKernels::default_size_type;
-using KAT     = Kokkos::ArithTraits<Scalar>;
+using KAT     = KokkosKernels::ArithTraits<Scalar>;
 
 struct SPMVBenchmarking {
   // note: CLI currently only allows square matrices to be randomly generated

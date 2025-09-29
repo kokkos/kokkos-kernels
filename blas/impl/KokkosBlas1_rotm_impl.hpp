@@ -63,10 +63,10 @@ struct rotm_functor {
 template <class execution_space, class VectorView, class ParamView>
 void Rotm_Invoke(execution_space const& space, VectorView const& X, VectorView const& Y, ParamView const& param) {
   using Scalar = typename VectorView::value_type;
-  static_assert(!Kokkos::ArithTraits<Scalar>::is_complex, "rotm is not defined for complex types!");
+  static_assert(!KokkosKernels::ArithTraits<Scalar>::is_complex, "rotm is not defined for complex types!");
 
-  Scalar const zero = Kokkos::ArithTraits<Scalar>::zero();
-  Scalar const one  = Kokkos::ArithTraits<Scalar>::one();
+  Scalar const zero = KokkosKernels::ArithTraits<Scalar>::zero();
+  Scalar const one  = KokkosKernels::ArithTraits<Scalar>::one();
   Scalar const two  = one + one;
 
   rotm_functor myFunc(X, Y, param);

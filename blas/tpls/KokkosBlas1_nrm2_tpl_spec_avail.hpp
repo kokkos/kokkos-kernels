@@ -53,7 +53,7 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
 #define KOKKOSBLAS1_NRM2_TPL_SPEC(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                               \
   template <>                                                                                                        \
   struct nrm2_tpl_spec_avail<EXECSPACE,                                                                              \
-                             Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace, \
+                             Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace, \
                                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                 \
                              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                \
                                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                 \

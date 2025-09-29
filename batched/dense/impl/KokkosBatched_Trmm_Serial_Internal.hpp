@@ -71,7 +71,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::i
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
   int left_m  = am;
   int right_n = bn;
   // echo-TODO: See about coniditionally setting conjOp at compile time.
@@ -146,7 +146,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
   int left_m  = bm;
   int right_n = an;
   // echo-TODO: See about coniditionally setting conjOp at compile time.
@@ -221,7 +221,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::i
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
   int left_m  = am;
   int right_n = bn;
   // echo-TODO: See about coniditionally setting conjOp at compile time.
@@ -293,7 +293,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
   int left_m  = bm;
   int right_n = an;
   // echo-TODO: See about coniditionally setting conjOp at compile time.

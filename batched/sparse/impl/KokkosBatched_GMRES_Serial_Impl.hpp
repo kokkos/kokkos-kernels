@@ -41,8 +41,8 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
                                                const PrecOperatorType& P, const KrylovHandleType& handle,
                                                const int GMRES_id) {
   typedef int OrdinalType;
-  typedef typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
-  typedef Kokkos::ArithTraits<MagnitudeType> ATM;
+  typedef typename KokkosKernels::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
+  typedef KokkosKernels::ArithTraits<MagnitudeType> ATM;
 
   using SerialCopy1D = SerialCopy<Trans::NoTranspose, 1>;
   using SerialCopy2D = SerialCopy<Trans::NoTranspose, 2>;
@@ -206,7 +206,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
         G(l, j + 1) = 0.;
       }
 
-      auto res_norm = Kokkos::ArithTraits<double>::abs(G(l, j + 1)) / G(l, 0);
+      auto res_norm = KokkosKernels::ArithTraits<double>::abs(G(l, j + 1)) / G(l, 0);
 
       handle.set_norm(GMRES_id, l, j + 1, res_norm);
 

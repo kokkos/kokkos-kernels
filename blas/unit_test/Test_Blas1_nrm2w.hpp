@@ -23,7 +23,7 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2w(int N) {
   using ScalarA    = typename ViewTypeA::value_type;
-  using AT         = Kokkos::ArithTraits<ScalarA>;
+  using AT         = KokkosKernels::ArithTraits<ScalarA>;
   using MagnitudeA = typename AT::mag_type;
 
   view_stride_adapter<ViewTypeA> a("A", N);
@@ -49,7 +49,7 @@ void impl_test_nrm2w(int N) {
     typename AT::mag_type term = AT::abs(a.h_view(i)) / AT::abs(w.h_view(i));
     expected_result += term * term;
   }
-  expected_result = Kokkos::ArithTraits<typename AT::mag_type>::sqrt(expected_result);
+  expected_result = KokkosKernels::ArithTraits<typename AT::mag_type>::sqrt(expected_result);
 
   typename AT::mag_type nonconst_result = KokkosBlas::nrm2w(a.d_view, w.d_view);
   EXPECT_NEAR_KK(nonconst_result, expected_result, max_error);
@@ -58,7 +58,7 @@ void impl_test_nrm2w(int N) {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2w_mv(int N, int K) {
   using ScalarA    = typename ViewTypeA::value_type;
-  using AT         = Kokkos::ArithTraits<ScalarA>;
+  using AT         = KokkosKernels::ArithTraits<ScalarA>;
   using MagnitudeA = typename AT::mag_type;
 
   view_stride_adapter<ViewTypeA> a("A", N, K);
@@ -86,7 +86,7 @@ void impl_test_nrm2w_mv(int N, int K) {
       typename AT::mag_type term = AT::abs(a.h_view(i, j)) / AT::abs(w.h_view(i, j));
       expected_result[j] += term * term;
     }
-    expected_result[j] = Kokkos::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
+    expected_result[j] = KokkosKernels::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
   }
 
   Kokkos::View<typename AT::mag_type*, Device> r("Dot::Result", K);

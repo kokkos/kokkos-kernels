@@ -25,11 +25,11 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_reciprocal(int N) {
   using ScalarA    = typename ViewTypeA::value_type;
   using ScalarB    = typename ViewTypeB::value_type;
-  using AT         = Kokkos::ArithTraits<ScalarA>;
+  using AT         = KokkosKernels::ArithTraits<ScalarA>;
   using MagnitudeA = typename AT::mag_type;
-  using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
+  using MagnitudeB = typename KokkosKernels::ArithTraits<ScalarB>::mag_type;
 
-  const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
+  const MagnitudeB eps     = KokkosKernels::ArithTraits<ScalarB>::epsilon();
   const MagnitudeA one     = AT::abs(AT::one());
   const MagnitudeA max_val = 10;
 
@@ -53,7 +53,7 @@ void impl_test_reciprocal(int N) {
   }
 
   // Zero out y again, and run again with const input
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
 
   KokkosBlas::reciprocal(y.d_view, x.d_view_const);
   Kokkos::deep_copy(y.h_base, y.d_base);
@@ -75,7 +75,7 @@ void impl_test_reciprocal_mv(int N, int K) {
   {
     ScalarA randStart, randEnd;
     Test::getRandomBounds(10, randStart, randEnd);
-    Kokkos::fill_random(x.d_view, rand_pool, Kokkos::ArithTraits<ScalarA>::one(), randEnd);
+    Kokkos::fill_random(x.d_view, rand_pool, KokkosKernels::ArithTraits<ScalarA>::one(), randEnd);
   }
 
   Kokkos::deep_copy(x.h_base, x.d_base);
@@ -85,20 +85,20 @@ void impl_test_reciprocal_mv(int N, int K) {
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int j = 0; j < K; ++j) {
     for (int i = 0; i < N; ++i) {
-      EXPECT_NEAR_KK(y.h_view(i, j), Kokkos::ArithTraits<ScalarB>::one() / ScalarB(x.h_view(i, j)),
-                     2 * Kokkos::ArithTraits<ScalarB>::epsilon());
+      EXPECT_NEAR_KK(y.h_view(i, j), KokkosKernels::ArithTraits<ScalarB>::one() / ScalarB(x.h_view(i, j)),
+                     2 * KokkosKernels::ArithTraits<ScalarB>::epsilon());
     }
   }
 
   // Zero out y again, and run again with const input
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
 
   KokkosBlas::reciprocal(y.d_view, x.d_view_const);
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int j = 0; j < K; j++) {
     for (int i = 0; i < N; ++i) {
-      EXPECT_NEAR_KK(y.h_view(i, j), Kokkos::ArithTraits<ScalarB>::one() / ScalarB(x.h_view(i, j)),
-                     2 * Kokkos::ArithTraits<ScalarB>::epsilon());
+      EXPECT_NEAR_KK(y.h_view(i, j), KokkosKernels::ArithTraits<ScalarB>::one() / ScalarB(x.h_view(i, j)),
+                     2 * KokkosKernels::ArithTraits<ScalarB>::epsilon());
     }
   }
 }

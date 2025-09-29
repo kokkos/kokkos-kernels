@@ -81,7 +81,7 @@ struct Functor_TestBatchedTeamTrsm {
 template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_trsm(const int N, const int BlkSize, const int NumCols) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ScalarType alpha(1.0);

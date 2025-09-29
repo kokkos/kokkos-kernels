@@ -51,9 +51,9 @@ void rotm(execution_space const& space, VectorView const& X, VectorView const& Y
                 "from execution_space template parameter");
   static_assert(std::is_same<typename VectorView::non_const_value_type, typename VectorView::value_type>::value,
                 "rotm: VectorView template parameter needs to store non-const values");
-  static_assert(!Kokkos::ArithTraits<typename VectorView::value_type>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<typename VectorView::value_type>::is_complex,
                 "rotm: VectorView template parameter cannot use complex value_type");
-  static_assert(!Kokkos::ArithTraits<typename ParamView::value_type>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<typename ParamView::value_type>::is_complex,
                 "rotm: ParamView template parameter cannot use complex value_type");
 
   using VectorView_Internal = Kokkos::View<typename VectorView::non_const_value_type*,

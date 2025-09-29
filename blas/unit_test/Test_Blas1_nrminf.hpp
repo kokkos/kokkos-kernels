@@ -23,7 +23,7 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_nrminf(int N) {
   typedef typename ViewTypeA::non_const_value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   view_stride_adapter<ViewTypeA> a("A", N);
 
@@ -37,7 +37,7 @@ void impl_test_nrminf(int N) {
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
-  typename AT::mag_type expected_result = Kokkos::ArithTraits<typename AT::mag_type>::min();
+  typename AT::mag_type expected_result = KokkosKernels::ArithTraits<typename AT::mag_type>::min();
   for (int i = 0; i < N; i++)
     if (AT::abs(a.h_view(i)) > expected_result) expected_result = AT::abs(a.h_view(i));
 
@@ -53,7 +53,7 @@ void impl_test_nrminf(int N) {
 template <class ViewTypeA, class Device>
 void impl_test_nrminf_mv(int N, int K) {
   typedef typename ViewTypeA::non_const_value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   view_stride_adapter<ViewTypeA> a("A", N, K);
 
@@ -67,7 +67,7 @@ void impl_test_nrminf_mv(int N, int K) {
 
   typename AT::mag_type* expected_result = new typename AT::mag_type[K];
   for (int j = 0; j < K; j++) {
-    expected_result[j] = Kokkos::ArithTraits<typename AT::mag_type>::min();
+    expected_result[j] = KokkosKernels::ArithTraits<typename AT::mag_type>::min();
     for (int i = 0; i < N; i++) {
       if (AT::abs(a.h_view(i, j)) > expected_result[j]) expected_result[j] = AT::abs(a.h_view(i, j));
     }

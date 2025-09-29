@@ -145,7 +145,7 @@ void impl_test_team_mult_mv(int N, int K) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  typename Kokkos::ArithTraits<ScalarC>::mag_type const max_val = 10;
+  typename KokkosKernels::ArithTraits<ScalarC>::mag_type const max_val = 10;
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(max_val));
   Kokkos::fill_random(y.d_view, rand_pool, ScalarB(max_val));
   Kokkos::fill_random(z.d_view, rand_pool, ScalarC(max_val));
@@ -163,9 +163,9 @@ void impl_test_team_mult_mv(int N, int K) {
   // Since b and a are known and the largest value in z, x and y
   // is set by the variables max_val, the error upper bound will be
   //         max_error = a * max_val * max_val
-  typename Kokkos::ArithTraits<ScalarC>::mag_type const eps = Kokkos::ArithTraits<ScalarC>::epsilon();
-  typename Kokkos::ArithTraits<ScalarC>::mag_type const max_error =
-      Kokkos::ArithTraits<ScalarC>::abs(a) * max_val * max_val * eps;
+  typename KokkosKernels::ArithTraits<ScalarC>::mag_type const eps = KokkosKernels::ArithTraits<ScalarC>::epsilon();
+  typename KokkosKernels::ArithTraits<ScalarC>::mag_type const max_error =
+      KokkosKernels::ArithTraits<ScalarC>::abs(a) * max_val * max_val * eps;
 
   // KokkosBlas::mult(b,z,a,x,y);
   Kokkos::parallel_for(

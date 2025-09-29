@@ -44,7 +44,7 @@ template <class AV, class XMV, class BV, class YMV, int scalar_x, int scalar_y,
           class SizeType = typename YMV::size_type>
 struct Axpby_MV_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   const size_type numCols;
   XMV m_x;
@@ -121,7 +121,7 @@ struct Axpby_MV_Functor {
         // Nothing to do: Y(i,j) := Y(i,j)
       } else if constexpr (scalar_y == 2) {
         if (m_b.extent(0) == 1) {
-          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -129,7 +129,7 @@ struct Axpby_MV_Functor {
 #pragma vector always
 #endif
             for (size_type k = 0; k < numCols; ++k) {
-              m_y(i, k) = Kokkos::ArithTraits<typename YMV::non_const_value_type>::zero();
+              m_y(i, k) = KokkosKernels::ArithTraits<typename YMV::non_const_value_type>::zero();
             }
           } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -191,7 +191,7 @@ struct Axpby_MV_Functor {
         }
       } else if constexpr (scalar_y == 2) {
         if (m_b.extent(0) == 1) {
-          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -261,7 +261,7 @@ struct Axpby_MV_Functor {
         }
       } else if constexpr (scalar_y == 2) {
         if (m_b.extent(0) == 1) {
-          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -368,7 +368,7 @@ struct Axpby_MV_Functor {
       } else if constexpr (scalar_y == 2) {
         if (m_a.extent(0) == 1) {
           if (m_b.extent(0) == 1) {
-            if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -402,7 +402,7 @@ struct Axpby_MV_Functor {
           }
         } else {
           if (m_b.extent(0) == 1) {
-            if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -462,7 +462,7 @@ template <class XMV, class YMV, int scalar_x, int scalar_y, class SizeType>
 struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV, typename YMV::non_const_value_type, YMV, scalar_x,
                         scalar_y, SizeType> {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   const size_type numCols;
   XMV m_x;
@@ -684,7 +684,7 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV, typename YMV::n
 template <class AV, class XMV, class BV, class YMV, int scalar_x, int scalar_y, int UNROLL, class SizeType>
 struct Axpby_MV_Unroll_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   XMV m_x;
   YMV m_y;
@@ -763,12 +763,12 @@ struct Axpby_MV_Unroll_Functor {
         // Nothing to do: Y(i,j) := Y(i,j)
       } else if constexpr (scalar_y == 2) {
         if (m_b.extent(0) == 1) {
-          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
             for (int k = 0; k < UNROLL; ++k) {
-              m_y(i, k) = Kokkos::ArithTraits<typename YMV::non_const_value_type>::zero();
+              m_y(i, k) = KokkosKernels::ArithTraits<typename YMV::non_const_value_type>::zero();
             }
           } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -815,7 +815,7 @@ struct Axpby_MV_Unroll_Functor {
         }
       } else if constexpr (scalar_y == 2) {
         if (m_b.extent(0) == 1) {
-          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -867,7 +867,7 @@ struct Axpby_MV_Unroll_Functor {
         }
       } else if constexpr (scalar_y == 2) {
         if (m_b.extent(0) == 1) {
-          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -947,7 +947,7 @@ struct Axpby_MV_Unroll_Functor {
       } else if constexpr (scalar_y == 2) {
         if (m_a.extent(0) == 1) {
           if (m_b.extent(0) == 1) {
-            if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -972,7 +972,7 @@ struct Axpby_MV_Unroll_Functor {
           }
         } else {
           if (m_b.extent(0) == 1) {
-            if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
@@ -1008,7 +1008,7 @@ template <class XMV, class YMV, int scalar_x, int scalar_y, int UNROLL, class Si
 struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV, typename YMV::non_const_value_type, YMV,
                                scalar_x, scalar_y, UNROLL, SizeType> {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   XMV m_x;
   YMV m_y;

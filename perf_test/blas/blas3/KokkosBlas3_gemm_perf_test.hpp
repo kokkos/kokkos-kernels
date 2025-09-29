@@ -1369,7 +1369,7 @@ static inline bool gemm_print_compare_failure(ViewType h_expected, ViewType h_ac
  */
 template <class ScalarType, class LayoutType>
 static inline bool gemm_do_compare(view_type_3d expected, view_type_3d actual) {
-  double epsilon = Kokkos::ArithTraits<ScalarType>::eps() * 1e3;
+  double epsilon = KokkosKernels::ArithTraits<ScalarType>::eps() * 1e3;
 
   STATUS;
 

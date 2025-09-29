@@ -143,9 +143,9 @@ struct SPMV_STRUCT<ExecutionSpace, AMatrix, XVector, YVector, false, KOKKOSKERNE
                           const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& structure,
                           const coefficient_type& alpha, const AMatrix& A, const XVector& x,
                           const coefficient_type& beta, const YVector& y) {
-    typedef Kokkos::ArithTraits<coefficient_type> KAT;
+    typedef KokkosKernels::ArithTraits<coefficient_type> KAT;
 
-    typedef Kokkos::ArithTraits<coefficient_type> KAT;
+    typedef KokkosKernels::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero()) {
       if (beta != KAT::one()) {
@@ -178,7 +178,7 @@ struct SPMV_MV_STRUCT<ExecutionSpace, AMatrix, XVector, YVector, false, false, K
 
   static void spmv_mv_struct(const ExecutionSpace& space, const char mode[], const coefficient_type& alpha,
                              const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {
-    typedef Kokkos::ArithTraits<coefficient_type> KAT;
+    typedef KokkosKernels::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero()) {
       spmv_alpha_mv_struct<ExecutionSpace, AMatrix, XVector, YVector, 0>(space, mode, alpha, A, x, beta, y);

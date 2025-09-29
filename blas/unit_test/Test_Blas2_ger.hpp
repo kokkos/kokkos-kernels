@@ -73,7 +73,7 @@ class GerTester {
   using _HostViewTypeA    = typename _ViewTypeA::host_mirror_type;
   using _ViewTypeExpected = Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
 
-  using _KAT_A   = Kokkos::ArithTraits<ScalarA>;
+  using _KAT_A   = KokkosKernels::ArithTraits<ScalarA>;
   using _AuxType = typename _KAT_A::mag_type;
 
   void populateVariables(ScalarA& alpha, view_stride_adapter<_ViewTypeX, false>& x,

@@ -74,7 +74,7 @@ are some specializations
 
 template <typename T>
 T getRandom() {
-  return rand() % Kokkos::ArithTraits<T>::max();
+  return rand() % KokkosKernels::ArithTraits<T>::max();
 }
 
 // Generate a uniform double between (-5, 5)

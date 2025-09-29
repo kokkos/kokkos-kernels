@@ -68,7 +68,7 @@ using ValuesType  = Kokkos::View<scalar_t*, device>;
 using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 using KernelHandle =
     KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
-using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+using float_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
 ///////////////////////////////////////////////////////////////////////////////
 void run_par_ilut_test(benchmark::State& state, KernelHandle& kh, const sp_matrix_type& A, int& num_iters)

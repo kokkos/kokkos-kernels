@@ -25,7 +25,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_dot(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> ats;
+  typedef KokkosKernels::ArithTraits<ScalarA> ats;
 
   view_stride_adapter<ViewTypeA> a("a", N);
   view_stride_adapter<ViewTypeB> b("b", N);
@@ -67,7 +67,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_dot_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> ats;
+  typedef KokkosKernels::ArithTraits<ScalarA> ats;
 
   view_stride_adapter<ViewTypeA> a("A", N, K);
   view_stride_adapter<ViewTypeB> b("B", N, K);

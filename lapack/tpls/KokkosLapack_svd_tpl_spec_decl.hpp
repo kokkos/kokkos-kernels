@@ -73,7 +73,7 @@ void lapackSvdWrapper(const ExecutionSpace& /* space */, const char jobu[], cons
   int lwork = -1, info = 0;
   Kokkos::View<Magnitude*, memory_space> rwork("svd rwork buffer", 5 * Kokkos::min(m, n));
   Kokkos::View<Scalar*, memory_space> work("svd work buffer", 1);
-  if constexpr (Kokkos::ArithTraits<Scalar>::is_complex) {
+  if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
     HostLapack<std::complex<Magnitude>>::gesvd(
         jobu[0], jobvt[0], m, n, reinterpret_cast<std::complex<Magnitude>*>(A.data()), lda, S.data(),
         reinterpret_cast<std::complex<Magnitude>*>(U.data()), ldu,
@@ -105,7 +105,7 @@ void lapackSvdWrapper(const ExecutionSpace& /* space */, const char jobu[], cons
   struct SVD<EXEC_SPACE,                                                                                               \
              Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                             \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
-             Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                  \
+             Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                  \
                           Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
              Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                             \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
@@ -116,7 +116,7 @@ void lapackSvdWrapper(const ExecutionSpace& /* space */, const char jobu[], cons
                  EXEC_SPACE,                                                                                           \
                  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                         \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                \
-                 Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                              \
+                 Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                              \
                               Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
                  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                         \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                \
@@ -125,7 +125,7 @@ void lapackSvdWrapper(const ExecutionSpace& /* space */, const char jobu[], cons
     using AMatrix = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                      \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                             \
     using SVector =                                                                                                    \
-        Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                       \
+        Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                       \
                      Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;          \
     using UMatrix = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                      \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                             \
@@ -229,7 +229,7 @@ void mklSvdWrapper(const ExecutionSpace& /* space */, const char jobu[], const c
   struct SVD<EXEC_SPACE,                                                                                               \
              Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                             \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
-             Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                  \
+             Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                  \
                           Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
              Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                             \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
@@ -240,7 +240,7 @@ void mklSvdWrapper(const ExecutionSpace& /* space */, const char jobu[], const c
                  EXEC_SPACE,                                                                                           \
                  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                         \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                \
-                 Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                              \
+                 Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                              \
                               Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
                  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                         \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                \
@@ -249,7 +249,7 @@ void mklSvdWrapper(const ExecutionSpace& /* space */, const char jobu[], const c
     using AMatrix = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                      \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                             \
     using SVector =                                                                                                    \
-        Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                       \
+        Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                       \
                      Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;          \
     using UMatrix = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, Kokkos::HostSpace>,                      \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                             \
@@ -369,7 +369,7 @@ void cusolverSvdWrapper(const ExecutionSpace& space, const char jobu[], const ch
   struct SVD<Kokkos::Cuda,                                                                                          \
              Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
-             Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                               \
+             Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                               \
                           Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,        \
              Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                 \
@@ -380,7 +380,7 @@ void cusolverSvdWrapper(const ExecutionSpace& space, const char jobu[], const ch
                  Kokkos::Cuda,                                                                                      \
                  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                            \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                             \
-                 Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                           \
+                 Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                           \
                               Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
                  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                            \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                             \
@@ -388,7 +388,7 @@ void cusolverSvdWrapper(const ExecutionSpace& space, const char jobu[], const ch
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                                   \
     using AMatrix = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
-    using SVector = Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                        \
+    using SVector = Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                        \
                                  Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     using UMatrix = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
@@ -506,7 +506,7 @@ void rocsolverSvdWrapper(const ExecutionSpace& space, const char jobu[], const c
   struct SVD<                                                                                                          \
       Kokkos::HIP,                                                                                                     \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
+      Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
@@ -515,7 +515,7 @@ void rocsolverSvdWrapper(const ExecutionSpace& space, const char jobu[], const c
           Kokkos::HIP,                                                                                                 \
           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                                       \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
-          Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                     \
+          Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                     \
                        Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                                       \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
@@ -523,7 +523,7 @@ void rocsolverSvdWrapper(const ExecutionSpace& space, const char jobu[], const c
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                                             \
     using AMatrix = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                             \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                             \
-    using SVector = Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                           \
+    using SVector = Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                           \
                                  Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
     using UMatrix = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                             \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                             \

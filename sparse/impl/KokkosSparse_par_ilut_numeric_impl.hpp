@@ -47,7 +47,7 @@ struct IlutWrap {
   using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
   using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
-  using karith                  = typename Kokkos::ArithTraits<scalar_t>;
+  using karith                  = typename KokkosKernels::ArithTraits<scalar_t>;
   using policy_type             = typename IlutHandle::TeamPolicy;
   using member_type             = typename policy_type::member_type;
   using range_policy            = typename IlutHandle::RangePolicy;

@@ -41,7 +41,7 @@ struct ThreadParallelGER {
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType& i) const {
-    if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
+    if (alpha_ == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     } else {
       const IndexType N(A_.extent(1));
@@ -53,7 +53,7 @@ struct ThreadParallelGER {
         }
       } else {
         for (IndexType j = 0; j < N; ++j) {
-          A_(i, j) += AComponentType(alpha_ * x_fixed * Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
+          A_(i, j) += AComponentType(alpha_ * x_fixed * KokkosKernels::ArithTraits<YComponentType>::conj(y_(j)));
         }
       }
     }
@@ -81,7 +81,7 @@ void threadParallelGer(const ExecutionSpace& space, const char trans[],
     // no entries to update
   } else if (x.extent(0) == 0) {
     // no entries to update
-  } else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
+  } else if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
     // no entries to update
   } else {
     Kokkos::RangePolicy<ExecutionSpace, IndexType> rangePolicy(space, 0, A.extent(0));
@@ -117,7 +117,7 @@ struct TeamParallelGER {
  public:
   // LayoutLeft version: one team per column
   KOKKOS_INLINE_FUNCTION void operator()(TeamParallelGER_LayoutLeftTag, const member_type& team) const {
-    if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
+    if (alpha_ == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     } else {
       const IndexType M(A_.extent(0));
@@ -127,7 +127,7 @@ struct TeamParallelGER {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M),
                              [&](const IndexType& i) { A_(i, j) += AComponentType(alpha_ * x_(i) * y_fixed); });
       } else {
-        const YComponentType y_fixed(Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
+        const YComponentType y_fixed(KokkosKernels::ArithTraits<YComponentType>::conj(y_(j)));
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M),
                              [&](const IndexType& i) { A_(i, j) += AComponentType(alpha_ * x_(i) * y_fixed); });
       }
@@ -136,7 +136,7 @@ struct TeamParallelGER {
 
   // LayoutRight version: one team per row
   KOKKOS_INLINE_FUNCTION void operator()(TeamParallelGER_LayoutRightTag, const member_type& team) const {
-    if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
+    if (alpha_ == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     } else {
       const IndexType N(A_.extent(1));
@@ -147,7 +147,7 @@ struct TeamParallelGER {
                              [&](const IndexType& j) { A_(i, j) += AComponentType(alpha_ * x_fixed * y_(j)); });
       } else {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
-          A_(i, j) += AComponentType(alpha_ * x_fixed * Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
+          A_(i, j) += AComponentType(alpha_ * x_fixed * KokkosKernels::ArithTraits<YComponentType>::conj(y_(j)));
         });
       }
     }
@@ -176,7 +176,7 @@ void teamParallelGer(const ExecutionSpace& space, const char trans[], const type
   } else if (x.extent(0) == 0) {
     // no entries to update
     return;
-  } else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
+  } else if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
     // no entries to update
     return;
   }

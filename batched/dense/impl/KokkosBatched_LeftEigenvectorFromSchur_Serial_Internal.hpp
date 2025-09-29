@@ -49,7 +49,7 @@ struct SerialLeftEigenvectorFromSchurInternal {
                                            /* */ ValueType *V, const int vs0, const int vs1,
                                            /* */ ValueType *w, const int *blks) {
     typedef ValueType value_type;
-    typedef Kokkos::ArithTraits<value_type> ats;
+    typedef KokkosKernels::ArithTraits<value_type> ats;
     // typedef typename ats::mag_type mag_type;
     typedef Kokkos::complex<value_type> complex_type;
 

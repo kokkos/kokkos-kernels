@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 
     using ViewType  = Kokkos::View<double*>;
     using Scalar    = typename ViewType::non_const_value_type;
-    using AT        = Kokkos::ArithTraits<Scalar>;
+    using AT        = KokkosKernels::ArithTraits<Scalar>;
     using mag_type  = typename AT::mag_type;
     using size_type = typename ViewType::size_type;
 
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
     size_type max_loc = KokkosBlas::iamax(x);
 
-    mag_type expected_result   = Kokkos::ArithTraits<mag_type>::min();
+    mag_type expected_result   = KokkosKernels::ArithTraits<mag_type>::min();
     size_type expected_max_loc = 0;
     for (int i = 0; i < N; i++) {
       mag_type val = AT::abs(h_x(i));

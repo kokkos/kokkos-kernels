@@ -72,7 +72,7 @@ struct SptrsvWrap {
   using values_t        = typename TriSolveHandle::nnz_scalar_view_t;
   using work_view_t     = Kokkos::View<scalar_t *, Kokkos::Device<execution_space, temp_mem_space>>;
   using work_view_int_t = Kokkos::View<int *, Kokkos::Device<execution_space, temp_mem_space>>;
-  using karith          = typename Kokkos::ArithTraits<scalar_t>;
+  using karith          = typename KokkosKernels::ArithTraits<scalar_t>;
   using team_policy     = typename TriSolveHandle::TeamPolicy;
   using member_type     = typename team_policy::member_type;
   using range_policy    = typename TriSolveHandle::RangePolicy;

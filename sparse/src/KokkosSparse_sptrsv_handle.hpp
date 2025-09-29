@@ -476,7 +476,7 @@ class SPTRSVHandle {
     }
 
 #if defined(__clang__) && defined(KOKKOS_ENABLE_CUDA)
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && Kokkos::ArithTraits<scalar_t>::isComplex &&
+    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && KokkosKernels::ArithTraits<scalar_t>::isComplex &&
         std::is_same_v<execution_space, Kokkos::Cuda> && block_size_ != 0) {
       throw(std::runtime_error(
           "sptrsv handle: SPTRSV may not work with blocks+clang+cuda+complex due to a compiler bug"));

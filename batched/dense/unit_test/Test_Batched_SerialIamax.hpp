@@ -162,7 +162,7 @@ void impl_test_batched_iamax_analytical(const std::size_t N) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType>
 void impl_test_batched_iamax(const std::size_t N, const std::size_t BlkSize) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;

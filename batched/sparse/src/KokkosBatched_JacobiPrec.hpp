@@ -30,7 +30,7 @@ template <class ValuesViewType>
 class JacobiPrec {
  public:
   using ScalarType    = typename ValuesViewType::non_const_value_type;
-  using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using MagnitudeType = typename KokkosKernels::ArithTraits<ScalarType>::mag_type;
 
  private:
   ValuesViewType diag_values;
@@ -54,8 +54,8 @@ class JacobiPrec {
 
   template <typename MemberType, typename ArgMode>
   KOKKOS_INLINE_FUNCTION void computeInverse(const MemberType &member) const {
-    auto one     = Kokkos::ArithTraits<MagnitudeType>::one();
-    auto epsilon = Kokkos::ArithTraits<MagnitudeType>::epsilon();
+    auto one     = KokkosKernels::ArithTraits<MagnitudeType>::one();
+    auto epsilon = KokkosKernels::ArithTraits<MagnitudeType>::epsilon();
     int tooSmall = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {
       for (int i = 0; i < n_operators; ++i)
@@ -111,8 +111,8 @@ class JacobiPrec {
   }
 
   KOKKOS_INLINE_FUNCTION void computeInverse() const {
-    auto one     = Kokkos::ArithTraits<MagnitudeType>::one();
-    auto epsilon = Kokkos::ArithTraits<MagnitudeType>::epsilon();
+    auto one     = KokkosKernels::ArithTraits<MagnitudeType>::one();
+    auto epsilon = KokkosKernels::ArithTraits<MagnitudeType>::epsilon();
     int tooSmall = 0;
 
     for (int i = 0; i < n_operators; ++i)

@@ -78,7 +78,7 @@ struct GmresTest {
   using RowMapType  = Kokkos::View<size_type*, device>;
   using EntriesType = Kokkos::View<lno_t*, device>;
   using ValuesType  = Kokkos::View<scalar_t*, device>;
-  using AT          = Kokkos::ArithTraits<scalar_t>;
+  using AT          = KokkosKernels::ArithTraits<scalar_t>;
   using exe_space   = typename device::execution_space;
   using mem_space   = typename device::memory_space;
 
@@ -87,7 +87,7 @@ struct GmresTest {
 
   using KernelHandle =
       KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
-  using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using float_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   template <bool UseBlocks>
   static void run_test_gmres() {

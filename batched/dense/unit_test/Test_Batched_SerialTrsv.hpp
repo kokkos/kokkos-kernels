@@ -110,7 +110,7 @@ struct Functor_BatchedSerialGemv {
 template <typename DeviceType, typename ScalarType, typename ValueType, typename LayoutType, typename ParamTagType,
           typename AlgoTagType>
 void impl_test_batched_trsv_blocking(const int N, const int BlkSize) {
-  using ats        = Kokkos::ArithTraits<ValueType>;
+  using ats        = KokkosKernels::ArithTraits<ValueType>;
   using View2DType = Kokkos::View<ValueType **, LayoutType, DeviceType>;
   using View3DType = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
 
@@ -195,7 +195,7 @@ void impl_test_batched_trsv_blocking(const int N, const int BlkSize) {
 template <typename DeviceType, typename ScalarType, typename ValueType, typename LayoutType, typename ParamTagType,
           typename AlgoTagType>
 void impl_test_batched_trsv_analytical(const std::size_t N) {
-  using ats      = typename Kokkos::ArithTraits<ValueType>;
+  using ats      = typename KokkosKernels::ArithTraits<ValueType>;
   using RealType = typename ats::mag_type;
 
   using View2DType        = Kokkos::View<ValueType **, LayoutType, DeviceType>;
@@ -304,7 +304,7 @@ void impl_test_batched_trsv_analytical(const std::size_t N) {
 template <typename DeviceType, typename ScalarType, typename ValueType, typename LayoutType, typename ParamTagType,
           typename AlgoTagType>
 void impl_test_batched_trsv(const std::size_t N, const std::size_t BlkSize) {
-  using ats      = typename Kokkos::ArithTraits<ValueType>;
+  using ats      = typename KokkosKernels::ArithTraits<ValueType>;
   using RealType = typename ats::mag_type;
 
   using View2DType        = Kokkos::View<ValueType **, LayoutType, DeviceType>;

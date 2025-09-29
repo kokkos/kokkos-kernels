@@ -40,7 +40,7 @@ using KK_INT = int;
 
 template <typename T>
 struct HostBlas {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   typedef typename ats::mag_type mag_type;
 
   static void scal(KK_INT n, const T alpha,

@@ -71,12 +71,12 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invok
       // accessed by others op(/=) uses this pointer and changes the associated
       // values, which brings a compiler problem
       if (!use_unit_diag)
-        *beta1 = (do_conj ? *beta1 / Kokkos::ArithTraits<ValueType>::conj(A[p * as0 + p * as1])
+        *beta1 = (do_conj ? *beta1 / KokkosKernels::ArithTraits<ValueType>::conj(A[p * as0 + p * as1])
                           : *beta1 / A[p * as0 + p * as1]);
 
       for (int i = 0; i < iend; ++i)
         b2[i * bs0] -=
-            (do_conj ? Kokkos::ArithTraits<ValueType>::conj(a21[i * as0]) * (*beta1) : a21[i * as0] * (*beta1));
+            (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(a21[i * as0]) * (*beta1) : a21[i * as0] * (*beta1));
     }
   }
   return 0;
@@ -161,12 +161,12 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invok
       // accessed by others op(/=) uses this pointer and changes the associated
       // values, which brings a compiler problem
       if (!use_unit_diag)
-        *beta1 = (do_conj ? *beta1 / Kokkos::ArithTraits<ValueType>::conj(A[p * as0 + p * as1])
+        *beta1 = (do_conj ? *beta1 / KokkosKernels::ArithTraits<ValueType>::conj(A[p * as0 + p * as1])
                           : *beta1 / A[p * as0 + p * as1]);
 
       for (int i = 0; i < iend; ++i)
         b0[i * bs0] -=
-            (do_conj ? Kokkos::ArithTraits<ValueType>::conj(a01[i * as0]) * (*beta1) : a01[i * as0] * (*beta1));
+            (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(a01[i * as0]) * (*beta1) : a01[i * as0] * (*beta1));
     }
   }
   return 0;

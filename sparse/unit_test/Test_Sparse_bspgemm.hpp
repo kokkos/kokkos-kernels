@@ -117,7 +117,7 @@ bool is_same_block_matrix(bsrMat_t output_mat_actual, bsrMat_t output_mat_refere
     return false;
   }
 
-  typedef typename Kokkos::ArithTraits<typename scalar_view_t::non_const_value_type>::mag_type eps_type;
+  typedef typename KokkosKernels::ArithTraits<typename scalar_view_t::non_const_value_type>::mag_type eps_type;
   eps_type eps = std::is_same<eps_type, float>::value ? 3e-2 : 5e-7;
 
   is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view<scalar_view_t, scalar_view_t, eps_type,

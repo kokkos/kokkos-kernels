@@ -179,7 +179,7 @@ struct Functor_BatchedSerialGemm {
 /// \param N [in] Batch size of matrix A and RHS
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_pttrs_analytical(const int N) {
-  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using ats            = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
@@ -246,7 +246,7 @@ void impl_test_batched_pttrs_analytical(const int N) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_pttrs(const int N, const int BlkSize) {
-  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using ats            = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
@@ -279,7 +279,7 @@ void impl_test_batched_pttrs(const int N, const int BlkSize) {
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize - 1; i++) {
       // Fill the lower diagonal with conjugate of the upper diagonal
-      h_e_lower(ib, i) = Kokkos::ArithTraits<ScalarType>::conj(h_e_upper(ib, i));
+      h_e_lower(ib, i) = KokkosKernels::ArithTraits<ScalarType>::conj(h_e_upper(ib, i));
     }
   }
 
@@ -359,7 +359,7 @@ void impl_test_batched_pttrs(const int N, const int BlkSize) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_pttrs_quick_return(const int N, const int BlkSize) {
-  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using ats            = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;

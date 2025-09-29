@@ -48,8 +48,8 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
                                                                const ArnoldiViewType& ArnoldiView,
                                                                const TMPViewType& TMPView) {
   typedef int OrdinalType;
-  typedef typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
-  typedef Kokkos::ArithTraits<MagnitudeType> ATM;
+  typedef typename KokkosKernels::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
+  typedef KokkosKernels::ArithTraits<MagnitudeType> ATM;
 
   using TeamVectorCopy1D = TeamVectorCopy<MemberType, Trans::NoTranspose, 1>;
 
@@ -219,7 +219,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
         G(l, j + 1) = 0.;
       }
 
-      auto res_norm = Kokkos::ArithTraits<double>::abs(G(l, j + 1)) / G(l, 0);
+      auto res_norm = KokkosKernels::ArithTraits<double>::abs(G(l, j + 1)) / G(l, 0);
 
       handle.set_norm(member.league_rank(), l, j + 1, res_norm);
 

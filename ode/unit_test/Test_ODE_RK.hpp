@@ -50,7 +50,7 @@ struct duho {
 
   template <class vec_type>
   KOKKOS_FUNCTION void solution(const double t, const vec_type& y0, const vec_type& y) const {
-    using KAT = Kokkos::ArithTraits<double>;
+    using KAT = KokkosKernels::ArithTraits<double>;
 
     const double gamma = c / (2 * m);
     const double omega = KAT::sqrt(k / m - gamma * gamma);

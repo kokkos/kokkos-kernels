@@ -29,7 +29,7 @@ KOKKOS_INLINE_FUNCTION T quiet_NaN() {
     return double(Kokkos::Experimental::quiet_NaN_v<float>);  // Kokkos::Experimetnal::quiet_NaN_v<double>
                                                               // is undefined in
                                                               // device code
-  } else if constexpr (Kokkos::ArithTraits<T>::is_complex) {
+  } else if constexpr (KokkosKernels::ArithTraits<T>::is_complex) {
     using value_type = typename T::value_type;
     return T(quiet_NaN<value_type>(),
              quiet_NaN<value_type>());  // Kokkos::complex ctor is not constexpr

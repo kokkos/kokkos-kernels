@@ -59,8 +59,8 @@ void lapackGesvWrapper(const AViewType& A, const BViewType& B, const IPIVViewTyp
   int info = 0;
 
   if (with_pivot) {
-    if constexpr (Kokkos::ArithTraits<Scalar>::is_complex) {
-      using MagType = typename Kokkos::ArithTraits<Scalar>::mag_type;
+    if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
+      using MagType = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
 
       HostLapack<std::complex<MagType>>::gesv(N, NRHS, reinterpret_cast<std::complex<MagType>*>(A.data()), LDA,
                                               IPIV.data(), reinterpret_cast<std::complex<MagType>*>(B.data()), LDB,
@@ -138,7 +138,7 @@ template <class ExecSpace, class AViewType, class BViewType, class IPIVViewType>
 void magmaGesvWrapper(const ExecSpace& space, const AViewType& A, const BViewType& B, const IPIVViewType& IPIV) {
   using scalar_type = typename AViewType::non_const_value_type;
 
-  Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA," + Kokkos::ArithTraits<scalar_type>::name() + "]");
+  Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA," + KokkosKernels::ArithTraits<scalar_type>::name() + "]");
   gesv_print_specialization<AViewType, BViewType, IPIVViewType>();
 
   const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));

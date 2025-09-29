@@ -174,11 +174,11 @@ void random_to_pds(InViewType& in, OutViewType& out) {
       for (int i2 = i1; i2 < BlkSize; i2++) {
         if (i1 == i2) {
           // Diagonal elements must be real
-          h_out(i0, i1, i2) = Kokkos::ArithTraits<value_type>::real(h_in(i0, i1, i2));
+          h_out(i0, i1, i2) = KokkosKernels::ArithTraits<value_type>::real(h_in(i0, i1, i2));
         } else {
           // Off-diagonal elements are complex and Hermitian
           h_out(i0, i1, i2) = h_in(i0, i1, i2);
-          h_out(i0, i2, i1) = Kokkos::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
+          h_out(i0, i2, i1) = KokkosKernels::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
         }
       }
     }
@@ -250,7 +250,7 @@ void create_banded_pds_matrix(InViewType& in, OutViewType& out, int k = 1, bool 
         for (int i1 = 0; i1 < BlkSize; i1++) {
           for (int i2 = i1; i2 < Kokkos::min(i1 + k + 1, BlkSize); i2++) {
             h_out(i0, i1, i2) = h_in(i0, i1, i2);
-            h_out(i0, i2, i1) = Kokkos::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
+            h_out(i0, i2, i1) = KokkosKernels::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
           }
         }
       }
@@ -259,7 +259,7 @@ void create_banded_pds_matrix(InViewType& in, OutViewType& out, int k = 1, bool 
         for (int i1 = 0; i1 < BlkSize; i1++) {
           for (int i2 = Kokkos::max(0, i1 - k); i2 <= i1; i2++) {
             h_out(i0, i1, i2) = h_in(i0, i1, i2);
-            h_out(i0, i2, i1) = Kokkos::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
+            h_out(i0, i2, i1) = KokkosKernels::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
           }
         }
       }

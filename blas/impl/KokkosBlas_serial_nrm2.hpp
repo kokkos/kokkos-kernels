@@ -32,14 +32,14 @@ KOKKOS_INLINE_FUNCTION static typename Kokkos::Details::InnerProductSpaceTraits<
   using IPT       = Kokkos::Details::InnerProductSpaceTraits<ValueType>;
   using norm_type = typename IPT::mag_type;
 
-  norm_type nrm = Kokkos::ArithTraits<norm_type>::zero();
+  norm_type nrm = KokkosKernels::ArithTraits<norm_type>::zero();
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
   for (int i = 0; i < m; ++i) nrm += IPT::norm(IPT::dot(X[i * xs0], X[i * xs0]));
 
-  return Kokkos::ArithTraits<norm_type>::sqrt(nrm);
+  return KokkosKernels::ArithTraits<norm_type>::sqrt(nrm);
 }
 
 template <typename ValueType>

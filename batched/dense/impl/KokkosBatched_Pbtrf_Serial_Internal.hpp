@@ -49,7 +49,7 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrfInternalLower<Algo::Pbtrf::Unblocked>::inv
                                                                                     const int kd) {
   // Compute the Cholesky factorization A = L*L'.
   for (int j = 0; j < an; ++j) {
-    auto a_jj = Kokkos::ArithTraits<ValueType>::real(AB[0 * as0 + j * as1]);
+    auto a_jj = KokkosKernels::ArithTraits<ValueType>::real(AB[0 * as0 + j * as1]);
 
     // Check if L (j, j) is positive definite
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
@@ -70,9 +70,9 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrfInternalLower<Algo::Pbtrf::Unblocked>::inv
       KokkosBlas::Impl::SerialScaleInternal::invoke(kn, alpha, &(AB[1 * as0 + j * as1]), 1);
 
       // syr or zher (lower) with alpha = -1.0 to diagonal elements
-      using op     = std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj,
+      using op     = std::conditional_t<KokkosKernels::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj,
                                     KokkosBlas::Impl::OpID>;
-      using op_sym = std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpReal,
+      using op_sym = std::conditional_t<KokkosKernels::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpReal,
                                         KokkosBlas::Impl::OpID>;
       SerialSyrInternalLower::invoke(op(), op_sym(), kn, -1.0, &(AB[1 * as0 + j * as1]), as0,
                                      &(AB[0 * as0 + (j + 1) * as1]), as0, (as1 - as0));
@@ -102,7 +102,7 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrfInternalUpper<Algo::Pbtrf::Unblocked>::inv
                                                                                     const int kd) {
   // Compute the Cholesky factorization A = U'*U.
   for (int j = 0; j < an; ++j) {
-    auto a_jj = Kokkos::ArithTraits<ValueType>::real(AB[kd * as0 + j * as1]);
+    auto a_jj = KokkosKernels::ArithTraits<ValueType>::real(AB[kd * as0 + j * as1]);
 
     // Check if U (j,j) is positive definite
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
@@ -126,9 +126,9 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrfInternalUpper<Algo::Pbtrf::Unblocked>::inv
       SerialLacgvInternal::invoke(kn, &(AB[(kd - 1) * as0 + (j + 1) * as1]), (as0 - as1));
 
       // syr or zher (upper) with alpha = -1.0 to diagonal elements
-      using op     = std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj,
+      using op     = std::conditional_t<KokkosKernels::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj,
                                     KokkosBlas::Impl::OpID>;
-      using op_sym = std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpReal,
+      using op_sym = std::conditional_t<KokkosKernels::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpReal,
                                         KokkosBlas::Impl::OpID>;
       SerialSyrInternalUpper::invoke(op(), op_sym(), kn, -1.0, &(AB[(kd - 1) * as0 + (j + 1) * as1]), as0,
                                      &(AB[kd * as0 + (j + 1) * as1]), as0, (as1 - as0));

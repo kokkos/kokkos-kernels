@@ -54,7 +54,7 @@ class Preconditioner {
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
   using MEMSP      = typename CRS::memory_space;
-  using karith     = typename Kokkos::ArithTraits<ScalarType>;
+  using karith     = typename KokkosKernels::ArithTraits<ScalarType>;
 
   //! Constructor:
   Preconditioner() {}

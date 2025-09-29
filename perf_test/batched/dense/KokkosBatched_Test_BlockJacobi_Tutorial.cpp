@@ -71,7 +71,7 @@ val_type computeResidual(const ManyMatrixType &A, const ManyVectorType &x, const
           val_type sum(0);
           Kokkos::parallel_reduce(
               Kokkos::TeamThreadRange(member, rr.extent(0)),
-              [&](const int &k, val_type &lsum) { lsum += Kokkos::ArithTraits<val_type>::abs(rr(k)); }, sum);
+              [&](const int &k, val_type &lsum) { lsum += KokkosKernels::ArithTraits<val_type>::abs(rr(k)); }, sum);
           Kokkos::single(Kokkos::PerTeam(member), [&]() { update += sum; });
         },
         residual);

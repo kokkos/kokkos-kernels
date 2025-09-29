@@ -164,7 +164,7 @@ struct Functor_BatchedSerialGetrf {
 ///        For simplicity, we represent the matrix U in 5x4 form instead of 4x4
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_gbtrf_analytical(const int Nb) {
-  using ats           = typename Kokkos::ArithTraits<ScalarType>;
+  using ats           = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType      = typename ats::mag_type;
   using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
@@ -371,7 +371,7 @@ void impl_test_batched_gbtrf_analytical(const int Nb) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_gbtrf(const int Nb, const int BlkSize) {
-  using ats           = typename Kokkos::ArithTraits<ScalarType>;
+  using ats           = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType      = typename ats::mag_type;
   using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;

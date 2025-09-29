@@ -50,8 +50,8 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
   int m            = A.numRows();
   int n            = B.numRows();
   int k            = B.numCols();
-  const auto alpha = Kokkos::ArithTraits<Scalar>::one();
-  const auto beta  = Kokkos::ArithTraits<Scalar>::zero();
+  const auto alpha = KokkosKernels::ArithTraits<Scalar>::one();
+  const auto beta  = KokkosKernels::ArithTraits<Scalar>::zero();
   typename Matrix::row_map_type::non_const_type row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C rowmap"),
                                                          m + 1);
 
@@ -123,7 +123,7 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;                \
     static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int> spgemm_noreuse(  \
         const ConstMatrix &A, bool, const ConstMatrix &B, bool) {                                                   \
-      std::string label = "KokkosSparse::spgemm_noreuse[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
+      std::string label = "KokkosSparse::spgemm_noreuse[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                         \
       Matrix C = spgemm_noreuse_cusparse<Matrix>(A, B);                                                             \
       Kokkos::Profiling::popRegion();                                                                               \
@@ -213,7 +213,7 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>;              \
     static KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>           \
     spgemm_noreuse(const ConstMatrix &A, bool, const ConstMatrix &B, bool) {                                          \
-      std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," + Kokkos::ArithTraits<SCALAR>::name() + "]";        \
+      std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";        \
       Kokkos::Profiling::pushRegion(label);                                                                           \
       Matrix C = spgemm_noreuse_mkl<Matrix>(A, B);                                                                    \
       Kokkos::Profiling::popRegion();                                                                                 \

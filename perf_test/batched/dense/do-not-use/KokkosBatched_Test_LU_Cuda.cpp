@@ -292,7 +292,7 @@ void LU(const int NN, const int BlkSize) {
       for (int i = 0, iend = aref.extent(0); i < iend; ++i)
         for (int j = 0, jend = aref.extent(1); j < jend; ++j)
           for (int k = 0, kend = aref.extent(2); k < kend; ++k)
-            diff += Kokkos::ArithTraits<value_type>::abs(aref(i, j, k) - asol(i, j, k));
+            diff += KokkosKernels::ArithTraits<value_type>::abs(aref(i, j, k) - asol(i, j, k));
 
       std::cout << std::setw(8) << "Kokkos" << std::setw(8) << "Range"
                 << " BlkSize = " << std::setw(3) << BlkSize << " TeamSize = N/A"
@@ -347,7 +347,7 @@ void LU(const int NN, const int BlkSize) {
       for (int i = 0, iend = aref.extent(0); i < iend; ++i)
         for (int j = 0, jend = aref.extent(1); j < jend; ++j)
           for (int k = 0, kend = aref.extent(2); k < kend; ++k)
-            diff += Kokkos::ArithTraits<value_type>::abs(aref(i, j, k) - asol(i, j, k));
+            diff += KokkosKernels::ArithTraits<value_type>::abs(aref(i, j, k) - asol(i, j, k));
 
       std::cout << std::setw(8) << "Kokkos" << std::setw(8) << "Team V1"
                 << " BlkSize = " << std::setw(3) << BlkSize << " TeamSize = " << std::setw(3) << team_size
@@ -411,7 +411,7 @@ void LU(const int NN, const int BlkSize) {
       for (int i = 0, iend = aref.extent(0); i < iend; ++i)
         for (int j = 0, jend = aref.extent(1); j < jend; ++j)
           for (int k = 0, kend = aref.extent(2); k < kend; ++k)
-            diff += Kokkos::ArithTraits<value_type>::abs(aref(i, j, k) - asol(i, j, k));
+            diff += KokkosKernels::ArithTraits<value_type>::abs(aref(i, j, k) - asol(i, j, k));
 
       std::cout << std::setw(8) << "Kokkos" << std::setw(8) << "Team V2"
                 << " BlkSize = " << std::setw(3) << BlkSize << " TeamSize = " << std::setw(3) << team_size
@@ -479,7 +479,7 @@ void LU(const int NN, const int BlkSize) {
         for (int i = 0, iend = aref.extent(0); i < iend; ++i)
           for (int j = 0, jend = aref.extent(1); j < jend; ++j)
             for (int k = 0, kend = aref.extent(2); k < kend; ++k)
-              diff += Kokkos::ArithTraits<value_type>::abs(aref(i, j, k) - asol(i, j, k));
+              diff += KokkosKernels::ArithTraits<value_type>::abs(aref(i, j, k) - asol(i, j, k));
 
         std::cout << std::setw(8) << "Kokkos" << std::setw(8) << "Team V3"
                   << " BlkSize = " << std::setw(3) << BlkSize << " TeamSize = " << std::setw(3) << team_size

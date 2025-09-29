@@ -160,7 +160,7 @@ class BatchedSerialGemm {
     // KokkosBatched::SerialDotInternal::invoke(svA_row.extent(0), svA_row.data(), svA_row.stride(0),
     //   svB_col.data(), svB_col.stride(0), &svA_row_x_svB_col);
 
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     // iC[0]      = ValueType(0);
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll

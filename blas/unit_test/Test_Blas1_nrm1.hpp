@@ -23,9 +23,9 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_nrm1(int N) {
   using ScalarA  = typename ViewTypeA::value_type;
-  using AT       = Kokkos::ArithTraits<ScalarA>;
+  using AT       = KokkosKernels::ArithTraits<ScalarA>;
   using mag_type = typename AT::mag_type;
-  using MAT      = Kokkos::ArithTraits<mag_type>;
+  using MAT      = KokkosKernels::ArithTraits<mag_type>;
 
   view_stride_adapter<ViewTypeA> a("a", N);
 
@@ -37,7 +37,7 @@ void impl_test_nrm1(int N) {
 
   Kokkos::deep_copy(a.h_base, a.d_base);
 
-  double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarA>::mag_type, float>::value ? 1e-4 : 1e-7);
+  double eps = (std::is_same<typename KokkosKernels::ArithTraits<ScalarA>::mag_type, float>::value ? 1e-4 : 1e-7);
 
   mag_type expected_result = 0;
   for (int i = 0; i < N; i++) {
@@ -59,9 +59,9 @@ void impl_test_nrm1(int N) {
 template <class ViewTypeA, class Device>
 void impl_test_nrm1_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
   typedef typename AT::mag_type mag_type;
-  typedef Kokkos::ArithTraits<mag_type> MAT;
+  typedef KokkosKernels::ArithTraits<mag_type> MAT;
 
   view_stride_adapter<ViewTypeA> a("A", N, K);
 
@@ -73,7 +73,7 @@ void impl_test_nrm1_mv(int N, int K) {
 
   Kokkos::deep_copy(a.h_base, a.d_base);
 
-  double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarA>::mag_type, float>::value ? 1e-4 : 1e-7);
+  double eps = (std::is_same<typename KokkosKernels::ArithTraits<ScalarA>::mag_type, float>::value ? 1e-4 : 1e-7);
 
   Kokkos::View<mag_type*, Kokkos::HostSpace> expected_result("Expected Nrm1", K);
   for (int k = 0; k < K; k++) {

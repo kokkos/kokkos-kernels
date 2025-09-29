@@ -1684,7 +1684,7 @@ struct CountDroppedEntriesFunctor {
   CountDroppedEntriesFunctor(const Values &values_, Mag tol_) : values(values_), tol(tol_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(int64_t i, Offset &lcount) const {
-    if (Kokkos::ArithTraits<Scalar>::abs(values(i)) <= tol) lcount++;
+    if (KokkosKernels::ArithTraits<Scalar>::abs(values(i)) <= tol) lcount++;
   }
 
   Values values;
@@ -1741,7 +1741,7 @@ struct DropEntriesFunctor {
     // i_in is the index of the input entry being processed
     // i_out (if finalPass == true) is the index of where that same entry goes
     // in the filtered matrix
-    bool filter   = Kokkos::ArithTraits<Scalar>::abs(valuesIn(i_in)) <= tol;
+    bool filter   = KokkosKernels::ArithTraits<Scalar>::abs(valuesIn(i_in)) <= tol;
     bool isRowEnd = rowEndMarkers.test(i_in);
     if (finalPass) {
       if (!filter) {
@@ -1797,7 +1797,7 @@ struct ExpandRowmapFunctor {
 // Otherwise a new matrix is returned.
 template <typename Matrix>
 Matrix removeCrsMatrixZeros(const Matrix &A,
-                            typename Kokkos::ArithTraits<typename Matrix::value_type>::mag_type tol = 0) {
+                            typename KokkosKernels::ArithTraits<typename Matrix::value_type>::mag_type tol = 0) {
   using Ordinal   = typename Matrix::non_const_ordinal_type;
   using Offset    = typename Matrix::non_const_size_type;
   using Device    = typename Matrix::device_type;
