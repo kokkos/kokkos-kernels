@@ -1093,14 +1093,12 @@ class ArithTraits<std::complex<RealFloatType>> {
     } else {
       KOKKOS_IF_ON_HOST((using std::isinf;))
       KOKKOS_IF_ON_DEVICE((using sycl::isinf;))
-      return isinf(real(x)) || isinf(imag(x));
+      return isinf(std::real(x)) || isinf(std::imag(x));
     }
   }
 #else
   static bool isInf(const std::complex<RealFloatType>& x) {
-    KOKKOS_IF_ON_HOST((using std::isinf;))
-    KOKKOS_IF_ON_DEVICE((using Kokkos::isinf;))
-    return isinf(real(x)) || isinf(imag(x));
+    return std::isinf(std::real(x)) || std::isinf(std::imag(x));
   }
 #endif
 
@@ -1113,14 +1111,12 @@ class ArithTraits<std::complex<RealFloatType>> {
     } else {
       KOKKOS_IF_ON_HOST((using std::isnan;))
       KOKKOS_IF_ON_DEVICE((using sycl::isnan;))
-      return isnan(real(x)) || isnan(imag(x));
+      return isnan(std::real(x)) || isnan(std::imag(x));
     }
   }
 #else
   static bool isNan(const std::complex<RealFloatType>& x) {
-    KOKKOS_IF_ON_HOST((using std::isnan;))
-    KOKKOS_IF_ON_DEVICE((using Kokkos::isnan;))
-    return isnan(real(x)) || isnan(imag(x));
+    return std::isnan(std::real(x)) || std::isnan(std::imag(x));
   }
 #endif
   static mag_type abs(const std::complex<RealFloatType>& x) { return std::abs(x); }
