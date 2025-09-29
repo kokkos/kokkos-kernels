@@ -686,8 +686,8 @@ class ClusterGaussSeidel {
 
   template <typename x_value_array_type, typename y_value_array_type>
   void apply(x_value_array_type x_lhs_output_vec, y_value_array_type y_rhs_input_vec, bool init_zero_x_vector = false,
-             int numIter = 1, nnz_scalar_t omega = KokkosKernels::ArithTraits<nnz_scalar_t>::one(), bool apply_forward = true,
-             bool apply_backward = true, bool /*update_y_vector*/ = true) {
+             int numIter = 1, nnz_scalar_t omega = KokkosKernels::ArithTraits<nnz_scalar_t>::one(),
+             bool apply_forward = true, bool apply_backward = true, bool /*update_y_vector*/ = true) {
     auto gsHandle = get_gs_handle();
 
     size_type nnz                                    = entries.extent(0);

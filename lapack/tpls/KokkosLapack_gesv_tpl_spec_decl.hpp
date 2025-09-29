@@ -138,7 +138,8 @@ template <class ExecSpace, class AViewType, class BViewType, class IPIVViewType>
 void magmaGesvWrapper(const ExecSpace& space, const AViewType& A, const BViewType& B, const IPIVViewType& IPIV) {
   using scalar_type = typename AViewType::non_const_value_type;
 
-  Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA," + KokkosKernels::ArithTraits<scalar_type>::name() + "]");
+  Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA," + KokkosKernels::ArithTraits<scalar_type>::name() +
+                                "]");
   gesv_print_specialization<AViewType, BViewType, IPIVViewType>();
 
   const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));

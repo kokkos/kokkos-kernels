@@ -298,8 +298,10 @@ void impl_test_batched_syr(const std::size_t Nb, const std::size_t BlkSize) {
             h_A0_ref(ib, i, j) = h_x(ib, i) * temp;
           }
         }
-        h_A_ref(ib, j, j)  = is_conj ? KokkosKernels::ArithTraits<ScalarType>::real(h_A_ref(ib, j, j)) : h_A_ref(ib, j, j);
-        h_A0_ref(ib, j, j) = is_conj ? KokkosKernels::ArithTraits<ScalarType>::real(h_A0_ref(ib, j, j)) : h_A0_ref(ib, j, j);
+        h_A_ref(ib, j, j) =
+            is_conj ? KokkosKernels::ArithTraits<ScalarType>::real(h_A_ref(ib, j, j)) : h_A_ref(ib, j, j);
+        h_A0_ref(ib, j, j) =
+            is_conj ? KokkosKernels::ArithTraits<ScalarType>::real(h_A0_ref(ib, j, j)) : h_A0_ref(ib, j, j);
       }
     }
   }

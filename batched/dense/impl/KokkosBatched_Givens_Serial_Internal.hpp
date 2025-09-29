@@ -57,7 +57,8 @@ struct SerialGivensInternal {
       cs = chi1 / r;
       sn = chi2 / r;
 
-      if (KokkosKernels::ArithTraits<value_type>::abs(chi1) > KokkosKernels::ArithTraits<value_type>::abs(chi2) && cs < zero) {
+      if (KokkosKernels::ArithTraits<value_type>::abs(chi1) > KokkosKernels::ArithTraits<value_type>::abs(chi2) &&
+          cs < zero) {
         cs = -cs;
         sn = -sn;
         r  = -r;

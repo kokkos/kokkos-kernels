@@ -150,8 +150,9 @@ struct SortedCountEntriesTeam {
                          [&](ordinal_type j) { scratch[npot - 1 - j] = Bcolinds(Browstart + j); });
     // Fill space between A and B with ORDINAL_MAX,
     // to maintain a valid bitonic sequence of power-of-two length
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, npot - n),
-                         [&](ordinal_type j) { scratch[Arowlen + j] = KokkosKernels::ArithTraits<ordinal_type>::max(); });
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, npot - n), [&](ordinal_type j) {
+      scratch[Arowlen + j] = KokkosKernels::ArithTraits<ordinal_type>::max();
+    });
     // npot = 2^levels
     for (ordinal_type level = 0; level < levels; level++) {
       // npot/2 pairs of items are compared in parallel

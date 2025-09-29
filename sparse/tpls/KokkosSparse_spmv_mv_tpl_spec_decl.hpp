@@ -217,7 +217,7 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle, const char mode[
                                                                                                                     \
     static void spmv_mv(const Kokkos::Cuda &exec, Handle *handle, const char mode[], const coefficient_type &alpha, \
                         const AMatrix &A, const XVector &x, const coefficient_type &beta, const YVector &y) {       \
-      std::string label = "KokkosSparse::spmv_mv[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";        \
+      std::string label = "KokkosSparse::spmv_mv[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                         \
       spmv_mv_cusparse(exec, handle, mode, alpha, A, x, beta, y);                                                   \
       Kokkos::Profiling::popRegion();                                                                               \
@@ -409,7 +409,7 @@ void spmv_mv_rocsparse(const Kokkos::HIP &exec, Handle *handle, const char mode[
                                                                                                                        \
     static void spmv_mv(const Kokkos::HIP &exec, Handle *handle, const char mode[], const coefficient_type &alpha,     \
                         const AMatrix &A, const XVector &x, const coefficient_type &beta, const YVector &y) {          \
-      std::string label = "KokkosSparse::spmv_mv[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";          \
+      std::string label = "KokkosSparse::spmv_mv[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";   \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spmv_mv_rocsparse(exec, handle, mode, alpha, A, x, beta, y);                                                     \
       Kokkos::Profiling::popRegion();                                                                                  \

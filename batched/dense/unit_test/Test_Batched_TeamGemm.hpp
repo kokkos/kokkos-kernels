@@ -172,8 +172,9 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
   using execution_space = typename DeviceType::execution_space;
   using ats             = KokkosKernels::ArithTraits<ValueType>;
   using ViewType        = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
-  using FP64Type     = std::conditional_t<KokkosKernels::ArithTraits<ValueType>::is_complex, Kokkos::complex<double>, double>;
-  using ViewFP64Type = Kokkos::View<FP64Type ***, LayoutType, DeviceType>;
+  using FP64Type =
+      std::conditional_t<KokkosKernels::ArithTraits<ValueType>::is_complex, Kokkos::complex<double>, double>;
+  using ViewFP64Type      = Kokkos::View<FP64Type ***, LayoutType, DeviceType>;
   using ErrorViewFP64Type = Kokkos::View<double ***, LayoutType, DeviceType>;
 
   /// randomized input testing views

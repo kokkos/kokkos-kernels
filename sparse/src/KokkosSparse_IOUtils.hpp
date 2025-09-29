@@ -110,11 +110,10 @@ void kk_sparseMatrix_generate_lower_upper_triangle(char uplo, OrdinalType nrows,
 }
 
 template <typename ScalarType, typename OrdinalType, typename SizeType>
-void kk_diagonally_dominant_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, SizeType &nnz,
-                                                  OrdinalType row_size_variance, OrdinalType bandwidth,
-                                                  ScalarType *&values, SizeType *&rowPtr, OrdinalType *&colInd,
-                                                  ScalarType diagDominance = 10 *
-                                                                             KokkosKernels::ArithTraits<ScalarType>::one()) {
+void kk_diagonally_dominant_sparseMatrix_generate(
+    OrdinalType nrows, OrdinalType ncols, SizeType &nnz, OrdinalType row_size_variance, OrdinalType bandwidth,
+    ScalarType *&values, SizeType *&rowPtr, OrdinalType *&colInd,
+    ScalarType diagDominance = 10 * KokkosKernels::ArithTraits<ScalarType>::one()) {
   rowPtr                       = new SizeType[nrows + 1];
   OrdinalType elements_per_row = nnz / nrows;
   // Set a hard limit to the actual entries in any one row, so that the
@@ -230,8 +229,8 @@ crsMat_t kk_generate_diagonally_dominant_sparse_matrix(
     typename crsMat_t::const_ordinal_type nrows, typename crsMat_t::const_ordinal_type ncols,
     typename crsMat_t::non_const_size_type &nnz, typename crsMat_t::const_ordinal_type row_size_variance,
     typename crsMat_t::const_ordinal_type bandwidth,
-    typename crsMat_t::const_value_type diagDominance = 10 *
-                                                        KokkosKernels::ArithTraits<typename crsMat_t::value_type>::one()) {
+    typename crsMat_t::const_value_type diagDominance =
+        10 * KokkosKernels::ArithTraits<typename crsMat_t::value_type>::one()) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type cols_view_t;

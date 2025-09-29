@@ -1155,7 +1155,8 @@ class ArithTraitsTesterFloatingPointBase
     : public ArithTraitsTesterComplexBase<ScalarType, DeviceType, KokkosKernels::ArithTraits<ScalarType>::is_complex> {
  private:
   //! The base class of this class.
-  typedef ArithTraitsTesterComplexBase<ScalarType, DeviceType, KokkosKernels::ArithTraits<ScalarType>::is_complex> base_type;
+  typedef ArithTraitsTesterComplexBase<ScalarType, DeviceType, KokkosKernels::ArithTraits<ScalarType>::is_complex>
+      base_type;
 
  public:
   typedef DeviceType execution_space;
@@ -1181,7 +1182,8 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
     : public ArithTraitsTesterComplexBase<ScalarType, DeviceType, KokkosKernels::ArithTraits<ScalarType>::is_complex> {
  private:
   //! The base class of this class.
-  typedef ArithTraitsTesterComplexBase<ScalarType, DeviceType, KokkosKernels::ArithTraits<ScalarType>::is_complex> base_type;
+  typedef ArithTraitsTesterComplexBase<ScalarType, DeviceType, KokkosKernels::ArithTraits<ScalarType>::is_complex>
+      base_type;
 
  public:
   typedef typename DeviceType::execution_space execution_space;
@@ -1340,7 +1342,8 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 1>
     : public ArithTraitsTesterComplexBase<ScalarType, DeviceType, KokkosKernels::ArithTraits<ScalarType>::is_complex> {
  private:
   //! The base class of this class.
-  typedef ArithTraitsTesterComplexBase<ScalarType, DeviceType, KokkosKernels::ArithTraits<ScalarType>::is_complex> base_type;
+  typedef ArithTraitsTesterComplexBase<ScalarType, DeviceType, KokkosKernels::ArithTraits<ScalarType>::is_complex>
+      base_type;
 
  public:
   typedef typename DeviceType::execution_space execution_space;

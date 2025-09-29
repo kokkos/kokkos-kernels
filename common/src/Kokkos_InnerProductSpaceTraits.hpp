@@ -125,7 +125,9 @@ class InnerProductSpaceTraits {
   typedef val_type dot_type;
 
   //! The "norm" (absolute value or magnitude) of a value x of type val_type.
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) { return KokkosKernels::ArithTraits<val_type>::abs(x); }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) {
+    return KokkosKernels::ArithTraits<val_type>::abs(x);
+  }
   /// \brief The "dot product" of two values x and y of type val_type.
   ///
   /// This default implementation should suffice unless val_type is
@@ -156,7 +158,9 @@ class InnerProductSpaceTraits<Kokkos::complex<T>> {
   typedef typename KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) { return KokkosKernels::ArithTraits<val_type>::abs(x); }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) {
+    return KokkosKernels::ArithTraits<val_type>::abs(x);
+  }
   static KOKKOS_FORCEINLINE_FUNCTION dot_type dot(const val_type& x, const val_type& y) { return Kokkos::conj(x) * y; }
 };
 

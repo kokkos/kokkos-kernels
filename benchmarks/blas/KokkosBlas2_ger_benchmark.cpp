@@ -119,8 +119,8 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   if (verbosity > 0) {
     std::cout << "Entering KokkosBlas2_GER()"
               << ": m = " << m << ", n = " << n << ", yIsTranspose = " << yIsTranspose
-              << ", tScalar = " << KokkosKernels::ArithTraits<tScalar>::name() << ", tLayout = " << typeid(tLayout).name()
-              << std::endl;
+              << ", tScalar = " << KokkosKernels::ArithTraits<tScalar>::name()
+              << ", tLayout = " << typeid(tLayout).name() << std::endl;
   }
 
   using MemSpace = typename tExecSpace::memory_space;

@@ -318,6 +318,6 @@ class ArithTraits<KokkosBatched::Vector<KokkosBatched::SIMD<Kokkos::complex<T>>,
   }
 };
 
-}  // namespace Kokkos
+}  // namespace KokkosKernels
 
 #endif

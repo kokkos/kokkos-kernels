@@ -191,8 +191,9 @@ struct AxpbyUnificationAttemptTraits {
   using InternalLayoutA =
       std::conditional_t<(a_is_r1d || a_is_r1s) && atInputLayoutA_isStride, AtInputLayoutA, InternalLayoutX>;
 
-  static constexpr bool atInputScalarTypeA_mustRemain = KokkosKernels::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex &&
-                                                        !KokkosKernels::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex;
+  static constexpr bool atInputScalarTypeA_mustRemain =
+      KokkosKernels::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex &&
+      !KokkosKernels::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex;
 
   using InternalScalarTypeA =
       std::conditional_t<atInputScalarTypeA_mustRemain || ((a_is_r1d || a_is_r1s) && xyRank2Case),
@@ -240,8 +241,9 @@ struct AxpbyUnificationAttemptTraits {
   using InternalLayoutB =
       std::conditional_t<(b_is_r1d || b_is_r1s) && atInputLayoutB_isStride, AtInputLayoutB, InternalLayoutY>;
 
-  static constexpr bool atInputScalarTypeB_mustRemain = KokkosKernels::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex &&
-                                                        !KokkosKernels::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex;
+  static constexpr bool atInputScalarTypeB_mustRemain =
+      KokkosKernels::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex &&
+      !KokkosKernels::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex;
 
   using InternalScalarTypeB =
       std::conditional_t<atInputScalarTypeB_mustRemain || ((b_is_r1d || b_is_r1s) && xyRank2Case),

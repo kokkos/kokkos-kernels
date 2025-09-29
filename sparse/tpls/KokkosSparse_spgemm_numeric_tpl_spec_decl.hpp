@@ -233,7 +233,8 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, co
                                c_int_view_t row_mapA, c_int_view_t entriesA, c_scalar_view_t valuesA, bool,            \
                                c_int_view_t row_mapB, c_int_view_t entriesB, c_scalar_view_t valuesB, bool,            \
                                c_int_view_t row_mapC, int_view_t entriesC, scalar_view_t valuesC) {                    \
-      std::string label = "KokkosSparse::spgemm_numeric[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";    \
+      std::string label =                                                                                              \
+          "KokkosSparse::spgemm_numeric[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";             \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spgemm_numeric_cusparse(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, valuesA, row_mapB, entriesB,   \
                               valuesB, row_mapC, entriesC, valuesC);                                                   \
@@ -372,7 +373,8 @@ void spgemm_numeric_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_l
                                c_int_view_t row_mapA, c_int_view_t entriesA, c_scalar_view_t valuesA, bool,           \
                                c_int_view_t row_mapB, c_int_view_t entriesB, c_scalar_view_t valuesB, bool,           \
                                c_int_view_t row_mapC, int_view_t entriesC, scalar_view_t valuesC) {                   \
-      std::string label = "KokkosSparse::spgemm_numeric[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";  \
+      std::string label =                                                                                             \
+          "KokkosSparse::spgemm_numeric[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                                                           \
       spgemm_numeric_rocsparse(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, valuesA, row_mapB, entriesB, \
                                valuesB, row_mapC, entriesC, valuesC);                                                 \
@@ -487,7 +489,7 @@ void spgemm_numeric_mkl(KernelHandle *handle, typename KernelHandle::nnz_lno_t m
                                c_int_view_t row_mapA, c_int_view_t entriesA, c_scalar_view_t valuesA, bool,            \
                                c_int_view_t row_mapB, c_int_view_t entriesB, c_scalar_view_t valuesB, bool,            \
                                c_int_view_t row_mapC, int_view_t entriesC, scalar_view_t valuesC) {                    \
-      std::string label = "KokkosSparse::spgemm_numeric[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";         \
+      std::string label = "KokkosSparse::spgemm_numeric[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";  \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spgemm_numeric_mkl(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, valuesA, row_mapB, entriesB,        \
                          valuesB, row_mapC, entriesC, valuesC);                                                        \

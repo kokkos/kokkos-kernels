@@ -318,9 +318,10 @@ void register_expand_type(const fs::path &path) {
   for (size_t bs : {4, 7, 10, 16}) {  // block sizes
     for (size_t k : ks) {             // multivector sizes
       std::string name = std::string("MatrixMarketExpanded") + "/" + std::string(path.stem()) + "/" +
-                         KokkosKernels::ArithTraits<Scalar>::name() + "/" + KokkosKernels::ArithTraits<Ordinal>::name() + "/" +
-                         KokkosKernels::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" + std::to_string(k) +
-                         "/" + Spmv::name() + "/" + Device::name();
+                         KokkosKernels::ArithTraits<Scalar>::name() + "/" +
+                         KokkosKernels::ArithTraits<Ordinal>::name() + "/" +
+                         KokkosKernels::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" +
+                         std::to_string(k) + "/" + Spmv::name() + "/" + Device::name();
       benchmark::RegisterBenchmark(name.c_str(), read_expand_run<Bsr, Spmv>, path, bs, k)->UseRealTime();
     }
   }
@@ -333,9 +334,9 @@ void register_convert_type(const fs::path &path, size_t bs) {
 
   for (size_t k : ks) {  // multivector sizes
     std::string name = std::string("MatrixMarketConvert") + "/" + std::string(path.stem()) + "/" +
-                       KokkosKernels::ArithTraits<Scalar>::name() + "/" + KokkosKernels::ArithTraits<Ordinal>::name() + "/" +
-                       KokkosKernels::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" + std::to_string(k) + "/" +
-                       Spmv::name() + "/" + Device::name();
+                       KokkosKernels::ArithTraits<Scalar>::name() + "/" + KokkosKernels::ArithTraits<Ordinal>::name() +
+                       "/" + KokkosKernels::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" +
+                       std::to_string(k) + "/" + Spmv::name() + "/" + Device::name();
     benchmark::RegisterBenchmark(name.c_str(), read_convert_run<Bsr, Spmv>, path, bs, k)->UseRealTime();
   }
 }

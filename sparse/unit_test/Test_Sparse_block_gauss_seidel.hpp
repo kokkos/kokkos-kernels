@@ -291,7 +291,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
                 scalar_t diff = x_host(r, c) - solution_host(r, c);
                 sum += diff * diff;
               }
-              mag_t result_res = KokkosKernels::ArithTraits<mag_t>::sqrt(KokkosKernels::ArithTraits<scalar_t>::abs(sum));
+              mag_t result_res =
+                  KokkosKernels::ArithTraits<mag_t>::sqrt(KokkosKernels::ArithTraits<scalar_t>::abs(sum));
               EXPECT_LT(result_res, params.tolerance * initial_norms[c]);
             }
           }

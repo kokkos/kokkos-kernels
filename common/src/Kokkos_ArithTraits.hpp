@@ -1099,6 +1099,7 @@ class ArithTraits<std::complex<RealFloatType>> {
 #else
   static bool isInf(const std::complex<RealFloatType>& x) {
     KOKKOS_IF_ON_HOST((using std::isinf;))
+    KOKKOS_IF_ON_DEVICE((using Kokkos::isinf;))
     return isinf(real(x)) || isinf(imag(x));
   }
 #endif
@@ -1118,6 +1119,7 @@ class ArithTraits<std::complex<RealFloatType>> {
 #else
   static bool isNan(const std::complex<RealFloatType>& x) {
     KOKKOS_IF_ON_HOST((using std::isnan;))
+    KOKKOS_IF_ON_DEVICE((using Kokkos::isnan;))
     return isnan(real(x)) || isnan(imag(x));
   }
 #endif

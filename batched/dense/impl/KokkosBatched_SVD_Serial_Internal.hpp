@@ -328,8 +328,9 @@ struct SerialSVDInternal {
   template <typename value_type>
   KOKKOS_INLINE_FUNCTION static int invoke(int m, int n, value_type* A, int As0, int As1, value_type* U, int Us0,
                                            int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
-                                           value_type* work, value_type tol = KokkosKernels::ArithTraits<value_type>::zero(),
-                                           int max_iters = 1000000000) {
+                                           value_type* work,
+                                           value_type tol = KokkosKernels::ArithTraits<value_type>::zero(),
+                                           int max_iters  = 1000000000) {
     // First, if m < n, need to instead compute (V, s, U^T) = A^T.
     // This just means swapping U & Vt, and implicitly transposing A, U and Vt.
     if (m < n) {

@@ -53,7 +53,8 @@ struct SerialApplyLeftHouseholderInternal {
     // w1t /= tau
     for (int j = 0; j < n; ++j) {
       value_type tmp = a1t[j * a1ts];
-      for (int i = 0; i < m; ++i) tmp += KokkosKernels::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
+      for (int i = 0; i < m; ++i)
+        tmp += KokkosKernels::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
       w1t[j] = tmp * inv_tau;  // /= (*tau);
     }
 
@@ -101,7 +102,8 @@ struct SerialApplyRightHouseholderInternal {
 
     // A2 -= w1 * u2' (ger with conjugate)
     for (int j = 0; j < n; ++j)
-      for (int i = 0; i < m; ++i) A2[i * as0 + j * as1] -= w1[i] * KokkosKernels::ArithTraits<ValueType>::conj(u2[j * u2s]);
+      for (int i = 0; i < m; ++i)
+        A2[i * as0 + j * as1] -= w1[i] * KokkosKernels::ArithTraits<ValueType>::conj(u2[j * u2s]);
 
     return 0;
   }
