@@ -1644,5 +1644,4 @@ struct [[deprecated]] ArithTraits<qd_real> {
 
 }  // namespace KokkosKernels
 
-
 #endif  // KOKKOSKERNELS_ARITHTRAITS_HPP

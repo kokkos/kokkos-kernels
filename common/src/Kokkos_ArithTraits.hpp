@@ -24,11 +24,13 @@
 
 namespace Kokkos {
 template <typename T>
-using ArithTraits [[deprecated("Use KokkosKernels::ArithTraits from KokkosKernels_ArithTraits.hpp header instead")]] = ::KokkosKernels::ArithTraits<T>;
+using ArithTraits [[deprecated("Use KokkosKernels::ArithTraits from KokkosKernels_ArithTraits.hpp header instead")]] =
+    ::KokkosKernels::ArithTraits<T>;
 
 namespace Details {
 template <typename T>
-using ArithTraits [[deprecated("Use KokkosKernels::ArithTraits from KokkosKernels_ArithTraits.hpp header instead")]] = ::KokkosKernels::ArithTraits<T>;
+using ArithTraits [[deprecated("Use KokkosKernels::ArithTraits from KokkosKernels_ArithTraits.hpp header instead")]] =
+    ::KokkosKernels::ArithTraits<T>;
 
 }  // namespace Details
 }  // namespace Kokkos
