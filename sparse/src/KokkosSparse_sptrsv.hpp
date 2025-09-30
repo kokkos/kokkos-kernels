@@ -176,7 +176,7 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t
   Kokkos::Timer timer_sptrsv;
 #endif
   auto sptrsv_handle = handle->get_sptrsv_handle();
-  if (sptrsv_handle->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+  if (sptrsv_handle->get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
       using RowMap_Internal =
@@ -351,7 +351,7 @@ void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ r
   XType_Internal x_i = x;
 
   auto sptrsv_handle = handle->get_sptrsv_handle();
-  if (sptrsv_handle->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+  if (sptrsv_handle->get_algorithm() == KokkosSparse::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
       typedef typename KernelHandle::SPTRSVHandleType sptrsvHandleType;
@@ -673,7 +673,7 @@ void sptrsv_solve_streams(const std::vector<ExecutionSpace> &execspace_v, const 
   }
 
   if (handle_v[0]->get_sptrsv_handle()->get_algorithm() ==
-      KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+      KokkosSparse::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     // NOTE: assume all streams use the same SPTRSV_CUSPARSE algo.
     KokkosSparse::Impl::sptrsvcuSPARSE_solve_streams<ExecutionSpace, const_handle_type, RowMap_Internal,

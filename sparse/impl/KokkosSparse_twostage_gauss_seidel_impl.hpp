@@ -684,7 +684,6 @@ class TwostageGaussSeidel {
 
     if (!(gsHandle->isTwoStage())) {
       // create SpTRSV handles for classical GS
-      using namespace KokkosSparse::Experimental;
       auto sptrsv_algo = handle->get_gs_sptrsvL_handle()->get_sptrsv_handle()->get_algorithm();
       if (sptrsv_algo != SPTRSVAlgorithm::SPTRSV_CUSPARSE) {  // symbolic with CuSparse needs
                                                               // values
@@ -753,7 +752,7 @@ class TwostageGaussSeidel {
     if (!(gsHandle->isTwoStage())) {
       using namespace KokkosSparse::Experimental;
       auto sptrsv_algo = handle->get_gs_sptrsvL_handle()->get_sptrsv_handle()->get_algorithm();
-      if (sptrsv_algo == SPTRSVAlgorithm::SPTRSV_CUSPARSE) {  // symbolic with CuSparse needs
+      if (sptrsv_algo == KokkosSparse::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {  // symbolic with CuSparse needs
                                                               // values
         // CuSparse needs matrix sorted by column indexes for each row
         // TODO: may need to move this to symbolic/numeric of sptrsv
