@@ -134,7 +134,7 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   Kokkos::fence();
 
   // this eps is about 10^-14
-  using ats      = typename Kokkos::ArithTraits<ScalarType>;
+  using ats      = typename KokkosKernels::ArithTraits<ScalarType>;
   using mag_type = typename ats::mag_type;
   mag_type eps   = 1.0e3 * ats::epsilon();
 
@@ -244,7 +244,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
   Kokkos::fence();
 
   // Check x0 = x_ref
-  using ats      = typename Kokkos::ArithTraits<ScalarType>;
+  using ats      = typename KokkosKernels::ArithTraits<ScalarType>;
   using mag_type = typename ats::mag_type;
   mag_type eps   = 1.0e3 * ats::epsilon();
 

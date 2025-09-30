@@ -143,7 +143,7 @@ struct Functor_BatchedSerialGemm {
 /// \param Nb [in] Batch size of matrices
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_getrf_analytical(const int Nb) {
-  using ats           = typename Kokkos::ArithTraits<ScalarType>;
+  using ats           = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType      = typename ats::mag_type;
   using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
@@ -316,7 +316,7 @@ void impl_test_batched_getrf_analytical(const int Nb) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_getrf(const int N, const int BlkSize) {
-  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using ats            = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;

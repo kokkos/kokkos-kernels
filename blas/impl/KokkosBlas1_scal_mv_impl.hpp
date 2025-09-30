@@ -45,7 +45,7 @@ namespace Impl {
 template <class RMV, class aVector, class XMV, int scalar_x, class SizeType = typename RMV::size_type>
 struct MV_Scal_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -123,7 +123,7 @@ struct MV_Scal_Functor {
 template <class RMV, class XMV, int scalar_x, class SizeType>
 struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type, XMV, scalar_x, SizeType> {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV m_r;
@@ -191,7 +191,7 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type, XMV, scalar_x, S
 template <class RMV, class aVector, class XMV, int scalar_x, int UNROLL, class SizeType>
 struct MV_Scal_Unroll_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   RMV m_r;
   XMV m_x;
@@ -248,7 +248,7 @@ struct MV_Scal_Unroll_Functor {
 template <class RMV, class XMV, int scalar_x, int UNROLL, class SizeType>
 struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type, XMV, scalar_x, UNROLL, SizeType> {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   RMV m_r;
   XMV m_x;

@@ -33,7 +33,7 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
   using batchLayout     = typename ParamTagType::batchLayout;
-  using ats             = Kokkos::ArithTraits<ScalarType>;
+  using ats             = KokkosKernels::ArithTraits<ScalarType>;
 
   int ret        = 0;
   auto algo_type = batchedGemmHandle->get_kernel_algo_type();

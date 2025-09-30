@@ -21,7 +21,7 @@
 /// \brief Implementation(s) of dense linear solve.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 namespace KokkosLapack {
 namespace Impl {

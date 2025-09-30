@@ -108,7 +108,7 @@ template <typename ArgTransA, typename ArgTransB, typename AViewType, typename B
 void gemm_error_bound(const AViewType &A, const BViewType &B, const CViewType &C, const ErrorBoundViewType &error_bound,
                       ScalarType alpha, ScalarType beta, double eps) {
   using value_type = typename AViewType::non_const_value_type;
-  using ats        = Kokkos::ArithTraits<value_type>;
+  using ats        = KokkosKernels::ArithTraits<value_type>;
   using mag_type   = typename ats::mag_type;
   const int nb     = C.extent_int(0);
   const int m      = C.extent_int(1);
@@ -170,10 +170,11 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
   using execution_space = typename DeviceType::execution_space;
-  using ats             = Kokkos::ArithTraits<ValueType>;
+  using ats             = KokkosKernels::ArithTraits<ValueType>;
   using ViewType        = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
-  using FP64Type     = std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, Kokkos::complex<double>, double>;
-  using ViewFP64Type = Kokkos::View<FP64Type ***, LayoutType, DeviceType>;
+  using FP64Type =
+      std::conditional_t<KokkosKernels::ArithTraits<ValueType>::is_complex, Kokkos::complex<double>, double>;
+  using ViewFP64Type      = Kokkos::View<FP64Type ***, LayoutType, DeviceType>;
   using ErrorViewFP64Type = Kokkos::View<double ***, LayoutType, DeviceType>;
 
   /// randomized input testing views

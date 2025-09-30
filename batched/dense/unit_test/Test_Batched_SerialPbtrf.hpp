@@ -116,7 +116,7 @@ struct Functor_BatchedSerialGemm {
 /// \param N [in] Batch size of AB
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_pbtrf_analytical(const int N) {
-  using ats        = typename Kokkos::ArithTraits<ScalarType>;
+  using ats        = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType   = typename ats::mag_type;
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
 
@@ -236,7 +236,7 @@ void impl_test_batched_pbtrf(const int N, const int k, const int BlkSize) {
   }
 
   // this eps is about 10^-14
-  using ats      = typename Kokkos::ArithTraits<ScalarType>;
+  using ats      = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType = typename ats::mag_type;
   RealType eps   = 1.0e3 * ats::epsilon();
 

@@ -36,7 +36,7 @@
 #include <quadmath.h>
 #include <stdexcept>
 
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_Core.hpp>
 
 // GCC / libquadmath doesn't implement an std::ostream operator<< for

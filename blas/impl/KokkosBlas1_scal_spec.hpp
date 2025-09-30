@@ -18,7 +18,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -107,7 +107,7 @@ template <class execution_space, class RV, class XV>
 struct Scal<execution_space, RV, typename XV::non_const_value_type, XV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XV::non_const_value_type AV;
   typedef typename XV::size_type size_type;
-  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATA;
+  typedef KokkosKernels::ArithTraits<typename XV::non_const_value_type> ATA;
 
   static void scal(const execution_space& space, const RV& R, const AV& alpha, const XV& X) {
     static_assert(Kokkos::is_view<RV>::value,
@@ -164,7 +164,7 @@ struct Scal<execution_space, RV, typename XV::non_const_value_type, XV, 1, false
 template <class execution_space, class RMV, class AV, class XMV>
 struct Scal<execution_space, RMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
-  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef KokkosKernels::ArithTraits<typename XMV::non_const_value_type> ATA;
 
   static void scal(const execution_space& space, const RMV& R, const AV& av, const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
@@ -221,7 +221,7 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2, fa
             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::non_const_value_type AV;
   typedef typename XMV::size_type size_type;
-  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef KokkosKernels::ArithTraits<typename XMV::non_const_value_type> ATA;
 
   static void scal(const execution_space& space, const RMV& R, const AV& alpha, const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,

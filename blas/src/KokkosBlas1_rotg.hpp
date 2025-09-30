@@ -42,12 +42,12 @@ void rotg(execution_space const& space, SViewType const& a, SViewType const& b, 
           SViewType const& s) {
   static_assert(SViewType::rank == 0, "rotg: the inputs need to be rank 0 views");
   static_assert(MViewType::rank == 0, "rotg: the inputs need to be rank 0 views");
-  static_assert(!Kokkos::ArithTraits<typename MViewType::value_type>::is_complex);
+  static_assert(!KokkosKernels::ArithTraits<typename MViewType::value_type>::is_complex);
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename SViewType::memory_space>::accessible,
                 "rotg: execution_space cannot access data in SViewType");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename MViewType::memory_space>::accessible,
                 "rotg: execution_space cannot access data in MViewType");
-  static_assert(!Kokkos::ArithTraits<typename MViewType::value_type>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<typename MViewType::value_type>::is_complex,
                 "rotg: MViewType cannot hold complex values.");
 
   using SView_Internal = Kokkos::View<

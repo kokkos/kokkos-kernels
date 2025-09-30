@@ -103,7 +103,7 @@ struct bdf_input_parameters {
 template <class execution_space>
 void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   using scalar_type = double;
-  using KAT         = Kokkos::ArithTraits<scalar_type>;
+  using KAT         = KokkosKernels::ArithTraits<scalar_type>;
   using vec_type    = Kokkos::View<scalar_type**, execution_space>;
   using mat_type    = Kokkos::View<scalar_type***, execution_space>;
 

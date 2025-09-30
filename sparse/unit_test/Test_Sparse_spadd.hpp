@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosSparse_spadd.hpp>
@@ -46,7 +46,7 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNN
   typedef typename size_type_view_t::non_const_value_type size_type;  // rowptr type
   typedef typename lno_view_t::non_const_value_type lno_t;            // colind type
   typedef typename scalar_view_t::non_const_value_type scalar_t;
-  typedef Kokkos::ArithTraits<scalar_t> KAT;
+  typedef KokkosKernels::ArithTraits<scalar_t> KAT;
   static_assert(std::is_same<ordinal_type, lno_t>::value, "ordinal_type should be same as lno_t from crsMat_t");
   // first, populate rowmap
   size_type_view_t rowmap("rowmap", nrows + 1);
@@ -96,7 +96,7 @@ template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ, bool sortRows) {
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
 
-  typedef Kokkos::ArithTraits<scalar_t> KAT;
+  typedef KokkosKernels::ArithTraits<scalar_t> KAT;
   typedef typename KAT::mag_type magnitude_t;
   typedef typename crsMat_t::row_map_type::non_const_type row_map_type;
   typedef typename crsMat_t::index_type::non_const_type entries_type;
@@ -194,7 +194,7 @@ void test_spadd_known_columns() {
   using row_map_type = typename crsMat_t::row_map_type::non_const_type;
   using entries_type = typename crsMat_t::index_type::non_const_type;
   using values_type  = typename crsMat_t::values_type::non_const_type;
-  using KAT          = Kokkos::ArithTraits<scalar_t>;
+  using KAT          = KokkosKernels::ArithTraits<scalar_t>;
   using KernelHandle = typename KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename Device::execution_space, typename Device::memory_space,
       typename Device::memory_space>;

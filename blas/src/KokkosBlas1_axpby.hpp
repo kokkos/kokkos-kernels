@@ -275,7 +275,7 @@ void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
 ///                        stored.
 template <class execution_space, class AV, class XMV, class YMV>
 void axpy(const execution_space& exec_space, const AV& a, const XMV& X, const YMV& Y) {
-  axpby(exec_space, a, X, Kokkos::ArithTraits<typename YMV::non_const_value_type>::one(), Y);
+  axpby(exec_space, a, X, KokkosKernels::ArithTraits<typename YMV::non_const_value_type>::one(), Y);
 }
 
 /// \brief Computes Y := a*X + Y

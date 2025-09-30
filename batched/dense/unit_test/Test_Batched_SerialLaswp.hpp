@@ -101,7 +101,7 @@ struct Functor_BatchedSerialLaswp {
 /// \param N [in] Batch size of matrices
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgDirect>
 void impl_test_batched_laswp_analytical(const std::size_t N) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
@@ -333,7 +333,7 @@ void impl_test_batched_laswp_analytical(const std::size_t N) {
 /// \param BlkSize [in] Length of vector b
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgDirect>
 void impl_test_batched_laswp_vector(const std::size_t N, const std::size_t BlkSize) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
@@ -448,7 +448,7 @@ void impl_test_batched_laswp_vector(const std::size_t N, const std::size_t BlkSi
 /// \param BlkSize [in] Row size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgDirect>
 void impl_test_batched_laswp_matrix(const std::size_t N, const std::size_t BlkSize) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using StridedView3DType = Kokkos::View<ScalarType ***, Kokkos::LayoutStride, DeviceType>;

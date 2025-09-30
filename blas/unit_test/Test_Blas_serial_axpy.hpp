@@ -77,7 +77,7 @@ template <typename DeviceType, typename ViewType, typename ScalarType>
 void impl_test_blas_serial_axpy(const int N, const int BlkSize) {
   /// typedefs
   using value_type = typename ViewType::value_type;
-  using ats        = Kokkos::ArithTraits<value_type>;
+  using ats        = KokkosKernels::ArithTraits<value_type>;
 
   /// radomized input testing views
   const ScalarType alpha = 11.1;

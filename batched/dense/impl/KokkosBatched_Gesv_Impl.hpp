@@ -59,7 +59,7 @@ KOKKOS_INLINE_FUNCTION int SerialStaticPivoting::invoke(const MatrixType1 A, con
   // First, the algorithm loops over the rows and columns and search
   // for the maximal absolute value per row and column.
   for (size_t i = 0; i < n; ++i) {
-    D2(i)      = Kokkos::ArithTraits<value_type>::zero();
+    D2(i)      = KokkosKernels::ArithTraits<value_type>::zero();
     tmp_v_1(i) = 0;
     tmp_v_2(i) = 1.;
     for (size_t j = 0; j < n; ++j) {
@@ -82,7 +82,7 @@ KOKKOS_INLINE_FUNCTION int SerialStaticPivoting::invoke(const MatrixType1 A, con
   // of A and Y.
   value_type D1_i;
   for (size_t i = 0; i < n; ++i) {
-    D1_i = Kokkos::ArithTraits<value_type>::zero();
+    D1_i = KokkosKernels::ArithTraits<value_type>::zero();
     for (size_t j = 0; j < n; ++j) {
       if (D1_i < Kokkos::abs(A(i, j))) D1_i = Kokkos::abs(A(i, j));
     }
@@ -104,8 +104,8 @@ KOKKOS_INLINE_FUNCTION int SerialStaticPivoting::invoke(const MatrixType1 A, con
   for (size_t i = 0; i < n; ++i) {
     int row_index    = 0;
     int col_index    = 0;
-    value_type tmp_0 = Kokkos::ArithTraits<value_type>::zero();
-    value_type tmp_1 = Kokkos::ArithTraits<value_type>::zero();
+    value_type tmp_0 = KokkosKernels::ArithTraits<value_type>::zero();
+    value_type tmp_1 = KokkosKernels::ArithTraits<value_type>::zero();
     for (size_t j = 0; j < n; ++j) {
       if (tmp_0 < tmp_v_1(j)) {
         tmp_0     = tmp_v_1(j);
@@ -118,9 +118,9 @@ KOKKOS_INLINE_FUNCTION int SerialStaticPivoting::invoke(const MatrixType1 A, con
         col_index = j;
       }
     }
-    if (tmp_1 == Kokkos::ArithTraits<value_type>::zero()) return 1;
-    tmp_v_1(row_index) = Kokkos::ArithTraits<value_type>::zero();
-    tmp_v_2(col_index) = Kokkos::ArithTraits<value_type>::zero();
+    if (tmp_1 == KokkosKernels::ArithTraits<value_type>::zero()) return 1;
+    tmp_v_1(row_index) = KokkosKernels::ArithTraits<value_type>::zero();
+    tmp_v_2(col_index) = KokkosKernels::ArithTraits<value_type>::zero();
 
     for (size_t j = 0; j < n; ++j) {
       PDAD(col_index, j) = A(row_index, j);
@@ -147,7 +147,7 @@ KOKKOS_INLINE_FUNCTION int TeamStaticPivoting<MemberType>::invoke(const MemberTy
   size_t n = A.extent(0);
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
-    D2(i)      = Kokkos::ArithTraits<value_type>::zero();
+    D2(i)      = KokkosKernels::ArithTraits<value_type>::zero();
     tmp_v_1(i) = 0;
     tmp_v_2(i) = 1.;
     for (size_t j = 0; j < n; ++j) {
@@ -164,7 +164,7 @@ KOKKOS_INLINE_FUNCTION int TeamStaticPivoting<MemberType>::invoke(const MemberTy
   });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
-    value_type D1_i = Kokkos::ArithTraits<value_type>::zero();
+    value_type D1_i = KokkosKernels::ArithTraits<value_type>::zero();
     for (size_t j = 0; j < n; ++j) {
       if (D1_i < Kokkos::abs(A(i, j))) D1_i = Kokkos::abs(A(i, j));
     }
@@ -190,7 +190,7 @@ KOKKOS_INLINE_FUNCTION int TeamStaticPivoting<MemberType>::invoke(const MemberTy
         reducer_value);
     row_index = value.loc;
     value.loc = 0;
-    value.val = Kokkos::ArithTraits<value_type>::zero();
+    value.val = KokkosKernels::ArithTraits<value_type>::zero();
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(member, n),
         [&](const int &j, reducer_value_type &update) {
@@ -201,9 +201,9 @@ KOKKOS_INLINE_FUNCTION int TeamStaticPivoting<MemberType>::invoke(const MemberTy
         },
         reducer_value);
     col_index = value.loc;
-    if (value.val == Kokkos::ArithTraits<value_type>::zero()) return 1;
-    tmp_v_1(row_index) = Kokkos::ArithTraits<value_type>::zero();
-    tmp_v_2(col_index) = Kokkos::ArithTraits<value_type>::zero();
+    if (value.val == KokkosKernels::ArithTraits<value_type>::zero()) return 1;
+    tmp_v_1(row_index) = KokkosKernels::ArithTraits<value_type>::zero();
+    tmp_v_2(col_index) = KokkosKernels::ArithTraits<value_type>::zero();
 
     for (size_t j = 0; j < n; ++j) {
       PDAD(col_index, j) = A(row_index, j);
@@ -228,7 +228,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
   const size_t n = A.extent(0);
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
-    D2(i)      = Kokkos::ArithTraits<value_type>::zero();
+    D2(i)      = KokkosKernels::ArithTraits<value_type>::zero();
     tmp_v_1(i) = 0;
     tmp_v_2(i) = 1.;
     reducer_value_type value;
@@ -260,7 +260,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
   });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
-    value_type D1_i = Kokkos::ArithTraits<value_type>::zero();
+    value_type D1_i = KokkosKernels::ArithTraits<value_type>::zero();
     reducer_value_type value;
     Kokkos::MaxLoc<value_type, int> reducer_value(value);
     Kokkos::parallel_reduce(
@@ -292,7 +292,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
         reducer_value);
     row_index = value.loc;
     value.loc = 0;
-    value.val = Kokkos::ArithTraits<value_type>::zero();
+    value.val = KokkosKernels::ArithTraits<value_type>::zero();
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, n),
         [&](const int &j, reducer_value_type &update) {
@@ -303,9 +303,9 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
         },
         reducer_value);
     col_index = value.loc;
-    if (value.val == Kokkos::ArithTraits<value_type>::zero()) return 1;
-    tmp_v_1(row_index) = Kokkos::ArithTraits<value_type>::zero();
-    tmp_v_2(col_index) = Kokkos::ArithTraits<value_type>::zero();
+    if (value.val == KokkosKernels::ArithTraits<value_type>::zero()) return 1;
+    tmp_v_1(row_index) = KokkosKernels::ArithTraits<value_type>::zero();
+    tmp_v_2(col_index) = KokkosKernels::ArithTraits<value_type>::zero();
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
                          [&](const int &j) { PDAD(col_index, j) = A(row_index, j); });

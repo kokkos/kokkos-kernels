@@ -48,7 +48,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using EXSP       = typename CRS::execution_space;
   using MEMSP      = typename CRS::memory_space;
   using DEVICE     = typename Kokkos::Device<EXSP, MEMSP>;
-  using karith     = typename Kokkos::ArithTraits<ScalarType>;
+  using karith     = typename KokkosKernels::ArithTraits<ScalarType>;
   using View1d     = typename Kokkos::View<ScalarType *, DEVICE>;
 
  private:

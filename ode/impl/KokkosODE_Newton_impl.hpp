@@ -44,19 +44,19 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
       typename Kokkos::Details::InnerProductSpaceTraits<typename ini_vec_type::non_const_value_type>::mag_type;
   sys.residual(y0, rhs);
   const norm_type norm0 = KokkosBlas::serial_nrm2(rhs);
-  norm_type norm        = Kokkos::ArithTraits<norm_type>::zero();
-  norm_type norm_old    = Kokkos::ArithTraits<norm_type>::zero();
-  norm_type norm_new    = Kokkos::ArithTraits<norm_type>::zero();
-  norm_type rate        = Kokkos::ArithTraits<norm_type>::zero();
+  norm_type norm        = KokkosKernels::ArithTraits<norm_type>::zero();
+  norm_type norm_old    = KokkosKernels::ArithTraits<norm_type>::zero();
+  norm_type norm_new    = KokkosKernels::ArithTraits<norm_type>::zero();
+  norm_type rate        = KokkosKernels::ArithTraits<norm_type>::zero();
 
-  const norm_type tol = Kokkos::max(10 * Kokkos::ArithTraits<norm_type>::eps() / params.rel_tol,
+  const norm_type tol = Kokkos::max(10 * KokkosKernels::ArithTraits<norm_type>::eps() / params.rel_tol,
                                     Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
 
   // LBV - 07/24/2023: for now assume that we take
   // a full Newton step. Eventually this value can
   // be computed using a line search algorithm to
   // improve convergence for difficult problems.
-  const value_type alpha = Kokkos::ArithTraits<value_type>::one();
+  const value_type alpha = KokkosKernels::ArithTraits<value_type>::one();
 
   // Iterate until maxIts or the tolerance is reached
   for (int it = 0; it < params.max_iters; ++it) {  // handle.maxIters; ++it) {
@@ -83,7 +83,7 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
       norm_new = (update(idx) * update(idx)) / (scale(idx) * scale(idx));
     }
     norm_new = Kokkos::sqrt(norm_new / sys.neqs);
-    if ((it > 0) && norm_old > Kokkos::ArithTraits<norm_type>::zero()) {
+    if ((it > 0) && norm_old > KokkosKernels::ArithTraits<norm_type>::zero()) {
       rate = norm_new / norm_old;
       if ((rate >= 1) || Kokkos::pow(rate, params.max_iters - it) / (1 - rate) * norm_new > tol) {
         return newton_solver_status::NLS_DIVERGENCE;

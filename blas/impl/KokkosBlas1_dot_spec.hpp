@@ -18,7 +18,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
@@ -341,7 +341,7 @@ struct Dot<execution_space, RV, XV, YV, X_Rank, Y_Rank, false, KOKKOSKERNELS_IMP
 
     const size_type numRows = X.extent(0);
     const size_type numDots = std::max(X.extent(1), Y.extent(1));
-    if (numDots == Kokkos::ArithTraits<size_type>::one()) {
+    if (numDots == KokkosKernels::ArithTraits<size_type>::one()) {
       auto R0 = Kokkos::subview(R, 0);
       auto X0 = getFirstColumn(X);
       auto Y0 = getFirstColumn(Y);

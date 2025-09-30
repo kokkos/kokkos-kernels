@@ -37,7 +37,7 @@ struct SerialIamaxInternal {
 template <typename IndexType, typename ValueType>
 KOKKOS_INLINE_FUNCTION IndexType SerialIamaxInternal::invoke(const int n, const ValueType *KOKKOS_RESTRICT x,
                                                              const int xs0) {
-  using ats      = typename Kokkos::ArithTraits<ValueType>;
+  using ats      = typename KokkosKernels::ArithTraits<ValueType>;
   using RealType = typename ats::mag_type;
 
   RealType amax  = Kokkos::abs(x[0 * xs0]);

@@ -242,7 +242,7 @@ struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<double>>, l>> {
 #include "KokkosBatched_Vector_SIMD.hpp"
 
 // arith traits overload for vector types
-namespace Kokkos {
+namespace KokkosKernels {
 
 // do not use Vector alone as other can use the name.
 
@@ -318,6 +318,6 @@ class ArithTraits<KokkosBatched::Vector<KokkosBatched::SIMD<Kokkos::complex<T>>,
   }
 };
 
-}  // namespace Kokkos
+}  // namespace KokkosKernels
 
 #endif

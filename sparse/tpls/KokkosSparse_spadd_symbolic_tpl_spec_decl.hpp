@@ -58,7 +58,7 @@ namespace Impl {
                                const ORDINAL_TYPE n, rowmap_view_t rowmapA, colidx_view_t colidxA,                     \
                                rowmap_view_t rowmapB, colidx_view_t colidxB, non_const_rowmap_view_t rowmapC) {        \
       Kokkos::Profiling::pushRegion("KokkosSparse::spadd_symbolic[TPL_CUSPARSE," +                                     \
-                                    Kokkos::ArithTraits<KOKKOS_SCALAR_TYPE>::name() + "]");                            \
+                                    KokkosKernels::ArithTraits<KOKKOS_SCALAR_TYPE>::name() + "]");                     \
                                                                                                                        \
       auto addHandle   = handle->get_spadd_handle();                                                                   \
       auto& cuspData   = addHandle->cusparseData;                                                                      \
@@ -151,7 +151,7 @@ KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE_EXT(false)
                                const ORDINAL_TYPE n, rowmap_view_t rowmapA, colidx_view_t colidxA,                     \
                                rowmap_view_t rowmapB, colidx_view_t colidxB, non_const_rowmap_view_t rowmapC) {        \
       Kokkos::Profiling::pushRegion("KokkosSparse::spadd_symbolic[TPL_ROCSPARSE," +                                    \
-                                    Kokkos::ArithTraits<KOKKOS_SCALAR_TYPE>::name() + "]");                            \
+                                    KokkosKernels::ArithTraits<KOKKOS_SCALAR_TYPE>::name() + "]");                     \
                                                                                                                        \
       auto addHandle    = handle->get_spadd_handle();                                                                  \
       auto& rocData     = addHandle->rocsparseData;                                                                    \

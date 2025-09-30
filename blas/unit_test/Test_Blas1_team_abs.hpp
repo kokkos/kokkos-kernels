@@ -40,7 +40,7 @@ void impl_test_team_abs(int N) {
 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
@@ -73,7 +73,7 @@ void impl_test_team_abs(int N) {
   EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result, eps * expected_result);
 
   // Zero out y and run again with const input
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
 
   // KokkosBlas::abs(y,c_x);
   Kokkos::parallel_for(
@@ -102,7 +102,7 @@ void impl_test_team_abs_mv(int N, int K) {
 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   view_stride_adapter<ViewTypeA> x("X", N, K);
   view_stride_adapter<ViewTypeB> y("Y", N, K);
@@ -146,7 +146,7 @@ void impl_test_team_abs_mv(int N, int K) {
   }
 
   // Zero out y and run again with const input
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
 
   // KokkosBlas::abs(y,c_x);
   Kokkos::parallel_for(

@@ -157,7 +157,7 @@ struct Functor_BatchedSerialGemv {
 /// \param N [in] Batch size of RHS
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_gbtrs_analytical(const int N) {
-  using ats         = typename Kokkos::ArithTraits<ScalarType>;
+  using ats         = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType    = typename ats::mag_type;
   using View2DType  = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType  = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
@@ -240,7 +240,7 @@ void impl_test_batched_gbtrs_analytical(const int N) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_gbtrs(const int N, const int k, const int BlkSize) {
-  using ats         = typename Kokkos::ArithTraits<ScalarType>;
+  using ats         = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType    = typename ats::mag_type;
   using View2DType  = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType  = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;

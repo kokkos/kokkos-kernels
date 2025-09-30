@@ -132,7 +132,7 @@ void run_experiment(int argc, char** argv, CommonInputParams /*params*/) {
 
       // Generate the values of A
       Kokkos::Random_XorShift64_Pool<exec_space> rand_pool(13718);
-      Kokkos::fill_random(valuesA, rand_pool, 10 * Kokkos::ArithTraits<scalar_t>::one());
+      Kokkos::fill_random(valuesA, rand_pool, 10 * KokkosKernels::ArithTraits<scalar_t>::one());
 
       // Actually put A together
       graph_t graph(entriesA, rowmapA);

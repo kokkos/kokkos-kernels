@@ -40,7 +40,7 @@ struct TeamVectorUpdateColumnNormsInternal {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int n, const ValueType *KOKKOS_RESTRICT a,
                                            const int as0,
                                            /* */ ValueType *KOKKOS_RESTRICT norm, const int ns0) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int &j) {
       const int idx_a = j * as0, idx_n = j * ns0;
       norm[idx_n] -= ats::conj(a[idx_a]) * a[idx_a];
@@ -61,7 +61,7 @@ struct TeamVectorQR_WithColumnPivotingInternal {
                                            /* */ int &matrix_rank) {
     using value_type = ValueType;
     using int_type   = IntType;
-    using ats        = Kokkos::ArithTraits<value_type>;
+    using ats        = KokkosKernels::ArithTraits<value_type>;
 
     /// Given a matrix A, it computes QR decomposition of the matrix
     ///  - t is to store tau and w is for workspace

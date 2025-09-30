@@ -38,7 +38,7 @@ struct V_NrmInf_Functor {
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
+  typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 
   typename XV::const_type m_x;
@@ -70,7 +70,7 @@ struct V_NrmInf_Functor {
 ///   View) X, and store the result in the 0-D View r.
 template <class execution_space, class RV, class XV, class SizeType>
 void V_NrmInf_Invoke(const execution_space& space, const RV& r, const XV& X) {
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> AT;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> AT;
 
   const SizeType numRows = static_cast<SizeType>(X.extent(0));
 

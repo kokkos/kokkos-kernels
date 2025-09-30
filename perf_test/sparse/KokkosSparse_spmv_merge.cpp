@@ -224,7 +224,7 @@ int main(int argc, char** argv) {
     using matrix_type = KokkosSparse::CrsMatrix<Scalar, lno_t, Kokkos::DefaultExecutionSpace, void, lno_t>;
     using values_type = typename matrix_type::values_type::non_const_type;
     using handle_type = KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, values_type, values_type>;
-    const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
+    const Scalar SC_ONE = KokkosKernels::ArithTraits<Scalar>::one();
     const Scalar alpha  = SC_ONE + SC_ONE;
     const Scalar beta   = alpha + SC_ONE;
 

@@ -200,7 +200,7 @@ struct Axpby<execution_space, AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COM
         }
       }
     } else {
-      using ATA = Kokkos::ArithTraits<AV>;
+      using ATA = KokkosKernels::ArithTraits<AV>;
       if (av == ATA::zero()) {
         scalar_x = 0;
       } else if (av == -ATA::one()) {
@@ -218,7 +218,7 @@ struct Axpby<execution_space, AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COM
         }
       }
     } else {
-      using ATB = Kokkos::ArithTraits<BV>;
+      using ATB = KokkosKernels::ArithTraits<BV>;
       if (bv == ATB::zero()) {
         scalar_y = 0;
       } else if (bv == -ATB::one()) {
@@ -260,8 +260,8 @@ struct Axpby<execution_space, typename XMV::non_const_value_type, XMV, typename 
   using AV        = typename XMV::non_const_value_type;
   using BV        = typename YMV::non_const_value_type;
   using size_type = typename YMV::size_type;
-  using ATA       = Kokkos::ArithTraits<typename XMV::non_const_value_type>;
-  using ATB       = Kokkos::ArithTraits<typename YMV::non_const_value_type>;
+  using ATA       = KokkosKernels::ArithTraits<typename XMV::non_const_value_type>;
+  using ATB       = KokkosKernels::ArithTraits<typename YMV::non_const_value_type>;
 
   static void axpby(const execution_space& space, const AV& alpha, const XMV& X, const BV& beta, const YMV& Y) {
     static_assert(Kokkos::is_view<XMV>::value,
@@ -360,7 +360,7 @@ struct Axpby<execution_space, AV, XV, BV, YV, 1, false, KOKKOSKERNELS_IMPL_COMPI
         }
       }
     } else {
-      using ATA = Kokkos::ArithTraits<AV>;
+      using ATA = KokkosKernels::ArithTraits<AV>;
       if (av == ATA::zero()) {
         scalar_x = 0;
       } else if (av == -ATA::one()) {
@@ -378,7 +378,7 @@ struct Axpby<execution_space, AV, XV, BV, YV, 1, false, KOKKOSKERNELS_IMPL_COMPI
         }
       }
     } else {
-      using ATB = Kokkos::ArithTraits<BV>;
+      using ATB = KokkosKernels::ArithTraits<BV>;
       if (bv == ATB::zero()) {
         scalar_y = 0;
       } else if (bv == -ATB::one()) {
@@ -413,8 +413,8 @@ struct Axpby<execution_space, typename XV::non_const_value_type, XV, typename YV
   using AV        = typename XV::non_const_value_type;
   using BV        = typename YV::non_const_value_type;
   using size_type = typename YV::size_type;
-  using ATA       = Kokkos::ArithTraits<typename XV::non_const_value_type>;
-  using ATB       = Kokkos::ArithTraits<typename YV::non_const_value_type>;
+  using ATA       = KokkosKernels::ArithTraits<typename XV::non_const_value_type>;
+  using ATB       = KokkosKernels::ArithTraits<typename YV::non_const_value_type>;
 
   static void axpby(const execution_space& space, const AV& alpha, const XV& X, const BV& beta, const YV& Y) {
     static_assert(Kokkos::is_view<XV>::value,

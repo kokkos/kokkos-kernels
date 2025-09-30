@@ -23,7 +23,7 @@
 /// \brief Implementation(s) of the numeric phase of GMRES.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_gmres_handle.hpp>
 #include <KokkosBlas.hpp>
 #include <KokkosBlas3_trsm_impl.hpp>
@@ -48,7 +48,7 @@ struct GmresWrap {
   using HandleDeviceRowMapType  = typename GmresHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename GmresHandle::nnz_value_view_t;
   using HandleDevice2dValueType = typename GmresHandle::nnz_value_view2d_t;
-  using karith                  = typename Kokkos::ArithTraits<scalar_t>;
+  using karith                  = typename KokkosKernels::ArithTraits<scalar_t>;
   using device_t                = typename HandleDeviceEntriesType::device_type;
 
   /**

@@ -43,7 +43,7 @@ void impl_test_batched_vector_logical() {
   typedef ValueType value_type;
   const int vector_length = VectorLength;
 
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
   typedef typename ats::mag_type mag_type;
 
   vector_int_type a, b;

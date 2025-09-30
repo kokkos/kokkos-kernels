@@ -43,7 +43,7 @@ namespace fs = std::filesystem;
 
 #include <Benchmark_Context.hpp>
 
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 #include "Benchmark_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -128,9 +128,9 @@ void check_correctness(benchmark::State &state, const View &y_exp, const View &y
                        const Alpha &alpha, const Beta &beta, const DieOnError &die, const SkipOnError &skip) {
   using execution_space = typename View::execution_space;
   using scalar_type     = typename View::non_const_value_type;
-  using AT              = Kokkos::ArithTraits<scalar_type>;
+  using AT              = KokkosKernels::ArithTraits<scalar_type>;
   using mag_type        = typename AT::mag_type;
-  using ATM             = Kokkos::ArithTraits<mag_type>;
+  using ATM             = KokkosKernels::ArithTraits<mag_type>;
 
   // max value in A
   mag_type maxA = 0;
@@ -318,9 +318,10 @@ void register_expand_type(const fs::path &path) {
   for (size_t bs : {4, 7, 10, 16}) {  // block sizes
     for (size_t k : ks) {             // multivector sizes
       std::string name = std::string("MatrixMarketExpanded") + "/" + std::string(path.stem()) + "/" +
-                         Kokkos::ArithTraits<Scalar>::name() + "/" + Kokkos::ArithTraits<Ordinal>::name() + "/" +
-                         Kokkos::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" + std::to_string(k) +
-                         "/" + Spmv::name() + "/" + Device::name();
+                         KokkosKernels::ArithTraits<Scalar>::name() + "/" +
+                         KokkosKernels::ArithTraits<Ordinal>::name() + "/" +
+                         KokkosKernels::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" +
+                         std::to_string(k) + "/" + Spmv::name() + "/" + Device::name();
       benchmark::RegisterBenchmark(name.c_str(), read_expand_run<Bsr, Spmv>, path, bs, k)->UseRealTime();
     }
   }
@@ -333,9 +334,9 @@ void register_convert_type(const fs::path &path, size_t bs) {
 
   for (size_t k : ks) {  // multivector sizes
     std::string name = std::string("MatrixMarketConvert") + "/" + std::string(path.stem()) + "/" +
-                       Kokkos::ArithTraits<Scalar>::name() + "/" + Kokkos::ArithTraits<Ordinal>::name() + "/" +
-                       Kokkos::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" + std::to_string(k) + "/" +
-                       Spmv::name() + "/" + Device::name();
+                       KokkosKernels::ArithTraits<Scalar>::name() + "/" + KokkosKernels::ArithTraits<Ordinal>::name() +
+                       "/" + KokkosKernels::ArithTraits<Offset>::name() + "/" + std::to_string(bs) + "/" +
+                       std::to_string(k) + "/" + Spmv::name() + "/" + Device::name();
     benchmark::RegisterBenchmark(name.c_str(), read_convert_run<Bsr, Spmv>, path, bs, k)->UseRealTime();
   }
 }

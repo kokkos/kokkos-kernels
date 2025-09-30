@@ -191,8 +191,9 @@ struct AxpbyUnificationAttemptTraits {
   using InternalLayoutA =
       std::conditional_t<(a_is_r1d || a_is_r1s) && atInputLayoutA_isStride, AtInputLayoutA, InternalLayoutX>;
 
-  static constexpr bool atInputScalarTypeA_mustRemain = Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex &&
-                                                        !Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex;
+  static constexpr bool atInputScalarTypeA_mustRemain =
+      KokkosKernels::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex &&
+      !KokkosKernels::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex;
 
   using InternalScalarTypeA =
       std::conditional_t<atInputScalarTypeA_mustRemain || ((a_is_r1d || a_is_r1s) && xyRank2Case),
@@ -240,8 +241,9 @@ struct AxpbyUnificationAttemptTraits {
   using InternalLayoutB =
       std::conditional_t<(b_is_r1d || b_is_r1s) && atInputLayoutB_isStride, AtInputLayoutB, InternalLayoutY>;
 
-  static constexpr bool atInputScalarTypeB_mustRemain = Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex &&
-                                                        !Kokkos::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex;
+  static constexpr bool atInputScalarTypeB_mustRemain =
+      KokkosKernels::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex &&
+      !KokkosKernels::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex;
 
   using InternalScalarTypeB =
       std::conditional_t<atInputScalarTypeB_mustRemain || ((b_is_r1d || b_is_r1s) && xyRank2Case),
@@ -350,10 +352,10 @@ struct AxpbyUnificationAttemptTraits {
                   ": one must have either both X and Y as rank 1, or both X and Y as "
                   "rank 2");
 
-    if constexpr (!Kokkos::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex) {
-      static_assert((!Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex) &&
-                        (!Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex) &&
-                        (!Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex),
+    if constexpr (!KokkosKernels::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex) {
+      static_assert((!KokkosKernels::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex) &&
+                        (!KokkosKernels::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex) &&
+                        (!KokkosKernels::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex),
                     "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
                     ": if Y is not complex, then A, X and B cannot be complex");
     }
@@ -659,7 +661,7 @@ struct AxpbyUnificationAttemptTraits {
        // typeid(AV::non_const_data_type).name()
        << ", AtInputScalarTypeA = " << typeid(AtInputScalarTypeA).name()
        << ", isConst = " << std::is_const_v<AtInputScalarTypeA> << ", isComplex = "
-       << Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex
+       << KokkosKernels::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex
        << ", AtInputScalarTypeA_nonConst = " << typeid(AtInputScalarTypeA_nonConst).name()
        << ", InternalTypeA = " << typeid(InternalTypeA).name() << "\n"
        << ", InternalTypeA_managed = " << typeid(InternalTypeA_managed).name() << "\n"
@@ -670,7 +672,7 @@ struct AxpbyUnificationAttemptTraits {
        << "XMV::non_const_data_type = " << typeid(typename XMV::non_const_data_type).name() << "\n"
        << "AtInputScalarTypeX = " << typeid(AtInputScalarTypeX).name() << "\n"
        << "isConst = " << std::is_const_v<AtInputScalarTypeX> << "\n"
-       << "isComplex = " << Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex << "\n"
+       << "isComplex = " << KokkosKernels::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex << "\n"
        << "AtInputScalarTypeX_nonConst = " << typeid(AtInputScalarTypeX_nonConst).name() << "\n"
        << "InternalTypeX = " << typeid(InternalTypeX).name() << "\n"
        << "\n"
@@ -681,7 +683,7 @@ struct AxpbyUnificationAttemptTraits {
        // typeid(BV::non_const_data_type).name()
        << ", AtInputScalarTypeB = " << typeid(AtInputScalarTypeB).name()
        << ", isConst = " << std::is_const_v<AtInputScalarTypeB> << ", isComplex = "
-       << Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex
+       << KokkosKernels::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex
        << ", AtInputScalarTypeB_nonConst = " << typeid(AtInputScalarTypeB_nonConst).name()
        << ", InternalTypeB = " << typeid(InternalTypeB).name() << "\n"
        << ", InternalTypeB_managed = " << typeid(InternalTypeB_managed).name() << "\n"
@@ -692,7 +694,7 @@ struct AxpbyUnificationAttemptTraits {
        << "YMV::non_const_data_type = " << typeid(typename YMV::non_const_data_type).name() << "\n"
        << "AtInputScalarTypeY = " << typeid(AtInputScalarTypeY).name() << "\n"
        << "isConst = " << std::is_const_v<AtInputScalarTypeY> << "\n"
-       << "isComplex = " << Kokkos::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex << "\n"
+       << "isComplex = " << KokkosKernels::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex << "\n"
        << "AtInputScalarTypeY_nonConst = " << typeid(AtInputScalarTypeY_nonConst).name() << "\n"
        << "InternalTypeY = " << typeid(InternalTypeY).name() << "\n"
        << std::endl;

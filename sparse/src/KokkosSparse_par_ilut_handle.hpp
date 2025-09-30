@@ -52,7 +52,7 @@ class PAR_ILUTHandle {
   using nnz_scalar_t       = typename std::remove_const<scalar_t_>::type;
   using const_nnz_scalar_t = const nnz_scalar_t;
 
-  using float_t = typename Kokkos::ArithTraits<nnz_scalar_t>::mag_type;
+  using float_t = typename KokkosKernels::ArithTraits<nnz_scalar_t>::mag_type;
 
   using nnz_row_view_t = typename Kokkos::View<size_type *, HandlePersistentMemorySpace>;
 

@@ -18,7 +18,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
@@ -159,7 +159,7 @@ struct Nrm2<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
 
     const size_type numRows = X.extent(0);
     const size_type numCols = X.extent(1);
-    if (numCols == Kokkos::ArithTraits<size_type>::one()) {
+    if (numCols == KokkosKernels::ArithTraits<size_type>::one()) {
       auto R0 = Kokkos::subview(R, 0);
       auto X0 = Kokkos::subview(X, Kokkos::ALL(), 0);
       if (numRows < static_cast<size_type>(INT_MAX)) {

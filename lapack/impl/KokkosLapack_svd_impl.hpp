@@ -21,7 +21,7 @@
 /// \brief Implementation(s) of singular value decomposition of a dense matrix.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 namespace KokkosLapack {
 namespace Impl {

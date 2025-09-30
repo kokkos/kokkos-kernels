@@ -63,7 +63,7 @@ bool check_errors(mag_t tol, crsmat_t &Mtx, scalar_view_t rhs, scalar_view_t sol
   using lno_t          = typename entries_view_t::non_const_value_type;
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using scalar_t       = typename values_view_t::value_type;
-  using STS            = Kokkos::ArithTraits<scalar_t>;
+  using STS            = KokkosKernels::ArithTraits<scalar_t>;
 
   using execution_space = typename scalar_view_t::execution_space;
 

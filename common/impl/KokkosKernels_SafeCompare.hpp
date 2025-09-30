@@ -17,7 +17,7 @@
 #ifndef KOKKOSKERNELS_SAFECOMPARE_HPP
 #define KOKKOSKERNELS_SAFECOMPARE_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosKernels {
 namespace Impl {
@@ -43,8 +43,8 @@ namespace Impl {
 */
 template <typename T, typename U>
 KOKKOS_INLINE_FUNCTION constexpr bool safe_gt(const T &t, const U &u) {
-  using KT = Kokkos::ArithTraits<T>;
-  using KU = Kokkos::ArithTraits<U>;
+  using KT = KokkosKernels::ArithTraits<T>;
+  using KU = KokkosKernels::ArithTraits<U>;
 
   // both are integer, but only one is signed
   if constexpr (KT::is_integer && KU::is_integer && (KT::is_signed != KU::is_signed)) {

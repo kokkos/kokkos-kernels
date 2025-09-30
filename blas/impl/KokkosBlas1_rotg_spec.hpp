@@ -18,7 +18,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -42,14 +42,14 @@ struct rotg_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ROTG_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                      \
-  template <>                                                                                                     \
-  struct rotg_eti_spec_avail<                                                                                     \
-      EXECSPACE,                                                                                                  \
-      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                    \
-    enum : bool { value = true };                                                                                 \
+#define KOKKOSBLAS1_ROTG_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                           \
+  template <>                                                                                                          \
+  struct rotg_eti_spec_avail<                                                                                          \
+      EXECSPACE,                                                                                                       \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,      \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                         \
+    enum : bool { value = true };                                                                                      \
   };
 
 // Include the actual specialization declarations
@@ -101,12 +101,12 @@ struct Rotg<ExecutionSpace, SViewType, MViewType, false, KOKKOSKERNELS_IMPL_COMP
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ROTG_ETI_SPEC_DECL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                       \
-  extern template struct Rotg<                                                                                    \
-      EXECSPACE,                                                                                                  \
-      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
+#define KOKKOSBLAS1_ROTG_ETI_SPEC_DECL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                            \
+  extern template struct Rotg<                                                                                         \
+      EXECSPACE,                                                                                                       \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,      \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       false, true>;
 
 //
@@ -114,12 +114,12 @@ struct Rotg<ExecutionSpace, SViewType, MViewType, false, KOKKOSKERNELS_IMPL_COMP
 // KokkosBlas::Impl::Rotg.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_ROTG_ETI_SPEC_INST(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                       \
-  template struct Rotg<                                                                                           \
-      EXECSPACE,                                                                                                  \
-      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
+#define KOKKOSBLAS1_ROTG_ETI_SPEC_INST(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                            \
+  template struct Rotg<                                                                                                \
+      EXECSPACE,                                                                                                       \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,      \
+      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       false, true>;
 
 #include <KokkosBlas1_rotg_tpl_spec_decl.hpp>

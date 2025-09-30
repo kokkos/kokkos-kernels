@@ -27,7 +27,7 @@
 #ifndef KOKKOSKERNELS_IOUTILS_HPP
 #define KOKKOSKERNELS_IOUTILS_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include <Kokkos_Core.hpp>
 #include "Kokkos_Random.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
@@ -42,8 +42,8 @@ namespace Impl {
 // For complex, both real and imaginary parts will have interval (-mag, mag)
 template <typename Scalar>
 inline void getRandomBounds(double mag, Scalar &start, Scalar &end) {
-  start = -mag * Kokkos::ArithTraits<Scalar>::one();
-  end   = mag * Kokkos::ArithTraits<Scalar>::one();
+  start = -mag * KokkosKernels::ArithTraits<Scalar>::one();
+  end   = mag * KokkosKernels::ArithTraits<Scalar>::one();
 }
 
 template <>

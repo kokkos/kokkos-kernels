@@ -139,7 +139,7 @@ void free_cholmod(cholmod_factor *L, cholmod_common *cm) {
 template <typename scalar_type>
 int test_sptrsv_perf(std::vector<int> tests, std::string &filename, bool u_in_csr, bool invert_diag,
                      bool invert_offdiag, int block_size, int loop) {
-  using STS      = Kokkos::ArithTraits<scalar_type>;
+  using STS      = KokkosKernels::ArithTraits<scalar_type>;
   using mag_type = typename STS::mag_type;
 
   // using cholmod_int_type = long;

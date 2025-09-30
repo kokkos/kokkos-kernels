@@ -23,7 +23,7 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2w_squared(int N) {
   using ScalarA    = typename ViewTypeA::value_type;
-  using AT         = Kokkos::ArithTraits<ScalarA>;
+  using AT         = KokkosKernels::ArithTraits<ScalarA>;
   using MagnitudeA = typename AT::mag_type;
 
   view_stride_adapter<ViewTypeA> a("A", N);
@@ -57,7 +57,7 @@ void impl_test_nrm2w_squared(int N) {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2w_squared_mv(int N, int K) {
   using ScalarA    = typename ViewTypeA::value_type;
-  using AT         = Kokkos::ArithTraits<ScalarA>;
+  using AT         = KokkosKernels::ArithTraits<ScalarA>;
   using MagnitudeA = typename AT::mag_type;
 
   view_stride_adapter<ViewTypeA> a("A", N, K);

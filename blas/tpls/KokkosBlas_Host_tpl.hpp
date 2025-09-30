@@ -22,7 +22,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosKernels_config.h"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
@@ -40,7 +40,7 @@ using KK_INT = int;
 
 template <typename T>
 struct HostBlas {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   typedef typename ats::mag_type mag_type;
 
   static void scal(KK_INT n, const T alpha,

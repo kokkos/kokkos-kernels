@@ -106,7 +106,7 @@ struct Functor_BatchedSerialGemm {
 template <typename DeviceType, typename ScalarType, typename ValueType, typename LayoutType, typename ParamTagType,
           typename AlgoTagType>
 void impl_test_batched_trsm_blocking(const int N, const int BlkSize, const int NumCols) {
-  using ats      = Kokkos::ArithTraits<ValueType>;
+  using ats      = KokkosKernels::ArithTraits<ValueType>;
   using ViewType = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
 
   /// randomized input testing views
@@ -218,7 +218,7 @@ void impl_test_batched_trsm_blocking(const int N, const int BlkSize, const int N
 template <typename DeviceType, typename ScalarType, typename ValueType, typename LayoutType, typename ParamTagType,
           typename AlgoTagType>
 void impl_test_batched_trsm_analytical(const std::size_t N) {
-  using ats        = typename Kokkos::ArithTraits<ValueType>;
+  using ats        = typename KokkosKernels::ArithTraits<ValueType>;
   using RealType   = typename ats::mag_type;
   using View3DType = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
 
@@ -404,7 +404,7 @@ void impl_test_batched_trsm_analytical(const std::size_t N) {
 template <typename DeviceType, typename ScalarType, typename ValueType, typename LayoutType, typename ParamTagType,
           typename AlgoTagType>
 void impl_test_batched_trsm(const std::size_t N, const std::size_t m, const std::size_t n) {
-  using ats        = typename Kokkos::ArithTraits<ValueType>;
+  using ats        = typename KokkosKernels::ArithTraits<ValueType>;
   using RealType   = typename ats::mag_type;
   using View3DType = Kokkos::View<ValueType ***, LayoutType, DeviceType>;
 
@@ -442,7 +442,7 @@ void impl_test_batched_trsm(const std::size_t N, const std::size_t m, const std:
       for (std::size_t ib = 0; ib < N; ib++) {
         for (std::size_t i = 0; i < m; i++) {
           for (std::size_t j = 0; j < m; j++) {
-            h_Atri(ib, i, j) = Kokkos::ArithTraits<ScalarType>::conj(h_Atri(ib, i, j));
+            h_Atri(ib, i, j) = KokkosKernels::ArithTraits<ScalarType>::conj(h_Atri(ib, i, j));
           }
         }
       }
@@ -466,7 +466,7 @@ void impl_test_batched_trsm(const std::size_t N, const std::size_t m, const std:
       for (std::size_t ib = 0; ib < N; ib++) {
         for (std::size_t i = 0; i < m; i++) {
           for (std::size_t j = 0; j < m; j++) {
-            h_Atri(ib, i, j) = Kokkos::ArithTraits<ScalarType>::conj(h_Atri(ib, i, j));
+            h_Atri(ib, i, j) = KokkosKernels::ArithTraits<ScalarType>::conj(h_Atri(ib, i, j));
           }
         }
       }

@@ -205,7 +205,7 @@ template <class ode_type, class mat_type, class vec_type, class res_type, class 
 KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, const scalar_type t0,
                                        const scalar_type atol, const scalar_type rtol, const vec_type& y0,
                                        const res_type& f0, const mat_type& temp, scalar_type& dt_ini) {
-  using KAT = Kokkos::ArithTraits<scalar_type>;
+  using KAT = KokkosKernels::ArithTraits<scalar_type>;
 
   // Extract subviews to store intermediate data
   auto scale = Kokkos::subview(temp, Kokkos::ALL(), 1);
@@ -317,10 +317,10 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   BDF_system_wrapper2 sys(ode, psi, update, t, dt);
   const newton_params param(
       max_newton_iters, atol,
-      Kokkos::max(10 * Kokkos::ArithTraits<scalar_type>::eps() / rtol, Kokkos::min(0.03, Kokkos::sqrt(rtol))));
+      Kokkos::max(10 * KokkosKernels::ArithTraits<scalar_type>::eps() / rtol, Kokkos::min(0.03, Kokkos::sqrt(rtol))));
 
-  scalar_type max_step = Kokkos::ArithTraits<scalar_type>::max();
-  scalar_type min_step = Kokkos::ArithTraits<scalar_type>::min();
+  scalar_type max_step = KokkosKernels::ArithTraits<scalar_type>::max();
+  scalar_type min_step = KokkosKernels::ArithTraits<scalar_type>::min();
   scalar_type safety = 0.675, error_norm = 0.0;
   if (dt > max_step) {
     update_D(order, max_step / dt, coeffs, tempD, D);
@@ -436,7 +436,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
     }
     error_low = Kokkos::sqrt(error_low) / Kokkos::sqrt(sys.neqs);
   } else {
-    error_low = Kokkos::ArithTraits<double>::max();
+    error_low = KokkosKernels::ArithTraits<double>::max();
   }
 
   if (order < max_order) {
@@ -445,7 +445,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
     }
     error_high = Kokkos::sqrt(error_high) / Kokkos::sqrt(sys.neqs);
   } else {
-    error_high = Kokkos::ArithTraits<double>::max();
+    error_high = KokkosKernels::ArithTraits<double>::max();
   }
 
   double factor_low, factor_mid, factor_high, factor;

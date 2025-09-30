@@ -35,7 +35,7 @@ struct TeamVectorLeftHouseholderInternal {
                                            /* */ ValueType *x2, const int x2s,
                                            /* */ ValueType *tau) {
     typedef ValueType value_type;
-    typedef typename Kokkos::ArithTraits<ValueType>::mag_type mag_type;
+    typedef typename KokkosKernels::ArithTraits<ValueType>::mag_type mag_type;
 
     const mag_type zero(0);
     const mag_type half(0.5);
@@ -63,10 +63,10 @@ struct TeamVectorLeftHouseholderInternal {
     }
 
     /// compute magnitude of chi1, equal to norm2 of chi1
-    const mag_type norm_chi1 = Kokkos::ArithTraits<value_type>::abs(*chi1);
+    const mag_type norm_chi1 = KokkosKernels::ArithTraits<value_type>::abs(*chi1);
 
     /// compute 2 norm of x using norm_chi1 and norm_x2
-    const mag_type norm_x = Kokkos::ArithTraits<mag_type>::sqrt(norm_x2_square + norm_chi1 * norm_chi1);
+    const mag_type norm_x = KokkosKernels::ArithTraits<mag_type>::sqrt(norm_x2_square + norm_chi1 * norm_chi1);
 
     /// compute alpha
     const mag_type alpha = (*chi1 < 0 ? one : minus_one) * norm_x;

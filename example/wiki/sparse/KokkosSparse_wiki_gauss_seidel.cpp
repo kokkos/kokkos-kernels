@@ -31,7 +31,7 @@
 // Helper to print out colors in the shape of the grid
 int main() {
   using Scalar    = KokkosKernels::default_scalar;
-  using Mag       = Kokkos::ArithTraits<Scalar>::mag_type;
+  using Mag       = KokkosKernels::ArithTraits<Scalar>::mag_type;
   using Ordinal   = KokkosKernels::default_lno_t;
   using Offset    = KokkosKernels::default_size_type;
   using ExecSpace = Kokkos::DefaultExecutionSpace;
@@ -42,8 +42,8 @@ int main() {
   using Matrix    = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Vector    = typename Matrix::values_type;
   constexpr Ordinal numRows = 10000;
-  const Scalar one          = Kokkos::ArithTraits<Scalar>::one();
-  const Mag magOne          = Kokkos::ArithTraits<Mag>::one();
+  const Scalar one          = KokkosKernels::ArithTraits<Scalar>::one();
+  const Mag magOne          = KokkosKernels::ArithTraits<Mag>::one();
   // Solve tolerance
   const Mag tolerance = 1e-6 * magOne;
   Kokkos::initialize();

@@ -60,7 +60,7 @@ template <class AV, class XV, class BV, class YV, int scalar_x, int scalar_y, cl
 struct Axpby_Functor {
   typedef typename YV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename YV::non_const_value_type> ATS;
 
   XV m_x;
   YV m_y;
@@ -115,8 +115,8 @@ struct Axpby_Functor {
       } else if constexpr (scalar_y == 1) {
         // Nothing to do: m_y(i) = m_y(i);
       } else if constexpr (scalar_y == 2) {
-        if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
-          m_y(i) = Kokkos::ArithTraits<typename YV::non_const_value_type>::zero();
+        if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          m_y(i) = KokkosKernels::ArithTraits<typename YV::non_const_value_type>::zero();
         } else {
           m_y(i) = m_b(0) * m_y(i);
         }
@@ -133,7 +133,7 @@ struct Axpby_Functor {
       } else if constexpr (scalar_y == 1) {
         m_y(i) = -m_x(i) + m_y(i);
       } else if constexpr (scalar_y == 2) {
-        if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+        if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
           m_y(i) = -m_x(i);
         } else {
           m_y(i) = -m_x(i) + m_b(0) * m_y(i);
@@ -151,7 +151,7 @@ struct Axpby_Functor {
       } else if constexpr (scalar_y == 1) {
         m_y(i) = m_x(i) + m_y(i);
       } else if constexpr (scalar_y == 2) {
-        if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+        if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
           m_y(i) = m_x(i);
         } else {
           m_y(i) = m_x(i) + m_b(0) * m_y(i);
@@ -169,7 +169,7 @@ struct Axpby_Functor {
       } else if constexpr (scalar_y == 1) {
         m_y(i) = m_a(0) * m_x(i) + m_y(i);
       } else if constexpr (scalar_y == 2) {
-        if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+        if (m_b(0) == KokkosKernels::ArithTraits<typename BV::non_const_value_type>::zero()) {
           m_y(i) = m_a(0) * m_x(i);
         } else {
           m_y(i) = m_a(0) * m_x(i) + m_b(0) * m_y(i);
@@ -200,7 +200,7 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV, typename YV::non_con
                      SizeType> {
   typedef typename YV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename YV::non_const_value_type> ATS;
 
   XV m_x;
   YV m_y;

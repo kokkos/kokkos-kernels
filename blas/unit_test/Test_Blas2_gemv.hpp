@@ -27,7 +27,7 @@ void impl_test_gemv_streams(ExecutionSpace& space, const char* mode, int M, int 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeX::value_type ScalarX;
   typedef typename ViewTypeY::value_type ScalarY;
-  typedef Kokkos::ArithTraits<ScalarY> KAT_Y;
+  typedef KokkosKernels::ArithTraits<ScalarY> KAT_Y;
 
   const ScalarA alpha                = 3;
   ScalarY beta                       = 5;

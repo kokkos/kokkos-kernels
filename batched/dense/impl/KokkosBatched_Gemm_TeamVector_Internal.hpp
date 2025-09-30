@@ -102,7 +102,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGemmInternal<Algo::Gemm::Unblocked, true>::
         const ValueType *KOKKOS_RESTRICT pB = B + j * bs1;
 
         ValueType c = ValueType(0);
-        for (int p = 0; p < k; ++p) c += Kokkos::ArithTraits<ValueType>::conj(pA[p * as1]) * pB[p * bs0];
+        for (int p = 0; p < k; ++p) c += KokkosKernels::ArithTraits<ValueType>::conj(pA[p * as1]) * pB[p * bs0];
         C[i * cs0 + j * cs1] += alpha * c;
       });
     });

@@ -35,10 +35,10 @@ template <typename RealType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialPttrsInternal<ArgUplo, AlgoType>::invoke(
     const int n, const RealType *KOKKOS_RESTRICT d, const int ds0, const ValueType *KOKKOS_RESTRICT e, const int es0,
     ValueType *KOKKOS_RESTRICT b, const int bs0) {
-  using MayBeOpConj =
-      std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj, KokkosBlas::Impl::OpID>;
-  using OpUpper = std::conditional_t<std::is_same_v<ArgUplo, Uplo::Upper>, MayBeOpConj, KokkosBlas::Impl::OpID>;
-  using OpLower = std::conditional_t<std::is_same_v<ArgUplo, Uplo::Lower>, MayBeOpConj, KokkosBlas::Impl::OpID>;
+  using MayBeOpConj = std::conditional_t<KokkosKernels::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj,
+                                         KokkosBlas::Impl::OpID>;
+  using OpUpper     = std::conditional_t<std::is_same_v<ArgUplo, Uplo::Upper>, MayBeOpConj, KokkosBlas::Impl::OpID>;
+  using OpLower     = std::conditional_t<std::is_same_v<ArgUplo, Uplo::Lower>, MayBeOpConj, KokkosBlas::Impl::OpID>;
 
   OpUpper op_upper;
   OpLower op_lower;

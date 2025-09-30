@@ -37,7 +37,7 @@
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
 
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Vector.hpp>
 #include <KokkosBatched_Copy_Decl.hpp>
@@ -350,7 +350,7 @@ int main(int argc, char *argv[]) {
 #endif
     Kokkos::print_configuration(std::cout);
 
-    // typedef Kokkos::ArithTraits<value_type> ats;
+    // typedef KokkosKernels::ArithTraits<value_type> ats;
 
     ///
     /// input arguments parsing

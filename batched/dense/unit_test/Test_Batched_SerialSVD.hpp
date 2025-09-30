@@ -66,7 +66,7 @@ void verifyOrthogonal(const Mat& X, const double epsilon = -1) {
     Test::EXPECT_NEAR_KK(len, 1.0, tol);
     for (int j = 0; j < i; j++) {
       auto col2 = Kokkos::subview(X, Kokkos::ALL(), j);
-      double d  = Kokkos::ArithTraits<Scalar>::abs(simpleDot(col1, col2));
+      double d  = KokkosKernels::ArithTraits<Scalar>::abs(simpleDot(col1, col2));
       Test::EXPECT_NEAR_KK(d, 0.0, tol);
     }
   }
@@ -75,7 +75,7 @@ void verifyOrthogonal(const Mat& X, const double epsilon = -1) {
 template <typename AView, typename UView, typename VtView, typename SigmaView>
 void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView& sigma, const double epsilon = -1) {
   using Scalar = typename AView::non_const_value_type;
-  using KAT    = Kokkos::ArithTraits<Scalar>;
+  using KAT    = KokkosKernels::ArithTraits<Scalar>;
   // Check that U/V columns are unit length and orthogonal
   // and that:   U * diag(sigma) * V^T == A
   int m            = A.extent(0);
@@ -112,7 +112,7 @@ struct SerialSVDFunctor_Full {
   SerialSVDFunctor_Full(const Matrix& A_, const Matrix& U_, const Matrix& Vt_, const Vector& sigma_,
                         const Vector& work_)
       : A(A_), U(U_), Vt(Vt_), sigma(sigma_), work(work_) {
-    tol = Kokkos::ArithTraits<double>::zero();
+    tol = KokkosKernels::ArithTraits<double>::zero();
   }
 
   SerialSVDFunctor_Full(const Matrix& A_, const Matrix& U_, const Matrix& Vt_, const Vector& sigma_,
@@ -258,7 +258,7 @@ template <typename Scalar, typename Layout>
 void testSerialSVDZeroLastRow(int n) {
   // Generate a bidiagonal matrix
   using Matrix = Kokkos::View<Scalar**, Layout, Kokkos::HostSpace>;
-  using KAT    = Kokkos::ArithTraits<Scalar>;
+  using KAT    = KokkosKernels::ArithTraits<Scalar>;
   Matrix B     = randomMatrixWithRank<Matrix>(n, n);
   // Zero out entries to make B bidiagonal
   for (int i = 0; i < n; i++) {
@@ -306,7 +306,7 @@ template <typename Scalar, typename Layout>
 void testSerialSVDZeroDiagonal(int n, int row) {
   // Generate a bidiagonal matrix
   using Matrix = Kokkos::View<Scalar**, Layout, Kokkos::HostSpace>;
-  using KAT    = Kokkos::ArithTraits<Scalar>;
+  using KAT    = KokkosKernels::ArithTraits<Scalar>;
   int m        = n + 2;  // Make U somewhat bigger to make sure the Givens transforms
                          // are applied correctly
   Matrix B = randomMatrixWithRank<Matrix>(m, n);

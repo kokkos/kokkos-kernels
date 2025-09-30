@@ -270,7 +270,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string &filename
                      int panel_size, int relax_size, int block_size, int loop) {
   using ordinal_type = int;
   using size_type    = int;
-  using STS          = Kokkos::ArithTraits<scalar_type>;
+  using STS          = KokkosKernels::ArithTraits<scalar_type>;
   using mag_type     = typename STS::mag_type;
 
   // Default spaces

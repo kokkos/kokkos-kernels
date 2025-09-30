@@ -22,7 +22,7 @@ struct BSPMV_Functor_View {
   typedef typename Kokkos::TeamPolicy<exec_space> team_policy;
   typedef typename team_policy::member_type team_member;
   typedef typename AMatrix::non_const_value_type entries_type;
-  typedef Kokkos::ArithTraits<value_type> ATV;
+  typedef KokkosKernels::ArithTraits<value_type> ATV;
 
   const value_type* alpha;
   const AMatrix m_A_values;

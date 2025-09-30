@@ -75,7 +75,7 @@ class TwostageGaussSeidel {
   using single_vector_view_t   = Kokkos::View<scalar_t *, Kokkos::LayoutLeft, input_device_t, input_memory_t>;
   using internal_vector_view_t = typename TwoStageGaussSeidelHandleType::vector_view_t;
 
-  using ST    = Kokkos::ArithTraits<scalar_t>;
+  using ST    = KokkosKernels::ArithTraits<scalar_t>;
   using mag_t = typename ST::mag_type;
 
  private:
@@ -387,7 +387,7 @@ class TwostageGaussSeidel {
     // functor for storing both valuesL & valuesU (with parallel_for)
     KOKKOS_INLINE_FUNCTION
     void operator()(const Tag_valuesLU &, const ordinal_t i) const {
-      const_scalar_t one = Kokkos::ArithTraits<scalar_t>::one();
+      const_scalar_t one = KokkosKernels::ArithTraits<scalar_t>::one();
       ordinal_t nnzL     = row_map(i);
       ordinal_t nnzU     = row_map2(i);
       ordinal_t nnzLa    = 0;
@@ -779,8 +779,8 @@ class TwostageGaussSeidel {
              y_value_array_type localB,  // in
              bool init_zero_x_vector = false, int numIter = 1, scalar_t omega = ST::one(), bool apply_forward = true,
              bool apply_backward = true, bool /*update_y_vector*/ = true) {
-    const_scalar_t one  = Kokkos::ArithTraits<scalar_t>::one();
-    const_scalar_t zero = Kokkos::ArithTraits<scalar_t>::zero();
+    const_scalar_t one  = KokkosKernels::ArithTraits<scalar_t>::one();
+    const_scalar_t zero = KokkosKernels::ArithTraits<scalar_t>::zero();
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
     double tic;
     Kokkos::Timer timer;

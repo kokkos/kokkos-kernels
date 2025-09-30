@@ -80,8 +80,8 @@ struct SerialFrancisInternal {
         t = lambda1.real() * lambda1.real() + lambda1.imag() * lambda1.imag();
       } else {
         const value_type val    = H[(m - 1) * hs];
-        const auto dist_lambda1 = Kokkos::ArithTraits<value_type>::abs(lambda1.real() - val);
-        const auto dist_lambda2 = Kokkos::ArithTraits<value_type>::abs(lambda2.real() - val);
+        const auto dist_lambda1 = KokkosKernels::ArithTraits<value_type>::abs(lambda1.real() - val);
+        const auto dist_lambda2 = KokkosKernels::ArithTraits<value_type>::abs(lambda2.real() - val);
         const value_type lambda = dist_lambda1 < dist_lambda2 ? lambda1.real() : lambda2.real();
         s                       = 2 * lambda;
         t                       = lambda * lambda;

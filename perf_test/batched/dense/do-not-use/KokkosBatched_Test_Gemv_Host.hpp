@@ -195,7 +195,7 @@ void Gemv(const int NN) {
       for (int i = 0, iend = yref.extent(0); i < iend; ++i)
         for (int j = 0, jend = yref.extent(1); j < jend; ++j)
           for (int k = 0, kend = yref.extent(2); k < kend; ++k)
-            diff += Kokkos::ArithTraits<value_type>::abs(yref(i, j, k) - y(i, j, k));
+            diff += KokkosKernels::ArithTraits<value_type>::abs(yref(i, j, k) - y(i, j, k));
 
       std::cout << std::setw(12) << "Plain"
                 << " BlkSize = " << std::setw(3) << BlkSize << " NumVecs = " << std::setw(3) << NumVecs
@@ -259,7 +259,8 @@ void Gemv(const int NN) {
       for (int i = 0, iend = yref.extent(0); i < iend; ++i)
         for (int j = 0, jend = yref.extent(1); j < jend; ++j)
           for (int k = 0, kend = yref.extent(2); k < kend; ++k)
-            diff += Kokkos::ArithTraits<value_type>::abs(yref(i, j, k) - y(i / VectorLength, j, k)[i % VectorLength]);
+            diff += KokkosKernels::ArithTraits<value_type>::abs(yref(i, j, k) -
+                                                                y(i / VectorLength, j, k)[i % VectorLength]);
 
       std::cout << std::setw(12) << "Serial SIMD"
                 << " BlkSize = " << std::setw(3) << BlkSize << " NumVecs = " << std::setw(3) << NumVecs

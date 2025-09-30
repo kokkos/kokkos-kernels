@@ -220,7 +220,7 @@ void run_mis2(const MIS2Parameters& params) {
   crsMat_t At_in = KokkosSparse::Impl::transpose_matrix(A_in);
   crsMat_t A;
   KKH kkh;
-  const scalar_type one = Kokkos::ArithTraits<scalar_type>::one();
+  const scalar_type one = KokkosKernels::ArithTraits<scalar_type>::one();
   kkh.create_spadd_handle(false);
   KokkosSparse::spadd_symbolic(&kkh, A_in, At_in, A);
   KokkosSparse::spadd_numeric(&kkh, one, A_in, one, At_in, A);

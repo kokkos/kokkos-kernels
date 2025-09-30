@@ -670,7 +670,7 @@ template <class execution_space, class scalar_type>
 void test_adaptive_BDF_v2() {
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
-  using KAT      = Kokkos::ArithTraits<scalar_type>;
+  using KAT      = KokkosKernels::ArithTraits<scalar_type>;
 
   std::cout << "\n\n\nBDF_v2 test starting\n" << std::endl;
 
@@ -700,7 +700,7 @@ void test_BDF_adaptive_stiff() {
   using execution_space = typename Device::execution_space;
   using vec_type        = Kokkos::View<scalar_type*, execution_space>;
   using mat_type        = Kokkos::View<scalar_type**, execution_space>;
-  using KAT             = Kokkos::ArithTraits<scalar_type>;
+  using KAT             = KokkosKernels::ArithTraits<scalar_type>;
 
   StiffChemistry mySys{};
 

@@ -37,7 +37,7 @@ int main() {
   using entries_type = typename graph_type::entries_type;
   using values_type  = typename matrix_type::values_type;
 
-  const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
+  const Scalar SC_ONE = KokkosKernels::ArithTraits<Scalar>::one();
 
   Ordinal numRows = 10;
 

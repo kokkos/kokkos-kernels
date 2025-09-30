@@ -25,7 +25,7 @@
 #include <KokkosKernels_Utils.hpp>
 #include <KokkosKernels_Sorting.hpp>
 #include <KokkosKernels_default_types.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_Complex.hpp>
 #include <cstdlib>
 
@@ -74,7 +74,7 @@ are some specializations
 
 template <typename T>
 T getRandom() {
-  return rand() % Kokkos::ArithTraits<T>::max();
+  return rand() % KokkosKernels::ArithTraits<T>::max();
 }
 
 // Generate a uniform double between (-5, 5)

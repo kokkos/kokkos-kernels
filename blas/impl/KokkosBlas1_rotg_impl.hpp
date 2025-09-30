@@ -24,10 +24,10 @@ namespace KokkosBlas {
 namespace Impl {
 
 template <class Scalar, class Magnitude,
-          typename std::enable_if<!Kokkos::ArithTraits<Scalar>::is_complex, bool>::type = true>
+          typename std::enable_if<!KokkosKernels::ArithTraits<Scalar>::is_complex, bool>::type = true>
 KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c, Scalar* s) {
-  const Scalar one  = Kokkos::ArithTraits<Scalar>::one();
-  const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
+  const Scalar one  = KokkosKernels::ArithTraits<Scalar>::one();
+  const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
 
   const Scalar numerical_scaling = Kokkos::abs(*a) + Kokkos::abs(*b);
   if (numerical_scaling == zero) {
@@ -57,13 +57,13 @@ KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c, Scalar
 }
 
 template <class Scalar, class Magnitude,
-          typename std::enable_if<Kokkos::ArithTraits<Scalar>::is_complex, bool>::type = true>
+          typename std::enable_if<KokkosKernels::ArithTraits<Scalar>::is_complex, bool>::type = true>
 KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c, Scalar* s) {
-  using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
+  using mag_type = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
 
-  const Scalar one        = Kokkos::ArithTraits<Scalar>::one();
-  const Scalar zero       = Kokkos::ArithTraits<Scalar>::zero();
-  const mag_type mag_zero = Kokkos::ArithTraits<mag_type>::zero();
+  const Scalar one        = KokkosKernels::ArithTraits<Scalar>::one();
+  const Scalar zero       = KokkosKernels::ArithTraits<Scalar>::zero();
+  const mag_type mag_zero = KokkosKernels::ArithTraits<mag_type>::zero();
 
   const mag_type numerical_scaling = Kokkos::abs(*a) + Kokkos::abs(*b);
   if (Kokkos::abs(*a) == zero) {

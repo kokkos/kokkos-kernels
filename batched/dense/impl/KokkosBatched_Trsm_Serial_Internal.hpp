@@ -64,7 +64,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::i
 
       if (!use_unit_diag) {
         const ValueType alpha11 =
-            (do_conj ? Kokkos::ArithTraits<ValueType>::conj(A[p * as0 + p * as1]) : A[p * as0 + p * as1]);
+            (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(A[p * as0 + p * as1]) : A[p * as0 + p * as1]);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -78,7 +78,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::i
 #pragma unroll
 #endif
         for (int j = 0; j < jend; ++j)
-          B2[i * bs0 + j * bs1] -= (do_conj ? Kokkos::ArithTraits<ValueType>::conj(a21[i * as0]) * b1t[j * bs1]
+          B2[i * bs0 + j * bs1] -= (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(a21[i * as0]) * b1t[j * bs1]
                                             : a21[i * as0] * b1t[j * bs1]);
     }
   }
@@ -170,7 +170,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::i
 
       if (!use_unit_diag) {
         const ValueType alpha11 =
-            (do_conj ? Kokkos::ArithTraits<ValueType>::conj(A[p * as0 + p * as1]) : A[p * as0 + p * as1]);
+            (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(A[p * as0 + p * as1]) : A[p * as0 + p * as1]);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -186,7 +186,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::i
 #pragma unroll
 #endif
           for (int j = 0; j < jend; ++j)
-            B0[i * bs0 + j * bs1] -= (do_conj ? Kokkos::ArithTraits<ValueType>::conj(a01[i * as0]) * b1t[j * bs1]
+            B0[i * bs0 + j * bs1] -= (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(a01[i * as0]) * b1t[j * bs1]
                                               : a01[i * as0] * b1t[j * bs1]);
       }
     }

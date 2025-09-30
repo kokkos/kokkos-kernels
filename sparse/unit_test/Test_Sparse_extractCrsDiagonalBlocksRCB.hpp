@@ -63,7 +63,7 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
   using RowMapType       = Kokkos::View<size_type *, device>;
   using EntriesType      = Kokkos::View<lno_t *, device>;
   using ValuesType       = Kokkos::View<scalar_t *, device>;
-  using magnitude_t      = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using magnitude_t      = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using CoorsViewType    = Kokkos::View<magnitude_t **, device>;
   using PermViewType     = Kokkos::View<lno_t *, device>;
   using CoorsViewType_hm = typename CoorsViewType::host_mirror_type;

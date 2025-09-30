@@ -18,7 +18,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -31,7 +31,7 @@ namespace Impl {
 template <class RMV, class XMV, class SizeType = typename RMV::size_type>
 struct MV_Reciprocal_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename XMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -77,7 +77,7 @@ struct MV_Reciprocal_Functor {
 template <class RMV, class SizeType = typename RMV::size_type>
 struct MV_ReciprocalSelf_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -116,7 +116,7 @@ struct MV_ReciprocalSelf_Functor {
 template <class RV, class XV, class SizeType = typename RV::size_type>
 struct V_Reciprocal_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename XV::non_const_value_type> ATS;
 
   RV R_;
   XV X_;
@@ -145,7 +145,7 @@ struct V_Reciprocal_Functor {
 template <class RV, class SizeType = typename RV::size_type>
 struct V_ReciprocalSelf_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV R_;
 

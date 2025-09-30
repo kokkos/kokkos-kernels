@@ -18,7 +18,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -48,7 +48,7 @@ struct svd_eti_spec_avail {
       EXEC_SPACE_TYPE,                                                                                        \
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR_TYPE>::mag_type *, Kokkos::LayoutLeft,                          \
+      Kokkos::View<KokkosKernels::ArithTraits<SCALAR_TYPE>::mag_type *, Kokkos::LayoutLeft,                   \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
@@ -106,7 +106,7 @@ struct SVD<ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix, false, KOKKOSKERN
       EXEC_SPACE_TYPE,                                                                                        \
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR_TYPE>::mag_type *, Kokkos::LayoutLeft,                          \
+      Kokkos::View<KokkosKernels::ArithTraits<SCALAR_TYPE>::mag_type *, Kokkos::LayoutLeft,                   \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
@@ -119,7 +119,7 @@ struct SVD<ExecutionSpace, AMatrix, SVector, UMatrix, VMatrix, false, KOKKOSKERN
       EXEC_SPACE_TYPE,                                                                                        \
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR_TYPE>::mag_type *, Kokkos::LayoutLeft,                          \
+      Kokkos::View<KokkosKernels::ArithTraits<SCALAR_TYPE>::mag_type *, Kokkos::LayoutLeft,                   \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \

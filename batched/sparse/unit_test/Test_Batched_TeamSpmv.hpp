@@ -91,7 +91,7 @@ template <typename DeviceType, typename ParamTagType, typename ValuesViewType, t
           typename yViewType, typename alphaViewType, typename betaViewType, int dobeta>
 void impl_test_batched_spmv(const int N, const int BlkSize, const int N_team) {
   typedef typename ValuesViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   const int nnz = (BlkSize - 2) * 3 + 2 * 2;
 

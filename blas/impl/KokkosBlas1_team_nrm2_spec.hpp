@@ -19,7 +19,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
 namespace KokkosBlas {
@@ -36,7 +36,7 @@ template <class TeamType, class XV, bool tpl_spec_avail = team_nrm2_tpl_spec_ava
 struct TeamNrm2 {
   typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::mag_type mag_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
-  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
+  typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
 
   static KOKKOS_INLINE_FUNCTION mag_type team_nrm2(const TeamType& team, const XV& X);
 };
@@ -45,10 +45,10 @@ template <class TeamType, class XV>
 struct TeamNrm2<TeamType, XV, false> {
   typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::mag_type mag_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
-  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
+  typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
 
   static KOKKOS_INLINE_FUNCTION mag_type team_nrm2(const TeamType& team, const XV& X) {
-    mag_type result = 0.0;  // Kokkos::ArithTraits<mag_type>zero();
+    mag_type result = 0.0;  // KokkosKernels::ArithTraits<mag_type>zero();
     int N           = X.extent(0);
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team, N),

@@ -39,7 +39,7 @@ template <class ode_type, class mat_type, class vec_type, class res_type, class 
 KOKKOS_FUNCTION void first_step_size(const ode_type ode, const int order, const scalar_type t0, const scalar_type atol,
                                      const scalar_type rtol, const vec_type& y0, const res_type& f0, const vec_type y1,
                                      const mat_type temp, scalar_type& dt_ini) {
-  using KAT = Kokkos::ArithTraits<scalar_type>;
+  using KAT = KokkosKernels::ArithTraits<scalar_type>;
 
   // Extract subviews to store intermediate data
   auto f1 = Kokkos::subview(temp, 1, Kokkos::ALL());

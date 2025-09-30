@@ -50,10 +50,10 @@ void impl_test_complex_real_imag_value() {
     a[k].imag() = k * 5 + 4;
   }
 
-  const auto a_real = Kokkos::ArithTraits<vector_type>::real(a);
-  const auto a_imag = Kokkos::ArithTraits<vector_type>::imag(a);
+  const auto a_real = KokkosKernels::ArithTraits<vector_type>::real(a);
+  const auto a_imag = KokkosKernels::ArithTraits<vector_type>::imag(a);
 
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   for (int k = 0; k < vector_length; ++k) {
     EXPECT_NEAR(a[k].real(), a_real[k], eps);
@@ -69,7 +69,7 @@ void impl_test_batched_vector_arithmatic() {
   typedef typename vector_type::value_type value_type;
   const int vector_length = vector_type::vector_length;
 
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
   typedef typename ats::mag_type mag_type;
 
   vector_type a, b, c;

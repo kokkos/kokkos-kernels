@@ -22,7 +22,7 @@
 
 #include <KokkosKernels_config.h>
 #include <KokkosKernels_Error.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
 #include "KokkosBatched_SetIdentity_Decl.hpp"
 #include "KokkosBatched_SetIdentity_Impl.hpp"
@@ -55,7 +55,7 @@ struct IlukWrap {
   using WorkViewType      = typename IlukHandle::work_view_t;
   using LevelHostViewType = typename IlukHandle::nnz_lno_view_host_t;
   using LevelViewType     = typename IlukHandle::nnz_lno_view_t;
-  using karith            = typename Kokkos::ArithTraits<scalar_t>;
+  using karith            = typename KokkosKernels::ArithTraits<scalar_t>;
   using team_policy       = typename IlukHandle::TeamPolicy;
   using member_type       = typename team_policy::member_type;
   using range_policy      = typename IlukHandle::RangePolicy;

@@ -69,7 +69,7 @@ int run_block_gauss_seidel_1(
     mtx_t input_mat, int block_size, KokkosSparse::GSAlgorithm gs_algorithm, vector_t x_vector, const_vector_t y_vector,
     bool is_symmetric_graph, GSApplyType apply_type = Test::symmetric, bool skip_symbolic = false,
     bool skip_numeric = false, size_t shmem_size = 32128,
-    typename mtx_t::value_type omega = Kokkos::ArithTraits<typename mtx_t::value_type>::one()) {
+    typename mtx_t::value_type omega = KokkosKernels::ArithTraits<typename mtx_t::value_type>::one()) {
   typedef typename mtx_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
   typedef typename graph_t::entries_type lno_nnz_view_t;
@@ -141,7 +141,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
-  typedef typename Kokkos::ArithTraits<scalar_t>::mag_type mag_t;
+  typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;
 
@@ -219,7 +219,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, device> scalar_view2d_t;
-  typedef typename Kokkos::ArithTraits<scalar_t>::mag_type mag_t;
+  typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;
 
@@ -261,7 +261,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
     for (lno_t j = 0; j < nv; j++) {
       sum += solution_host(j, i) * solution_host(j, i);
     }
-    initial_norms[i] = Kokkos::ArithTraits<mag_t>::sqrt(Kokkos::ArithTraits<scalar_t>::abs(sum));
+    initial_norms[i] = KokkosKernels::ArithTraits<mag_t>::sqrt(KokkosKernels::ArithTraits<scalar_t>::abs(sum));
   }
 
   for (const auto gs_algorithm : params.gs_algorithms) {
@@ -291,7 +291,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
                 scalar_t diff = x_host(r, c) - solution_host(r, c);
                 sum += diff * diff;
               }
-              mag_t result_res = Kokkos::ArithTraits<mag_t>::sqrt(Kokkos::ArithTraits<scalar_t>::abs(sum));
+              mag_t result_res =
+                  KokkosKernels::ArithTraits<mag_t>::sqrt(KokkosKernels::ArithTraits<scalar_t>::abs(sum));
               EXPECT_LT(result_res, params.tolerance * initial_norms[c]);
             }
           }
