@@ -20,7 +20,7 @@ Perform a symmetric rank-1 update of matrix :math:`A` by vector :math:`x` with s
    A &= A + \alpha (x * x^H) \: \text{(if ArgTrans == KokkosBatched::Trans::ConjTranspose)}
    \end{align}
 
-1. If ``ArgTrans == KokkosBatched::Trans::Transpose``, this operation is equivalent to the BLAS routine ``SSYR`` (``CSYR``) or ``DGER`` (``ZSYR``) for single or double precision for real (complex) matrix.
+1. If ``ArgTrans == KokkosBatched::Trans::Transpose``, this operation is equivalent to the BLAS routine ``SSYR`` (``CSYR``) or ``DSYR`` (``ZSYR``) for single or double precision for real (complex) matrix.
 
 2. If ``ArgTrans == KokkosBatched::Trans::ConjTranspose``, this operation is equivalent to the BLAS routine ``CHER`` or ``ZHER`` for single or double precision for complex matrix.
 
