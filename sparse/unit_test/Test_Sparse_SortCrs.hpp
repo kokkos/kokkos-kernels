@@ -28,7 +28,7 @@
 #include <KokkosSparse_SortCrs.hpp>
 #include <KokkosKernels_default_types.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_Complex.hpp>
 #include <cstdlib>
 

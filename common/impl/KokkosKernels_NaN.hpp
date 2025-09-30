@@ -17,7 +17,7 @@
 #ifndef KOKKOSKERNELS_NAN_HPP
 #define KOKKOSKERNELS_NAN_HPP
 
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_NumericTraits.hpp>
 
 namespace KokkosKernels::Impl {

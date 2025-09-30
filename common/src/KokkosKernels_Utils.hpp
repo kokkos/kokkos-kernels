@@ -14,7 +14,7 @@
 //
 //@HEADER
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include <iostream>
 #include <limits>

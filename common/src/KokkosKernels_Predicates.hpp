@@ -17,7 +17,7 @@
 #ifndef KOKKOSKERNELS_PREDICATES_HPP
 #define KOKKOSKERNELS_PREDICATES_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 /*! \file KokkosKernels_Predicates.hpp
  * Define predicates for KokkosKernels search functions

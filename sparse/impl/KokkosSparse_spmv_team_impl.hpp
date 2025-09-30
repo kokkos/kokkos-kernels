@@ -19,7 +19,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
 namespace KokkosSparse {

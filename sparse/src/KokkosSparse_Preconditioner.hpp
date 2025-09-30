@@ -21,7 +21,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Controls.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 namespace KokkosSparse {
 namespace Experimental {

@@ -21,7 +21,7 @@
 /// \brief Implementation(s) of sequential sparse triangular solve.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include "KokkosBatched_Axpy.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"

@@ -22,7 +22,7 @@
 #include "KokkosKernels_Sorting.hpp"
 #include "KokkosSparse_findRelOffset.hpp"
 #include <type_traits>
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosSparse {
 namespace Impl {

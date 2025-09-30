@@ -21,7 +21,7 @@
 /// \brief Declaration and definition of
 /// Kokkos::Details::InnerProductSpaceTraits
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace Kokkos {
 namespace Details {

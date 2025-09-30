@@ -27,7 +27,7 @@
 #ifndef KOKKOSKERNELS_IOUTILS_HPP
 #define KOKKOSKERNELS_IOUTILS_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include <Kokkos_Core.hpp>
 #include "Kokkos_Random.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"

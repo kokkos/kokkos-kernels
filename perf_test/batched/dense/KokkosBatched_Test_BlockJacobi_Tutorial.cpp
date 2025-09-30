@@ -21,7 +21,7 @@
 /// KokkosKernels headers
 #include "KokkosBatched_Util.hpp"
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_Copy_Impl.hpp"

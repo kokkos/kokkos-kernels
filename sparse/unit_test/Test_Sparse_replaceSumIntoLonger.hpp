@@ -15,7 +15,7 @@
 //@HEADER
 
 // #include "Teuchos_UnitTestHarness.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include <sstream>
 
 #include "KokkosSparse_CrsMatrix.hpp"

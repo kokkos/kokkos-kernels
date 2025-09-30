@@ -17,7 +17,7 @@
 #ifndef KOKKOSKERNELS_KOKKOS_ARITHTRAITS_HPP
 #define KOKKOSKERNELS_KOKKOS_ARITHTRAITS_HPP
 
-/// \file Kokkos_ArithTraits.hpp
+/// \file KokkosKernels_ArithTraits.hpp
 /// \brief Declaration and definition of KokkosKernels::ArithTraits
 
 #include <KokkosKernels_ArithTraits.hpp>

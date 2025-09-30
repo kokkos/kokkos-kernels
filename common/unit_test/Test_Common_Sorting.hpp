@@ -25,7 +25,7 @@
 #include <KokkosKernels_Utils.hpp>
 #include <KokkosKernels_Sorting.hpp>
 #include <KokkosKernels_default_types.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_Complex.hpp>
 #include <cstdlib>
 

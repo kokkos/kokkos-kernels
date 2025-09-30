@@ -25,7 +25,7 @@
 
 #include <KokkosBlas3_gemm.hpp>
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBatched_HostLevel_Gemm.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Util.hpp"

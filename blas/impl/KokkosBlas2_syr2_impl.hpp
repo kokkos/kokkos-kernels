@@ -20,7 +20,7 @@
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosBlas {
 namespace Impl {

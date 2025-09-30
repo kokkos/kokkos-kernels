@@ -17,7 +17,7 @@
 #ifndef KOKKOSKERNELS_SAFECOMPARE_HPP
 #define KOKKOSKERNELS_SAFECOMPARE_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosKernels {
 namespace Impl {

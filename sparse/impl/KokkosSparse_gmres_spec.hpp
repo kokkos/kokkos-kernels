@@ -21,7 +21,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
 #include "KokkosKernels_Handle.hpp"

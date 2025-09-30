@@ -23,7 +23,7 @@
 /// \brief Implementation(s) of the numeric phase of GMRES.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_gmres_handle.hpp>
 #include <KokkosBlas.hpp>
 #include <KokkosBlas3_trsm_impl.hpp>

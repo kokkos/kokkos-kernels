@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosBlas1_dot.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 

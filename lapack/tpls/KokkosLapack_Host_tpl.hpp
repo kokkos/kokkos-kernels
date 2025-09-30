@@ -21,7 +21,7 @@
 /// \brief LAPACK wrapper
 
 #include "KokkosKernels_config.h"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 

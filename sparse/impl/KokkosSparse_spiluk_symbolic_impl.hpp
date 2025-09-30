@@ -21,7 +21,7 @@
 /// \brief Implementation of the symbolic phase of sparse ILU(k).
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
 #include <KokkosSparse_SortCrs.hpp>
 #include <KokkosKernels_Error.hpp>

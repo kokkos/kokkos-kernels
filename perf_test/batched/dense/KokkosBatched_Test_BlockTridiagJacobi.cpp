@@ -28,7 +28,7 @@
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Vector.hpp>
 #include <KokkosBatched_Copy_Decl.hpp>

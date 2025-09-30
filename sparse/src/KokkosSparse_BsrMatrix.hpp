@@ -30,7 +30,7 @@
 #include <type_traits>
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_Error.hpp"
 #include "KokkosKernels_default_types.hpp"

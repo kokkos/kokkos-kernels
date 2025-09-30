@@ -18,7 +18,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosBlas1_rotmg_spec.hpp>
 
 namespace KokkosBlas {

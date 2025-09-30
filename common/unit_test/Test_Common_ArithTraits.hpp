@@ -30,7 +30,7 @@
 #define KOKKOSKERNELS_TEST_COMMON_ARITHTRAITSTEST_HPP
 
 #include <Kokkos_Core.hpp>
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include <limits>    // std::numeric_limits
 #include <typeinfo>  // typeid (T)
 #include <cstdio>

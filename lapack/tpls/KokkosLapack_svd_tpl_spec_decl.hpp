@@ -18,7 +18,7 @@
 #define KOKKOSLAPACK_SVD_TPL_SPEC_DECL_HPP_
 
 #include "KokkosKernels_Error.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 #include <iostream>
 

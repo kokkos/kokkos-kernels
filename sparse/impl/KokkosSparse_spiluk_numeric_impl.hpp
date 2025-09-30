@@ -22,7 +22,7 @@
 
 #include <KokkosKernels_config.h>
 #include <KokkosKernels_Error.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
 #include "KokkosBatched_SetIdentity_Decl.hpp"
 #include "KokkosBatched_SetIdentity_Impl.hpp"

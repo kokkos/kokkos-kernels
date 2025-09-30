@@ -36,7 +36,7 @@
 /// We have <i>not</i> done this here.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <vector>  // temporarily
 
 namespace KokkosSparse {

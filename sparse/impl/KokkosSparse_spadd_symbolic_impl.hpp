@@ -19,7 +19,7 @@
 
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_SortCrs.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosSparse {
 namespace Impl {

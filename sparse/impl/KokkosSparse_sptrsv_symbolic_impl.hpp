@@ -20,7 +20,7 @@
 /// \brief Implementation(s) of sparse triangular solve.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_sptrsv_handle.hpp>
 
 // #define TRISOLVE_SYMB_TIMERS
