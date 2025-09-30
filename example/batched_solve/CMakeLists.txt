@@ -50,3 +50,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   serial_iamax
   SOURCES serial_iamax.cpp
   )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  serial_laswp
+  SOURCES serial_laswp.cpp
+  )
