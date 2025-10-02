@@ -5,6 +5,7 @@ API: Batched Dense (DLA)
    :maxdepth: 2
    :hidden:
 
+   dense/batched_tbsv
    dense/batched_ger
    dense/batched_syr
    dense/batched_getrf
@@ -196,7 +197,7 @@ BLAS 2
      - `TeamTrsv`
      - `TeamVectorTrsv`
    * - TBSV
-     - `SerialTbsv`
+     - :doc:`SerialTbsv <dense/batched_tbsv>`
      - --
      - --
    * - TPSV
