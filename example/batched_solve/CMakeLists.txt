@@ -55,3 +55,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   serial_laswp
   SOURCES serial_laswp.cpp
   )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  serial_lacgv
+  SOURCES serial_lacgv.cpp
+  )
