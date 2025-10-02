@@ -23,7 +23,7 @@
 #include <KokkosKernels_ArithTraits.hpp>
 
 #ifndef KOKKOS_ENABLE_DEPRECATED_CODE_5
-static_assert(false, "this header is deprecated, include <KokkosKernels_ArithTraits.hpp> instead");
+static_assert(false, "Header `Kokkos_ArithTraits.hpp` is deprecated, include `KokkosKernels_ArithTraits.hpp` instead");
 #endif
 
 namespace Kokkos {
