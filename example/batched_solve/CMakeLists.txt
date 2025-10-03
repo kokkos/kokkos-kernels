@@ -60,3 +60,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   serial_lacgv
   SOURCES serial_lacgv.cpp
   )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  serial_trsv
+  SOURCES serial_trsv.cpp
+  )
