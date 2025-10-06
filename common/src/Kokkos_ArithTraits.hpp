@@ -9,6 +9,10 @@
 
 #include <KokkosKernels_ArithTraits.hpp>
 
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_5
+static_assert(false, "Header `Kokkos_ArithTraits.hpp` is deprecated, include `KokkosKernels_ArithTraits.hpp` instead");
+#endif
+
 namespace Kokkos {
 template <typename T>
 using ArithTraits [[deprecated("Use KokkosKernels::ArithTraits from KokkosKernels_ArithTraits.hpp header instead")]] =
