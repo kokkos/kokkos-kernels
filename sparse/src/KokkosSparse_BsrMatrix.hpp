@@ -956,7 +956,9 @@ class BsrMatrix {
     crs_values_t crsValues("crsValues", numCrsEntries);
 
     // Create the policy, we have 3 levels of parallelism available in the algorithm
-    policy_t policy(numBlockRows, Kokkos::AUTO(), blockDim);
+    const crs_size_t maxvec = policy_t::vector_length_max();
+    const crs_size_t veclen = (blockDim <= maxvec) ? blockDim : maxvec;
+    policy_t policy(numBlockRows, Kokkos::AUTO(), veclen);
 
     // Fill CrsMatrix row map, entries, and values
     Kokkos::parallel_for(
