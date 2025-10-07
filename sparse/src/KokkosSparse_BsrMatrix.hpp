@@ -921,7 +921,7 @@ class BsrMatrix {
   /// This is a host function.
   ///
   template <typename CrsMatrixType = KokkosSparse::CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType>>
-  auto convertToCrs() const {
+  CrsMatrixType convertToCrs() const {
     using crs_size_t      = typename CrsMatrixType::size_type;
     using crs_rowmap_t    = typename CrsMatrixType::row_map_type::non_const_type;
     using crs_entries_t   = typename CrsMatrixType::index_type::non_const_type;
