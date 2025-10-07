@@ -321,8 +321,8 @@ unmanaged_block_const
 Return a const view of the i-th block in the matrix.
 
 
-unmanaged_block_const
-^^^^^^^^^^^^^^^^^^^^^
+convertToCrs
+^^^^^^^^^^^^
 
 .. code:: cppkokkos
 
