@@ -174,11 +174,10 @@ struct TestFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator()(const int /*rid*/) const {
     // Test 1: Check member functions behave as expected
-    bool check0    = true;
-    bool check1    = true;
-    bool check2    = true;
-    bool check3    = true;
-    int result_idx = 0;
+    bool check0 = true;
+    bool check1 = true;
+    bool check2 = true;
+    bool check3 = true;
     for (lno_t i = 0; i < A.numRows(); ++i) {
       // Test BsrRowView
       {
@@ -190,14 +189,14 @@ struct TestFunctor {
             auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
             for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
               auto entry = iblockrow.local_block_value(blk, lrow, lcol);
-              check0     = check0 && (entry == row_ptr[lcol]);
-              check1     = check1 && (entry == view_blk(lrow, lcol));
+              check0 &= (entry == row_ptr[lcol]);
+              check1 &= (entry == view_blk(lrow, lcol));
             }  // end local col in row
           }    // end local row in blk
         }      // end blk
       }
-      d_results(result_idx++) = check0;
-      d_results(result_idx++) = check1;
+      d_results(0) &= check0;
+      d_results(1) &= check1;
 
       // Test BsrRowViewConst
       {
@@ -209,14 +208,14 @@ struct TestFunctor {
             auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
             for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
               auto entry = iblockrow.local_block_value(blk, lrow, lcol);
-              check2     = check2 && (entry == row_ptr[lcol]);
-              check3     = check3 && (entry == view_blk(lrow, lcol));
+              check2 &= (entry == row_ptr[lcol]);
+              check3 &= (entry == view_blk(lrow, lcol));
             }  // end local col in row
           }    // end local row in blk
         }      // end blk
       }
-      d_results(result_idx++) = check2;
-      d_results(result_idx++) = check3;
+      d_results(2) &= check2;
+      d_results(3) &= check3;
     }  // end for blk rows
 
     // Test sumIntoValues
@@ -240,14 +239,14 @@ struct TestFunctor {
         auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
         for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
           auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
-          check0     = check0 && (entry == row_ptr[lcol]);
-          check1     = check1 && (entry == view_blk(lrow, lcol));
-          check2     = check2 && (entry == result[lrow * A.blockDim() + lcol]);
+          check0 &= (entry == row_ptr[lcol]);
+          check1 &= (entry == view_blk(lrow, lcol));
+          check2 &= (entry == result[lrow * A.blockDim() + lcol]);
         }  // end local col in row
       }    // end local row in blk
-      d_results(result_idx++) = check0;
-      d_results(result_idx++) = check1;
-      d_results(result_idx++) = check2;
+      d_results(4) &= check0;
+      d_results(5) &= check1;
+      d_results(6) &= check2;
     }
 
     // Test replaceValues
@@ -270,14 +269,14 @@ struct TestFunctor {
         auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
         for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
           auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
-          check0     = check0 && (entry == row_ptr[lcol]);
-          check1     = check1 && (entry == view_blk(lrow, lcol));
-          check2     = check2 && (entry == valsreplace[lrow * A.blockDim() + lcol]);
+          check0 &= (entry == row_ptr[lcol]);
+          check1 &= (entry == view_blk(lrow, lcol));
+          check2 &= (entry == valsreplace[lrow * A.blockDim() + lcol]);
         }  // end local col in row
       }    // end local row in blk
-      d_results(result_idx++) = check0;
-      d_results(result_idx++) = check1;
-      d_results(result_idx++) = check2;
+      d_results(7) &= check0;
+      d_results(8) &= check1;
+      d_results(9) &= check2;
     }
   }  // end operator()(i)
 };   // end TestFunctor
@@ -286,6 +285,7 @@ template <class BsrMatrixType, class ResultsType>
 struct TestConvFunctor {
   typedef typename BsrMatrixType::value_type scalar_t;
   typedef typename BsrMatrixType::ordinal_type lno_t;
+  typedef typename BsrMatrixType::size_type size_type;
 
   // Members
   BsrMatrixType A_;
@@ -324,12 +324,12 @@ struct TestConvFunctor {
     const auto blockValues2  = A_.values;
 
     for (lno_t i = 0; i < A_.numRows() + 1; ++i) {
-      check4 = check4 && (blockRowMap1(i) == blockRowMap2(i));
+      check4 &= (blockRowMap1(i) == blockRowMap2(i));
     }
 
-    for (size_t i = 0; i < A_.nnz() + 1; ++i) {
-      check5 = check5 && (blockEntries1(i) == blockEntries2(i));
-      check6 = check6 && (blockValues1(i) == blockValues2(i));
+    for (size_type i = 0; i < A_.nnz(); ++i) {
+      check5 &= (blockEntries1(i) == blockEntries2(i));
+      check6 &= (blockValues1(i) == blockValues2(i));
     }
 
     d_results_(result_idx++) = check0;
@@ -355,9 +355,10 @@ void testBsrMatrix() {
   crs_matrix_type crsA = makeCrsMatrix_BlockStructure<crs_matrix_type>();
   bsr_matrix_type A    = makeBsrMatrix<bsr_matrix_type>();
 
-  const int num_entries = 10;
+  static constexpr int num_entries = 10;
   typedef Kokkos::View<bool[num_entries], device> result_view_type;
   result_view_type d_results("d_results");
+  Kokkos::deep_copy(d_results, true);
   auto h_results = Kokkos::create_mirror_view(d_results);
   Test_Bsr::TestFunctor<bsr_matrix_type, result_view_type> functor(A, d_results);
 
