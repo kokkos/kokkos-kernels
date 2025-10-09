@@ -50,7 +50,7 @@ Polaris:
             -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON
             -DKokkosKernels_ENABLE_PERFTESTS:BOOL=OFF
             -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON
-	    -DKokkosKernels_RUN_BENCHMARKS:BOOL=ON
+            -DKokkosKernels_RUN_BENCHMARKS:BOOL=ON
     - ctest -V --test-dir kokkos-kernels/build -D Nightly --output-junit result_a100.xml
 
   artifacts:
