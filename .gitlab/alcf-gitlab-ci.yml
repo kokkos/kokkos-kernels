@@ -1,0 +1,110 @@
+include:
+  - project: 'anl/ci-resources/defaults'
+    ref: main
+    file:
+      - '/runners.yml'
+
+Polaris:
+  extends: .polaris-batch-runner
+  variables:
+    ANL_POLARIS_SCHEDULER_PARAMETERS: "-q debug -A kokkos_math -l select=1,walltime=60:00,filesystems=home"
+  script:
+    - module use /soft/modulefiles
+    - module load PrgEnv-gnu
+    - module load spack-pe-base
+    - module load cmake
+    - module load cudatoolkit-standalone/12.8.1
+    - module list
+    - export CMAKE_BUILD_PARALLEL_LEVEL=48
+    - git clone https://github.com/kokkos/kokkos.git
+    - "cmake -S kokkos \
+            -B kokkos_build \
+            -DCMAKE_INSTALL_PREFIX=kokkos_install \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
+            -DCMAKE_CXX_COMPILER=kokkos/bin/nvcc_wrapper \
+            -DKokkos_ENABLE_CUDA=ON \
+            -DKokkos_ARCH_AMPERE80=ON \
+            -DKokkos_ENABLE_TESTS=OFF \
+            -DKokkos_ENABLE_EXAMPLES=OFF \
+            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF"
+    - cmake --build kokkos_build --parallel
+    - cmake --install kokkos_build --prefix kokkos_install
+    - git clone https://github.com/kokkos/kokkos-kernels.git
+    - cmake -S kokkos-kernels
+            -B kokkos-kernels_build
+            -DCMAKE_INSTALL_PREFIX=kokkos-kernels_install
+            -DBUILD_SHARED_LIBS=ON
+            -DCMAKE_CXX_FLAGS="-fsycl-device-code-split=per_kernel -fp-model=precise"
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_VERBOSE_MAKEFILE=OFF
+            -DCMAKE_CXX_COMPILER=kokkos/bin/nvcc_wrapper
+            -DSITE=ALCF-Polaris
+            -DKokkos_ROOT=kokkos_install
+            -DKokkosKernels_INST_COMPLEX_DOUBLE:BOOL=ON
+            -DKokkosKernels_ENABLE_TESTS:BOOL=ON
+            -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON
+            -DKokkosKernels_ENABLE_PERFTESTS:BOOL=OFF
+            -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON
+            -DKokkosKernels_RUN_BENCHMARKS:BOOL=ON
+    - ctest -V --test-dir kokkos-kernels/build -D Nightly --output-junit result_a100.xml
+
+  artifacts:
+    when: always
+    paths:
+      - result_a100.xml
+    reports:
+      junit: result_a100.xml
+
+Aurora:
+  extends: .aurora-batch-runner
+  variables:
+    ANL_AURORA_SCHEDULER_PARAMETERS: "-q debug -A kokkos_math -l select=1,walltime=60:00,filesystems=flare"
+  script:
+    - module load cmake oneapi
+    - module list
+    - git clone https://github.com/kokkos/kokkos.git
+    - cmake -S kokkos
+            -B kokkos/build
+            -DCMAKE_INSTALL_PREFIX=kokkos-install
+            -DBUILD_SHARED_LIBS=ON
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_VERBOSE_MAKEFILE=ON
+            -DCMAKE_CXX_COMPILER=icpx
+            -DKokkos_ARCH_NATIVE=ON
+            -DKokkos_ENABLE_SYCL=ON
+            -DKokkos_ARCH_INTEL_PVC=ON
+            -DKokkos_ENABLE_DEPRECATED_CODE_4=ON
+    - cmake --build kokkos/build --parallel
+    - cmake --install kokkos/build --prefix kokkos-install
+    - git clone https://github.com/kokkos/kokkos-kernels.git
+    - cmake -S kokkos-kernels
+            -B kokkos-kernels/build
+            -DCMAKE_INSTALL_PREFIX=kokkos-kernels-install
+            -DBUILD_SHARED_LIBS=ON
+            -DCMAKE_CXX_FLAGS="-fsycl-device-code-split=per_kernel -fp-model=precise"
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_VERBOSE_MAKEFILE=OFF
+            -DCMAKE_CXX_COMPILER=icpx
+            -DSITE=ALCF-Aurora
+            -DKokkos_ROOT=kokkos-install
+            -DKokkosKernels_INST_COMPLEX_DOUBLE:BOOL=ON
+            -DKokkosKernels_ENABLE_TESTS:BOOL=ON
+            -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON
+            -DKokkosKernels_ENABLE_PERFTESTS:BOOL=OFF
+            -DKokkosKernels_ENABLE_BENCHMARK:BOOL=OFF
+            -DKokkosKernels_ENABLE_TPL_MKL=ON
+    - export CMAKE_BUILD_PARALLEL_LEVEL=48
+    - export ZES_ENABLE_SYSMAN=1
+    - ctest -V --test-dir kokkos-kernels/build -D Nightly --output-junit result_pvc1550.xml
+
+  artifacts:
+    when: always
+    paths:
+      - result_pvc1550.xml
+    reports:
+      junit: result_pvc1550.xml
