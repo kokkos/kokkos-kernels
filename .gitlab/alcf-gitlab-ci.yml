@@ -66,11 +66,6 @@ Aurora:
     ANL_AURORA_SCHEDULER_PARAMETERS: "-q debug -A kokkos_math -l select=1,walltime=60:00,filesystems=flare"
   script:
     - module load cmake oneapi
-    - module unload mpich oneapi
-    - module use /soft/compilers/oneapi/2025.2.0/modulefiles
-    - module use /soft/compilers/oneapi/nope/modulefiles
-    - module add oneapi/public/2025.2.0 
-    - module add mpich/nope/develop-git.6037a7a
     - module list
     - git clone https://github.com/kokkos/kokkos.git
     - cmake -S kokkos
