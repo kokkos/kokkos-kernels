@@ -16,6 +16,12 @@ Polaris:
     - module load cudatoolkit-standalone/12.8.1
     - module list
     - export CMAKE_BUILD_PARALLEL_LEVEL=48
+    - export HTTP_PROXY="http://proxy.alcf.anl.gov:3128"
+    - export HTTPS_PROXY="http://proxy.alcf.anl.gov:3128"
+    - export http_proxy="http://proxy.alcf.anl.gov:3128"
+    - export https_proxy="http://proxy.alcf.anl.gov:3128"
+    - export ftp_proxy="http://proxy.alcf.anl.gov:3128"
+    - export no_proxy="admin,polaris-adminvm-01,localhost,*.cm.polaris.alcf.anl.gov,polaris-*,*.polaris.alcf.anl.gov,*.alcf.anl.gov"
     - git clone https://github.com/kokkos/kokkos.git
     - "cmake -S kokkos \
             -B kokkos_build \
@@ -67,6 +73,12 @@ Aurora:
   script:
     - module load cmake oneapi
     - module list
+    - export HTTP_PROXY="http://proxy.alcf.anl.gov:3128"
+    - export HTTPS_PROXY="http://proxy.alcf.anl.gov:3128"
+    - export http_proxy="http://proxy.alcf.anl.gov:3128"
+    - export https_proxy="http://proxy.alcf.anl.gov:3128"
+    - export ftp_proxy="http://proxy.alcf.anl.gov:3128"
+    - export no_proxy="admin,polaris-adminvm-01,localhost,*.cm.polaris.alcf.anl.gov,polaris-*,*.polaris.alcf.anl.gov,*.alcf.anl.gov"
     - git clone https://github.com/kokkos/kokkos.git
     - cmake -S kokkos
             -B kokkos/build
