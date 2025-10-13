@@ -31,7 +31,7 @@ Polaris:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DCMAKE_VERBOSE_MAKEFILE=ON \
-            -DCMAKE_CXX_COMPILER=kokkos/bin/nvcc_wrapper \
+            -DCMAKE_CXX_COMPILER=`pwd`/kokkos/bin/nvcc_wrapper \
             -DKokkos_ENABLE_CUDA=ON \
             -DKokkos_ARCH_AMPERE80=ON \
             -DKokkos_ENABLE_TESTS=OFF \
@@ -48,7 +48,7 @@ Polaris:
             -DCMAKE_CXX_FLAGS="-fsycl-device-code-split=per_kernel -fp-model=precise"
             -DCMAKE_BUILD_TYPE=Release
             -DCMAKE_VERBOSE_MAKEFILE=OFF
-            -DCMAKE_CXX_COMPILER=kokkos/bin/nvcc_wrapper
+            -DCMAKE_CXX_COMPILER=`pwd`/kokkos/bin/nvcc_wrapper
             -DSITE=ALCF-Polaris
             -DKokkos_ROOT=kokkos_install
             -DKokkosKernels_INST_COMPLEX_DOUBLE:BOOL=ON
