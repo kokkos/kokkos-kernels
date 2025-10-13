@@ -14,6 +14,7 @@ Polaris:
     - module load spack-pe-base
     - module load cmake
     - module load cudatoolkit-standalone/12.8.1
+    - module load gcc
     - module list
     - export CMAKE_BUILD_PARALLEL_LEVEL=48
     - export HTTP_PROXY="http://proxy.alcf.anl.gov:3128"
@@ -23,32 +24,23 @@ Polaris:
     - export ftp_proxy="http://proxy.alcf.anl.gov:3128"
     - export no_proxy="admin,polaris-adminvm-01,localhost,*.cm.polaris.alcf.anl.gov,polaris-*,*.polaris.alcf.anl.gov,*.alcf.anl.gov"
     - git clone https://github.com/kokkos/kokkos.git
-    - "cmake -S kokkos \
-            -B kokkos_build \
-            -DCMAKE_INSTALL_PREFIX=kokkos_install \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DCMAKE_CXX_STANDARD=20 \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_EXTENSIONS=OFF \
-            -DCMAKE_VERBOSE_MAKEFILE=ON \
-            -DCMAKE_CXX_COMPILER=`pwd`/kokkos/bin/nvcc_wrapper \
-            -DKokkos_ENABLE_CUDA=ON \
-            -DKokkos_ARCH_AMPERE80=ON \
-            -DKokkos_ENABLE_TESTS=OFF \
-            -DKokkos_ENABLE_EXAMPLES=OFF \
-            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF"
+    - cmake -S kokkos
+            -B kokkos_build
+            -DCMAKE_INSTALL_PREFIX=kokkos_install
+            -DCMAKE_CXX_STANDARD=20
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_CXX_EXTENSIONS=OFF
+            -DCMAKE_VERBOSE_MAKEFILE=ON
+            -DKokkos_ENABLE_CUDA=ON
+            -DKokkos_ARCH_AMPERE80=ON
+            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF
     - cmake --build kokkos_build --parallel
     - cmake --install kokkos_build --prefix kokkos_install
-    - git clone https://github.com/kokkos/kokkos-kernels.git
-    - cmake -S kokkos-kernels
-            -B kokkos-kernels_build
+    - cmake -B kokkos-kernels_build
             -DCMAKE_INSTALL_PREFIX=kokkos-kernels_install
             -DBUILD_SHARED_LIBS=ON
-            -DCMAKE_CXX_FLAGS="-fsycl-device-code-split=per_kernel -fp-model=precise"
             -DCMAKE_BUILD_TYPE=Release
             -DCMAKE_VERBOSE_MAKEFILE=OFF
-            -DCMAKE_CXX_COMPILER=`pwd`/kokkos/bin/nvcc_wrapper
             -DSITE=ALCF-Polaris
             -DKokkos_ROOT=kokkos_install
             -DKokkosKernels_INST_COMPLEX_DOUBLE:BOOL=ON
@@ -57,7 +49,7 @@ Polaris:
             -DKokkosKernels_ENABLE_PERFTESTS:BOOL=OFF
             -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON
             -DKokkosKernels_RUN_BENCHMARKS:BOOL=ON
-    - ctest -V --test-dir kokkos-kernels/build -D Nightly --output-junit result_a100.xml
+    - ctest -V --test-dir kokkos-kernels_build -D Nightly --output-junit result_a100.xml
 
   artifacts:
     when: always
@@ -93,9 +85,7 @@ Aurora:
             -DKokkos_ENABLE_DEPRECATED_CODE_4=ON
     - cmake --build kokkos/build --parallel
     - cmake --install kokkos/build --prefix kokkos-install
-    - git clone https://github.com/kokkos/kokkos-kernels.git
-    - cmake -S kokkos-kernels
-            -B kokkos-kernels/build
+    - cmake -B kokkos-kernels_build
             -DCMAKE_INSTALL_PREFIX=kokkos-kernels-install
             -DBUILD_SHARED_LIBS=ON
             -DCMAKE_CXX_FLAGS="-fsycl-device-code-split=per_kernel -fp-model=precise"
@@ -112,7 +102,7 @@ Aurora:
             -DKokkosKernels_ENABLE_TPL_MKL=ON
     - export CMAKE_BUILD_PARALLEL_LEVEL=48
     - export ZES_ENABLE_SYSMAN=1
-    - ctest -V --test-dir kokkos-kernels/build -D Nightly --output-junit result_pvc1550.xml
+    - ctest -V --test-dir kokkos-kernels_build -D Nightly --output-junit result_pvc1550.xml
 
   artifacts:
     when: always
