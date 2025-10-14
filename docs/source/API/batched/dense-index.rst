@@ -4,7 +4,8 @@ API: Batched Dense (DLA)
 .. toctree::
    :maxdepth: 2
    :hidden:
-
+   
+   dense/batched_iamax
    dense/batched_tbsv
    dense/batched_ger
    dense/batched_syr
@@ -145,7 +146,7 @@ BLAS 1
      - --
      - --
    * - IAMAX
-     - `SerialIamax`
+     - :doc:`SerialIamax <dense/batched_iamax>`
      - --
      - --
 
