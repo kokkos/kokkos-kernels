@@ -99,7 +99,8 @@ Aurora:
             -DKokkosKernels_ENABLE_TESTS:BOOL=ON
             -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON
             -DKokkosKernels_ENABLE_PERFTESTS:BOOL=OFF
-            -DKokkosKernels_ENABLE_BENCHMARK:BOOL=OFF
+            -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON
+            -DKokkosKernels_RUN_BENCHMARKS:BOOL=ON
             -DKokkosKernels_ENABLE_TPL_MKL=ON
     - export CMAKE_BUILD_PARALLEL_LEVEL=48
     - export ZES_ENABLE_SYSMAN=1
