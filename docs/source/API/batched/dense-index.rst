@@ -17,6 +17,7 @@ API: Batched Dense (DLA)
    dense/batched_pbtrs
    dense/batched_pttrf
    dense/batched_pttrs
+   dense/batched_lacgv
 
 Our implementation of batched dense linear algebra (DLA) allows user to compose various batched DLA operations.
 For example, consider a case where small element matrices are created via `gemm` and those matrices are triangular solved by `lu` and `trsv`.
@@ -364,7 +365,7 @@ Below are tables summarizing the currently supported function calls in Kokkos Ke
      - --
      - --
    * - lacgv
-     - `SerialLacgv`
+     - :doc:`SerialLacgv <dense/batched_lacgv>`
      - --
      - --
    * - laswp
