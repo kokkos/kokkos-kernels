@@ -20,7 +20,7 @@ Parameters
 Type Requirements
 -----------------
 
-- ``XViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 containing a vector :math:`x`
+- ``XViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 representing the vector :math:`x`
 
 Example
 =======
