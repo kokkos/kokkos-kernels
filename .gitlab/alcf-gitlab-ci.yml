@@ -7,7 +7,7 @@ include:
 Polaris:
   extends: .polaris-batch-runner
   variables:
-    ANL_POLARIS_SCHEDULER_PARAMETERS: "-q debug -A kokkos_math -l select=1,walltime=90:00,filesystems=home"
+    ANL_POLARIS_SCHEDULER_PARAMETERS: "-q debug -A kokkos_math -l select=1,walltime=60:00,filesystems=home"
   script:
     - module use /soft/modulefiles
     - module load PrgEnv-gnu
@@ -44,7 +44,6 @@ Polaris:
             -DCMAKE_VERBOSE_MAKEFILE=OFF
             -DSITE=ALCF-Polaris
             -DKokkos_ROOT=kokkos_install
-            -DKokkosKernels_INST_COMPLEX_DOUBLE:BOOL=ON
             -DKokkosKernels_ENABLE_TESTS:BOOL=ON
             -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON
             -DKokkosKernels_ENABLE_PERFTESTS:BOOL=OFF
