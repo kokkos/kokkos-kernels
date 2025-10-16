@@ -69,7 +69,7 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
   using transB          = typename ParamTagType::transB;
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::value_type;
-  using ats             = Kokkos::ArithTraits<value_type>;
+  using ats             = KokkosKernels::ArithTraits<value_type>;
 
   /// randomized input testing views
   ScalarType alpha = ScalarType(1.5), beta = ScalarType(3.0);
@@ -94,9 +94,9 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
   vgemm.A_t = std::is_same<transA, Trans::Transpose>::value;
   vgemm.B_t = std::is_same<transB, Trans::Transpose>::value;
   vgemm.A_c = vgemm.B_c = false;
-  vgemm.A               = a_expected;
-  vgemm.B               = b_expected;
-  vgemm.C               = c_expected;
+  vgemm.A_              = a_expected;
+  vgemm.B_              = b_expected;
+  vgemm.C_              = c_expected;
   vgemm.alpha           = alpha;
   vgemm.beta            = beta;
   vgemm.run();  // Compute c_expected
@@ -107,8 +107,8 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
 
   Kokkos::fence();
 
-  typename ViewType::HostMirror c_expected_host = Kokkos::create_mirror_view(c_expected);
-  typename ViewType::HostMirror c_actual_host   = Kokkos::create_mirror_view(c_actual);
+  typename ViewType::host_mirror_type c_expected_host = Kokkos::create_mirror_view(c_expected);
+  typename ViewType::host_mirror_type c_actual_host   = Kokkos::create_mirror_view(c_actual);
 
   // Copy to host for comparision
   Kokkos::deep_copy(c_expected_host, c_expected);
