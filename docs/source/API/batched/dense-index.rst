@@ -6,6 +6,7 @@ API: Batched Dense (DLA)
    :hidden:
    
    dense/batched_iamax
+   dense/batched_trsv
    dense/batched_tbsv
    dense/batched_ger
    dense/batched_syr
@@ -196,9 +197,9 @@ BLAS 2
      - --
      - --
    * - TRSV
-     - `SerialTrsv`
-     - `TeamTrsv`
-     - `TeamVectorTrsv`
+     - :doc:`SerialTrsv <dense/batched_trsv>`
+     - :doc:`TeamTrsv <dense/batched_trsv>`
+     - :doc:`TeamVectorTrsv <dense/batched_trsv>`
    * - TBSV
      - :doc:`SerialTbsv <dense/batched_tbsv>`
      - --
