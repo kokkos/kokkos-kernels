@@ -15,4 +15,3 @@ The following macros are deprecated as they ignore the standard or Kokkos' reser
 - ``__KOKKOSBATCHED_ENABLE_INTEL_MKL__``
 - ``__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__``
 - ``__KOKKOSBATCHED_ENABLE_AVX__``
-- ``KOKKOS_CUSPARSE_SAFE_CALL``
