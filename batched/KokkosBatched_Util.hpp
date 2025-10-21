@@ -9,21 +9,6 @@
 
 #define KOKKOSBATCHED_IMPL_PROMOTION 1
 
-#if defined(KOKKOS_COMPILER_MSVC)
-#define __KOKKOSBATCHED_PROMOTION__ /*NOLINT(bugprone-reserved-identifier)*/                                       \
-  (__pragma(message("warning: __KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version")) \
-       KOKKOSBATCHED_IMPL_PROMOTION)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define __KOKKOSBATCHED_PROMOTION__ /*NOLINT(bugprone-reserved-identifier)*/                                      \
-  (__extension__({                                                                                                \
-    _Pragma("GCC warning \"__KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version\""); \
-    KOKKOSBATCHED_IMPL_PROMOTION;                                                                                 \
-  }))
-#else
-// no good way to deprecate
-#define __KOKKOSBATCHED_PROMOTION__ KOKKOSBATCHED_IMPL_PROMOTION  // NOLINT(bugprone-reserved-identifier)
-#endif
-
 #include <iomanip>
 #include <random>
 #include <string>
@@ -45,59 +30,13 @@
 
 // TPL macros
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-
-#if defined(KOKKOS_COMPILER_MSVC)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL \
-  (__pragma(                                \
-      message("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL__ is deprecated and will be removed in a future version")) 1)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL                                                                       \
-  (__extension__({                                                                                                \
-    _Pragma("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL__ is deprecated and will be removed in a future version"); \
-    1;                                                                                                            \
-  }))
-#else
 #define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL 1  // no good way to deprecate?
-#endif
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL__ KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL
 
 #include "mkl_version.h"
 #if __INTEL_MKL__ >= 2018
 
-#if defined(KOKKOS_COMPILER_MSVC)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED \
-  (__pragma(message(                                \
-      "warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ is deprecated and will be removed in a future version")) 1)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED                                                                   \
-  (__extension__({                                                                                                    \
-    _Pragma(                                                                                                          \
-        "warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ is deprecated and will be removed in a future version"); \
-    1;                                                                                                                \
-  }))
-#else
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED 1  // no good way to deprecate?
-#endif
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED
-
+#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED 1
 #define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED 1
-#if defined(KOKKOS_COMPILER_MSVC)
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__                                                      \
-  (                                                                                                             \
-      __pragma(message("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ is deprecated and will be " \
-                       "removed in a future version")) KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__                                                    \
-  (__extension__({                                                                                            \
-    _Pragma(                                                                                                  \
-        "\"__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ is deprecated and will be removed in a future " \
-        "version\"");                                                                                         \
-    KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED;                                                      \
-  }))
-#else
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ \
-  KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED  // no good way to deprecate?
-#endif
 
 #include "mkl.h"
 // #include "mkl_types.h"
@@ -106,22 +45,6 @@
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE)
 #define KOKKOSBATCHED_IMPL_ENABLE_LAPACKE 1
-#if defined(KOKKOS_COMPILER_MSVC)
-#define __KOKKOSBATCHED_ENABLE_LAPACKE__                                                      \
-  (                                                                                           \
-      __pragma(message("warning: __KOKKOSBATCHED_ENABLE_LAPACKE__ is deprecated and will be " \
-                       "removed in a future version")) KOKKOSBATCHED_IMPL_ENABLE_LAPACKE)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define __KOKKOSBATCHED_ENABLE_LAPACKE__                                                    \
-  (__extension__({                                                                          \
-    _Pragma(                                                                                \
-        "\"__KOKKOSBATCHED_ENABLE_LAPACKE__ is deprecated and will be removed in a future " \
-        "version\"");                                                                       \
-    KOKKOSBATCHED_IMPL_ENABLE_LAPACKE;                                                      \
-  }))
-#else
-#define __KOKKOSBATCHED_ENABLE_LAPACKE__ KOKKOSBATCHED_IMPL_ENABLE_LAPACKE  // no good way to deprecate?
-#endif
 
 #include "lapacke.h"
 #endif

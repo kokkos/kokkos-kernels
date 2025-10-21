@@ -164,7 +164,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::NoTranspose, Algo::Gemm::CompactMKL>::invoke(
@@ -383,7 +383,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::Transpose, Algo::
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::Transpose, Algo::Gemm::CompactMKL>::invoke(
@@ -456,7 +456,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::Transpose, Al
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::ConjTranspose, Algo::Gemm::CompactMKL>::invoke(
@@ -529,7 +529,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::ConjTranspose, 
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::ConjTranspose, Algo::Gemm::CompactMKL>::invoke(
@@ -602,7 +602,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::ConjTranspose, Al
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::ConjTranspose, Algo::Gemm::CompactMKL>::invoke(
