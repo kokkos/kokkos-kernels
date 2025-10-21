@@ -691,13 +691,6 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::L
 #endif
 }  // namespace Impl
 
-template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector,
-          class XLayout = typename XVector::array_layout>
-using SPMV2D1D_STRUCT
-    [[deprecated("KokkosSparse::SPMV2D1D_STRUCT is not part of the public "
-                 "interface - use KokkosSparse::spmv_struct instead")]] =
-        Impl::SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector>;
-
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void spmv_struct(const ExecutionSpace& space, const char mode[], const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& structure,
@@ -842,10 +835,5 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
 
 }  // namespace Experimental
 }  // namespace KokkosSparse
-
-// Pull in all the deprecated versions of spmv
-// It's included here (and not at the top) because it uses definitions in this
-// file.
-#include "KokkosSparse_spmv_deprecated.hpp"
 
 #endif

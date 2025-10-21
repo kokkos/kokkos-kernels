@@ -33,15 +33,6 @@ enum SPGEMMAlgorithm {
   SPGEMM_KK_DENSE,
   SPGEMM_KK_MEMORY,
   SPGEMM_KK_LP,  // KKVARIANTS
-  SPGEMM_CUSPARSE [[deprecated("cuSPARSE is now used automatically in all "
-                               "supported SpGEMM calls, if enabled.")]],
-  SPGEMM_MKL [[deprecated("MKL is now used automatically in all supported "
-                          "SpGEMM calls, if enabled.")]],
-  SPGEMM_MKL2PHASE [[deprecated("MKL is now used automatically in all "
-                                "supported SpGEMM calls, if enabled.")]],
-  SPGEMM_ROCSPARSE [[deprecated("rocSPARSE is now used automatically in all "
-                                "supported SpGEMM calls, if enabled.")]],
-
   // TRIANGLE COUNTING SPECIALIZED
   SPGEMM_KK_TRIANGLE_AI,        // SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM,
                                 // SPGEMM_KK_TRIANGLE_DENSE,
@@ -750,22 +741,6 @@ inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string &name) {
     return SPGEMM_SERIAL;
   else if (name == "SPGEMM_SERIAL")
     return SPGEMM_SERIAL;
-  else if (name == "SPGEMM_CUSPARSE")
-    throw std::runtime_error(
-        "Enum value SPGEMM_CUSPARSE is deprecated. cuSPARSE is automatically "
-        "used in all supported SpGEMM calls.");
-  else if (name == "SPGEMM_MKL")
-    throw std::runtime_error(
-        "Enum value SPGEMM_MKL is deprecated. MKL is automatically used in all "
-        "supported SpGEMM calls.");
-  else if (name == "SPGEMM_MKL2PHASE")
-    throw std::runtime_error(
-        "Enum value SPGEMM_MKL2PHASE is deprecated. MKL is automatically used "
-        "in all supported SpGEMM calls.");
-  else if (name == "SPGEMM_ROCSPARSE")
-    throw std::runtime_error(
-        "Enum value SPGEMM_ROCSPARSE is deprecated. rocSPARSE is automatically "
-        "used in all supported SpGEMM calls.");
   else
     throw std::runtime_error("Invalid SPGEMMAlgorithm name");
 }
