@@ -36,8 +36,8 @@ namespace {
 using KokkosSparse::Experimental::par_ilut_numeric;
 using KokkosSparse::Experimental::par_ilut_symbolic;
 
-using KokkosSparse::Experimental::spiluk_numeric;
-using KokkosSparse::Experimental::spiluk_symbolic;
+using KokkosSparse::spiluk_numeric;
+using KokkosSparse::spiluk_symbolic;
 using KokkosSparse::Experimental::SPILUKAlgorithm;
 
 // Build up useful types
