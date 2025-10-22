@@ -27,7 +27,7 @@ struct SerialGemm {
   static_assert(KokkosBlas::is_trans_v<ArgTransA>, "KokkosBatched::SerialGemm: ArgTransA must be a KokkosBlas::Trans.");
   static_assert(KokkosBlas::is_trans_v<ArgTransB>, "KokkosBatched::SerialGemm: ArgTransB must be a KokkosBlas::Trans.");
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
   static_assert(std::is_same_v<ArgAlgo, Algo::Gemm::Unblocked> || std::is_same_v<ArgAlgo, Algo::Gemm::Blocked> ||
                     std::is_same_v<ArgAlgo, Algo::Gemm::CompactMKL>,
                 "KokkosBatched::Gemm: Use Algo::Gemm::Unblocked or Algo::Gemm::Blocked or Algo::Gemm::CompactMKL");
