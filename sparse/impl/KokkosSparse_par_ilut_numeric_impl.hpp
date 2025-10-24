@@ -16,11 +16,25 @@
 #include <KokkosSparse_SortCrs.hpp>
 #include <KokkosKernels_Utils.hpp>
 
+#include <chrono>
 #include <limits>
 
 namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
+
+// Resize a view without allocating or initializing if possible.
+template <typename ViewT>
+inline void resize_no_preserve(ViewT& view, const size_t new_size) {
+  // const auto curr_size = view.size();
+  // if (curr_size >= new_size) {
+  //   return Kokkos::subview(view, Kokkos::make_pair(0, new_size));
+  // }
+  // else {
+  Kokkos::realloc(Kokkos::WithoutInitializing, view, new_size);
+  //   return view;
+  // }
+}
 
 template <class IlutHandle>
 struct IlutWrap {
@@ -31,6 +45,7 @@ struct IlutWrap {
   using index_t                 = typename IlutHandle::nnz_lno_t;
   using size_type               = typename IlutHandle::size_type;
   using scalar_t                = typename IlutHandle::nnz_scalar_t;
+  using float_t                 = typename IlutHandle::float_t;
   using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
   using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
@@ -71,8 +86,8 @@ struct IlutWrap {
                                   LU_row_map);
 
     const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    Kokkos::resize(LU_entries, lu_nnz_size);
-    Kokkos::resize(LU_values, lu_nnz_size);
+    resize_no_preserve(LU_entries, lu_nnz_size);
+    resize_no_preserve(LU_values, lu_nnz_size);
 
     KokkosSparse::spgemm_numeric(&kh, nrows, nrows, nrows, L_row_map, L_entries, L_values, false, U_row_map, U_entries,
                                  U_values, false, LU_row_map, LU_entries, LU_values);
@@ -96,8 +111,8 @@ struct IlutWrap {
     // Need to reset t_row_map
     Kokkos::deep_copy(t_row_map, 0);
 
-    Kokkos::resize(t_entries, entries.extent(0));
-    Kokkos::resize(t_values, values.extent(0));
+    resize_no_preserve(t_entries, entries.extent(0));
+    resize_no_preserve(t_values, values.extent(0));
 
     KokkosSparse::Impl::transpose_matrix<HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
                                          HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
@@ -225,10 +240,10 @@ struct IlutWrap {
     const size_type l_new_nnz_tot = prefix_sum(L_new_row_map);
     const size_type u_new_nnz_tot = prefix_sum(U_new_row_map);
 
-    Kokkos::resize(L_new_entries, l_new_nnz_tot);
-    Kokkos::resize(U_new_entries, u_new_nnz_tot);
-    Kokkos::resize(L_new_values, l_new_nnz_tot);
-    Kokkos::resize(U_new_values, u_new_nnz_tot);
+    resize_no_preserve(L_new_entries, l_new_nnz_tot);
+    resize_no_preserve(U_new_entries, u_new_nnz_tot);
+    resize_no_preserve(L_new_values, l_new_nnz_tot);
+    resize_no_preserve(U_new_values, u_new_nnz_tot);
 
     constexpr auto sentinel = std::numeric_limits<size_type>::max();
 
@@ -461,28 +476,33 @@ struct IlutWrap {
     }
   }
 
+  struct AbsComparator {
+    KOKKOS_INLINE_FUNCTION
+    bool operator()(const scalar_t& a, const scalar_t& b) const { return karith::abs(a) < karith::abs(b); }
+  };
+
   /**
    * Select threshold based on filter rank. Do all this on host
    */
   template <class ValuesType, class ValuesCopyType>
-  static typename IlutHandle::float_t threshold_select(ValuesType& values, const typename IlutHandle::nnz_lno_t rank,
-                                                       ValuesCopyType& values_copy) {
+  static float_t threshold_select(ValuesType& values, const typename IlutHandle::nnz_lno_t rank,
+                                  ValuesCopyType& values_copy_d) {
     const index_t size = values.extent(0);
 
-    Kokkos::resize(values_copy, size);
-    Kokkos::deep_copy(values_copy, values);
+    resize_no_preserve(values_copy_d, size);
+    Kokkos::deep_copy(values_copy_d, values);
 
-    auto begin  = values_copy.data();
-    auto target = begin + rank;
-    auto end    = begin + size;
-    std::nth_element(begin, target, end, [](scalar_t a, scalar_t b) { return karith::abs(a) < karith::abs(b); });
+    float_t result;
+    Kokkos::sort(values_copy_d, AbsComparator{});
+    Kokkos::parallel_reduce(
+        range_policy(0, 1), KOKKOS_LAMBDA(const int, scalar_t& lsum) { lsum = karith::abs(values_copy_d(rank)); },
+        result);
 
-    return karith::abs(values_copy(rank));
+    return result;
   }
 
   template <class IRowMapType, class IEntriesType, class IValuesType, class ORowMapType>
   struct ThresholdFilterCountFunctor {
-    using float_t = typename IlutHandle::float_t;
     ThresholdFilterCountFunctor(const float_t threshold_, const IRowMapType& I_row_map_, const IEntriesType& I_entries_,
                                 const IValuesType& I_values_, const ORowMapType& O_row_map_)
         : threshold(threshold_),
@@ -520,7 +540,6 @@ struct IlutWrap {
   template <class IRowMapType, class IEntriesType, class IValuesType, class ORowMapType, class OEntriesType,
             class OValuesType>
   struct ThresholdFilterAssignFunctor {
-    using float_t = typename IlutHandle::float_t;
     ThresholdFilterAssignFunctor(const float_t threshold_, const IRowMapType& I_row_map_,
                                  const IEntriesType& I_entries_, const IValuesType& I_values_,
                                  const ORowMapType& O_row_map_, const OEntriesType& O_entries_,
@@ -562,9 +581,9 @@ struct IlutWrap {
    */
   template <class IRowMapType, class IEntriesType, class IValuesType, class ORowMapType, class OEntriesType,
             class OValuesType>
-  static void threshold_filter(IlutHandle& ih, const typename IlutHandle::float_t threshold,
-                               const IRowMapType& I_row_map, const IEntriesType& I_entries, const IValuesType& I_values,
-                               ORowMapType& O_row_map, OEntriesType& O_entries, OValuesType& O_values) {
+  static void threshold_filter(IlutHandle& ih, const float_t threshold, const IRowMapType& I_row_map,
+                               const IEntriesType& I_entries, const IValuesType& I_values, ORowMapType& O_row_map,
+                               OEntriesType& O_entries, OValuesType& O_values) {
     const auto policy     = ih.get_default_team_policy();
     const size_type nrows = ih.get_nrows();
 
@@ -574,8 +593,8 @@ struct IlutWrap {
 
     const auto new_nnz = prefix_sum(O_row_map);
 
-    Kokkos::resize(O_entries, new_nnz);
-    Kokkos::resize(O_values, new_nnz);
+    resize_no_preserve(O_entries, new_nnz);
+    resize_no_preserve(O_values, new_nnz);
 
     Kokkos::parallel_for(
         "threshold_filter assign", range_policy(0, nrows),
@@ -608,13 +627,13 @@ struct IlutWrap {
     // use that for exec!
     typename KHandle::HandleExecSpace exec{};
     if (R_row_map.size() == 0) {
-      Kokkos::resize(exec, R_row_map, A_row_map.size());
+      resize_no_preserve(R_row_map, A_row_map.size());
     }
     KokkosSparse::spadd_symbolic(exec, &kh, m, n, A_row_map, A_entries, LU_row_map, LU_entries, R_row_map);
 
     const size_type r_nnz = addHandle->get_c_nnz();
-    Kokkos::resize(exec, R_entries, r_nnz);
-    Kokkos::resize(exec, R_values, r_nnz);
+    resize_no_preserve(R_entries, r_nnz);
+    resize_no_preserve(R_values, r_nnz);
 
     KokkosSparse::spadd_numeric(exec, &kh, m, n, A_row_map, A_entries, A_values, 1., LU_row_map, LU_entries, LU_values,
                                 -1., R_row_map, R_entries, R_values);
@@ -748,7 +767,6 @@ struct IlutWrap {
     HandleDeviceRowMapType R_row_map;
     HandleDeviceEntriesType LU_entries, L_new_entries, U_new_entries, Ut_new_entries, R_entries;
     HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, V_copy_d, R_values;
-    auto V_copy = Kokkos::create_mirror_view(V_copy_d);
 
     size_type itr                  = 0;
     scalar_t curr_residual         = std::numeric_limits<scalar_t>::max();
@@ -796,8 +814,8 @@ struct IlutWrap {
         const auto l_filter_rank = std::max(static_cast<index_t>(0), l_nnz - l_nnz_limit - 1);
         const auto u_filter_rank = std::max(static_cast<index_t>(0), u_nnz - u_nnz_limit - 1);
 
-        const auto l_threshold = threshold_select(L_new_values, l_filter_rank, V_copy);
-        const auto u_threshold = threshold_select(U_new_values, u_filter_rank, V_copy);
+        const auto l_threshold = threshold_select(L_new_values, l_filter_rank, V_copy_d);
+        const auto u_threshold = threshold_select(U_new_values, u_filter_rank, V_copy_d);
 
         threshold_filter(thandle, l_threshold, L_new_row_map, L_new_entries, L_new_values, L_row_map, L_entries,
                          L_values);
