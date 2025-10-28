@@ -40,9 +40,9 @@ struct TeamGemm<MemberType, Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::
 
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
-    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(member, C_extent_0, C_extent_1, A_extent_1, alpha,
-                                                           A.data(), A_stride_0, A_stride_1, B.data(), B_stride_0,
-                                                           B_stride_1, beta, C.data(), C_stride_0, C_stride_1);
+    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(member, C_extent_0, C_extent_1, A_extent_1, alpha, A.data(),
+                                                           A_stride_0, A_stride_1, B.data(), B_stride_0, B_stride_1,
+                                                           beta, C.data(), C_stride_0, C_stride_1);
   }
 };
 
@@ -61,8 +61,8 @@ struct TeamGemm<MemberType, Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
     return TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, C_extent_0, C_extent_1, A_extent_1, alpha, A.data(),
-                                                         A_stride_0, A_stride_1, B.data(), B_stride_0,
-                                                         B_stride_1, beta, C.data(), C_stride_0, C_stride_1);
+                                                         A_stride_0, A_stride_1, B.data(), B_stride_0, B_stride_1, beta,
+                                                         C.data(), C_stride_0, C_stride_1);
   }
 };
 
@@ -84,9 +84,9 @@ struct TeamGemm<MemberType, Trans::Transpose, Trans::NoTranspose, Algo::Gemm::Un
 
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
-    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(member, C_extent_0, C_extent_1, A_extent_0, alpha,
-                                                           A.data(), A_stride_1, A_stride_0, B.data(), B_stride_0,
-                                                           B_stride_1, beta, C.data(), C_stride_0, C_stride_1);
+    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(member, C_extent_0, C_extent_1, A_extent_0, alpha, A.data(),
+                                                           A_stride_1, A_stride_0, B.data(), B_stride_0, B_stride_1,
+                                                           beta, C.data(), C_stride_0, C_stride_1);
   }
 };
 
@@ -105,8 +105,8 @@ struct TeamGemm<MemberType, Trans::Transpose, Trans::NoTranspose, Algo::Gemm::Bl
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
     return TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, C_extent_0, C_extent_1, A_extent_0, alpha, A.data(),
-                                                         A_stride_1, A_stride_0, B.data(), B_stride_0,
-                                                         B_stride_1, beta, C.data(), C_stride_0, C_stride_1);
+                                                         A_stride_1, A_stride_0, B.data(), B_stride_0, B_stride_1, beta,
+                                                         C.data(), C_stride_0, C_stride_1);
   }
 };
 
@@ -128,9 +128,9 @@ struct TeamGemm<MemberType, Trans::NoTranspose, Trans::Transpose, Algo::Gemm::Un
 
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
-    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(member, C_extent_0, C_extent_1, A_extent_1, alpha,
-                                                           A.data(), A_stride_0, A_stride_1, B.data(), B_stride_1,
-                                                           B_stride_0, beta, C.data(), C_stride_0, C_stride_1);
+    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(member, C_extent_0, C_extent_1, A_extent_1, alpha, A.data(),
+                                                           A_stride_0, A_stride_1, B.data(), B_stride_1, B_stride_0,
+                                                           beta, C.data(), C_stride_0, C_stride_1);
   }
 };
 
@@ -149,8 +149,8 @@ struct TeamGemm<MemberType, Trans::NoTranspose, Trans::Transpose, Algo::Gemm::Bl
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
     return TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, C_extent_0, C_extent_1, A_extent_1, alpha, A.data(),
-                                                         A_stride_0, A_stride_1, B.data(), B_stride_1,
-                                                         B_stride_0, beta, C.data(), C_stride_0, C_stride_1);
+                                                         A_stride_0, A_stride_1, B.data(), B_stride_1, B_stride_0, beta,
+                                                         C.data(), C_stride_0, C_stride_1);
   }
 };
 
@@ -172,9 +172,9 @@ struct TeamGemm<MemberType, Trans::Transpose, Trans::Transpose, Algo::Gemm::Unbl
 
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
-    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(member, C_extent_0, C_extent_1, A_extent_0, alpha,
-                                                           A.data(), A_stride_1, A_stride_0, B.data(), B_stride_1,
-                                                           B_stride_0, beta, C.data(), C_stride_0, C_stride_1);
+    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(member, C_extent_0, C_extent_1, A_extent_0, alpha, A.data(),
+                                                           A_stride_1, A_stride_0, B.data(), B_stride_1, B_stride_0,
+                                                           beta, C.data(), C_stride_0, C_stride_1);
   }
 };
 
@@ -193,8 +193,8 @@ struct TeamGemm<MemberType, Trans::Transpose, Trans::Transpose, Algo::Gemm::Bloc
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
     return TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, C_extent_0, C_extent_1, A_extent_0, alpha, A.data(),
-                                                         A_stride_1, A_stride_0, B.data(), B_stride_1,
-                                                         B_stride_0, beta, C.data(), C_stride_0, C_stride_1);
+                                                         A_stride_1, A_stride_0, B.data(), B_stride_1, B_stride_0, beta,
+                                                         C.data(), C_stride_0, C_stride_1);
   }
 };
 
