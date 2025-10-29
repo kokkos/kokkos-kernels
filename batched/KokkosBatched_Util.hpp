@@ -705,7 +705,7 @@ KOKKOS_INLINE_FUNCTION std::size_t get_stride(const ViewType &v, const int r) {
     std::size_t V_stride_1 = V_rank < 2 ? 1 : v.stride(1);
     return V_stride_1;
   } else {
-    return 0;
+    return 1;
   }
 }
 }  // namespace Impl
