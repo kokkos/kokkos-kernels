@@ -31,8 +31,8 @@ jobs:
     with:
       kokkos_version: 4.7.00
       kokkos_previous_version: 4.6.02
-  bdw:
-    uses: ./.github/workflows/bdw.yml
+  host:
+    uses: ./.github/workflows/host.yml
     with:
       kokkos_version: 4.7.00
   spr:

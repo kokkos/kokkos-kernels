@@ -1,4 +1,4 @@
-name: Reusable BDW workflow
+name: Reusable Host workflow
 
 permissions:
   contents: none
@@ -176,8 +176,8 @@ jobs:
 #        working-directory: kokkos-kernels/build
 #        run: ctest --output-on-failure -V --timeout 3600
 
-  PR_BDW_GNU1020_OPENMP_SERIAL_LEFT_OPENBLAS_REL:
-    name: PR_BDW_GNU1020_OPENMP_SERIAL_LEFT_OPENBLAS_REL
+  PR_GNU1020_OPENMP_SERIAL_LEFT_OPENBLAS_REL:
+    name: PR_GNU1020_OPENMP_SERIAL_LEFT_OPENBLAS_REL
     runs-on: [kk-env-openblas-0.3.21-gcc-10.2.0-latest]
     
     steps:
@@ -199,22 +199,23 @@ jobs:
           cd kokkos/build
 
           cmake \
+	    -S "$PWD/.." \
+	    -B "$PWD" \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS=-O3 \
             -DCMAKE_INSTALL_PREFIX=$PWD/../install \
             -DKokkos_ENABLE_SERIAL=ON \
             -DKokkos_ENABLE_OPENMP=ON \
-            -DKokkos_ARCH_BDW=ON \
+            -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_TESTS=OFF \
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_VERBOSE_MAKEFILE=ON \
             -DCMAKE_CXX_EXTENSIONS=OFF \
-            -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_CXX_STANDARD=17 \
             -DBUILD_SHARED_LIBS=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
             -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
-            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            ..
+            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
