@@ -199,8 +199,8 @@ jobs:
           cd kokkos/build
 
           cmake \
-	    -S "$PWD/.." \
-	    -B "$PWD" \
+            -S "$PWD/.." \
+            -B "$PWD" \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS=-O3 \
             -DCMAKE_INSTALL_PREFIX=$PWD/../install \
@@ -357,8 +357,8 @@ jobs:
           cd kokkos/build
 
           cmake \
-	    -S "$PWD/.." \
-	    -B "$PWD" \
+            -S "$PWD/.." \
+            -B "$PWD" \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_CXX_COMPILER=icpx \
             -DCMAKE_CXX_FLAGS="-fp-model=precise" \
