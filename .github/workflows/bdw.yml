@@ -253,9 +253,9 @@ jobs:
         working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
 
-  PR_BDW_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL:
-    name: PR_BDW_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL
-    runs-on: [kk-env-openblas-0.3.21-gcc-10.2.0-latest]
+  PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL:
+    name: PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL
+    runs-on: [gcc-10.5.0_openblas-0.3.30_x86-64]
     
     steps:
       - name: checkout_kokkos_kernels
@@ -287,7 +287,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=20 \
             -DKokkos_ENABLE_SERIAL=ON \
             -DKokkos_ENABLE_OPENMP=ON \
-            -DKokkos_ARCH_BDW=ON \
+	    -DKokkos_ENABLE_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_TESTS=OFF \
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
@@ -309,6 +309,7 @@ jobs:
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS="-O3 " \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
             -DCMAKE_CXX_STANDARD=20 \
             -DKokkos_ROOT=$PWD/../../kokkos/install \
             -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
