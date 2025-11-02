@@ -44,7 +44,7 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@16140ae1a102900babc80a33c44059580f687047 # v3.29.5
+      uses: github/codeql-action/init@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v3.29.5
       with:
         languages: c-cpp
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -66,7 +66,7 @@ jobs:
         -B ${{github.workspace}}/kokkos/build \
         -D Kokkos_ENABLE_SERIAL=ON \
         -D CMAKE_CXX_FLAGS="-Werror" \
-        -D CMAKE_CXX_STANDARD=17 \
+        -D CMAKE_CXX_STANDARD=20 \
         -D Kokkos_ENABLE_COMPILER_WARNINGS=ON \
         -D Kokkos_ENABLE_TESTS=OFF \
         -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
@@ -100,6 +100,6 @@ jobs:
       run: make -j2
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@16140ae1a102900babc80a33c44059580f687047 # v3.29.5
+      uses: github/codeql-action/analyze@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v3.29.5
       with:
         category: "/language:c-cpp"

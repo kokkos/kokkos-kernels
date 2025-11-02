@@ -682,13 +682,13 @@ KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
   static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
 
   if (r == 0) {
-    int V_extent_0 = V_rank == 0 ? 0 : v.extent_int(0);
+    int V_extent_0 = V_rank < 1 ? 1 : v.extent_int(0);
     return V_extent_0;
   } else if (r == 1) {
-    int V_extent_1 = V_rank == 0 ? 0 : V_rank == 1 ? 1 : v.extent_int(1);
+    int V_extent_1 = V_rank < 2 ? 1 : v.extent_int(1);
     return V_extent_1;
   } else {
-    return -1;
+    return 1;
   }
 }
 
@@ -699,13 +699,13 @@ KOKKOS_INLINE_FUNCTION std::size_t get_stride(const ViewType &v, const int r) {
   static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
 
   if (r == 0) {
-    std::size_t V_stride_0 = V_rank == 0 ? 0 : v.stride(0);
+    std::size_t V_stride_0 = V_rank < 1 ? 1 : v.stride(0);
     return V_stride_0;
   } else if (r == 1) {
-    std::size_t V_stride_1 = V_rank == 0 ? 0 : V_rank == 1 ? 1 : v.stride(1);
+    std::size_t V_stride_1 = V_rank < 2 ? 1 : v.stride(1);
     return V_stride_1;
   } else {
-    return 0;
+    return 1;
   }
 }
 }  // namespace Impl
