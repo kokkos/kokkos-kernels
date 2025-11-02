@@ -66,7 +66,7 @@ jobs:
         -B ${{github.workspace}}/kokkos/build \
         -D Kokkos_ENABLE_SERIAL=ON \
         -D CMAKE_CXX_FLAGS="-Werror" \
-        -D CMAKE_CXX_STANDARD=17 \
+        -D CMAKE_CXX_STANDARD=20 \
         -D Kokkos_ENABLE_COMPILER_WARNINGS=ON \
         -D Kokkos_ENABLE_TESTS=OFF \
         -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
