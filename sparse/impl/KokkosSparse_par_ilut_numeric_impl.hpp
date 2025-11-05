@@ -23,19 +23,6 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-// Resize a view without allocating or initializing if possible.
-template <typename ViewT>
-inline void resize_no_preserve(ViewT& view, const size_t new_size) {
-  // const auto curr_size = view.size();
-  // if (curr_size >= new_size) {
-  //   return Kokkos::subview(view, Kokkos::make_pair(0, new_size));
-  // }
-  // else {
-  Kokkos::realloc(Kokkos::WithoutInitializing, view, new_size);
-  //   return view;
-  // }
-}
-
 template <class IlutHandle>
 struct IlutWrap {
   //
@@ -86,8 +73,8 @@ struct IlutWrap {
                                   LU_row_map);
 
     const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    resize_no_preserve(LU_entries, lu_nnz_size);
-    resize_no_preserve(LU_values, lu_nnz_size);
+    Kokkos::realloc(Kokkos::WithoutInitializing, LU_entries, lu_nnz_size);
+    Kokkos::realloc(Kokkos::WithoutInitializing, LU_values, lu_nnz_size);
 
     KokkosSparse::spgemm_numeric(&kh, nrows, nrows, nrows, L_row_map, L_entries, L_values, false, U_row_map, U_entries,
                                  U_values, false, LU_row_map, LU_entries, LU_values);
@@ -111,8 +98,8 @@ struct IlutWrap {
     // Need to reset t_row_map
     Kokkos::deep_copy(t_row_map, 0);
 
-    resize_no_preserve(t_entries, entries.extent(0));
-    resize_no_preserve(t_values, values.extent(0));
+    Kokkos::realloc(Kokkos::WithoutInitializing, t_entries, entries.extent(0));
+    Kokkos::realloc(Kokkos::WithoutInitializing, t_values, values.extent(0));
 
     KokkosSparse::Impl::transpose_matrix<HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
                                          HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
@@ -240,10 +227,10 @@ struct IlutWrap {
     const size_type l_new_nnz_tot = prefix_sum(L_new_row_map);
     const size_type u_new_nnz_tot = prefix_sum(U_new_row_map);
 
-    resize_no_preserve(L_new_entries, l_new_nnz_tot);
-    resize_no_preserve(U_new_entries, u_new_nnz_tot);
-    resize_no_preserve(L_new_values, l_new_nnz_tot);
-    resize_no_preserve(U_new_values, u_new_nnz_tot);
+    Kokkos::realloc(Kokkos::WithoutInitializing, L_new_entries, l_new_nnz_tot);
+    Kokkos::realloc(Kokkos::WithoutInitializing, U_new_entries, u_new_nnz_tot);
+    Kokkos::realloc(Kokkos::WithoutInitializing, L_new_values, l_new_nnz_tot);
+    Kokkos::realloc(Kokkos::WithoutInitializing, U_new_values, u_new_nnz_tot);
 
     constexpr auto sentinel = std::numeric_limits<size_type>::max();
 
@@ -489,7 +476,7 @@ struct IlutWrap {
                                   ValuesCopyType& values_copy_d) {
     const index_t size = values.extent(0);
 
-    resize_no_preserve(values_copy_d, size);
+    Kokkos::realloc(Kokkos::WithoutInitializing, values_copy_d, size);
     Kokkos::deep_copy(values_copy_d, values);
 
     float_t result;
@@ -593,8 +580,8 @@ struct IlutWrap {
 
     const auto new_nnz = prefix_sum(O_row_map);
 
-    resize_no_preserve(O_entries, new_nnz);
-    resize_no_preserve(O_values, new_nnz);
+    Kokkos::realloc(Kokkos::WithoutInitializing, O_entries, new_nnz);
+    Kokkos::realloc(Kokkos::WithoutInitializing, O_values, new_nnz);
 
     Kokkos::parallel_for(
         "threshold_filter assign", range_policy(0, nrows),
@@ -627,13 +614,13 @@ struct IlutWrap {
     // use that for exec!
     typename KHandle::HandleExecSpace exec{};
     if (R_row_map.size() == 0) {
-      resize_no_preserve(R_row_map, A_row_map.size());
+      Kokkos::realloc(Kokkos::WithoutInitializing, R_row_map, A_row_map.size());
     }
     KokkosSparse::spadd_symbolic(exec, &kh, m, n, A_row_map, A_entries, LU_row_map, LU_entries, R_row_map);
 
     const size_type r_nnz = addHandle->get_c_nnz();
-    resize_no_preserve(R_entries, r_nnz);
-    resize_no_preserve(R_values, r_nnz);
+    Kokkos::realloc(Kokkos::WithoutInitializing, R_entries, r_nnz);
+    Kokkos::realloc(Kokkos::WithoutInitializing, R_values, r_nnz);
 
     KokkosSparse::spadd_numeric(exec, &kh, m, n, A_row_map, A_entries, A_values, 1., LU_row_map, LU_entries, LU_values,
                                 -1., R_row_map, R_entries, R_values);
