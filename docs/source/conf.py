@@ -38,8 +38,7 @@ extensions = ["myst_parser",
               "sphinx.ext.viewcode",
               "sphinx.ext.intersphinx",
               "sphinx_copybutton",
-              "sphinx_design",
-              "cppkokkos"]
+              "sphinx_design"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
