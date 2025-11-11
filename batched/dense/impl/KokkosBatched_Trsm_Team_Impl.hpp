@@ -27,24 +27,26 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -59,24 +61,26 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -97,24 +101,26 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDia
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -129,24 +135,26 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDia
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -167,24 +175,26 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDia
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -199,24 +209,26 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDia
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -237,24 +249,26 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -269,24 +283,26 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -307,24 +323,26 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -339,24 +357,26 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -377,24 +397,26 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, 
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -409,24 +431,26 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, 
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -447,24 +471,26 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, 
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -479,24 +505,26 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, 
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                            const BViewType &B) {
-
     // Only allow View and DynRankView objects
-    if constexpr(Kokkos::is_view_v<AViewType>) {
+    if constexpr (Kokkos::is_view_v<AViewType>) {
       static_assert(AViewType::rank() == 2, "KokkosBatched::TeamTrsm: AViewType must be rank 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>, "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
+      static_assert(Kokkos::is_dyn_rank_view_v<AViewType>,
+                    "KokkosBatched::TeamTrsm: AViewType must be a DynRankView or a View");
     }
 
-    if constexpr(Kokkos::is_view_v<BViewType>) {
-      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2, "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
+    if constexpr (Kokkos::is_view_v<BViewType>) {
+      static_assert(BViewType::rank() == 1 || BViewType::rank() == 2,
+                    "KokkosBatched::TeamTrsm: BViewType must be rank 1 or 2");
     } else {
-      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>, "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
+      static_assert(Kokkos::is_dyn_rank_view_v<BViewType>,
+                    "KokkosBatched::TeamTrsm: BViewType must be a View or a DynRankView");
     }
 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank = B.rank();
+    const size_t B_rank     = B.rank();
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
