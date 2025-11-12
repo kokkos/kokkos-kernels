@@ -46,7 +46,8 @@ void test_Householder_analytic_real() {
   Kokkos::deep_copy(reflector, reflector_h);
 
   auto tau_h = Kokkos::create_mirror(tau);
-  Kokkos::parallel_for("SerialHouseholder", 1, KOKKOS_LAMBDA(int) {
+  Kokkos::RangePolicy<ExecutionSpace> policy(0, 1);
+  Kokkos::parallel_for("SerialHouseholder", policy, KOKKOS_LAMBDA(int) {
       SerialHouseholder<KokkosBatched::Side::Left>::invoke(reflector, tau);
     });
   Kokkos::deep_copy(reflector_h, reflector);
@@ -62,9 +63,9 @@ void test_Householder_analytic_real() {
 
   vec_type workspace("workspace", 1);
   auto u = Kokkos::subview(reflector, Kokkos::pair<int, int>(1, 4));
-  Kokkos::parallel_for("SerialApplyHouseholder", 1, KOKKOS_LAMBDA(int) {
+  Kokkos::parallel_for("SerialApplyHouseholder", policy, KOKKOS_LAMBDA(int) {
       KokkosBatched::SerialApplyHouseholder<KokkosBatched::Side::Left>::invoke(u, tau, vec, workspace);
-    });
+    });;
 
   Kokkos::deep_copy(vec_h, vec);
   Test::EXPECT_NEAR_KK_REL(vec_h(0), reflector_h(0), tol);
@@ -98,7 +99,8 @@ void test_Householder_analytic_cplx() {
   Kokkos::deep_copy(reflector, reflector_h);
 
   auto tau_h = Kokkos::create_mirror(tau);
-  Kokkos::parallel_for("SerialHouseholder", 1, KOKKOS_LAMBDA(int) {
+  Kokkos::RangePolicy<ExecutionSpace> policy(0, 1);
+  Kokkos::parallel_for("SerialHouseholder", policy, KOKKOS_LAMBDA(int) {
       SerialHouseholder<KokkosBatched::Side::Left>::invoke(reflector, tau);
     });
   Kokkos::deep_copy(reflector_h, reflector);
@@ -115,7 +117,7 @@ void test_Householder_analytic_cplx() {
 
   vec_type workspace("workspace", 1);
   auto v = Kokkos::subview(reflector, Kokkos::pair<int, int>(1, 4));
-  Kokkos::parallel_for("SerialHouseholder", 1, KOKKOS_LAMBDA(int) {
+  Kokkos::parallel_for("SerialHouseholder", policy, KOKKOS_LAMBDA(int) {
       SerialApplyHouseholder<KokkosBatched::Side::Left, Trans::Transpose>::invoke(v, tau, vec, workspace);
     });
 

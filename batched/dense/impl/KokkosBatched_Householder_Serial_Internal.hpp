@@ -47,10 +47,10 @@ struct SerialLeftHouseholderInternal {
     }
 
     /// compute magnitude of chi1, equal to norm2 of chi1
-    const mag_type norm_chi1 = KokkosKernels::ArithTraits<value_type>::abs(*chi1);
+    const mag_type norm_chi1 = KAT::abs(*chi1);
 
     /// compute 2 norm of x using norm_chi1 and norm_x2
-    const mag_type norm_x = KokkosKernels::ArithTraits<mag_type>::sqrt(norm_x2_square + norm_chi1 * norm_chi1);
+    const mag_type norm_x = KAT_mag::sqrt(norm_x2_square + norm_chi1 * norm_chi1);
 
     /// compute alpha
     const mag_type alpha = (Kokkos::real(*chi1) < zero ? one : minus_one) * norm_x;
