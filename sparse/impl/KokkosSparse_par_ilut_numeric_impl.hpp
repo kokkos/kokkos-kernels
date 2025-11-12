@@ -479,6 +479,15 @@ struct IlutWrap {
     Kokkos::realloc(Kokkos::WithoutInitializing, values_copy_d, size);
     Kokkos::deep_copy(values_copy_d, values);
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+    auto values_copy = Kokkos::create_mirror_view(values_copy_d);
+    Kokkos::deep_copy(values_copy, values_copy_d);
+    auto begin  = values_copy.data();
+    auto target = begin + rank;
+    auto end    = begin + size;
+    std::nth_element(begin, target, end, [](scalar_t a, scalar_t b) { return karith::abs(a) < karith::abs(b); });
+    return karith::abs(values_copy(rank));
+#else
     float_t result;
     Kokkos::sort(values_copy_d, AbsComparator{});
     Kokkos::parallel_reduce(
@@ -486,6 +495,7 @@ struct IlutWrap {
         result);
 
     return result;
+#endif
   }
 
   template <class IRowMapType, class IEntriesType, class IValuesType, class ORowMapType>
