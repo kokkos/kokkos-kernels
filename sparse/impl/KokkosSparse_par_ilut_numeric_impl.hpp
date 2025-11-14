@@ -472,8 +472,7 @@ struct IlutWrap {
    */
   template <class ValuesType, class ValuesCopyHostType, class ValuesCopyType>
   static float_t threshold_select(const ValuesType& values, const typename IlutHandle::nnz_lno_t rank,
-                                  ValuesCopyHostType& values_copy,
-                                  ValuesCopyType& values_copy_d) {
+                                  ValuesCopyHostType& values_copy, ValuesCopyType& values_copy_d) {
     const index_t size = values.extent(0);
 
     // Legacy views do not support sort, so we have to do it on host
@@ -490,16 +489,15 @@ struct IlutWrap {
       auto end    = begin + size;
       std::nth_element(begin, target, end, [](scalar_t a, scalar_t b) { return karith::abs(a) < karith::abs(b); });
       return karith::abs(values_copy(rank));
-    }
-    else {
+    } else {
       Kokkos::realloc(Kokkos::WithoutInitializing, values_copy_d, size);
       Kokkos::deep_copy(values_copy_d, values);
 
       float_t result;
       Kokkos::sort(values_copy_d, AbsComparator{});
       Kokkos::parallel_reduce(
-        range_policy(0, 1), KOKKOS_LAMBDA(const int, float_t& lsum) { lsum = karith::abs(values_copy_d(rank)); },
-        result);
+          range_policy(0, 1), KOKKOS_LAMBDA(const int, float_t& lsum) { lsum = karith::abs(values_copy_d(rank)); },
+          result);
 
       return result;
     }
