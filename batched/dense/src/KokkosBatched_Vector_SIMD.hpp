@@ -76,7 +76,20 @@ class Vector<SIMD<T>, l> {
 
   KOKKOS_INLINE_FUNCTION
   value_type &operator[](const int &i) const { return _data[i]; }
+
+  KOKKOS_INLINE_FUNCTION
+  type &operator=(const type &rhs) {
+    KOKKOSKERNELS_FORCE_SIMD
+    for (int i = 0; i < vector_length; ++i) _data[i] = rhs._data[i];
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION Vector(const type &b) {
+    KOKKOSKERNELS_FORCE_SIMD
+    for (int i = 0; i < vector_length; ++i) _data[i] = b[i];
+  }
 };
+
 }  // namespace KokkosBatched
 
 #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
@@ -137,6 +150,9 @@ class Vector<SIMD<float>, 2> {
     _data.y = val.y;
     return *this;
   }
+
+  KOKKOS_INLINE_FUNCTION
+  type &operator=(const type &) = default;
 
   KOKKOS_INLINE_FUNCTION
   float2 float2() const { return _data; }
@@ -226,6 +242,9 @@ class Vector<SIMD<double>, 2> {
     _data.y = val.y;
     return *this;
   }
+
+  KOKKOS_INLINE_FUNCTION
+  type &operator=(const type &) = default;
 
   KOKKOS_INLINE_FUNCTION
   double2 double2() const { return _data; }
@@ -329,6 +348,9 @@ class Vector<SIMD<float>, 4> {
     _data.w = val.w;
     return *this;
   }
+
+  KOKKOS_INLINE_FUNCTION
+  type &operator=(const type &) = default;
 
   KOKKOS_INLINE_FUNCTION
   float4 float4() const { return _data; }
@@ -446,6 +468,9 @@ class Vector<SIMD<double>, 4> {
   }
 
   KOKKOS_INLINE_FUNCTION
+  type &operator=(const type &) = default;
+
+  KOKKOS_INLINE_FUNCTION
   data_type double4() const { return _data; }
 
   KOKKOS_INLINE_FUNCTION
@@ -544,6 +569,8 @@ class Vector<SIMD<double>, 4> {
     return *this;
   }
 
+  inline type &operator=(const type &) = default;
+
   inline operator __m256d() const { return _data; }
 
   inline type &loadAligned(const value_type *p) {
@@ -619,6 +646,8 @@ class Vector<SIMD<Kokkos::complex<double> >, 2> {
     return *this;
   }
 
+  inline type &operator=(const type &) = default;
+
   inline operator __m256d() const { return _data; }
 
   inline type &loadAligned(const value_type *p) {
@@ -691,6 +720,8 @@ class Vector<SIMD<double>, 8> {
     return *this;
   }
 
+  inline type &operator=(const type &) = default;
+
   inline operator __m512d() const { return _data; }
 
   inline type &loadAligned(const value_type *p) {
@@ -759,6 +790,8 @@ class Vector<SIMD<Kokkos::complex<double> >, 4> {
     _data = val;
     return *this;
   }
+
+  inline type &operator=(const type &) = default;
 
   inline operator __m512d() const { return _data; }
 
