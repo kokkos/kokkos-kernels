@@ -15,9 +15,9 @@ namespace Impl {
 //
 
 #if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13)) && !defined(__NVCC__)
-#define NEED_TO_DEOPT 1
+#define KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE 1
 #else
-#define NEED_TO_DEOPT 0
+#define KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE 0
 #endif
 
 // Entry-wise reciprocalolute value / magnitude: R(i,j) = reciprocal(X(i,j)).
@@ -47,7 +47,7 @@ struct MV_Reciprocal_Functor {
 
   // disable vectorization in this function
   // work-around https://github.com/kokkos/kokkos-kernels/issues/2091
-#if NEED_TO_DEOPT
+#if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 #pragma GCC push_options
 #pragma GCC optimize("no-tree-vectorize")
 #endif
@@ -61,7 +61,7 @@ struct MV_Reciprocal_Functor {
     }
   }
 };
-#if NEED_TO_DEOPT
+#if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 #pragma GCC pop_options
 #endif
 
@@ -86,7 +86,7 @@ struct MV_ReciprocalSelf_Functor {
 
   // disable vectorization in this function
   // work-around https://github.com/kokkos/kokkos-kernels/issues/2091
-#if NEED_TO_DEOPT
+#if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 #pragma GCC push_options
 #pragma GCC optimize("no-tree-vectorize")
 #endif
@@ -100,7 +100,7 @@ struct MV_ReciprocalSelf_Functor {
     }
   }
 };
-#if NEED_TO_DEOPT
+#if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 #pragma GCC pop_options
 #endif
 
@@ -212,7 +212,7 @@ void V_Reciprocal_Generic(const execution_space& space, const RV& R, const XV& X
   }
 }
 
-#undef NEED_TO_DEOPT
+#undef KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 
 }  // namespace Impl
 }  // namespace KokkosBlas
