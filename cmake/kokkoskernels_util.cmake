@@ -20,22 +20,22 @@ macro(kokkoskernels_enable_warnings)
 
   # NVHPC compiler does not support -Wtype-limits.
   if (KOKKOS_ENABLE_OPENACC)
-    if (KOKKOS_CXX_COMPILER_ID STREQUAL NVHPC)
+    if (Kokkos_CXX_COMPILER_ID STREQUAL NVHPC)
       list(REMOVE_ITEM COMMON_WARNINGS "-Wtype-limits")
     endif()
   endif()
 
   # nvcc raises internal warnings about extra semicolons
-  if (KOKKOS_CXX_COMPILER_ID STREQUAL NVIDIA)
+  if (Kokkos_CXX_COMPILER_ID STREQUAL NVIDIA)
     list(REMOVE_ITEM COMMON_WARNINGS "-Wextra-semi")
   endif()
 
-  if (KOKKOS_CXX_COMPILER_ID STREQUAL Clang)
+  if (Kokkos_CXX_COMPILER_ID STREQUAL Clang)
     list(APPEND COMMON_WARNINGS "-Wimplicit-fallthrough")
   endif()
 
   set(GNU_WARNINGS "-Wempty-body" "-Wignored-qualifiers" ${COMMON_WARNINGS})
-  if (KOKKOS_CXX_COMPILER_ID STREQUAL GNU)
+  if (Kokkos_CXX_COMPILER_ID STREQUAL GNU)
     list(APPEND GNU_WARNINGS "-Wimplicit-fallthrough")
   endif()
 

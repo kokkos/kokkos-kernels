@@ -126,10 +126,6 @@ kokkoskernels_add_option(
 
 include(cmake/kokkoskernels_util.cmake)
 
-if (KokkosKernels_ENABLE_COMPILER_WARNINGS)
-  kokkoskernels_enable_warnings()
-endif()
-
 set(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL
   "Whether to build tests and examples against installation")
 if (KokkosKernels_INSTALL_TESTING)
@@ -174,6 +170,10 @@ else()
       endif()
     else()
       message(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 4.6.02 or greater (found ${Kokkos_VERSION})")
+    endif()
+
+    if (KokkosKernels_ENABLE_COMPILER_WARNINGS)
+      kokkoskernels_enable_warnings()
     endif()
   endif()
 
