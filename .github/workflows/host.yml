@@ -48,7 +48,7 @@ jobs:
 #            -DCMAKE_CXX_STANDARD=20 \
 #            -DBUILD_SHARED_LIBS=OFF \
 #            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-#            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+#            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
 #            ..
 #
 #      - name: build_and_install_kokkos
@@ -130,7 +130,7 @@ jobs:
 #            -DCMAKE_CXX_STANDARD=20 \
 #            -DBUILD_SHARED_LIBS=OFF \
 #            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-#            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+#            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
 #            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
 #            ..
 #
@@ -214,7 +214,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=17 \
             -DBUILD_SHARED_LIBS=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
       - name: build_and_install_kokkos
@@ -292,7 +292,7 @@ jobs:
             -DKokkos_ENABLE_TESTS=OFF \
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
       - name: build_and_install_kokkos
@@ -371,7 +371,7 @@ jobs:
             -DKokkos_ENABLE_TESTS=OFF \
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
             -DKokkos_ENABLE_ONEDPL=OFF
 
       - name: build_and_install_kokkos
