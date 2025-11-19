@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  kokkos_version: 4.7.01
+  kokkos_version: 5.0.0
 
 jobs:
   check-pr-labels:
@@ -79,7 +79,7 @@ jobs:
           -D Kokkos_ENABLE_COMPILER_WARNINGS=ON \
           -D Kokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
           -D Kokkos_ENABLE_TESTS=OFF \
-          -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF
+          -D Kokkos_ENABLE_DEPRECATED_CODE_5=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build

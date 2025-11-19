@@ -50,7 +50,7 @@ jobs:
             -D Kokkos_ENABLE_TESTS=OFF \
             -D Kokkos_ENABLE_EXAMPLES=OFF \
             -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF
+            -D Kokkos_ENABLE_DEPRECATED_CODE_5=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
@@ -121,8 +121,7 @@ jobs:
             -D Kokkos_ARCH_VEGA90A=ON \
             -D Kokkos_ENABLE_TESTS=OFF \
             -D Kokkos_ENABLE_EXAMPLES=OFF \
-            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -D Kokkos_ENABLE_DEPRECATED_CODE_5=OFF \
             -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
       - name: build_and_install_kokkos
