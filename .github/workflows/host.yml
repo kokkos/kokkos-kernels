@@ -205,12 +205,11 @@ jobs:
             -DCMAKE_VERBOSE_MAKEFILE=ON \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DCMAKE_CXX_STANDARD=20 \
-            -DKokkos_ENABLE_SERIAL=ON \
+            -DKokkos_ENABLE_SERIAL=OFF \
             -DKokkos_ENABLE_OPENMP=ON \
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_TESTS=OFF \
             -DKokkos_ENABLE_EXAMPLES=OFF \
-            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
             -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
@@ -241,7 +240,7 @@ jobs:
             -DKokkosKernels_INST_DOUBLE=ON \
             -DKokkosKernels_INST_ORDINAL_INT=ON \
             -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
-            -DKokkosKernels_INST_OFFSET_INT=ON \
+            -DKokkosKernels_INST_OFFSET_INT=OFF \
             -DKokkosKernels_INST_LAYOUTLEFT=ON \
             -DKokkosKernels_TEST_ETI_ONLY=OFF \
             -DKokkosKernels_ENABLE_TPL_BLAS=ON \
