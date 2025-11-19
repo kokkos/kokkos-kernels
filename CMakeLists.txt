@@ -124,7 +124,7 @@ kokkoskernels_add_option(
   "Whether warnings should be treated as errors. Default: OFF"
 )
 
-include(cmake/kokkoskernels_util.cmake)
+include(cmake/kokkoskernels_warnings.cmake)
 
 set(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL
   "Whether to build tests and examples against installation")

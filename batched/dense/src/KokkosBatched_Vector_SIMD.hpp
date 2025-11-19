@@ -44,13 +44,22 @@ class Vector<SIMD<T>, l> {
     KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = 0;
   }
+
+  KOKKOS_INLINE_FUNCTION ~Vector() = default;
+
   template <typename ArgValueType>
   KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
     KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = val;
   }
+
   template <typename ArgValueType>
   KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
+    KOKKOSKERNELS_FORCE_SIMD
+    for (int i = 0; i < vector_length; ++i) _data[i] = b[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION Vector(const type &b) {
     KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = b[i];
   }
@@ -77,16 +86,19 @@ class Vector<SIMD<T>, l> {
   KOKKOS_INLINE_FUNCTION
   value_type &operator[](const int &i) const { return _data[i]; }
 
+  template <typename ArgValueType>
   KOKKOS_INLINE_FUNCTION
-  type &operator=(const type &rhs) {
+  type &operator=(const Vector<SIMD<ArgValueType>, vector_length> &rhs) {
     KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = rhs._data[i];
     return *this;
   }
 
-  KOKKOS_INLINE_FUNCTION Vector(const type &b) {
+  KOKKOS_INLINE_FUNCTION
+  type &operator=(const type &rhs) {
     KOKKOSKERNELS_FORCE_SIMD
-    for (int i = 0; i < vector_length; ++i) _data[i] = b[i];
+    for (int i = 0; i < vector_length; ++i) _data[i] = rhs._data[i];
+    return *this;
   }
 };
 
