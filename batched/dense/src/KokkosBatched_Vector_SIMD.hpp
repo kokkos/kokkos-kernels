@@ -87,8 +87,7 @@ class Vector<SIMD<T>, l> {
   value_type &operator[](const int &i) const { return _data[i]; }
 
   template <typename ArgValueType>
-  KOKKOS_INLINE_FUNCTION
-  type &operator=(const Vector<SIMD<ArgValueType>, vector_length> &rhs) {
+  KOKKOS_INLINE_FUNCTION type &operator=(const Vector<SIMD<ArgValueType>, vector_length> &rhs) {
     KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = rhs._data[i];
     return *this;
