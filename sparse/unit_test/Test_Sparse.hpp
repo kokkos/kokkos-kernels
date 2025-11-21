@@ -20,6 +20,7 @@
 #include "Test_Sparse_SortCrs.hpp"
 #include "Test_Sparse_spiluk.hpp"
 #include "Test_Sparse_spmv.hpp"
+#include "Test_Sparse_spmv_sell.hpp"
 #include "Test_Sparse_sptrsv.hpp"
 #include "Test_Sparse_trsv.hpp"
 #include "Test_Sparse_par_ilut.hpp"

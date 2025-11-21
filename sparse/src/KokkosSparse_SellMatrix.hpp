@@ -167,6 +167,9 @@ struct is_sell_matrix<const SellMatrix<P...>> : public std::true_type {};
 template <typename T>
 inline constexpr bool is_sell_matrix_v = is_sell_matrix<T>::value;
 
+template<class T>
+concept SellFormat = is_sell_matrix_v<T> == true;
+
 }  // namespace Experimental
 }  // namespace KokkosSparse
 #endif  // KOKKOSSPARSE_SELLMATRIX_HPP_

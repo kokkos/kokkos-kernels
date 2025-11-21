@@ -16,6 +16,7 @@
 #include <type_traits>
 #include "KokkosSparse_BsrMatrix.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_SellMatrix.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_Error.hpp"
@@ -466,7 +467,38 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A, const XVe
   spmv(typename AMatrix::execution_space(), &handle, mode, alpha, A, x, beta, y);
 }
 
+
 namespace Experimental {
+
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+void spmv(const ExecutionSpace& space, const char[] /*mode*/, const AlphaType& alpha, const AMatrix& A, const XVector& x,
+	  const BetaType& beta, const YVector& y) requires SellFormat<AMatrix> {
+  using ordinal_type = typename AMatrix::ordinal_type;
+  using y_value_type = typename YVector::value_type;
+
+  const ordinal_type row_length = A.sell_nnz / A.num_rows;
+  Kokkos::parallel_for("KokkosSparse::spmv SellMatrix",
+		       Kokkos::RangePolicy<ExecutionSpace, ordinal_type>(space, 0, A.num_rows),
+		       KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+			 y_value_type sum  = KokkosKernels::ArithTraits<y_value_type>::zero();
+			 ordinal_type entryIdx, colIdx = 0;
+			 for(ordinal_type idx = 0; idx < row_length; ++idx) {
+			   entryIdx = rowIdx + idx * A.num_rows_per_slice;
+			   if(A.entries(entryIdx) > -1) {
+			     colIdx = A.entries(entryIdx);
+			   }
+			   sum += A.values(entryIdx) * x(colIdx);
+			 }
+			 y(rowIdx) = beta * y(rowIdx) + alpha * sum;
+		       });
+}
+  
+template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A, const XVector& x, const BetaType& beta,
+          const YVector& y) requires KokkosSparse::Experimental::SellFormat<AMatrix> {
+  spmv(typename AMatrix::execution_space(), mode, alpha, A, x, beta, y);
+}
+
 
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void spmv_struct(const ExecutionSpace& space, const char mode[], const int stencil_type,
@@ -797,7 +829,7 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType, class Y
 void spmv_struct(const char mode[], const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& structure,
                  const AlphaType& alpha, const AMatrix& A, const XVector& x, const BetaType& beta, const YVector& y) {
-  typedef typename std::conditional<XVector::rank == 2, RANK_TWO, RANK_ONE>::type RANK_SPECIALISE;
+  using RANK_SPECIALISE = typename std::conditional<XVector::rank() == 2, RANK_TWO, RANK_ONE>::type;
   spmv_struct(mode, stencil_type, structure, alpha, A, x, beta, y, RANK_SPECIALISE());
 }
 
@@ -829,7 +861,7 @@ template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector, c
 void spmv_struct(const ExecutionSpace& space, const char mode[], const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& structure,
                  const AlphaType& alpha, const AMatrix& A, const XVector& x, const BetaType& beta, const YVector& y) {
-  typedef typename std::conditional<XVector::rank == 2, RANK_TWO, RANK_ONE>::type RANK_SPECIALISE;
+  using RANK_SPECIALISE = typename std::conditional<XVector::rank() == 2, RANK_TWO, RANK_ONE>::type;
   spmv_struct(space, mode, stencil_type, structure, alpha, A, x, beta, y, RANK_SPECIALISE());
 }
 
