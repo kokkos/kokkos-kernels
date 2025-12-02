@@ -13,13 +13,13 @@ list(APPEND SOURCES sparse/tpls/KokkosKernels_tpl_handles.cpp)
 #                #
 ##################
 
-macro(gen_sparse_eti FUNC_NAME SUBDIR)
+function(gen_sparse_eti FUNC_NAME SUBDIR)
   kokkoskernels_generate_eti(${FUNC_NAME} ${SUBDIR}
     COMPONENTS  sparse
     HEADER_LIST ETI_HEADERS
     SOURCE_LIST SOURCES
     TYPE_LISTS  FLOATS ORDINALS OFFSETS LAYOUTS DEVICES)
-endmacro(gen_sparse_eti)
+endfunction(gen_sparse_eti)
 
 #Build up a list of DECL, AVAIL, and INST macros
 #that should be instantiated based on input options
@@ -33,7 +33,11 @@ gen_sparse_eti(Sparse_spmv               spmv)
 gen_sparse_eti(Sparse_spmv_mv            spmv)
 gen_sparse_eti(Sparse_spgemm_symbolic    spgemm_symbolic)
 gen_sparse_eti(Sparse_spgemm_numeric     spgemm_numeric)
-gen_sparse_eti(Sparse_spgemm_noreuse     spgemm_noreuse)
+kokkoskernels_generate_eti(Sparse_spgemm_noreuse spgemm_noreuse
+  COMPONENTS  sparse
+  HEADER_LIST ETI_HEADERS
+  SOURCE_LIST SOURCES
+  TYPE_LISTS  FLOATS ORDINALS OFFSETS DEVICES) # do not do LAYOUTS for spgemm_noreuse
 gen_sparse_eti(Sparse_bspgemm_numeric    bspgemm_numeric)
 gen_sparse_eti(Sparse_spgemm_jacobi      spgemm_jacobi)
 # NOTE: SpAdd symbolic doesn't use scalars directly,
