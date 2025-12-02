@@ -89,8 +89,6 @@ gen_blas_eti(Blas1_reciprocal     reciprocal)
 gen_blas_eti(Blas1_reciprocal_mv  reciprocal)
 gen_blas_eti(Blas1_rot            rot)
 gen_blas_eti(Blas1_rotg           rotg)
-gen_blas_eti(Blas1_rotm           rotm)
-gen_blas_eti(Blas1_rotmg          rotmg)
 gen_blas_eti(Blas1_swap           swap)
 gen_blas_eti(Blas2_gemv           gemv)
 gen_blas_eti(Blas2_ger            ger)
@@ -99,3 +97,19 @@ gen_blas_eti(Blas2_syr2           syr2)
 gen_blas_eti(Blas3_gemm           gemm)
 gen_blas_eti(Blas3_trsm           trsm)
 gen_blas_eti(Blas3_trmm           trmm)
+
+# These last two do REAL_FLOATS
+
+kokkoskernels_generate_eti(Blas1_rotm rotm
+  COMPONENTS  blas
+  HEADER_LIST ETI_HEADERS
+  SOURCE_LIST SOURCES
+  TYPE_LISTS  REAL_FLOATS LAYOUTS DEVICES
+)
+
+kokkoskernels_generate_eti(Blas1_rotmg rotmg
+  COMPONENTS  blas
+  HEADER_LIST ETI_HEADERS
+  SOURCE_LIST SOURCES
+  TYPE_LISTS  REAL_FLOATS LAYOUTS DEVICES
+)
