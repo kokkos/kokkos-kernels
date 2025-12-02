@@ -368,7 +368,7 @@ macro(kokkoskernels_import_tpl NAME)
       kokkoskernels_export_imported_tpl(${NAME} IMPORTED_NAME ${TPL_${NAME}_IMPORTED_NAME})
     endif()
   endif()
-endmacro(kokkoskernels_import_tpl)
+endmacro()
 
 function(kokkoskernels_link_tpl TARGET)
   cmake_parse_arguments(TPL "PUBLIC;PRIVATE;INTERFACE" "IMPORTED_NAME" "" ${ARGN})

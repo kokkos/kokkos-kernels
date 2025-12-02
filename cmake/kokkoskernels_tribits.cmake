@@ -35,7 +35,7 @@ macro(kokkoskernels_package_postprocess)
       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels
       NAMESPACE Kokkos::)
   endif()
-endmacro(kokkoskernels_package_postprocess)
+endmacro()
 
 macro(kokkoskernels_subpackage NAME)
   if(KOKKOSKERNELS_HAS_TRILINOS)
@@ -47,19 +47,19 @@ macro(kokkoskernels_subpackage NAME)
     string(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UC)
     set(${PACKAGE_NAME}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
   endif()
-endmacro(kokkoskernels_subpackage)
+endmacro()
 
 macro(kokkoskernels_subpackage_postprocess)
   if(KOKKOSKERNELS_HAS_TRILINOS)
     tribits_subpackage_postprocess()
   endif()
-endmacro(kokkoskernels_subpackage_postprocess)
+endmacro()
 
 macro(kokkoskernels_process_subpackages)
   if(kokkoskernels_has_trilinos)
     tribits_process_subpackages()
   endif()
-endmacro(kokkoskernels_process_subpackages)
+endmacro()
 
 macro(kokkoskernels_package)
   if(KOKKOSKERNELS_HAS_TRILINOS)
@@ -70,7 +70,7 @@ macro(kokkoskernels_package)
     string(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UC)
     set(${PACKAGE_NAME}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
   endif()
-endmacro(kokkoskernels_package)
+endmacro()
 
 function(kokkoskernels_internal_add_library LIBRARY_NAME)
   cmake_parse_arguments(PARSE "STATIC;SHARED" "" "HEADERS;SOURCES" ${ARGN})
@@ -103,7 +103,7 @@ function(kokkoskernels_internal_add_library LIBRARY_NAME)
   install(FILES ${PARSE_HEADERS}
           DESTINATION ${KOKKOSKERNELS_HEADER_INSTALL_DIR})
 
-endfunction(kokkoskernels_internal_add_library LIBRARY_NAME)
+endfunction()
 
 function(kokkoskernels_add_library LIBRARY_NAME)
   if(KOKKOSKERNELS_HAS_TRILINOS)
@@ -150,7 +150,7 @@ function(kokkoskernels_add_unit_test ROOT_NAME)
   kokkoskernels_add_executable_and_test(${ROOT_NAME} TESTONLYLIBS kokkoskernels_gtest ${ARGN})
 endfunction()
 
-function(KOKKOSKERNELS_IS_ENABLED)
+function(kokkoskernels_is_enabled)
   cmake_parse_arguments(PARSE "" "OUTPUT_VARIABLE" "COMPONENTS" ${ARGN})
 
   if(KOKKOSKERNELS_ENABLED_COMPONENTS STREQUAL "ALL")

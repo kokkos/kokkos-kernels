@@ -1,13 +1,13 @@
 # Kokkos only defines the variables if the backends are ON
 # Define aux variables that exist as on/off
-macro(CHECK_KOKKOS_BACKEND BE)
+macro(check_kokkos_backend BE)
   if(Kokkos_ENABLE_${BE})
     set(KOKKOS_ENABLE_${BE} ON)
   else()
     set(KOKKOS_ENABLE_${BE} OFF)
   endif()
   set(KOKKOSKERNELS_INST_EXECSPACE_${BE}_DEFAULT ${KOKKOS_ENABLE_${BE}})
-endmacro(CHECK_KOKKOS_BACKEND)
+endmacro()
 
 check_kokkos_backend(SERIAL)
 check_kokkos_backend(THREADS)

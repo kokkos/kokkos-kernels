@@ -20,7 +20,7 @@ else()
 endif()
 
 # From Trilinos/cmake/TPLs/FindTPLSuperLU.cmake
-function(CHECK_SUPERLU_GLOBALLU_T_ARG VARNAME)
+function(check_superlu_globallu_t_arg VARNAME)
   set(SOURCE
       "
 #include <slu_ddefs.h>

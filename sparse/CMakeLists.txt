@@ -13,13 +13,13 @@ list(APPEND SOURCES sparse/tpls/KokkosKernels_tpl_handles.cpp)
 #                #
 ##################
 
-function(gen_sparse_eti FUNC_NAME SUBDIR)
+macro(gen_sparse_eti FUNC_NAME SUBDIR)
   kokkoskernels_generate_eti(${FUNC_NAME} ${SUBDIR}
     COMPONENTS  sparse
     HEADER_LIST ETI_HEADERS
     SOURCE_LIST SOURCES
     TYPE_LISTS  FLOATS ORDINALS OFFSETS LAYOUTS DEVICES)
-endfunction(gen_sparse_eti)
+endmacro()
 
 #Build up a list of DECL, AVAIL, and INST macros
 #that should be instantiated based on input options

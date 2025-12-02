@@ -59,7 +59,7 @@ macro(gen_blas_eti FUNC_NAME SUBDIR)
     HEADER_LIST ETI_HEADERS
     SOURCE_LIST SOURCES
     TYPE_LISTS  FLOATS LAYOUTS DEVICES)
-endmacro(gen_blas_eti)
+endmacro()
 
 gen_blas_eti(Blas1_abs            abs)
 gen_blas_eti(Blas1_abs_mv         abs)

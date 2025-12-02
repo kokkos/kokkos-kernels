@@ -46,7 +46,7 @@ else()
   target_compile_options(benchmark_main PRIVATE -w)
 endif()
 
-function(KOKKOSKERNELS_ADD_BENCHMARK NAME)
+function(kokkoskernels_add_benchmark NAME)
   cmake_parse_arguments(BENCHMARK "" "" "SOURCES" ${ARGN})
 
   if(DEFINED BENCHMARK_UNPARSED_ARGUMENTS)

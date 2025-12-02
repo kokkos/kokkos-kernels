@@ -1,6 +1,6 @@
 include(CheckCXXSourceRuns)
 
-function(CHECK_HOST_BLAS_RETURN_COMPLEX VARNAME)
+function(check_host_blas_return_complex VARNAME)
 
   if(KOKKOSKERNELS_HAS_TRILINOS)
     set(CMAKE_REQUIRED_LIBRARIES ${TPL_BLAS_LIBRARIES})

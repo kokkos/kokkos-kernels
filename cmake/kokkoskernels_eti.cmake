@@ -115,9 +115,9 @@ function(kokkoskernels_eti_make_list ETI_LIST_NAME)
     endif()
   endforeach()
   set(${ETI_LIST_NAME} ${${ETI_LIST_NAME}} PARENT_SCOPE)
-endfunction(kokkoskernels_eti_make_list)
+endfunction()
 
-function(kokkoskernels_generate_eti FUNCTION_NAME SUBFOLDER)
+macro(kokkoskernels_generate_eti FUNCTION_NAME SUBFOLDER)
   cmake_parse_arguments(ETI "" "HEADER_LIST;SOURCE_LIST" "TYPE_LISTS;COMPONENTS" ${ARGN})
 
   string(TOUPPER "${FUNCTION_NAME}" UPPER_NAME)
@@ -171,4 +171,4 @@ function(kokkoskernels_generate_eti FUNCTION_NAME SUBFOLDER)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${DECL_TEMPLATE} ${CMAKE_CURRENT_BINARY_DIR}/${DECL_HEADER})
 
   list(APPEND ${ETI_HEADER_LIST} ${CMAKE_CURRENT_BINARY_DIR}/${DECL_HEADER})
-endfunction(kokkoskernels_generate_eti)
+endmacro()
