@@ -28,18 +28,19 @@ endif()
 # `batched` is not created (see Trilinos PR #11966).
 
 macro(gen_batched_eti FUNC_NAME)
-  kokkoskernels_generate_eti(${FUNC_NAME} Gemm
+  kokkoskernels_generate_eti("${FUNC_NAME}_bll" Gemm
+    COMPONENTS  batched
+    HEADER_LIST ETI_HEADERS
+    SOURCE_LIST SOURCES
+    TYPE_LISTS  FLOATS LEFT_LAYOUTS DEVICES)
+  kokkoskernels_generate_eti("${FUNC_NAME}_blr" Gemm
     COMPONENTS  batched
     HEADER_LIST ETI_HEADERS
     SOURCE_LIST SOURCES
     TYPE_LISTS  FLOATS RIGHT_LAYOUTS DEVICES)
 endmacro(gen_batched_eti)
 
-gen_batched_eti(Batched_Gemm_nt_nt_bll)
-gen_batched_eti(Batched_Gemm_nt_t_bll)
-gen_batched_eti(Batched_Gemm_t_nt_bll)
-gen_batched_eti(Batched_Gemm_t_t_bll)
-gen_batched_eti(Batched_Gemm_nt_nt_blr)
-gen_batched_eti(Batched_Gemm_nt_t_blr)
-gen_batched_eti(Batched_Gemm_t_nt_blr)
-gen_batched_eti(Batched_Gemm_t_t_blr)
+gen_batched_eti(Batched_Gemm_nt_nt)
+gen_batched_eti(Batched_Gemm_nt_t)
+gen_batched_eti(Batched_Gemm_t_nt)
+gen_batched_eti(Batched_Gemm_t_t)
