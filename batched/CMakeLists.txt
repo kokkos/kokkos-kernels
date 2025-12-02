@@ -27,18 +27,18 @@ endif()
 # are listed in the `INTERFACE_INCLUDE_DIRECTORIES` property when the build
 # `batched` is not created (see Trilinos PR #11966).
 
-macro(gen_batched_eti FUNC_NAME)
+function(gen_batched_eti FUNC_NAME)
   kokkoskernels_generate_eti("${FUNC_NAME}_bll" Gemm
     COMPONENTS  batched
     HEADER_LIST ETI_HEADERS
     SOURCE_LIST SOURCES
-    TYPE_LISTS  FLOATS LEFT_LAYOUTS DEVICES)
+    TYPE_LISTS  FLOATS RIGHT_LAYOUTS DEVICES)
   kokkoskernels_generate_eti("${FUNC_NAME}_blr" Gemm
     COMPONENTS  batched
     HEADER_LIST ETI_HEADERS
     SOURCE_LIST SOURCES
-    TYPE_LISTS  FLOATS RIGHT_LAYOUTS DEVICES)
-endmacro(gen_batched_eti)
+    TYPE_LISTS  FLOATS LEFT_LAYOUTS DEVICES)
+endfunction(gen_batched_eti)
 
 gen_batched_eti(Batched_Gemm_nt_nt)
 gen_batched_eti(Batched_Gemm_nt_t)
