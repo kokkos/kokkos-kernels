@@ -59,6 +59,10 @@ pygments_dark_style = "monokai"
 #
 html_theme = 'furo'
 
+html_theme_options = {
+   "announcement": "Upcoming Event: KUG returns to Chicago March 19-20, 2026. <a href='https://kokkos.org/blog/kug-2026-call-for-submissions/#call-for-submissions'>Submit to speak now!</a>",
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
