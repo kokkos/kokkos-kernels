@@ -38,7 +38,7 @@ jobs:
         egress-policy: audit
 
     - name: checkout_kokkos_kernels
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         path: kokkos-kernels
 
@@ -52,7 +52,7 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
 
     - name: checkout_kokkos
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         repository: 'kokkos/kokkos'
         path: 'kokkos'
