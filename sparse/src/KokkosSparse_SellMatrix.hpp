@@ -45,13 +45,13 @@ class SellMatrix {
   //! Type of the matrix's memory space.
   using memory_space = typename Device::memory_space;
   //! Canonical device type
-  using device_type = Kokkos::Device<execution_space, memory_space>;
+  using device_type   = Kokkos::Device<execution_space, memory_space>;
   using memory_traits = MemoryTraits;
 
   //! Type of each value in the matrix.
   using value_type = ScalarType;
   //! Type of each (column) index in the matrix.
-  using ordinal_type  = OrdinalType;
+  using ordinal_type = OrdinalType;
   //! Type of the offsets used in the track the start and end of each slice.
   using size_type = SizeType;
 
