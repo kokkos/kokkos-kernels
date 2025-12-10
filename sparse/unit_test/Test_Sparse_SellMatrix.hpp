@@ -99,25 +99,30 @@ void SellConstructor() {
 
   // Number of rows larger than rows_per_slice
   // This one should be removed once we support multiple slices
-  EXPECT_THROW({
-      SellMatrixType A_bad_nrows(nrows + 1, ncols, nnz, sell_nnz, rows_per_slice, slice_offsets, colinds, values);
-    }, std::invalid_argument);
+  EXPECT_THROW(
+      { SellMatrixType A_bad_nrows(nrows + 1, ncols, nnz, sell_nnz, rows_per_slice, slice_offsets, colinds, values); },
+      std::invalid_argument);
 
   // Mismatch between slice_offsets.extent(0) and number of slices
-  EXPECT_THROW({
-      offsets_type bad_slice_offsets("slice offsets", nslices + 2);
-      SellMatrixType A_bad_nrows(nrows, ncols, nnz, sell_nnz, rows_per_slice, bad_slice_offsets, colinds, values);
-    }, std::invalid_argument);
+  EXPECT_THROW(
+      {
+        offsets_type bad_slice_offsets("slice offsets", nslices + 2);
+        SellMatrixType A_bad_nrows(nrows, ncols, nnz, sell_nnz, rows_per_slice, bad_slice_offsets, colinds, values);
+      },
+      std::invalid_argument);
 
   // nnz is larger than sell_nnz
-  EXPECT_THROW({
-      SellMatrixType A_bad_nrows(nrows, ncols, nnz + sell_nnz + 1, sell_nnz, rows_per_slice, slice_offsets, colinds, values);
-    }, std::invalid_argument);
+  EXPECT_THROW(
+      {
+        SellMatrixType A_bad_nrows(nrows, ncols, nnz + sell_nnz + 1, sell_nnz, rows_per_slice, slice_offsets, colinds,
+                                   values);
+      },
+      std::invalid_argument);
 
   // Mismatch between sell_nnz and size of colinds and values
-  EXPECT_THROW({
-      SellMatrixType A_bad_nrows(nrows, ncols, nnz, sell_nnz - 1, rows_per_slice, slice_offsets, colinds, values);
-    }, std::invalid_argument);
+  EXPECT_THROW(
+      { SellMatrixType A_bad_nrows(nrows, ncols, nnz, sell_nnz - 1, rows_per_slice, slice_offsets, colinds, values); },
+      std::invalid_argument);
 }
 }  // namespace Test
 
