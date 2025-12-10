@@ -46,28 +46,33 @@ class SellMatrix {
   using memory_space = typename Device::memory_space;
   //! Canonical device type
   using device_type = Kokkos::Device<execution_space, memory_space>;
+  using memory_traits = MemoryTraits;
 
   //! Type of each value in the matrix.
   using value_type = ScalarType;
   //! Type of each (column) index in the matrix.
   using ordinal_type  = OrdinalType;
-  using memory_traits = MemoryTraits;
-  /// \brief Type of each entry of the "row map."
-  ///
-  /// The "row map" corresponds to the \c ptr array of row offsets in
-  /// compressed sparse row (CSR) storage.
+  //! Type of the offsets used in the track the start and end of each slice.
   using size_type = SizeType;
 
   //! Type of the view containing the offset to each slice of the matrix.
   using offsets_type = Kokkos::View<size_type*, Kokkos::LayoutRight, device_type, MemoryTraits>;
+  //! Const version of the type of the offsets_type in the sparse matrix.
+  using const_offsets_type = typename offsets_type::const_value_type;
+  //! Nonconst version of the type of the entries in the sparse matrix.
+  using non_const_offsets_type = typename offsets_type::non_const_value_type;
   //! Type of the view containing the column indices of the matrix entries.
   using entries_type = Kokkos::View<ordinal_type*, Kokkos::LayoutRight, device_type, MemoryTraits>;
+  //! Const version of the type of the column indices in the sparse matrix.
+  using const_entries_type = typename entries_type::const_value_type;
+  //! Nonconst version of the type of the column indices in the sparse matrix.
+  using non_const_entries_type = typename entries_type::non_const_value_type;
   //! Type of the view containing the values of the matrix entries.
   using values_type = Kokkos::View<value_type*, Kokkos::LayoutRight, device_type, MemoryTraits>;
   //! Const version of the type of the entries in the sparse matrix.
-  using const_value_type = typename values_type::const_value_type;
+  using const_values_type = typename values_type::const_value_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
-  using non_const_value_type = typename values_type::non_const_value_type;
+  using non_const_values_type = typename values_type::non_const_value_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
   using host_mirror_type = SellMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType>;
