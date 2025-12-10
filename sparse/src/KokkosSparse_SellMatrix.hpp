@@ -58,21 +58,21 @@ class SellMatrix {
   //! Type of the view containing the offset to each slice of the matrix.
   using offsets_type = Kokkos::View<size_type*, Kokkos::LayoutRight, device_type, MemoryTraits>;
   //! Const version of the type of the offsets_type in the sparse matrix.
-  using const_offsets_type = typename offsets_type::const_value_type;
+  using const_offset_type = typename offsets_type::const_value_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
-  using non_const_offsets_type = typename offsets_type::non_const_value_type;
+  using non_const_offset_type = typename offsets_type::non_const_value_type;
   //! Type of the view containing the column indices of the matrix entries.
   using entries_type = Kokkos::View<ordinal_type*, Kokkos::LayoutRight, device_type, MemoryTraits>;
   //! Const version of the type of the column indices in the sparse matrix.
-  using const_entries_type = typename entries_type::const_value_type;
+  using const_entry_type = typename entries_type::const_value_type;
   //! Nonconst version of the type of the column indices in the sparse matrix.
-  using non_const_entries_type = typename entries_type::non_const_value_type;
+  using non_const_entry_type = typename entries_type::non_const_value_type;
   //! Type of the view containing the values of the matrix entries.
   using values_type = Kokkos::View<value_type*, Kokkos::LayoutRight, device_type, MemoryTraits>;
   //! Const version of the type of the entries in the sparse matrix.
-  using const_values_type = typename values_type::const_value_type;
+  using const_value_type = typename values_type::const_value_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
-  using non_const_values_type = typename values_type::non_const_value_type;
+  using non_const_value_type = typename values_type::non_const_value_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
   using host_mirror_type = SellMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType>;
