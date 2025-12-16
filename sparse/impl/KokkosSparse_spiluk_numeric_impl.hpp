@@ -432,7 +432,7 @@ struct IlukWrap {
       typename Base::SBlock shared_buff(team.team_shmem(), bs, bs);
 
       const size_type my_team = static_cast<size_type>(team.league_rank());
-      const auto rowid        = Base::level_idx(my_team + Base::lev_start);  // map to rowid
+      const size_type rowid   = static_cast<size_type>(Base::level_idx(my_team + Base::lev_start));  // map to rowid
 
       // Set active entries in L to zero, store active cols in iw
       // Set L diagonal for this row to identity
