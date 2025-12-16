@@ -599,7 +599,7 @@ struct IlukWrap {
           lvl_rowid_start += lvl_nrows_chunk;
         }
       }  // end if
-    }  // end for lvl
+    }    // end for lvl
 
 // Output check
 #ifdef NUMERIC_OUTPUT_INFO
@@ -739,11 +739,11 @@ struct IlukWrap {
               // 1.c. Ready to move to next chunk
               lvl_rowid_start_v[i] += lvl_nrows_chunk;
             }  // end if (chunkid < lvl_nchunks_h_v[i](lvl))
-          }  // end if (stream_have_level_v[i])
-        }  // end for streams
-      }  // end for chunkid
-    }  // end for lvl
-  }  // end iluk_numeric_streams
+          }    // end if (stream_have_level_v[i])
+        }      // end for streams
+      }        // end for chunkid
+    }          // end for lvl
+  }            // end iluk_numeric_streams
 
 };  // IlukWrap
 
