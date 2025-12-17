@@ -9,7 +9,7 @@
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-/* 
+/*
    Version 11702 corresponds to CUDA 11.6.1, which produces incorrect
    results. 11701 (CUDA 11.6.0) is OK.
 */
