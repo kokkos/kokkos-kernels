@@ -45,10 +45,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
       !KokkosKernels::ArithTraits<value_type>::isComplex)
     myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;
 
-// Hopefully this corresponds to CUDA reelase 10.1, which is the first to
-// include the "generic" API
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
-
   using entry_type = typename AMatrix::non_const_ordinal_type;
 
   cudaDataType myCudaDataType;
@@ -78,19 +74,11 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   // matrices. After 11.2.1, the default is performant for imbalanced matrices,
   // and ALG2 now means something else. CUDA >= 11.2.1 corresponds to
   // CUSPARSE_VERSION >= 11402.
-#if CUSPARSE_VERSION >= 11402
   const bool useAlg2 = false;
-#else
-  const bool useAlg2     = handle->get_algorithm() == SPMV_MERGE_PATH;
-#endif
 
   // In CUDA 11.2.0, the algorithm enums were renamed.
   // This corresponds to CUSPARSE_VERSION >= 11400.
-#if CUSPARSE_VERSION >= 11400
   cusparseSpMVAlg_t algo = useAlg2 ? CUSPARSE_SPMV_CSR_ALG2 : CUSPARSE_SPMV_ALG_DEFAULT;
-#else
-  cusparseSpMVAlg_t algo = useAlg2 ? CUSPARSE_CSRMV_ALG2 : CUSPARSE_MV_ALG_DEFAULT;
-#endif
 
   KokkosSparse::Impl::CuSparse10_SpMV_Data* subhandle;
 
@@ -126,8 +114,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
 
   KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
   KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
-
-#elif (9000 <= CUDA_VERSION)
 
   KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
 
@@ -181,7 +167,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
         "Trying to call cusparse SpMV with a scalar type not float/double, "
         "nor complex of either!");
   }
-#endif  // CUDA_VERSION
 }
 
 #define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE)                                          \
@@ -212,7 +197,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
     }                                                                                                               \
   };
 
-#if (9000 <= CUDA_VERSION)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int, int, Kokkos::LayoutLeft, Kokkos::CudaSpace)
@@ -229,8 +213,6 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::CudaSpace)
@@ -247,8 +229,6 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::Lay
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif  // defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
-#endif  // 9000 <= CUDA_VERSION
 
 #undef KOKKOSSPARSE_SPMV_CUSPARSE
 
