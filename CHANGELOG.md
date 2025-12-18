@@ -1,5 +1,12 @@
 # Change Log
 
+## [5.0.1](https://github.com/kokkos/kokkos-kernels/tree/5.0.1)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.0.0...5.0.1)
+
+### Bug Fixes:
+- SPILUK symbolic and numeric update, fix overflow issue [\#2887](https://github.com/kokkos/kokkos-kernels/pull/2887)
+- Fix SYCL issues with MKL on Aurora [\#2865](https://github.com/kokkos/kokkos-kernels/pull/2865)
+
 ## [5.0.0](https://github.com/kokkos/kokkos-kernels/tree/5.0.0)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.01...5.0.0)
 
