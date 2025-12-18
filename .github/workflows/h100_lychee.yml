@@ -20,9 +20,9 @@ on:
         type: string
 
 jobs:
-  PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL:
-    name: PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL
-    runs-on: [lychee-kk-env-cuda-11.8.0-gcc-11.3.0-latest]
+  PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_REL:
+    name: PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_REL
+    runs-on: [lychee-cuda-12.6.2-openblas-0.3.28]
     
     steps:
       - name: nvidia-smi
@@ -32,12 +32,12 @@ jobs:
         run: echo $CUDA_VISIBLE_DEVICES
 
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: kokkos/kokkos
           ref: ${{ inputs.kokkos_version }}
@@ -56,7 +56,7 @@ jobs:
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DBUILD_SHARED_LIBS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
@@ -89,9 +89,9 @@ jobs:
         working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
 
-  PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_TPLS_REL:
-    name: PR_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_TPLS_REL
-    runs-on: [lychee-kk-env-cuda-11.8.0-gcc-11.3.0-latest]
+  PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_TPLS_REL:
+    name: PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_TPLS_REL
+    runs-on: [lychee-cuda-12.6.2-openblas-0.3.28]
     
     steps:
       - name: nvidia-smi
@@ -101,12 +101,12 @@ jobs:
         run: echo $CUDA_VISIBLE_DEVICES
 
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: kokkos/kokkos
           ref: ${{ inputs.kokkos_version }}
@@ -125,7 +125,7 @@ jobs:
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DBUILD_SHARED_LIBS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
@@ -169,12 +169,12 @@ jobs:
         run: echo $CUDA_VISIBLE_DEVICES
 
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: kokkos/kokkos
           ref: ${{ inputs.kokkos_version }}
@@ -193,7 +193,7 @@ jobs:
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DBUILD_SHARED_LIBS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build

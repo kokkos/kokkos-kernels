@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  kokkos_version: 4.7.00
+  kokkos_version: 5.0.0
 
 jobs:
   check-pr-labels:
@@ -53,12 +53,12 @@ jobs:
 
     steps:
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: kokkos/kokkos
           ref: ${{ env.kokkos_version }}
@@ -71,7 +71,6 @@ jobs:
           cmake \
           -S "$PWD/.." \
           -B "$PWD" \
-          -D CMAKE_CXX_FLAGS="-Werror" \
           -D CMAKE_CXX_STANDARD=20 \
           -D CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -D CMAKE_INSTALL_PREFIX=$PWD/../install \
@@ -79,7 +78,7 @@ jobs:
           -D Kokkos_ENABLE_COMPILER_WARNINGS=ON \
           -D Kokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
           -D Kokkos_ENABLE_TESTS=OFF \
-          -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF
+          -D Kokkos_ENABLE_DEPRECATED_CODE_5=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
@@ -92,11 +91,12 @@ jobs:
           cmake \
           -S "$PWD/.." \
           -B "$PWD" \
-          -D CMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
           -D CMAKE_CXX_STANDARD=20 \
           -D CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -D CMAKE_INSTALL_PREFIX="$PWD/../install" \
           -D Kokkos_ROOT="$PWD/../../kokkos/install" \
+          -D KokkosKernels_ENABLE_COMPILER_WARNINGS=On \
+          -D KokkosKernels_ENABLE_WARNINGS_AS_ERRORS=On \
           -D KokkosKernels_ENABLE_TESTS=ON \
           -D KokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
           -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \

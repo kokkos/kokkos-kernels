@@ -40,12 +40,12 @@ jobs:
         run: echo $CUDA_VISIBLE_DEVICES
 
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: kokkos/kokkos
           ref: ${{ inputs.kokkos_version }}
@@ -64,7 +64,7 @@ jobs:
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DBUILD_SHARED_LIBS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
@@ -122,12 +122,12 @@ jobs:
         run: echo $CUDA_VISIBLE_DEVICES
 
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: kokkos/kokkos
           ref: ${{ inputs.kokkos_version }}
@@ -146,7 +146,7 @@ jobs:
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DBUILD_SHARED_LIBS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
@@ -192,12 +192,12 @@ jobs:
         run: echo $CUDA_VISIBLE_DEVICES
 
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: kokkos/kokkos
           ref: ${{ inputs.kokkos_previous_version }}

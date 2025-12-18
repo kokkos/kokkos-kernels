@@ -24,6 +24,8 @@ src_directories = ["batched/dense/src",
                    "sparse/src"]
 
 src_doc_mapping = dict([
+                        ('batched/dense/src/KokkosBatched_ApplyHouseholder_Decl.hpp', ['docs/source/API/batched/dense/batched_apply_householder.rst']),
+                        ('batched/dense/src/KokkosBatched_Householder_Decl.hpp', ['docs/source/API/batched/dense/batched_householder.rst']),
                         ('blas/src/KokkosBlas1_abs.hpp', ['blas1_abs.rst']),
                         ('blas/src/KokkosBlas1_axpby.hpp', ['blas1_axpy.rst']),
                         ('blas/src/KokkosBlas1_dot.hpp', ['blas1_dot.rst']),
@@ -42,7 +44,7 @@ src_doc_mapping = dict([
                         ('blas/src/KokkosBlas1_rotm.hpp', ['blas1_rotm.rst']),
                         ('blas/src/KokkosBlas1_rotmg.hpp', ['blas1_rotmg.rst']),
                         ('blas/src/KokkosBlas1_scal.hpp', ['blas1_scal.rst']),
-                        # ('blas/src/KokkosBlas1_set.hpp', ['']),
+                        ('blas/src/KokkosBlas1_set.hpp', ['blas1_set.rst']),
                         # ('blas/src/KokkosBlas1_sum.hpp', ['']),
                         ('blas/src/KokkosBlas1_swap.hpp', ['blas1_swap.rst']),
                         # ('blas/src/KokkosBlas1_update.hpp', ['']),
