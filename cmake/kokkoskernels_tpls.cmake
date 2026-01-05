@@ -425,11 +425,6 @@ if("${F77_BLAS_MANGLE}" STREQUAL "")
   endif()
 endif()
 
-if(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-    set(KOKKOSKERNELS_ENABLE_TPL_BLAS ON)
-    set(F77_BLAS_MANGLE "(name,NAME) name ## _")
-endif()
-
 kokkoskernels_add_option("NO_DEFAULT_CUDA_TPLS" OFF BOOL
   "Whether CUDA TPLs should be enabled by default. Default: OFF")
 set(CUBLAS_DEFAULT ${KOKKOS_ENABLE_CUDA})
