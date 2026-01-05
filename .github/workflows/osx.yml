@@ -163,6 +163,7 @@ jobs:
           -B "$PWD" \
           -D CMAKE_CXX_FLAGS="-DACCELERATE_NEW_LAPACK -Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
           -D CMAKE_CXX_STANDARD=20 \
+	  -D CMAKE_EXE_LINKER_FLAGS:STRING="-framework Accelerate" \
           -D CMAKE_BUILD_TYPE=Release \
           -D CMAKE_INSTALL_PREFIX="$PWD/../install" \
           -D Kokkos_ROOT="$PWD/../../kokkos/install" \
