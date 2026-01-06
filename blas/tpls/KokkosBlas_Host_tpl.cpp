@@ -572,7 +572,7 @@ void HostBlas<float>::gemv(const char trans, KK_INT m, KK_INT n, const float alp
                            const float* x, KK_INT incx, const float beta,
                            /* */ float* y, KK_INT incy) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-  enum CBLAS_ORDER acc_order = CblasColMajor;
+  enum CBLAS_ORDER acc_order     = CblasColMajor;
   enum CBLAS_TRANSPOSE acc_trans = kk_to_accelerate_trans(trans);
   cblas_sgemv(acc_order, acc_trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
 #else
@@ -594,7 +594,7 @@ void HostBlas<float>::syr(const char uplo, KK_INT n, const float alpha, const fl
                           KK_INT lda) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
   cblas_ssyr(acc_order, acc_uplo, n, alpha, x, incx, a, lda);
 #else
   F77_FUNC_SSYR(&uplo, &n, &alpha, x, &incx, a, &lda);
@@ -605,7 +605,7 @@ void HostBlas<float>::syr2(const char uplo, KK_INT n, const float alpha, const f
                            KK_INT incy, float* a, KK_INT lda) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
   cblas_ssyr2(acc_order, acc_uplo, n, alpha, x, incx, y, incy, a, lda);
 #else
   F77_FUNC_SSYR2(&uplo, &n, &alpha, x, &incx, y, &incy, a, &lda);
@@ -616,9 +616,9 @@ void HostBlas<float>::trsv(const char uplo, const char transa, const char diag, 
                            /* */ float* x, KK_INT incx) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
-  enum CBLAS_DIAG acc_diag = kk_to_accelerate_diag(diag);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
+  enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_strsv(acc_order, acc_uplo, acc_trans, acc_diag, m, a, lda, x, incx);
 #else
   F77_FUNC_STRSV(&uplo, &transa, &diag, &m, a, &lda, x, &incx);
@@ -630,8 +630,8 @@ void HostBlas<float>::gemm(const char transa, const char transb, KK_INT m, KK_IN
                            /* */ float* c, KK_INT ldc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  auto acc_transa = kk_to_accelerate_trans(transa);
-  auto acc_transb = kk_to_accelerate_trans(transb);
+  auto acc_transa            = kk_to_accelerate_trans(transa);
+  auto acc_transb            = kk_to_accelerate_trans(transb);
   cblas_sgemm(acc_order, acc_transa, acc_transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 #else
   F77_FUNC_SGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
@@ -643,8 +643,8 @@ void HostBlas<float>::herk(const char uplo, const char trans, KK_INT n, KK_INT k
                            /* */ float* c, KK_INT ldc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(trans);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
+  auto acc_trans             = kk_to_accelerate_trans(trans);
   cblas_ssyrk(acc_order, acc_uplo, acc_trans, n, k, alpha, a, lda, beta, c, ldc);
 #else
   F77_FUNC_SSYRK(&uplo, &trans, &n, &k, &alpha, a, &lda, &beta, c, &ldc);
@@ -656,9 +656,9 @@ void HostBlas<float>::trmm(const char side, const char uplo, const char transa, 
                            /* */ float* b, KK_INT ldb) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  CBLAS_SIDE acc_side   = kk_to_accelerate_side(side);
+  CBLAS_SIDE acc_side        = kk_to_accelerate_side(side);
   enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_strmm(acc_order, acc_side, acc_uplo, acc_trans, acc_diag, m, n, alpha, a, lda, b, ldb);
 #else
@@ -671,9 +671,9 @@ void HostBlas<float>::trsm(const char side, const char uplo, const char transa, 
                            /* */ float* b, KK_INT ldb) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  CBLAS_SIDE acc_side   = kk_to_accelerate_side(side);
+  CBLAS_SIDE acc_side        = kk_to_accelerate_side(side);
   enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_strsm(acc_order, acc_side, acc_uplo, acc_trans, acc_diag, m, n, alpha, a, lda, b, ldb);
 #else
@@ -689,7 +689,7 @@ template <>
 void HostBlas<double>::scal(KK_INT n, const double alpha,
                             /* */ double* x, KK_INT x_inc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-    cblas_dscal(n, alpha, x, x_inc);
+  cblas_dscal(n, alpha, x, x_inc);
 #else
   F77_FUNC_DSCAL(&n, &alpha, x, &x_inc);
 #endif
@@ -782,7 +782,7 @@ void HostBlas<double>::gemv(const char trans, KK_INT m, KK_INT n, const double a
                             const double* x, KK_INT incx, const double beta,
                             /* */ double* y, KK_INT incy) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-  enum CBLAS_ORDER acc_order = CblasColMajor;
+  enum CBLAS_ORDER acc_order     = CblasColMajor;
   enum CBLAS_TRANSPOSE acc_trans = kk_to_accelerate_trans(trans);
   cblas_dgemv(acc_order, acc_trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
 #else
@@ -804,7 +804,7 @@ void HostBlas<double>::syr(const char uplo, KK_INT n, const double alpha, const 
                            KK_INT lda) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
   cblas_dsyr(acc_order, acc_uplo, n, alpha, x, incx, a, lda);
 #else
   F77_FUNC_DSYR(&uplo, &n, &alpha, x, &incx, a, &lda);
@@ -815,7 +815,7 @@ void HostBlas<double>::syr2(const char uplo, KK_INT n, const double alpha, const
                             const double* y, KK_INT incy, double* a, KK_INT lda) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
   cblas_dsyr2(acc_order, acc_uplo, n, alpha, x, incx, y, incy, a, lda);
 #else
   F77_FUNC_DSYR2(&uplo, &n, &alpha, x, &incx, y, &incy, a, &lda);
@@ -826,9 +826,9 @@ void HostBlas<double>::trsv(const char uplo, const char transa, const char diag,
                             /* */ double* x, KK_INT incx) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
-  enum CBLAS_DIAG acc_diag = kk_to_accelerate_diag(diag);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
+  enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_dtrsv(acc_order, acc_uplo, acc_trans, acc_diag, m, a, lda, x, incx);
 #else
   F77_FUNC_DTRSV(&uplo, &transa, &diag, &m, a, &lda, x, &incx);
@@ -840,21 +840,21 @@ void HostBlas<double>::gemm(const char transa, const char transb, KK_INT m, KK_I
                             /* */ double* c, KK_INT ldc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  auto acc_transa = kk_to_accelerate_trans(transa);
-  auto acc_transb = kk_to_accelerate_trans(transb);
+  auto acc_transa            = kk_to_accelerate_trans(transa);
+  auto acc_transb            = kk_to_accelerate_trans(transb);
   cblas_dgemm(acc_order, acc_transa, acc_transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 #else
   F77_FUNC_DGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 #endif
 }
 template <>
-void HostBlas<double>::herk(const char uplo, const char trans, KK_INT n, KK_INT k, const double alpha,
-                            const double* a, KK_INT lda, const double beta,
+void HostBlas<double>::herk(const char uplo, const char trans, KK_INT n, KK_INT k, const double alpha, const double* a,
+                            KK_INT lda, const double beta,
                             /* */ double* c, KK_INT ldc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(trans);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
+  auto acc_trans             = kk_to_accelerate_trans(trans);
   cblas_dsyrk(acc_order, acc_uplo, acc_trans, n, k, alpha, a, lda, beta, c, ldc);
 #else
   F77_FUNC_DSYRK(&uplo, &trans, &n, &k, &alpha, a, &lda, &beta, c, &ldc);
@@ -866,9 +866,9 @@ void HostBlas<double>::trmm(const char side, const char uplo, const char transa,
                             /* */ double* b, KK_INT ldb) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  CBLAS_SIDE acc_side   = kk_to_accelerate_side(side);
+  CBLAS_SIDE acc_side        = kk_to_accelerate_side(side);
   enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_dtrmm(acc_order, acc_side, acc_uplo, acc_trans, acc_diag, m, n, alpha, a, lda, b, ldb);
 #else
@@ -881,9 +881,9 @@ void HostBlas<double>::trsm(const char side, const char uplo, const char transa,
                             /* */ double* b, KK_INT ldb) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  CBLAS_SIDE acc_side   = kk_to_accelerate_side(side);
+  CBLAS_SIDE acc_side        = kk_to_accelerate_side(side);
   enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_dtrsm(acc_order, acc_side, acc_uplo, acc_trans, acc_diag, m, n, alpha, a, lda, b, ldb);
 #else
@@ -899,7 +899,7 @@ template <>
 void HostBlas<std::complex<float> >::scal(KK_INT n, const std::complex<float> alpha,
                                           /* */ std::complex<float>* x, KK_INT x_inc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-    cblas_cscal(n, &alpha, x, x_inc);
+  cblas_cscal(n, &alpha, x, x_inc);
 #else
   F77_FUNC_CSCAL(&n, &alpha, x, &x_inc);
 #endif
@@ -907,7 +907,7 @@ void HostBlas<std::complex<float> >::scal(KK_INT n, const std::complex<float> al
 template <>
 KK_INT HostBlas<std::complex<float> >::iamax(KK_INT n, const std::complex<float>* x, KK_INT x_inc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-    return cblas_icamax(n, x, x_inc) + 1;
+  return cblas_icamax(n, x, x_inc) + 1;
 #else
   return F77_FUNC_ICAMAX(&n, x, &x_inc);
 #endif
@@ -915,7 +915,7 @@ KK_INT HostBlas<std::complex<float> >::iamax(KK_INT n, const std::complex<float>
 template <>
 float HostBlas<std::complex<float> >::nrm2(KK_INT n, const std::complex<float>* x, KK_INT x_inc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-    return cblas_scnrm2(n, x, x_inc);
+  return cblas_scnrm2(n, x, x_inc);
 #else
   return F77_FUNC_SCNRM2(&n, x, &x_inc);
 #endif
@@ -989,7 +989,7 @@ void HostBlas<std::complex<float> >::gemv(const char trans, KK_INT m, KK_INT n, 
                                           KK_INT incx, const std::complex<float> beta,
                                           /* */ std::complex<float>* y, KK_INT incy) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-  enum CBLAS_ORDER acc_order = CblasColMajor;
+  enum CBLAS_ORDER acc_order     = CblasColMajor;
   enum CBLAS_TRANSPOSE acc_trans = kk_to_accelerate_trans(trans);
   cblas_cgemv(acc_order, acc_trans, m, n, &alpha, a, lda, x, incx, &beta, y, incy);
 #else
@@ -1053,9 +1053,9 @@ void HostBlas<std::complex<float> >::trsv(const char uplo, const char transa, co
                                           /* */ std::complex<float>* x, KK_INT incx) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
-  enum CBLAS_DIAG acc_diag = kk_to_accelerate_diag(diag);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
+  enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_ctrsv(acc_order, acc_uplo, acc_trans, acc_diag, m, a, lda, x, incx);
 #else
   F77_FUNC_CTRSV(&uplo, &transa, &diag, &m, (const std::complex<float>*)a, &lda, (std::complex<float>*)b, &ldb);
@@ -1068,8 +1068,8 @@ void HostBlas<std::complex<float> >::gemm(const char transa, const char transb, 
                                           /* */ std::complex<float>* c, KK_INT ldc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  auto acc_transa = kk_to_accelerate_trans(transa);
-  auto acc_transb = kk_to_accelerate_trans(transb);
+  auto acc_transa            = kk_to_accelerate_trans(transa);
+  auto acc_transb            = kk_to_accelerate_trans(transb);
   cblas_cgemm(acc_order, acc_transa, acc_transb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc);
 #else
   F77_FUNC_CGEMM(&transa, &transb, &m, &n, &k, &alpha, (const std::complex<float>*)a, &lda,
@@ -1083,8 +1083,8 @@ void HostBlas<std::complex<float> >::herk(const char uplo, const char transa, KK
                                           /* */ std::complex<float>* c, KK_INT ldc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   cblas_cherk(acc_order, acc_uplo, acc_trans, n, k, alpha.real(), a, lda, beta.real(), c, ldc);
 #else
   F77_FUNC_CHERK(&transa, &transb, &n, &k, &alpha, (const std::complex<float>*)a, &lda, &beta, (std::complex<float>*)c,
@@ -1098,9 +1098,9 @@ void HostBlas<std::complex<float> >::trmm(const char side, const char uplo, cons
                                           /* */ std::complex<float>* b, KK_INT ldb) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  CBLAS_SIDE acc_side   = kk_to_accelerate_side(side);
+  CBLAS_SIDE acc_side        = kk_to_accelerate_side(side);
   enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_ctrmm(acc_order, acc_side, acc_uplo, acc_trans, acc_diag, m, n, &alpha, a, lda, b, ldb);
 #else
@@ -1115,9 +1115,9 @@ void HostBlas<std::complex<float> >::trsm(const char side, const char uplo, cons
                                           /* */ std::complex<float>* b, KK_INT ldb) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  CBLAS_SIDE acc_side   = kk_to_accelerate_side(side);
+  CBLAS_SIDE acc_side        = kk_to_accelerate_side(side);
   enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_ctrsm(acc_order, acc_side, acc_uplo, acc_trans, acc_diag, m, n, &alpha, a, lda, b, ldb);
 #else
@@ -1134,7 +1134,7 @@ template <>
 void HostBlas<std::complex<double> >::scal(KK_INT n, const std::complex<double> alpha,
                                            /* */ std::complex<double>* x, KK_INT x_inc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-    cblas_zscal(n, &alpha, x, x_inc);
+  cblas_zscal(n, &alpha, x, x_inc);
 #else
   F77_FUNC_ZSCAL(&n, &alpha, x, &x_inc);
 #endif
@@ -1142,7 +1142,7 @@ void HostBlas<std::complex<double> >::scal(KK_INT n, const std::complex<double> 
 template <>
 KK_INT HostBlas<std::complex<double> >::iamax(KK_INT n, const std::complex<double>* x, KK_INT x_inc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-    return cblas_izamax(n, x, x_inc) + 1;
+  return cblas_izamax(n, x, x_inc) + 1;
 #else
   return F77_FUNC_IZAMAX(&n, x, &x_inc);
 #endif
@@ -1150,7 +1150,7 @@ KK_INT HostBlas<std::complex<double> >::iamax(KK_INT n, const std::complex<doubl
 template <>
 double HostBlas<std::complex<double> >::nrm2(KK_INT n, const std::complex<double>* x, KK_INT x_inc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-    return cblas_dznrm2(n, x, x_inc);
+  return cblas_dznrm2(n, x, x_inc);
 #else
   return F77_FUNC_DZNRM2(&n, x, &x_inc);
 #endif
@@ -1237,7 +1237,7 @@ void HostBlas<std::complex<double> >::gemv(const char trans, KK_INT m, KK_INT n,
                                            KK_INT incx, const std::complex<double> beta,
                                            /* */ std::complex<double>* y, KK_INT incy) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-  enum CBLAS_ORDER acc_order = CblasColMajor;
+  enum CBLAS_ORDER acc_order     = CblasColMajor;
   enum CBLAS_TRANSPOSE acc_trans = kk_to_accelerate_trans(trans);
   cblas_zgemv(acc_order, acc_trans, m, n, &alpha, a, lda, x, incx, &beta, y, incy);
 #else
@@ -1301,9 +1301,9 @@ void HostBlas<std::complex<double> >::trsv(const char uplo, const char transa, c
                                            /* */ std::complex<double>* x, KK_INT incx) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
-  enum CBLAS_DIAG acc_diag = kk_to_accelerate_diag(diag);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
+  enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_ztrsv(acc_order, acc_uplo, acc_trans, acc_diag, m, a, lda, x, incx);
 #else
   F77_FUNC_ZTRSV(&uplo, &transa, &diag, &m, (const std::complex<double>*)a, &lda, (std::complex<double>*)x, &incx);
@@ -1317,8 +1317,8 @@ void HostBlas<std::complex<double> >::gemm(const char transa, const char transb,
                                            /* */ std::complex<double>* c, KK_INT ldc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  auto acc_transa = kk_to_accelerate_trans(transa);
-  auto acc_transb = kk_to_accelerate_trans(transb);
+  auto acc_transa            = kk_to_accelerate_trans(transa);
+  auto acc_transb            = kk_to_accelerate_trans(transb);
   cblas_zgemm(acc_order, acc_transa, acc_transb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc);
 #else
   F77_FUNC_ZGEMM(&transa, &transb, &m, &n, &k, &alpha, (const std::complex<double>*)a, &lda,
@@ -1332,12 +1332,12 @@ void HostBlas<std::complex<double> >::herk(const char uplo, const char transa, K
                                            /* */ std::complex<double>* c, KK_INT ldc) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  enum CBLAS_UPLO acc_uplo = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   cblas_zherk(acc_order, acc_uplo, acc_trans, n, k, alpha.real(), a, lda, beta.real(), c, ldc);
 #else
-  F77_FUNC_ZHERK(&uplo, &transa, &n, &k, &alpha, (const std::complex<double>*)a, &lda, &beta,
-                 (std::complex<double>*)c, &ldc);
+  F77_FUNC_ZHERK(&uplo, &transa, &n, &k, &alpha, (const std::complex<double>*)a, &lda, &beta, (std::complex<double>*)c,
+                 &ldc);
 #endif
 }
 template <>
@@ -1347,9 +1347,9 @@ void HostBlas<std::complex<double> >::trmm(const char side, const char uplo, con
                                            /* */ std::complex<double>* b, KK_INT ldb) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  CBLAS_SIDE acc_side   = kk_to_accelerate_side(side);
+  CBLAS_SIDE acc_side        = kk_to_accelerate_side(side);
   enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_ztrmm(acc_order, acc_side, acc_uplo, acc_trans, acc_diag, m, n, &alpha, a, lda, b, ldb);
 #else
@@ -1364,9 +1364,9 @@ void HostBlas<std::complex<double> >::trsm(const char side, const char uplo, con
                                            /* */ std::complex<double>* b, KK_INT ldb) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   enum CBLAS_ORDER acc_order = CblasColMajor;
-  CBLAS_SIDE acc_side   = kk_to_accelerate_side(side);
+  CBLAS_SIDE acc_side        = kk_to_accelerate_side(side);
   enum CBLAS_UPLO acc_uplo   = kk_to_accelerate_uplo(uplo);
-  auto acc_trans = kk_to_accelerate_trans(transa);
+  auto acc_trans             = kk_to_accelerate_trans(transa);
   enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_ztrsm(acc_order, acc_side, acc_uplo, acc_trans, acc_diag, m, n, &alpha, a, lda, b, ldb);
 #else

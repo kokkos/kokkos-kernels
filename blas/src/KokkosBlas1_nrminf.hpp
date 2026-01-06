@@ -31,12 +31,13 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
   using mag_type = typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type;
 
   using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
-					typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-					typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+                                        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+                                        typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   using layout_t = typename XVector_Internal::array_layout;
 
-  using RVector_Internal = Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using RVector_Internal =
+      Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   mag_type result;
   RVector_Internal R = RVector_Internal(&result, layout_t());
