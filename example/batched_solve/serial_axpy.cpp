@@ -50,7 +50,10 @@ int main(int /*argc*/, char** /*argv*/) {
     Kokkos::parallel_for(
         "axpy", policy, KOKKOS_LAMBDA(int ib) {
           // y = y + a * x
-          KokkosBatched::SerialAxpy::invoke(alpha, x, y);
+          auto a     = alpha(ib);
+          auto sub_x = Kokkos::subview(x, ib, Kokkos::ALL());
+          auto sub_y = Kokkos::subview(y, ib, Kokkos::ALL());
+          KokkosBatched::SerialAxpy::invoke(a, sub_x, sub_y);
         });
 
     // Confirm that the results are correct
