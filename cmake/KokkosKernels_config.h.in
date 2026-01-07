@@ -30,7 +30,7 @@
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
 
-#cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
+/* Define this macro to build the benchmark tests */
 #cmakedefine KOKKOSKERNELS_ENABLE_BENCHMARKS
 
 /* Define this macro if experimental features of Kokkoskernels are enabled */

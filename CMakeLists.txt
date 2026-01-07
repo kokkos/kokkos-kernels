@@ -61,16 +61,6 @@ if(NOT KOKKOSKERNELS_HAS_TRILINOS)
     "Whether to build tests. Default: OFF")
   kokkoskernels_add_option("ENABLE_PERFTESTS" OFF BOOL
     "Whether to build performance tests. Default: OFF")
-  kokkoskernels_add_option("ENABLE_TESTS_AND_PERFSUITE" OFF BOOL
-    "Whether to build performance tests and suite. Default: OFF")
-  if(KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
-    set(BLT_CODE_CHECK_TARGET_NAME "fix-for-blt" CACHE STRING "Docstring")
-    set(INFRASTRUCTURE_ONLY ON CACHE BOOL "Only build the RAJAPerf infrastructure, no builtin kernels")
-    add_definitions("-DRAJAPERF_INFRASTRUCTURE_ONLY")
-    add_subdirectory(tpls/rajaperf)
-    include_directories(tpls/rajaperf/src)
-    set(KokkosKernels_ENABLE_PERFTESTS ON CACHE BOOL "Whether to build tests including Perfsuite. Default: OFF" FORCE)
-  endif()
   kokkoskernels_add_option("ENABLE_BENCHMARKS" OFF BOOL
     "Whether to build benchmarks. Default: OFF")
   if(KokkosKernels_ENABLE_BENCHMARKS)
