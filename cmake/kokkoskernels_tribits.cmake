@@ -130,10 +130,6 @@ function(kokkoskernels_add_executable EXE_NAME)
         endforeach()
       endif()
       add_executable(${EXE_NAME} ${PARSE_SOURCES})
-      #AJP, BMK altered:
-      if(KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE)
-        target_link_libraries(${EXE_NAME} PRIVATE common ${PARSE_TESTONLYLIBS})
-      endif()
 
       if(PARSE_TESTONLYLIBS)
         target_link_libraries(${EXE_NAME} PRIVATE Kokkos::kokkoskernels ${PARSE_TESTONLYLIBS})
