@@ -576,7 +576,7 @@ void HostBlas<float>::gemv(const char trans, KK_INT m, KK_INT n, const float alp
   enum CBLAS_TRANSPOSE acc_trans = kk_to_accelerate_trans(trans);
   cblas_sgemv(acc_order, acc_trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
 #else
-  F77_FUNC_SGEMV(&trans, &m, &n, &alpha, a, &lda, y, &incx, &beta, y, &incy);
+  F77_FUNC_SGEMV(&trans, &m, &n, &alpha, a, &lda, x, &incx, &beta, y, &incy);
 #endif
 }
 template <>
@@ -1058,7 +1058,7 @@ void HostBlas<std::complex<float> >::trsv(const char uplo, const char transa, co
   enum CBLAS_DIAG acc_diag   = kk_to_accelerate_diag(diag);
   cblas_ctrsv(acc_order, acc_uplo, acc_trans, acc_diag, m, a, lda, x, incx);
 #else
-  F77_FUNC_CTRSV(&uplo, &transa, &diag, &m, (const std::complex<float>*)a, &lda, (std::complex<float>*)b, &ldb);
+  F77_FUNC_CTRSV(&uplo, &transa, &diag, &m, (const std::complex<float>*)a, &lda, (std::complex<float>*)x, &incx);
 #endif
 }
 template <>
@@ -1087,7 +1087,7 @@ void HostBlas<std::complex<float> >::herk(const char uplo, const char transa, KK
   auto acc_trans             = kk_to_accelerate_trans(transa);
   cblas_cherk(acc_order, acc_uplo, acc_trans, n, k, alpha.real(), a, lda, beta.real(), c, ldc);
 #else
-  F77_FUNC_CHERK(&transa, &transb, &n, &k, &alpha, (const std::complex<float>*)a, &lda, &beta, (std::complex<float>*)c,
+  F77_FUNC_CHERK(&uplo, &transa, &n, &k, &alpha, (const std::complex<float>*)a, &lda, &beta, (std::complex<float>*)c,
                  &ldc);
 #endif
 }
