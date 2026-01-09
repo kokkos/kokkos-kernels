@@ -360,6 +360,7 @@ else()
   kokkoskernels_link_tpl(kokkoskernels PUBLIC METIS)
   kokkoskernels_link_tpl(kokkoskernels PUBLIC ARMPL)
   kokkoskernels_link_tpl(kokkoskernels PUBLIC MAGMA)
+  kokkoskernels_link_tpl(kokkoskernels PUBLIC ACCELERATE)
 
   if(KokkosKernels_ENABLE_INSTALL_TEST)
     add_subdirectory(install_test)
