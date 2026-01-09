@@ -5,6 +5,7 @@ API: Batched Dense (DLA)
    :maxdepth: 2
    :hidden:
    
+   dense/batched_axpy
    dense/batched_iamax
    dense/batched_trsv
    dense/batched_tbsv
@@ -128,9 +129,9 @@ BLAS 1
      - `TeamCopy`
      - `TeamVectorCopy`
    * - AXPY
-     - `SerialAxpy`
-     - `TeamAxpy`
-     - `TeamVectorAxpy`
+     - :doc:`SerialAxpy <dense/batched_axpy>`
+     - :doc:`TeamAxpy <dense/batched_axpy>`
+     - :doc:`TeamVectorAxpy <dense/batched_axpy>`
    * - DOT*
      - `SerialDot`
      - `TeamDot`
