@@ -45,7 +45,7 @@ class Vector<SIMD<T>, l> {
     for (int i = 0; i < vector_length; ++i) _data[i] = 0;
   }
 
-  KOKKOS_INLINE_FUNCTION ~Vector() = default;
+  KOKKOS_DEFAULTED_FUNCTION ~Vector() = default;
 
   template <typename ArgValueType>
   KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
@@ -162,7 +162,7 @@ class Vector<SIMD<float>, 2> {
     return *this;
   }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   type &operator=(const type &) = default;
 
   KOKKOS_INLINE_FUNCTION
@@ -254,7 +254,7 @@ class Vector<SIMD<double>, 2> {
     return *this;
   }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   type &operator=(const type &) = default;
 
   KOKKOS_INLINE_FUNCTION
@@ -360,7 +360,7 @@ class Vector<SIMD<float>, 4> {
     return *this;
   }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   type &operator=(const type &) = default;
 
   KOKKOS_INLINE_FUNCTION
@@ -478,7 +478,7 @@ class Vector<SIMD<double>, 4> {
     return *this;
   }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   type &operator=(const type &) = default;
 
   KOKKOS_INLINE_FUNCTION
