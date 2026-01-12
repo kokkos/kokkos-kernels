@@ -38,7 +38,8 @@ extensions = ["myst_parser",
               "sphinx.ext.viewcode",
               "sphinx.ext.intersphinx",
               "sphinx_copybutton",
-              "sphinx_design"]
+              "sphinx_design",
+              "sphinxcontrib.googleanalytics"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -74,6 +75,8 @@ source_suffix = {
     '.rst': 'restructuredtext',
     '.md': 'markdown',
 }
+
+googleanalytics_id = 'G-F9FYCDDLH4'
 
 myst_heading_anchors = 4
 
