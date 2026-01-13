@@ -88,10 +88,6 @@ void impl_test_batched_copy_analytical(const std::size_t N) {
   StridedView3DType A1_s("A1_s", layout1), B1_s("B1_s", layout2);
 
   // Initialize A0 and A1
-  using Op = std::conditional_t<std::is_same_v<ArgTrans, KokkosBatched::Trans::ConjTranspose>, KokkosBlas::Impl::OpConj,
-                                KokkosBlas::Impl::OpID>;
-  Op op;
-
   auto h_A0     = Kokkos::create_mirror_view(A0);
   auto h_A1     = Kokkos::create_mirror_view(A1);
   auto h_Ref_B1 = Kokkos::create_mirror_view(Ref_B1);
@@ -111,14 +107,13 @@ void impl_test_batched_copy_analytical(const std::size_t N) {
     for (std::size_t i = 0; i < h_Ref_B1.extent(1); i++) {
       for (std::size_t j = 0; j < h_Ref_B1.extent(2); j++) {
         h_Ref_B1(ib, i, j) =
-            std::is_same_v<ArgTrans, KokkosBatched::Trans::NoTranspose> ? h_A1(ib, i, j) : op(h_A1(ib, j, i));
+            std::is_same_v<ArgTrans, KokkosBatched::Trans::NoTranspose> ? h_A1(ib, i, j) : h_A1(ib, j, i);
       }
     }
   }
   Kokkos::deep_copy(A0, h_A0);
   Kokkos::deep_copy(A1, h_A1);
   Kokkos::deep_copy(Ref_B0, A0);
-  Kokkos::deep_copy(Ref_B1, h_Ref_B1);
 
   // Strided views can be copied only on the same device
   Kokkos::deep_copy(A0_s, A0);
@@ -207,10 +202,15 @@ void impl_test_batched_copy(const std::size_t N, const std::size_t m_A, const st
                                 KokkosBlas::Impl::OpID>;
   Op op;
 
+  auto h_A0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A0);
   auto h_A1     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A1);
+  auto h_Ref_B0 = Kokkos::create_mirror_view(Ref_B0);
   auto h_Ref_B1 = Kokkos::create_mirror_view(Ref_B1);
 
   for (std::size_t ib = 0; ib < N; ib++) {
+    for (std::size_t j = 0; j < h_Ref_B0.extent(1); j++) {
+      h_Ref_B0(ib, j) = op(h_A0(ib, j));
+    }
     for (std::size_t i = 0; i < h_Ref_B1.extent(1); i++) {
       for (std::size_t j = 0; j < h_Ref_B1.extent(2); j++) {
         h_Ref_B1(ib, i, j) =
@@ -218,8 +218,6 @@ void impl_test_batched_copy(const std::size_t N, const std::size_t m_A, const st
       }
     }
   }
-  Kokkos::deep_copy(Ref_B0, A0);
-  Kokkos::deep_copy(Ref_B1, h_Ref_B1);
 
   // Copy operations
   auto info0 = Functor_TestBatchedSerialCopy<DeviceType, View2DType, View2DType, ArgTrans>(A0, B0).run();
@@ -228,10 +226,9 @@ void impl_test_batched_copy(const std::size_t N, const std::size_t m_A, const st
   EXPECT_EQ(info0, 0);
   EXPECT_EQ(info1, 0);
 
-  RealType eps  = 1.0e1 * ats::epsilon();
-  auto h_B0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B0);
-  auto h_B1     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B1);
-  auto h_Ref_B0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Ref_B0);
+  RealType eps = 1.0e1 * ats::epsilon();
+  auto h_B0    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B0);
+  auto h_B1    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B1);
 
   // Check if B0 and B1 are same as Ref_B0 and Ref_B1
   for (std::size_t ib = 0; ib < h_B0.extent(0); ib++) {
