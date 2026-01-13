@@ -88,6 +88,10 @@ void impl_test_batched_copy_analytical(const std::size_t N) {
   StridedView3DType A1_s("A1_s", layout1), B1_s("B1_s", layout2);
 
   // Initialize A0 and A1
+  using Op = std::conditional_t<std::is_same_v<ArgTrans, KokkosBatched::Trans::ConjTranspose>, KokkosBlas::Impl::OpConj,
+                                KokkosBlas::Impl::OpID>;
+  Op op;
+
   auto h_A0     = Kokkos::create_mirror_view(A0);
   auto h_A1     = Kokkos::create_mirror_view(A1);
   auto h_Ref_B1 = Kokkos::create_mirror_view(Ref_B1);
@@ -107,7 +111,7 @@ void impl_test_batched_copy_analytical(const std::size_t N) {
     for (std::size_t i = 0; i < h_Ref_B1.extent(1); i++) {
       for (std::size_t j = 0; j < h_Ref_B1.extent(2); j++) {
         h_Ref_B1(ib, i, j) =
-            std::is_same_v<ArgTrans, KokkosBatched::Trans::NoTranspose> ? h_A1(ib, i, j) : h_A1(ib, j, i);
+            std::is_same_v<ArgTrans, KokkosBatched::Trans::NoTranspose> ? h_A1(ib, i, j) : op(h_A1(ib, j, i));
       }
     }
   }
@@ -139,13 +143,13 @@ void impl_test_batched_copy_analytical(const std::size_t N) {
   auto h_Ref_B0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Ref_B0);
 
   // Check if B0 and B1 are same as Ref_B0 and Ref_B1
-  for (std::size_t ib = 0; ib < N; ib++) {
-    for (std::size_t j = 0; j < 3; j++) {
-      // EXPECT_NEAR_KK(ats::abs(h_B0(ib, j) - h_Ref_B0(ib, j)), eps);
+  for (std::size_t ib = 0; ib < h_B0.extent(0); ib++) {
+    for (std::size_t j = 0; j < h_B0.extent(1); j++) {
+      EXPECT_NEAR_KK(h_B0(ib, j), h_Ref_B0(ib, j), eps);
     }
     for (std::size_t i = 0; i < h_B1.extent(1); i++) {
       for (std::size_t j = 0; j < h_B1.extent(2); j++) {
-        // EXPECT_NEAR_KK(ats::abs(h_B1(ib, i, j) - h_Ref_B1(ib, i, j)), eps);
+        EXPECT_NEAR_KK(h_B1(ib, i, j), h_Ref_B1(ib, i, j), eps);
       }
     }
   }
@@ -155,13 +159,13 @@ void impl_test_batched_copy_analytical(const std::size_t N) {
   Kokkos::deep_copy(B1, B1_s);
   Kokkos::deep_copy(h_B0, B0);
   Kokkos::deep_copy(h_B1, B1);
-  for (std::size_t ib = 0; ib < N; ib++) {
-    for (std::size_t j = 0; j < 3; j++) {
-      // EXPECT_NEAR_KK(ats::abs(h_B0(ib, j) - h_Ref_B0(ib, j)), eps);
+  for (std::size_t ib = 0; ib < h_B0.extent(0); ib++) {
+    for (std::size_t j = 0; j < h_B0.extent(1); j++) {
+      EXPECT_NEAR_KK(h_B0(ib, j), h_Ref_B0(ib, j), eps);
     }
     for (std::size_t i = 0; i < h_B1.extent(1); i++) {
       for (std::size_t j = 0; j < h_B1.extent(2); j++) {
-        // EXPECT_NEAR_KK(ats::abs(h_B1(ib, i, j) - h_Ref_B1(ib, i, j)), eps);
+        EXPECT_NEAR_KK(h_B1(ib, i, j), h_Ref_B1(ib, i, j), eps);
       }
     }
   }
@@ -180,12 +184,10 @@ void impl_test_batched_copy_analytical(const std::size_t N) {
 /// \param[in] n_A Number of columns of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgTrans>
 void impl_test_batched_copy(const std::size_t N, const std::size_t m_A, const std::size_t n_A) {
-  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
-  using RealType          = typename ats::mag_type;
-  using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
-  using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
-  using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
-  using StridedView3DType = Kokkos::View<ScalarType ***, Kokkos::LayoutStride, DeviceType>;
+  using ats        = typename KokkosKernels::ArithTraits<ScalarType>;
+  using RealType   = typename ats::mag_type;
+  using View2DType = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
+  using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
 
   const std::size_t m_B = std::is_same_v<ArgTrans, KokkosBatched::Trans::NoTranspose> ? m_A : n_A;
   const std::size_t n_B = std::is_same_v<ArgTrans, KokkosBatched::Trans::NoTranspose> ? n_A : m_A;
@@ -201,6 +203,10 @@ void impl_test_batched_copy(const std::size_t N, const std::size_t m_A, const st
   Kokkos::fill_random(A0, rand_pool, randStart, randEnd);
   Kokkos::fill_random(A1, rand_pool, randStart, randEnd);
 
+  using Op = std::conditional_t<std::is_same_v<ArgTrans, KokkosBatched::Trans::ConjTranspose>, KokkosBlas::Impl::OpConj,
+                                KokkosBlas::Impl::OpID>;
+  Op op;
+
   auto h_A1     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A1);
   auto h_Ref_B1 = Kokkos::create_mirror_view(Ref_B1);
 
@@ -208,7 +214,7 @@ void impl_test_batched_copy(const std::size_t N, const std::size_t m_A, const st
     for (std::size_t i = 0; i < h_Ref_B1.extent(1); i++) {
       for (std::size_t j = 0; j < h_Ref_B1.extent(2); j++) {
         h_Ref_B1(ib, i, j) =
-            std::is_same_v<ArgTrans, KokkosBatched::Trans::NoTranspose> ? h_A1(ib, i, j) : h_A1(ib, j, i);
+            std::is_same_v<ArgTrans, KokkosBatched::Trans::NoTranspose> ? h_A1(ib, i, j) : op(h_A1(ib, j, i));
       }
     }
   }
@@ -228,13 +234,13 @@ void impl_test_batched_copy(const std::size_t N, const std::size_t m_A, const st
   auto h_Ref_B0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Ref_B0);
 
   // Check if B0 and B1 are same as Ref_B0 and Ref_B1
-  for (std::size_t ib = 0; ib < N; ib++) {
+  for (std::size_t ib = 0; ib < h_B0.extent(0); ib++) {
     for (std::size_t j = 0; j < h_B0.extent(1); j++) {
-      // EXPECT_NEAR_KK(ats::abs(h_B0(ib, j) - h_Ref_B0(ib, j)), eps);
+      EXPECT_NEAR_KK(h_B0(ib, j), h_Ref_B0(ib, j), eps);
     }
     for (std::size_t i = 0; i < h_B1.extent(1); i++) {
       for (std::size_t j = 0; j < h_B1.extent(2); j++) {
-        // EXPECT_NEAR_KK(ats::abs(h_B1(ib, i, j) - h_Ref_B1(ib, i, j)), eps);
+        EXPECT_NEAR_KK(h_B1(ib, i, j), h_Ref_B1(ib, i, j), eps);
       }
     }
   }
