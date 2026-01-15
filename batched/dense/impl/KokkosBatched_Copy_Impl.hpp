@@ -60,6 +60,9 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::NoTranspose>::invoke(const AViewTyp
   auto info = Impl::checkCopyInput<Trans::NoTranspose>(A, B);
   if (info) return info;
 
+  // Quick return if possible
+  if (A.size() == 0 || B.size() == 0) return 0;
+
   if constexpr (AViewType::rank() == 1) {
     return Impl::SerialCopyInternal::invoke(KokkosBlas::Impl::OpID(), A.extent(0), A.data(), A.stride(0), B.data(),
                                             B.stride(0));
@@ -75,6 +78,9 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::Transpose>::invoke(const AViewType 
   auto info = Impl::checkCopyInput<Trans::Transpose>(A, B);
   if (info) return info;
 
+  // Quick return if possible
+  if (A.size() == 0 || B.size() == 0) return 0;
+
   if constexpr (AViewType::rank() == 1) {
     return Impl::SerialCopyInternal::invoke(KokkosBlas::Impl::OpID(), A.extent(0), A.data(), A.stride(0), B.data(),
                                             B.stride(0));
@@ -89,6 +95,9 @@ template <typename AViewType, typename BViewType>
 KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::ConjTranspose>::invoke(const AViewType &A, const BViewType &B) {
   auto info = Impl::checkCopyInput<Trans::ConjTranspose>(A, B);
   if (info) return info;
+
+  // Quick return if possible
+  if (A.size() == 0 || B.size() == 0) return 0;
 
   if constexpr (AViewType::rank() == 1) {
     return Impl::SerialCopyInternal::invoke(KokkosBlas::Impl::OpConj(), A.extent(0), A.data(), A.stride(0), B.data(),
@@ -109,6 +118,9 @@ struct TeamCopy<MemberType, Trans::NoTranspose> {
     auto info = Impl::checkCopyInput<Trans::NoTranspose>(A, B);
     if (info) return info;
 
+    // Quick return if possible
+    if (A.size() == 0 || B.size() == 0) return 0;
+
     if constexpr (AViewType::rank() == 1) {
       return Impl::TeamCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
     } else {
@@ -127,6 +139,9 @@ struct TeamCopy<MemberType, Trans::Transpose> {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
     auto info = Impl::checkCopyInput<Trans::Transpose>(A, B);
     if (info) return info;
+
+    // Quick return if possible
+    if (A.size() == 0 || B.size() == 0) return 0;
 
     if constexpr (AViewType::rank() == 1) {
       return Impl::TeamCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
@@ -151,6 +166,9 @@ struct TeamVectorCopy<MemberType, Trans::NoTranspose> {
     auto info = Impl::checkCopyInput<Trans::NoTranspose>(A, B);
     if (info) return info;
 
+    // Quick return if possible
+    if (A.size() == 0 || B.size() == 0) return 0;
+
     if constexpr (AViewType::rank() == 1) {
       return Impl::TeamVectorCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
     } else {
@@ -169,6 +187,9 @@ struct TeamVectorCopy<MemberType, Trans::Transpose> {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
     auto info = Impl::checkCopyInput<Trans::NoTranspose>(A, B);
     if (info) return info;
+
+    // Quick return if possible
+    if (A.size() == 0 || B.size() == 0) return 0;
 
     if constexpr (AViewType::rank() == 1) {
       return Impl::TeamVectorCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
