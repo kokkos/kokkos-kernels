@@ -1,5 +1,12 @@
 # Change Log
 
+## [5.0.1](https://github.com/kokkos/kokkos-kernels/tree/5.0.1)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.0.0...5.0.1)
+
+### Bug Fixes:
+- SPILUK symbolic and numeric update, fix overflow issue [\#2887](https://github.com/kokkos/kokkos-kernels/pull/2887)
+- Fix SYCL issues with MKL on Aurora [\#2865](https://github.com/kokkos/kokkos-kernels/pull/2865)
+
 ## [5.0.0](https://github.com/kokkos/kokkos-kernels/tree/5.0.0)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.01...5.0.0)
 
@@ -56,6 +63,12 @@
 - CI: Adding ci yaml file for Polaris [\#2812](https://github.com/kokkos/kokkos-kernels/pull/2812)
 - CI: Add V100 CUDA 12.6.2 build with TPLs [\#2738](https://github.com/kokkos/kokkos-kernels/pull/2738)
 - CI: adding new build to test previous minor release [\#2737](https://github.com/kokkos/kokkos-kernels/pull/2737)
+
+## [4.7.02](https://github.com/kokkos/kokkos-kernels/tree/4.7.02)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.01...4.7.02)
+
+### Bug Fixes:
+- Fix SYCL issues with MKL on Aurora [\#2865](https://github.com/kokkos/kokkos-kernels/pull/2865)
 
 ## [4.7.01](https://github.com/kokkos/kokkos-kernels/tree/4.7.01)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.00...4.7.01)
