@@ -27,7 +27,7 @@ namespace KokkosSparse {
 // clang-format on
 template <class DimType, class RowViewType, class ColViewType, class DataViewType>
 auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col, DataViewType data) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<RowViewType>::value, "RowViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<ColViewType>::value, "CalViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<DataViewType>::value, "DataViewType must be a Kokkos::View.");

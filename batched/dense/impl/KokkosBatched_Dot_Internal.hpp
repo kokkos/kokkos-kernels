@@ -150,7 +150,7 @@ template <>
 struct SerialDot<Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X, const YViewType &Y, const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -186,7 +186,7 @@ template <>
 struct SerialDot<Trans::NoTranspose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X, const YViewType &Y, const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -226,7 +226,7 @@ struct TeamDot<MemberType, Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -270,7 +270,7 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -317,7 +317,7 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -361,7 +361,7 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");

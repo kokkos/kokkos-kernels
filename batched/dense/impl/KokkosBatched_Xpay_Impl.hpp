@@ -155,7 +155,7 @@ struct TeamVectorXpayInternal {
 /// ===========
 template <typename ViewType, typename alphaViewType>
 KOKKOS_INLINE_FUNCTION int SerialXpay::invoke(const alphaViewType& alpha, const ViewType& X, const ViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<ViewType>::value, "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value, "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
   static_assert(ViewType::rank == 2, "KokkosBatched::xpay: ViewType must have rank 2.");
@@ -192,7 +192,7 @@ template <typename MemberType>
 template <typename ViewType, typename alphaViewType>
 KOKKOS_INLINE_FUNCTION int TeamXpay<MemberType>::invoke(const MemberType& member, const alphaViewType& alpha,
                                                         const ViewType& X, const ViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<ViewType>::value, "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value, "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
   static_assert(ViewType::rank == 2, "KokkosBatched::xpay: ViewType must have rank 2.");
@@ -229,7 +229,7 @@ template <typename MemberType>
 template <typename ViewType, typename alphaViewType>
 KOKKOS_INLINE_FUNCTION int TeamVectorXpay<MemberType>::invoke(const MemberType& member, const alphaViewType& alpha,
                                                               const ViewType& X, const ViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<ViewType>::value, "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value, "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
   static_assert(ViewType::rank == 2, "KokkosBatched::xpay: ViewType must have rank 2.");

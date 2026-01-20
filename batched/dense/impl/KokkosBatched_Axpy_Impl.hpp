@@ -22,7 +22,7 @@ KOKKOS_INLINE_FUNCTION static int checkAxpyInput([[maybe_unused]] const alphaVie
     static_assert(XViewType::rank == 2, "KokkosBatched::axpy: XViewType must have rank 2.");
     static_assert(YViewType::rank == 2, "KokkosBatched::axpy: YViewType must have rank 2.");
     static_assert(alphaViewType::rank == 1, "KokkosBatched::axpy: alphaViewType must have rank 1.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent_int(0) != Y.extent_int(0) || X.extent_int(1) != Y.extent_int(1)) {
       Kokkos::printf(
@@ -42,7 +42,7 @@ KOKKOS_INLINE_FUNCTION static int checkAxpyInput([[maybe_unused]] const alphaVie
   } else {
     static_assert(XViewType::rank == 1, "KokkosBatched::axpy: XViewType must have rank 1 if alpha is a scalar.");
     static_assert(YViewType::rank == 1, "KokkosBatched::axpy: YViewType must have rank 1 if alpha is a scalar.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent_int(0) != Y.extent_int(0)) {
       Kokkos::printf(

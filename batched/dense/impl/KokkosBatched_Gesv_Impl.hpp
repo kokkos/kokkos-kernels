@@ -334,7 +334,7 @@ struct SerialGesv<Gesv::StaticPivoting> {
   template <typename MatrixType, typename XVectorType, typename YVectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const XVectorType X, const YVectorType Y,
                                            const MatrixType tmp) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<XVectorType>::value, "KokkosBatched::gesv: XVectorType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YVectorType>::value, "KokkosBatched::gesv: YVectorType is not a Kokkos::View.");
@@ -397,7 +397,7 @@ struct SerialGesv<Gesv::NoPivoting> {
   template <typename MatrixType, typename XVectorType, typename YVectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const XVectorType X, const YVectorType Y,
                                            const MatrixType /*tmp*/) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<XVectorType>::value, "KokkosBatched::gesv: XVectorType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YVectorType>::value, "KokkosBatched::gesv: YVectorType is not a Kokkos::View.");
@@ -441,7 +441,7 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
@@ -505,7 +505,7 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
@@ -554,7 +554,7 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
@@ -619,7 +619,7 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");

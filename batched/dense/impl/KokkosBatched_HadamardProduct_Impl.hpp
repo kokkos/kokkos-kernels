@@ -68,7 +68,7 @@ struct TeamVectorHadamardProductInternal {
 /// ===========
 template <typename XViewType, typename YViewType, typename VViewType>
 KOKKOS_INLINE_FUNCTION int SerialHadamardProduct::invoke(const XViewType& X, const YViewType& Y, const VViewType& V) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::HadamardProduct: XViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::HadamardProduct: YViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<VViewType>::value, "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
@@ -108,7 +108,7 @@ template <typename MemberType>
 template <typename XViewType, typename YViewType, typename VViewType>
 KOKKOS_INLINE_FUNCTION int TeamHadamardProduct<MemberType>::invoke(const MemberType& member, const XViewType& X,
                                                                    const YViewType& Y, const VViewType& V) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::HadamardProduct: XViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::HadamardProduct: YViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<VViewType>::value, "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
@@ -149,7 +149,7 @@ template <typename MemberType>
 template <typename XViewType, typename YViewType, typename VViewType>
 KOKKOS_INLINE_FUNCTION int TeamVectorHadamardProduct<MemberType>::invoke(const MemberType& member, const XViewType& X,
                                                                          const YViewType& Y, const VViewType& V) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::HadamardProduct: XViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::HadamardProduct: YViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<VViewType>::value, "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");

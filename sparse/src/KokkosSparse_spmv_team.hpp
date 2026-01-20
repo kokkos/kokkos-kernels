@@ -20,7 +20,7 @@ template <class TeamType, class ScalarType, class ValuesViewType, class IntView,
 int KOKKOS_INLINE_FUNCTION team_spmv(const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
                                      const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
                                      const ScalarType &beta, const yViewType &y, const int dobeta) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<ValuesViewType>::value, "ValuesViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<IntView>::value, "IntView must be a Kokkos::View.");
   static_assert(Kokkos::is_view<xViewType>::value, "xViewType must be a Kokkos::View.");
@@ -46,7 +46,7 @@ int KOKKOS_INLINE_FUNCTION team_spmv(const TeamType &team, const ScalarType &alp
         (int)x.extent(0), (int)y.extent(0), (int)row_ptr.extent(0));
     return 1;
   }
-#endif  // KOKKOSKERNELS_DEBUG_LEVEL
+#endif  // HAVE_KOKKOSKERNELS_DEBUG
 
   if (dobeta == 1)
     return KokkosSparse::TeamSpmv<TeamType>::template invoke<ScalarType, ValuesViewType, IntView, xViewType, yViewType,
@@ -62,7 +62,7 @@ template <class TeamType, class ScalarType, class ValuesViewType, class IntView,
 int KOKKOS_INLINE_FUNCTION team_vector_spmv(const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
                                             const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
                                             const ScalarType &beta, const yViewType &y, const int dobeta) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<ValuesViewType>::value, "ValuesViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<IntView>::value, "IntView must be a Kokkos::View.");
   static_assert(Kokkos::is_view<xViewType>::value, "xViewType must be a Kokkos::View.");
@@ -88,7 +88,7 @@ int KOKKOS_INLINE_FUNCTION team_vector_spmv(const TeamType &team, const ScalarTy
         (int)x.extent(0), (int)y.extent(0), (int)row_ptr.extent(0));
     return 1;
   }
-#endif  // KOKKOSKERNELS_DEBUG_LEVEL
+#endif  // HAVE_KOKKOSKERNELS_DEBUG
 
   if (dobeta == 1)
     return KokkosSparse::TeamVectorSpmv<TeamType>::template invoke<ScalarType, ValuesViewType, IntView, xViewType,
