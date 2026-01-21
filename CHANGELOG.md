@@ -6,6 +6,7 @@
 ### Bug and Warning Fixes:
 - Cleanup warning and warning system [\#2861](https://github.com/kokkos/kokkos-kernels/pull/2861)
 - Batched - Vector: marking defaulted method properly [\#2908](https://github.com/kokkos/kokkos-kernels/pull/2908)
+- Fix template argument in sort_and_merge_graph [\#2918](https://github.com/kokkos/kokkos-kernels/pull/2918)
 
 ### CI and Workflow Updates:
 - CI - gcc/1050: adding new action with c++20 [\#2844](https://github.com/kokkos/kokkos-kernels/pull/2844)
