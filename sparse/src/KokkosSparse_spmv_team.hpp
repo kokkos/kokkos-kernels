@@ -20,7 +20,6 @@ template <class TeamType, class ScalarType, class ValuesViewType, class IntView,
 int KOKKOS_INLINE_FUNCTION team_spmv(const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
                                      const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
                                      const ScalarType &beta, const yViewType &y, const int dobeta) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<ValuesViewType>::value, "ValuesViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<IntView>::value, "IntView must be a Kokkos::View.");
   static_assert(Kokkos::is_view<xViewType>::value, "xViewType must be a Kokkos::View.");
@@ -30,6 +29,7 @@ int KOKKOS_INLINE_FUNCTION team_spmv(const TeamType &team, const ScalarType &alp
   static_assert(static_cast<int>(xViewType::rank) == 1, "xViewType must have rank 1.");
   static_assert(static_cast<int>(yViewType::rank) == 1, "yViewType must have rank 1.");
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
     Kokkos::printf(
@@ -62,7 +62,6 @@ template <class TeamType, class ScalarType, class ValuesViewType, class IntView,
 int KOKKOS_INLINE_FUNCTION team_vector_spmv(const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
                                             const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
                                             const ScalarType &beta, const yViewType &y, const int dobeta) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<ValuesViewType>::value, "ValuesViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<IntView>::value, "IntView must be a Kokkos::View.");
   static_assert(Kokkos::is_view<xViewType>::value, "xViewType must be a Kokkos::View.");
@@ -72,6 +71,7 @@ int KOKKOS_INLINE_FUNCTION team_vector_spmv(const TeamType &team, const ScalarTy
   static_assert(static_cast<int>(xViewType::rank) == 1, "xViewType must have rank 1.");
   static_assert(static_cast<int>(yViewType::rank) == 1, "yViewType must have rank 1.");
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
     Kokkos::printf(

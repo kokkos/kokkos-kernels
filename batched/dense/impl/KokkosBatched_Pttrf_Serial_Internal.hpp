@@ -28,6 +28,13 @@ template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
     const int n, ValueType *KOKKOS_RESTRICT d, const int ds0, ValueType *KOKKOS_RESTRICT e, const int es0) {
+
+  auto update = [&](const int i) {
+    auto ei_tmp = e[i * es0];
+    e[i * es0]  = ei_tmp / d[i * ds0];
+    d[(i + 1) * ds0] -= e[i * es0] * ei_tmp;
+  };
+
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   int info = 0;
 
@@ -35,12 +42,6 @@ KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
     return (d[i] <= KokkosKernels::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
   };
 #endif
-
-  auto update = [&](const int i) {
-    auto ei_tmp = e[i * es0];
-    e[i * es0]  = ei_tmp / d[i * ds0];
-    d[(i + 1) * ds0] -= e[i * es0] * ei_tmp;
-  };
 
   // Compute the L*D*L' (or U'*D*U) factorization of A.
   const int i4 = (n - 1) % 4;
@@ -100,13 +101,6 @@ template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
     const int n, ValueType *KOKKOS_RESTRICT d, const int ds0, Kokkos::complex<ValueType> *KOKKOS_RESTRICT e,
     const int es0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
-  int info = 0;
-
-  auto check_positive_definitiveness = [&](const int i) {
-    return (d[i] <= KokkosKernels::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
-  };
-#endif
 
   auto update = [&](const int i) {
     auto eir_tmp     = e[i * es0].real();
@@ -116,6 +110,14 @@ KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
     e[i * es0]       = Kokkos::complex<ValueType>(f_tmp, g_tmp);
     d[(i + 1) * ds0] = d[(i + 1) * ds0] - f_tmp * eir_tmp - g_tmp * eii_tmp;
   };
+
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  int info = 0;
+
+  auto check_positive_definitiveness = [&](const int i) {
+    return (d[i] <= KokkosKernels::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
+  };
+#endif
 
   // Compute the L*D*L' (or U'*D*U) factorization of A.
   const int i4 = (n - 1) % 4;

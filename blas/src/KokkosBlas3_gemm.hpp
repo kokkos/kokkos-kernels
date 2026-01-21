@@ -83,7 +83,6 @@ template <class execution_space, class AViewType, class BViewType, class CViewTy
 void gemm(const execution_space& space, const char transA[], const char transB[],
           typename AViewType::const_value_type& alpha, const AViewType& A, const BViewType& B,
           typename CViewType::const_value_type& beta, const CViewType& C) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::gemm: execution_space must be a valid Kokkos "
                 "execution space");
@@ -100,6 +99,7 @@ void gemm(const execution_space& space, const char transA[], const char transB[]
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename CViewType::memory_space>::accessible,
                 "KokkosBlas::gemm: CViewType must be accessible from execution_space");
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   // Check validity of transpose argument
   bool valid_transA = (transA[0] == 'N') || (transA[0] == 'n') || (transA[0] == 'T') || (transA[0] == 't') ||
                       (transA[0] == 'C') || (transA[0] == 'c');
