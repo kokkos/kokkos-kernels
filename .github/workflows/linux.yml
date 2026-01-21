@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  kokkos_version: 4.7.01
+  kokkos_version: 5.0.1
 
 jobs:
   check-pr-labels:
@@ -60,11 +60,11 @@ jobs:
           mkdir -p kokkos/{build,install}
           cmake -S kokkos -B kokkos/build \
           -DKokkos_ENABLE_${{ matrix.backend }}=ON \
-          -DCMAKE_CXX_STANDARD=17 \
+          -DCMAKE_CXX_STANDARD=20 \
           -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
           -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
           -DKokkos_ENABLE_TESTS=OFF \
-          -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+          -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
           -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -DCMAKE_CXX_FLAGS="-fsanitize=address -fsanitize=undefined -fno-sanitize=signed-integer-overflow -fno-sanitize=vptr -fno-sanitize-recover=all" \
           -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address -fsanitize=undefined -fno-sanitize=signed-integer-overflow -fno-sanitize=vptr -fno-sanitize-recover=all" \
