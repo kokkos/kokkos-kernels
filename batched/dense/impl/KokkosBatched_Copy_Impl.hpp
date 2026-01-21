@@ -34,7 +34,7 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::NoTranspose, 2>::invoke(const AView
   static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
   static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   // Check compatibility of dimensions at run time.
   if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
     Kokkos::printf(
@@ -56,7 +56,7 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::Transpose, 2>::invoke(const AViewTy
   static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
   static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   // Check compatibility of dimensions at run time.
   if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
     Kokkos::printf(
@@ -99,7 +99,7 @@ struct TeamCopy<MemberType, Trans::NoTranspose, 2> {
     static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
     static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
       Kokkos::printf(
@@ -128,7 +128,7 @@ struct TeamCopy<MemberType, Trans::Transpose, 2> {
     static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
     static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
       Kokkos::printf(
@@ -177,7 +177,7 @@ struct TeamVectorCopy<MemberType, Trans::NoTranspose, 2> {
     static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
     static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
       Kokkos::printf(
@@ -206,7 +206,7 @@ struct TeamVectorCopy<MemberType, Trans::Transpose, 2> {
     static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
     static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
       Kokkos::printf(

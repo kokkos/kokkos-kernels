@@ -639,7 +639,7 @@ struct AxpbyUnificationAttemptTraits {
   // ********************************************************************
   // Routine to print information on input variables and internal variables
   // ********************************************************************
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   static void printInformation(std::ostream& os, std::string const& headerMsg) {
     os << headerMsg << ": AV = "
        << typeid(AV).name()

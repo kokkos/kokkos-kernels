@@ -29,7 +29,7 @@ int KOKKOS_INLINE_FUNCTION team_spmv(const TeamType &team, const ScalarType &alp
   static_assert(static_cast<int>(xViewType::rank) == 1, "xViewType must have rank 1.");
   static_assert(static_cast<int>(yViewType::rank) == 1, "yViewType must have rank 1.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
     Kokkos::printf(
@@ -46,7 +46,7 @@ int KOKKOS_INLINE_FUNCTION team_spmv(const TeamType &team, const ScalarType &alp
         (int)x.extent(0), (int)y.extent(0), (int)row_ptr.extent(0));
     return 1;
   }
-#endif  // HAVE_KOKKOSKERNELS_DEBUG
+#endif  // NDEBUG
 
   if (dobeta == 1)
     return KokkosSparse::TeamSpmv<TeamType>::template invoke<ScalarType, ValuesViewType, IntView, xViewType, yViewType,
@@ -71,7 +71,7 @@ int KOKKOS_INLINE_FUNCTION team_vector_spmv(const TeamType &team, const ScalarTy
   static_assert(static_cast<int>(xViewType::rank) == 1, "xViewType must have rank 1.");
   static_assert(static_cast<int>(yViewType::rank) == 1, "yViewType must have rank 1.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
     Kokkos::printf(
@@ -88,7 +88,7 @@ int KOKKOS_INLINE_FUNCTION team_vector_spmv(const TeamType &team, const ScalarTy
         (int)x.extent(0), (int)y.extent(0), (int)row_ptr.extent(0));
     return 1;
   }
-#endif  // HAVE_KOKKOSKERNELS_DEBUG
+#endif  // NDEBUG
 
   if (dobeta == 1)
     return KokkosSparse::TeamVectorSpmv<TeamType>::template invoke<ScalarType, ValuesViewType, IntView, xViewType,

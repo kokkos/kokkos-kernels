@@ -19,7 +19,7 @@ KOKKOS_INLINE_FUNCTION static int checkTrsvInput([[maybe_unused]] const AViewTyp
                 "KokkosBatched::trsv: AViewType must be either a Kokkos::View or a Kokkos::DynRankView.");
   static_assert(Kokkos::is_view_v<bViewType> || Kokkos::is_dyn_rank_view_v<bViewType>,
                 "KokkosBatched::trsv: bViewType must be either a Kokkos::View or a Kokkos::DynRankView.");
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   if (A.rank() != 2) {
     Kokkos::printf(
         "KokkosBatched::trsv: A must be a rank 2 View."

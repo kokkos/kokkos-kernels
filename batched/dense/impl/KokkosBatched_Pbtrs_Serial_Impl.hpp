@@ -19,7 +19,7 @@ KOKKOS_INLINE_FUNCTION static int checkPbtrsInput([[maybe_unused]] const AViewTy
   static_assert(AViewType::rank == 2, "KokkosBatched::pbtrs: AViewType must have rank 2.");
   static_assert(XViewType::rank == 1, "KokkosBatched::pbtrs: XViewType must have rank 1.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   const int ldb = x.extent(0);
   const int lda = A.extent(0), n = A.extent(1);
   const int kd = lda - 1;

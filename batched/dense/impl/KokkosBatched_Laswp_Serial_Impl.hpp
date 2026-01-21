@@ -20,7 +20,7 @@ KOKKOS_INLINE_FUNCTION static int checkLaswpInput([[maybe_unused]] const PivView
   static_assert(AViewType::rank == 1 || AViewType::rank == 2, "KokkosBatched::laswp: AViewType must have rank 1 or 2.");
   static_assert(PivViewType::rank == 1, "KokkosBatched::laswp: PivViewType must have rank 1.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   const int npiv = piv.extent(0);
   const int lda  = A.extent(0);
   if (npiv > lda) {

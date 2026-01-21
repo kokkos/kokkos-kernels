@@ -99,7 +99,7 @@ void gemm(const execution_space& space, const char transA[], const char transB[]
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename CViewType::memory_space>::accessible,
                 "KokkosBlas::gemm: CViewType must be accessible from execution_space");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   // Check validity of transpose argument
   bool valid_transA = (transA[0] == 'N') || (transA[0] == 'n') || (transA[0] == 'T') || (transA[0] == 't') ||
                       (transA[0] == 'C') || (transA[0] == 'c');
@@ -133,7 +133,7 @@ void gemm(const execution_space& space, const char transA[], const char transB[]
        << " B: " << B.extent(0) << " x " << B.extent(1) << " C: " << C.extent(0) << " x " << C.extent(1);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
-#endif  // HAVE_KOKKOSKERNELS_DEBUG
+#endif  // NDEBUG
 
   // Return if C matrix is degenerated
   if ((C.extent(0) == 0) || (C.extent(1) == 0)) {

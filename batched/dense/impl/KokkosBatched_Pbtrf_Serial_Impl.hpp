@@ -15,7 +15,7 @@ KOKKOS_INLINE_FUNCTION static int checkPbtrfInput([[maybe_unused]] const ABViewT
   static_assert(Kokkos::is_view_v<ABViewType>, "KokkosBatched::pbtrf: ABViewType is not a Kokkos::View.");
   static_assert(ABViewType::rank == 2, "KokkosBatched::pbtrf: ABViewType must have rank 2.");
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   const int kd = Ab.extent(0) - 1;
   if (kd < 0) {
     Kokkos::printf(

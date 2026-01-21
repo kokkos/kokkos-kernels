@@ -4,9 +4,9 @@
 #ifndef KOKKOSBLAS1_AXPBY_HPP
 #define KOKKOSBLAS1_AXPBY_HPP
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
 #include <iostream>
-#endif  // HAVE_KOKKOSKERNELS_DEBUG
+#endif  // NDEBUG
 
 #include <KokkosBlas1_axpby_spec.hpp>
 #include <KokkosBlas_serial_axpy.hpp>
@@ -58,9 +58,6 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X, const B
   // Perform compile time checks and run time checks.
   // **********************************************************************
   AxpbyTraits::performChecks(a, X, b, Y);
-#if HAVE_KOKKOSKERNELS_DEBUG
-  AxpbyTraits::printInformation(std::cout, "axpby(), unif information");
-#endif  // HAVE_KOKKOSKERNELS_DEBUG
 
   // **********************************************************************
   // Call Impl::Axpby<...>::axpby(...)
@@ -293,16 +290,16 @@ void axpy(const AV& a, const XMV& X, const YMV& Y) {
 ///
 template <class scalar_type, class XMV, class YMV>
 KOKKOS_FUNCTION void serial_axpy(const scalar_type alpha, const XMV X, YMV Y) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
   static_assert(Kokkos::is_view<XMV>::value, "KokkosBlas::serial_axpy: XMV is not a Kokkos::View");
   static_assert(Kokkos::is_view<YMV>::value, "KokkosBlas::serial_axpy: YMV is not a Kokkos::View");
   static_assert(XMV::rank == 1 || XMV::rank == 2, "KokkosBlas::serial_axpy: XMV must have rank 1 or 2.");
   static_assert(XMV::rank == YMV::rank, "KokkosBlas::serial_axpy: XMV and YMV must have the same rank.");
 
+#ifndef NDEBUG
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
     Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
   }
-#endif  // HAVE_KOKKOSKERNELS_DEBUG
+#endif  // NDEBUG
   if constexpr (XMV::rank() == 1)
     return Impl::serial_axpy(X.extent(0), alpha, X.data(), Y.data(), X.stride(0), Y.stride(0));
   else
