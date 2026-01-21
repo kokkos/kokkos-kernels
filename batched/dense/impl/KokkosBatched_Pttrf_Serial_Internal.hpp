@@ -28,7 +28,6 @@ template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
     const int n, ValueType *KOKKOS_RESTRICT d, const int ds0, ValueType *KOKKOS_RESTRICT e, const int es0) {
-
   auto update = [&](const int i) {
     auto ei_tmp = e[i * es0];
     e[i * es0]  = ei_tmp / d[i * ds0];
@@ -101,7 +100,6 @@ template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
     const int n, ValueType *KOKKOS_RESTRICT d, const int ds0, Kokkos::complex<ValueType> *KOKKOS_RESTRICT e,
     const int es0) {
-
   auto update = [&](const int i) {
     auto eir_tmp     = e[i * es0].real();
     auto eii_tmp     = e[i * es0].imag();

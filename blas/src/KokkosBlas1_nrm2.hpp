@@ -175,7 +175,7 @@ serial_nrm2(const XMV X) {
 
 template <class RV, class XMV>
 KOKKOS_INLINE_FUNCTION int serial_nrm2(const XMV X, const RV& R) {
-// Do some compile time check when debug is enabled
+  // Do some compile time check when debug is enabled
   static_assert(Kokkos::is_view<XMV>::value, "KokkosBlas::serial_nrm2: XMV is not a Kokkos::View");
   static_assert(Kokkos::is_view<RV>::value, "KokkosBlas::serial_nrm2: RV is not a Kokkos::View");
   static_assert(std::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
