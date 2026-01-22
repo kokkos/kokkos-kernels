@@ -4,10 +4,6 @@
 #ifndef KOKKOSBLAS1_AXPBY_HPP
 #define KOKKOSBLAS1_AXPBY_HPP
 
-#ifndef NDEBUG
-#include <iostream>
-#endif  // NDEBUG
-
 #include <KokkosBlas1_axpby_spec.hpp>
 #include <KokkosBlas_serial_axpy.hpp>
 #include <KokkosKernels_helpers.hpp>
