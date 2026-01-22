@@ -98,6 +98,58 @@ KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, in
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
+// cuSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+
+#define KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, ORDINAL, OFFSET, XL, YL, MEMSPACE)           \
+  template <>                                                                                                      \
+  struct spmv_sellmatrix_tpl_spec_avail<                                                                           \
+      Kokkos::HIP,                                                                                                 \
+      KokkosSparse::Experimental::SellMatrix<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::HIP, MEMSPACE>,   \
+                                             Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET>,               \
+      Kokkos::View<const SCALAR*, XL, Kokkos::Device<Kokkos::HIP, MEMSPACE>,                                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                                \
+      Kokkos::View<SCALAR*, YL, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
+    enum : bool { value = true };                                                                                  \
+  };
+
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(float, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                                      Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(float, int, int, Kokkos::LayoutLeft, Kokkos::LayoutRight,
+                                                      Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(float, int, int, Kokkos::LayoutRight, Kokkos::LayoutLeft,
+                                                      Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(float, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight,
+                                                      Kokkos::HIPSpace)
+
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(double, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                                      Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(double, int, int, Kokkos::LayoutLeft, Kokkos::LayoutRight,
+                                                      Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(double, int, int, Kokkos::LayoutRight, Kokkos::LayoutLeft,
+                                                      Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(double, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight,
+                                                      Kokkos::HIPSpace)
+
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft,
+                                                      Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft,
+                                                      Kokkos::LayoutRight, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutRight,
+                                                      Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutRight,
+                                                      Kokkos::LayoutRight, Kokkos::HIPSpace)
+
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft,
+                                                      Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft,
+                                                      Kokkos::LayoutRight, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutRight,
+                                                      Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_SELLMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutRight,
+                                                      Kokkos::LayoutRight, Kokkos::HIPSpace)
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+
 }  // namespace Impl
 }  // namespace KokkosSparse
 

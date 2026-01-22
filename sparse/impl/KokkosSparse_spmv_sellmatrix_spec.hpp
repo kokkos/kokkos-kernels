@@ -81,32 +81,32 @@ struct SPMV_SELLMATRIX<ExecutionSpace, AMatrix, XVector, YVector, false, KOKKOSK
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSSPARSE_SPMV_SELLMATRIX_ETI_SPEC_DECL(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,   \
-                                                   EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                       \
-  extern template struct SPMV_SELLMATRIX<                                                                 \
-      EXEC_SPACE_TYPE,                                                                                    \
-      KokkosSparse::Experimental::SellMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,                       \
-                                             Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
-                                             Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>, \
-      Kokkos::View<SCALAR_TYPE const*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                       \
-      Kokkos::View<SCALAR_TYPE*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                              \
+#define KOKKOSSPARSE_SPMV_SELLMATRIX_ETI_SPEC_DECL(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,     \
+                                                   EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                         \
+  extern template struct SPMV_SELLMATRIX<                                                                   \
+      EXEC_SPACE_TYPE,                                                                                      \
+      ::KokkosSparse::Experimental::SellMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,                       \
+                                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
+                                               Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>, \
+      Kokkos::View<SCALAR_TYPE const*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,        \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                         \
+      Kokkos::View<SCALAR_TYPE*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                \
       false, true>;
 
 #include <generated_specializations_hpp/KokkosSparse_spmv_sellmatrix_eti_spec_decl.hpp>
 
-#define KOKKOSSPARSE_SPMV_SELLMATRIX_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,   \
-                                                   EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                       \
-  template struct SPMV_SELLMATRIX<                                                                        \
-      EXEC_SPACE_TYPE,                                                                                    \
-      KokkosSparse::Experimental::SellMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,                       \
-                                             Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
-                                             Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>, \
-      Kokkos::View<SCALAR_TYPE const*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                       \
-      Kokkos::View<SCALAR_TYPE*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                              \
+#define KOKKOSSPARSE_SPMV_SELLMATRIX_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE,     \
+                                                   EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                         \
+  template struct SPMV_SELLMATRIX<                                                                          \
+      EXEC_SPACE_TYPE,                                                                                      \
+      ::KokkosSparse::Experimental::SellMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,                       \
+                                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
+                                               Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>, \
+      Kokkos::View<SCALAR_TYPE const*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,        \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                         \
+      Kokkos::View<SCALAR_TYPE*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                \
       false, true>;
 
 #include <KokkosSparse_spmv_sellmatrix_tpl_spec_decl.hpp>
