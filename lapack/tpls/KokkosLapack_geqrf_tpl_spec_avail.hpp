@@ -20,7 +20,7 @@
 namespace KokkosLapack {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class AMatrix, class TWArray, class RType>
+template <class ExecutionSpace, class AMatrix, class TauArray, class InfoArray>
 struct geqrf_tpl_spec_avail {
   enum : bool { value = false };
 };

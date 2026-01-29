@@ -28,7 +28,7 @@
 namespace KokkosLapack {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class AVT, class TWVT, class RT>
+template <class ExecutionSpace, class AMatrix, class TauArray, class InfoArray>
 struct geqrf_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -63,20 +63,20 @@ namespace KokkosLapack {
 namespace Impl {
 
 // Unification layer
-template <class ExecutionSpace, class AMatrix, class TWArray, class RType,
-          bool tpl_spec_avail = geqrf_tpl_spec_avail<ExecutionSpace, AMatrix, TWArray, RType>::value,
-          bool eti_spec_avail = geqrf_eti_spec_avail<ExecutionSpace, AMatrix, TWArray, RType>::value>
+template <class ExecutionSpace, class AMatrix, class TauArray, class InfoArray,
+          bool tpl_spec_avail = geqrf_tpl_spec_avail<ExecutionSpace, AMatrix, TauArray, InfoArray>::value,
+          bool eti_spec_avail = geqrf_eti_spec_avail<ExecutionSpace, AMatrix, TauArray, InfoArray>::value>
 struct GEQRF {
-  static void geqrf(const ExecutionSpace &space, const AMatrix &A, const TWArray &Tau, const TWArray &Work,
-                    const RType &R);
+  static void geqrf(const ExecutionSpace &space, const AMatrix &A, const TauArray &Tau,
+                    const InfoArray &info);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 // Unification layer
-template <class ExecutionSpace, class AMatrix, class TWArray, class RType>
-struct GEQRF<ExecutionSpace, AMatrix, TWArray, RType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void geqrf(const ExecutionSpace & /* space */, const AMatrix & /* A */, const TWArray & /* Tau */,
-                    const TWArray & /* Work */, const RType & /* R */) {
+template <class ExecutionSpace, class AMatrix, class TauArray, class InfoArray>
+struct GEQRF<ExecutionSpace, AMatrix, TauArray, InfoArray, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void geqrf(const ExecutionSpace & /* space */, const AMatrix & /* A */, const TauArray & /* Tau */,
+                    const InfoArray & /* Info */) {
     // NOTE: Might add the implementation of KokkosLapack::geqrf later
     throw std::runtime_error(
         "No fallback implementation of GEQRF (general QR factorization) "

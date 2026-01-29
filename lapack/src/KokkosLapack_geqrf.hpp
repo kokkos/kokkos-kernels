@@ -54,7 +54,7 @@ namespace KokkosLapack {
 /// \param Tau [out]  One-dimensional array of size min(M,N) that contains the
 ///                   scalar factors of the elementary reflectors.
 /// \param Info [out] One-dimensional array of integers and of size 1:
-///                   Info[0] = 0: successfull exit
+///                   Info[0] = 0: successful exit
 ///                   Info[0] < 0: if equal to '-i', the i-th argument had an
 ///                                illegal value
 ///
@@ -94,10 +94,9 @@ void geqrf(const ExecutionSpace& space, const AMatrix& A, const TauArray& Tau, c
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  if (info0 == 0) {
+  if (info0 < 1) {
     std::ostringstream os;
-    os << "KokkosLapack::geqrf: length of Info must be at least 1: "
-       << " A: " << m << " x " << n << ", Info length = " << info0;
+    os << "KokkosLapack::geqrf: length of Info must be at least 1, Info length = " << info0;
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
@@ -137,7 +136,7 @@ void geqrf(const ExecutionSpace& space, const AMatrix& A, const TauArray& Tau, c
 /// \param Tau [out]  One-dimensional array of size min(M,N) that contains the
 ///                   scalar factors of the elementary reflectors.
 /// \param Info [out] One-dimensional array of integers and of size 1:
-///                   Info[0] = 0: successfull exit
+///                   Info[0] = 0: successful exit
 ///                   Info[0] < 0: if equal to '-i', the i-th argument had an
 ///                                illegal value
 ///

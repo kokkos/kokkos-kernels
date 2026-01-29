@@ -6,6 +6,6 @@
 namespace KokkosLapack {
 namespace Impl {
 @LAPACK_GEQRF_ETI_DECL_BLOCK@
-  } //IMPL 
-} //Kokkos
+  } // IMPL
+} // namespace KokkosLapack
 #endif

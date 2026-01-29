@@ -55,7 +55,7 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau, const InfoVi
   const int lda = A.stride(1);
 
   int lwork = -1;
-  Kokkos::View<Scalar*, memory_space> work("geqrf work buffer", 1);
+  Kokkos::View<Scalar*, memory_space> work;
 
   if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
     using MagType = typename KokkosKernels::ArithTraits<Scalar>::mag_type;

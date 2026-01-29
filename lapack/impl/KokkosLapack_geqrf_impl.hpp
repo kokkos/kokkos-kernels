@@ -18,7 +18,7 @@
 #define KOKKOSLAPACK_IMPL_GEQRF_HPP_
 
 /// \file KokkosLapack_geqrf_impl.hpp
-/// \brief Implementation(s) of dense linear solve.
+/// \brief Implementation(s) of QR factorization.
 
 #include <KokkosKernels_config.h>
 #include <KokkosKernels_ArithTraits.hpp>

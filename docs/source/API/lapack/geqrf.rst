@@ -20,9 +20,9 @@ Performs the QR factorization of matrix :math:`A`
 where :math:`A` is the input coefficient matrix on entry and the resulting :math:`R` factor and scaled Householder vectors on exit. :math:`Tau` stores the scaling factors associated with the Householder vectors.
 
 1. Overwrites :math:`A` with the :math:`QR` factors using the resources of ``space``.
-2. Same as 1. but use the resources of ``KernelHandle::HandleExecSpace{}``.
+2. Same as 1. but uses the resources of the default execution space from ``AMatrix::execution_space``.
 
-The function will throw a runtime exception if ``Tau.extent(0) < Kokkos::min(A.extent(0), A.extent(1))`` or if ``Info.extent(0) == 0``.
+The function will throw a runtime exception if ``Tau.extent(0) < Kokkos::min(A.extent(0), A.extent(1))`` or if ``Info.extent(0) < 1``.
 
 Parameters
 ==========
@@ -33,7 +33,7 @@ Parameters
 
 :Tau: rank-1 view of size min(M,N) that contains the scaling factors of the elementary reflectors.
 
-:Info: rank-1 view of integers and of size 1: Info[0] = 0: successfull exit; Info[0] < 0: if equal to '-i', the i-th argument had an illegal value.
+:Info: rank-1 view of integers and of size 1: Info[0] = 0: successful exit; Info[0] < 0: if equal to '-i', the i-th argument had an illegal value.
 
 Type Requirements
 =================
