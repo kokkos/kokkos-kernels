@@ -67,8 +67,7 @@ template <class ExecutionSpace, class AMatrix, class TauArray, class InfoArray,
           bool tpl_spec_avail = geqrf_tpl_spec_avail<ExecutionSpace, AMatrix, TauArray, InfoArray>::value,
           bool eti_spec_avail = geqrf_eti_spec_avail<ExecutionSpace, AMatrix, TauArray, InfoArray>::value>
 struct GEQRF {
-  static void geqrf(const ExecutionSpace &space, const AMatrix &A, const TauArray &Tau,
-                    const InfoArray &info);
+  static void geqrf(const ExecutionSpace &space, const AMatrix &A, const TauArray &Tau, const InfoArray &info);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
