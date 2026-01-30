@@ -33,9 +33,9 @@
 namespace Test {
 
 template <class ViewTypeA, class ViewTypeTau>
-void getQR(int const m, int const n, typename ViewTypeA::HostMirror const& h_A,
-           typename ViewTypeTau::HostMirror const& h_tau, typename ViewTypeA::HostMirror& h_Q,
-           typename ViewTypeA::HostMirror& h_R, typename ViewTypeA::HostMirror& h_QR) {
+void getQR(int const m, int const n, typename ViewTypeA::host_mirror_type const& h_A,
+           typename ViewTypeTau::host_mirror_type const& h_tau, typename ViewTypeA::host_mirror_type& h_Q,
+           typename ViewTypeA::host_mirror_type& h_R, typename ViewTypeA::host_mirror_type& h_QR) {
   using ScalarA = typename ViewTypeA::value_type;
 
   // ********************************************************************
@@ -55,7 +55,7 @@ void getQR(int const m, int const n, typename ViewTypeA::HostMirror const& h_A,
   // Instantiate the m x m identity matrix h_I
   // ********************************************************************
   ViewTypeA I("I", m, m);
-  typename ViewTypeA::HostMirror h_I = Kokkos::create_mirror_view(I);
+  typename ViewTypeA::host_mirror_type h_I = Kokkos::create_mirror_view(I);
   for (int i = 0; i < m; ++i) {
     h_I(i, i) = ScalarA(1.);
   }
@@ -65,13 +65,13 @@ void getQR(int const m, int const n, typename ViewTypeA::HostMirror const& h_A,
   // ********************************************************************
   int minMN(std::min(m, n));
   ViewTypeTau v("v", m);
-  typename ViewTypeTau::HostMirror h_v = Kokkos::create_mirror_view(v);
+  typename ViewTypeTau::host_mirror_type h_v = Kokkos::create_mirror_view(v);
 
   ViewTypeA Qk("Qk", m, m);
-  typename ViewTypeA::HostMirror h_Qk = Kokkos::create_mirror_view(Qk);
+  typename ViewTypeA::host_mirror_type h_Qk = Kokkos::create_mirror_view(Qk);
 
   ViewTypeA auxM("auxM", m, m);
-  typename ViewTypeA::HostMirror h_auxM = Kokkos::create_mirror_view(auxM);
+  typename ViewTypeA::host_mirror_type h_auxM = Kokkos::create_mirror_view(auxM);
 
   // Q = H(0) H(1) . . . H(min(M,N)-1), where for k=0,1,...,min(m,n)-1:
   //   H(k) = I - Tau(k) * v * v**H, and
@@ -175,10 +175,10 @@ void impl_test_geqrf(int m, int n) {
   // ********************************************************************
   // Create host mirrors of device views
   // ********************************************************************
-  typename ViewTypeA::HostMirror h_A       = Kokkos::create_mirror_view(A);
-  typename ViewTypeA::HostMirror h_Aorig   = Kokkos::create_mirror_view(Aorig);
-  typename ViewTypeTau::HostMirror h_tau   = Kokkos::create_mirror_view(Tau);
-  typename ViewTypeInfo::HostMirror h_info = Kokkos::create_mirror_view(Info);
+  typename ViewTypeA::host_mirror_type h_A       = Kokkos::create_mirror_view(A);
+  typename ViewTypeA::host_mirror_type h_Aorig   = Kokkos::create_mirror_view(Aorig);
+  typename ViewTypeTau::host_mirror_type h_tau   = Kokkos::create_mirror_view(Tau);
+  typename ViewTypeInfo::host_mirror_type h_info = Kokkos::create_mirror_view(Info);
 
   // ********************************************************************
   // Initialize data
@@ -238,8 +238,8 @@ void impl_test_geqrf(int m, int n) {
   // Check outputs h_A and h_tau
   // ********************************************************************
   if ((m == 3) && (n == 3)) {
-    Kokkos::View<ScalarA**, typename Kokkos::DefaultHostExecutionSpace::memory_space> refMatrix("ref matrix", m, n);
-    Kokkos::View<ScalarA*, typename Kokkos::DefaultHostExecutionSpace::memory_space> refTau("ref tau", m);
+    Kokkos::View<ScalarA**, Kokkos::HostSpace> refMatrix("ref matrix", m, n);
+    Kokkos::View<ScalarA*, Kokkos::HostSpace> refTau("ref tau", m);
 
     refMatrix(0, 0) = ScalarA(-14.);
     refMatrix(0, 1) = ScalarA(-21.);
@@ -298,9 +298,9 @@ void impl_test_geqrf(int m, int n) {
   ViewTypeA R("R", m, n);
   ViewTypeA QR("QR", m, n);
 
-  typename ViewTypeA::HostMirror h_Q  = Kokkos::create_mirror_view(Q);
-  typename ViewTypeA::HostMirror h_R  = Kokkos::create_mirror_view(R);
-  typename ViewTypeA::HostMirror h_QR = Kokkos::create_mirror_view(QR);
+  typename ViewTypeA::host_mirror_type h_Q  = Kokkos::create_mirror_view(Q);
+  typename ViewTypeA::host_mirror_type h_R  = Kokkos::create_mirror_view(R);
+  typename ViewTypeA::host_mirror_type h_QR = Kokkos::create_mirror_view(QR);
 
   getQR<ViewTypeA, ViewTypeTau>(m, n, h_A, h_tau, h_Q, h_R, h_QR);
 
@@ -309,7 +309,7 @@ void impl_test_geqrf(int m, int n) {
   // ********************************************************************
   if ((m == 3) && (n == 3)) {
     Kokkos::View<ScalarA**, typename Kokkos::DefaultHostExecutionSpace::memory_space> refQ("ref Q", m, n);
-    Kokkos::View<ScalarA**, typename Kokkos::DefaultHostExecutionSpace::memory_space> refR("ref Q", m, n);
+    Kokkos::View<ScalarA**, typename Kokkos::DefaultHostExecutionSpace::memory_space> refR("ref R", m, n);
 
     refQ(0, 0) = ScalarA(-6. / 7.);
     refQ(0, 1) = ScalarA(69. / 175.);
