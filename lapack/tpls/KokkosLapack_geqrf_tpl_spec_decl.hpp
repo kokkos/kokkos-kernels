@@ -17,6 +17,8 @@
 #ifndef KOKKOSLAPACK_GEQRF_TPL_SPEC_DECL_HPP_
 #define KOKKOSLAPACK_GEQRF_TPL_SPEC_DECL_HPP_
 
+#include <iostream>
+
 namespace KokkosLapack {
 namespace Impl {
 template <class AViewType, class TauViewType, class InfoViewType>
@@ -37,7 +39,7 @@ inline void geqrf_print_specialization() {
 }  // namespace KokkosLapack
 
 // Generic Host side LAPACK (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
 #include <KokkosLapack_Host_tpl.hpp>
 
 namespace KokkosLapack {
@@ -55,7 +57,8 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau, const InfoVi
   const int lda = A.stride(1);
 
   int lwork = -1;
-  Kokkos::View<Scalar*, memory_space> work;
+  // work needs to be at least length 1 to store the returned value for lwork
+  Kokkos::View<Scalar*, memory_space> work("work array", 1);
 
   if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
     using MagType = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
@@ -140,100 +143,6 @@ KOKKOSLAPACK_GEQRF_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::T
 }  // namespace Impl
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
-
-#if 0  // TO DO
-
-// MAGMA
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include <KokkosLapack_magma.hpp>
-
-namespace KokkosLapack {
-namespace Impl {
-
-template <class ExecSpace, class AViewType, class TauViewType>
-void magmaGeqrfWrapper(const ExecSpace& space, const AViewType& A,
-                      const TauViewType& Tau, const InfoViewType& Info) {
-  using scalar_type = typename AViewType::non_const_value_type;
-
-  Kokkos::Profiling::pushRegion("KokkosLapack::geqrf[TPL_MAGMA," +
-                                KokkosKernels::ArithTraits<scalar_type>::name() + "]");
-  geqrf_print_specialization<AViewType, TauViewType, InfoViewType>();
-
-  magma_int_t N    = static_cast<magma_int_t>(A.extent(1));
-  magma_int_t AST  = static_cast<magma_int_t>(A.stride(1));
-  magma_int_t LDA  = (AST == 0) ? 1 : AST;
-  magma_int_t BST  = static_cast<magma_int_t>(B.stride(1));
-  magma_int_t LDB  = (BST == 0) ? 1 : BST;
-  magma_int_t NRHS = static_cast<magma_int_t>(B.extent(1));
-
-  KokkosLapack::Impl::MagmaSingleton& s =
-      KokkosLapack::Impl::MagmaSingleton::singleton();
-  magma_int_t info = 0;
-
-  space.fence();
-  if constexpr (std::is_same_v<scalar_type, float>) {
-      magma_sgeqrf_nopiv_gpu(N, NRHS, reinterpret_cast<magmaFloat_ptr>(A.data()),
-                            LDA, reinterpret_cast<magmaFloat_ptr>(B.data()),
-                            LDB, &info);
-  }
-
-  if constexpr (std::is_same_v<scalar_type, double>) {
-      magma_dgeqrf_nopiv_gpu(
-          N, NRHS, reinterpret_cast<magmaDouble_ptr>(A.data()), LDA,
-          reinterpret_cast<magmaDouble_ptr>(B.data()), LDB, &info);
-  }
-
-  if constexpr (std::is_same_v<scalar_type, Kokkos::complex<float>>) {
-      magma_cgeqrf_nopiv_gpu(
-          N, NRHS, reinterpret_cast<magmaFloatComplex_ptr>(A.data()), LDA,
-          reinterpret_cast<magmaFloatComplex_ptr>(B.data()), LDB, &info);
-  }
-
-  if constexpr (std::is_same_v<scalar_type, Kokkos::complex<double>>) {
-      magma_zgeqrf_nopiv_gpu(
-          N, NRHS, reinterpret_cast<magmaDoubleComplex_ptr>(A.data()), LDA,
-          reinterpret_cast<magmaDoubleComplex_ptr>(B.data()), LDB, &info);
-  }
-  ExecSpace().fence();
-  Kokkos::Profiling::popRegion();
-}
-
-#define KOKKOSLAPACK_GEQRF_MAGMA(SCALAR, LAYOUT, MEM_SPACE)                                                            \
-  template <>                                                                                                          \
-  struct GEQRF<                                                                                                        \
-      Kokkos::Cuda,                                                                                                    \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                          \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      true,                                                                                                            \
-      geqrf_eti_spec_avail<Kokkos::Cuda,                                                                               \
-                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                      \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
-    using AViewType   = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                        \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
-    using TauViewType = Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
-                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
-                                                                                                                       \
-    static void geqrf(const Kokkos::Cuda& space, const AViewType& A, const TauViewType& Tau,                           \
-                      const InfoViewType& Info) {                                                                      \
-      magmaGeqrfWrapper(space, A, Tau, Info);                                                                          \
-    }                                                                                                                  \
-  };
-
-KOKKOSLAPACK_GEQRF_MAGMA(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GEQRF_MAGMA(double, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GEQRF_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                        Kokkos::CudaSpace)
-KOKKOSLAPACK_GEQRF_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                        Kokkos::CudaSpace)
-
-}  // namespace Impl
-}  // namespace KokkosLapack
-#endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
-
-#endif  // TO DO
 
 // CUSOLVER
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER

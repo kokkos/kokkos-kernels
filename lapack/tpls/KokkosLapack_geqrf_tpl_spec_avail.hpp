@@ -26,7 +26,7 @@ struct geqrf_tpl_spec_avail {
 };
 
 // Generic Host side LAPACK (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
 
 #define KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)                                          \
   template <class ExecSpace>                                                                                        \
@@ -45,30 +45,6 @@ KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>, Kokkos::LayoutL
 #endif
 }  // namespace Impl
 }  // namespace KokkosLapack
-
-// MAGMA
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include "magma_v2.h"
-
-namespace KokkosLapack {
-namespace Impl {
-#define KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_MAGMA(SCALAR, LAYOUT, MEMSPACE)                                              \
-  template <>                                                                                                          \
-  struct geqrf_tpl_spec_avail<                                                                                         \
-      Kokkos::Cuda,                                                                                                    \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                                            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                         \
-    enum : bool { value = true };                                                                                      \
-  };
-
-KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GEQRF_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-}  // namespace Impl
-}  // namespace KokkosLapack
-#endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
 // CUSOLVER
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER

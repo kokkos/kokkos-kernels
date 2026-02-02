@@ -18,7 +18,7 @@
 // CUDA+CUSOLVER, HIP+ROCSOLVER and HOST+LAPACK
 #if (defined(TEST_CUDA_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)) || \
     (defined(TEST_HIP_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) || \
-    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                                     \
+    ((defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)) &&		\
      (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
 
 #include <gtest/gtest.h>
@@ -162,7 +162,7 @@ void impl_test_geqrf(int m, int n) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  int minMN(std::min(m, n));
+  const int minMN = std::min(m, n);
 
   // ********************************************************************
   // Create device views

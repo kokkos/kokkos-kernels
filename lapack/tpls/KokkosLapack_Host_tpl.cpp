@@ -7,6 +7,10 @@
 #include "KokkosKernels_config.h"
 #include "KokkosLapack_Host_tpl.hpp"
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+#include <Accelerate/Accelerate.h>
+#endif
+
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 
 /// Fortran headers
@@ -84,6 +88,9 @@ void F77_BLAS_MANGLE(zgeqrf, ZGEQRF)(const int*, const int*, std::complex<double
 #define F77_FUNC_CGEQRF F77_BLAS_MANGLE(cgeqrf, CGEQRF)
 #define F77_FUNC_ZGEQRF F77_BLAS_MANGLE(zgeqrf, ZGEQRF)
 
+#endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
 namespace KokkosLapack {
 namespace Impl {
 
@@ -91,6 +98,7 @@ namespace Impl {
 /// float
 ///
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 template <>
 void HostLapack<float>::gesv(int n, int rhs, float* a, int lda, int* ipiv, float* b, int ldb, int info) {
   F77_FUNC_SGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
@@ -107,15 +115,21 @@ int HostLapack<float>::trtri(const char uplo, const char diag, int n, const floa
   F77_FUNC_STRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
 }
+#endif
 template <>
-void HostLapack<float>::geqrf(int m, int n, float* a, int lda, float* tau, float* work, int lwork, int* info) {
+void HostLapack<float>::geqrf(const int m, const int n, float* a, const int lda, float* tau, float* work, int lwork, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  sgeqrf_(&m, &n, a, &lda, tau, work, &lwork, info);
+#else
   F77_FUNC_SGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
+#endif
 }
 
 ///
 /// double
 ///
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 template <>
 void HostLapack<double>::gesv(int n, int rhs, double* a, int lda, int* ipiv, double* b, int ldb, int info) {
   F77_FUNC_DGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
@@ -132,15 +146,21 @@ int HostLapack<double>::trtri(const char uplo, const char diag, int n, const dou
   F77_FUNC_DTRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
 }
+#endif
 template <>
-void HostLapack<double>::geqrf(int m, int n, double* a, int lda, double* tau, double* work, int lwork, int* info) {
+void HostLapack<double>::geqrf(const int m, const int n, double* a, const int lda, double* tau, double* work, int lwork, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  dgeqrf_(&m, &n, a, &lda, tau, work, &lwork, info);
+#else
   F77_FUNC_DGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
+#endif
 }
 
 ///
 /// std::complex<float>
 ///
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 template <>
 void HostLapack<std::complex<float>>::gesv(int n, int rhs, std::complex<float>* a, int lda, int* ipiv,
                                            std::complex<float>* b, int ldb, int info) {
@@ -160,16 +180,22 @@ int HostLapack<std::complex<float>>::trtri(const char uplo, const char diag, int
   F77_FUNC_CTRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
 }
+#endif
 template <>
-void HostLapack<std::complex<float>>::geqrf(int m, int n, std::complex<float>* a, int lda, std::complex<float>* tau,
+void HostLapack<std::complex<float>>::geqrf(const int m, const int n, std::complex<float>* a, const int lda, std::complex<float>* tau,
                                             std::complex<float>* work, int lwork, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  cgeqrf_(&m, &n, a, &lda, tau, work, &lwork, info);
+#else
   F77_FUNC_CGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
+#endif
 }
 
 ///
 /// std::complex<double>
 ///
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 template <>
 void HostLapack<std::complex<double>>::gesv(int n, int rhs, std::complex<double>* a, int lda, int* ipiv,
                                             std::complex<double>* b, int ldb, int info) {
@@ -189,12 +215,17 @@ int HostLapack<std::complex<double>>::trtri(const char uplo, const char diag, in
   F77_FUNC_ZTRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
 }
+#endif
 template <>
-void HostLapack<std::complex<double>>::geqrf(int m, int n, std::complex<double>* a, int lda, std::complex<double>* tau,
+void HostLapack<std::complex<double>>::geqrf(const int m, const int n, std::complex<double>* a, const int lda, std::complex<double>* tau,
                                              std::complex<double>* work, int lwork, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  zgeqrf_(&m, &n, a, &lda, tau, work, &lwork, info);
+#else
   F77_FUNC_ZGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
+#endif
 }
 
 }  // namespace Impl
 }  // namespace KokkosLapack
-#endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
+#endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK || KOKKOSKERNELS_ENABLE_TPL_ACCELERATE
