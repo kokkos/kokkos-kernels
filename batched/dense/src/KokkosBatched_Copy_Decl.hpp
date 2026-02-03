@@ -4,55 +4,120 @@
 #define KOKKOSBATCHED_COPY_DECL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+/// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 #include "KokkosBatched_Util.hpp"
 
 namespace KokkosBatched {
 
+/// \brief Serial Batched Copy:
+/// Performs B = Op(A)
+/// where Op is one of NoTranspose, Transpose, ConjTranspose
+/// A and B are 1D or 2D views
 ///
-/// Serial Copy
-///
-
-template <typename ArgTrans = Trans::NoTranspose, int rank = 2>
+/// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
+/// \tparam Args: (deprecated) rank information
+template <typename ArgTrans = Trans::NoTranspose, class... Args>
 struct SerialCopy {
+  static constexpr size_t size = sizeof...(Args);
+  static_assert(size == 0,
+                "KokkosBatched::SerialCopy<ArgTrans, rank> is deprecated. Please use "
+                "KokkosBatched::SerialCopy<ArgTrans> instead.");
+  static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::SerialCopy: ArgTrans must be a KokkosBlas::Trans.");
+
+  /// \brief invoke the SerialCopy
+  /// \tparam AViewType: Kokkos::View type for A
+  /// \tparam BViewType: Kokkos::View type for B
+  /// \param[in] A Input view A
+  /// \param[out] B Output view B
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const BViewType &B);
 };
 
+/// \brief Team Batched Copy:
+/// Performs B = Op(A)
+/// where Op is one of NoTranspose, Transpose, ConjTranspose
+/// A and B are 1D or 2D views
 ///
-/// Team Copy
-///
-
-template <typename MemberType, typename ArgTrans = Trans::NoTranspose, int rank = 2>
+/// \tparam MemberType: Kokkos::TeamPolicy member type
+/// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
+/// \tparam Args: (deprecated) rank information
+template <typename MemberType, typename ArgTrans = Trans::NoTranspose, class... Args>
 struct TeamCopy {
+  static constexpr size_t size = sizeof...(Args);
+  static_assert(size == 0,
+                "KokkosBatched::TeamCopy<MemberType, ArgTrans, rank> is deprecated. Please use "
+                "KokkosBatched::TeamCopy<MemberType, ArgTrans> instead.");
+  static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::TeamCopy: ArgTrans must be a KokkosBlas::Trans.");
+
+  /// \brief invoke the TeamCopy
+  /// \tparam AViewType: Kokkos::View type for A
+  /// \tparam BViewType: Kokkos::View type for B
+  /// \param[in] member Kokkos::TeamPolicy member
+  /// \param[in] A Input view A
+  /// \param[out] B Output view B
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B);
 };
 
+/// \brief TeamVector Batched Copy:
+/// Performs B = Op(A)
+/// where Op is one of NoTranspose, Transpose, ConjTranspose
+/// A and B are 1D or 2D views
 ///
-/// TeamVector Copy
-///
-
-template <typename MemberType, typename ArgTrans = Trans::NoTranspose, int rank = 2>
+/// \tparam MemberType: Kokkos::TeamPolicy member type
+/// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
+/// \tparam Args: (deprecated) rank information
+template <typename MemberType, typename ArgTrans = Trans::NoTranspose, class... Args>
 struct TeamVectorCopy {
+  static constexpr size_t size = sizeof...(Args);
+  static_assert(size == 0,
+                "KokkosBatched::TeamVectorCopy<MemberType, ArgTrans, rank> is deprecated. Please use "
+                "KokkosBatched::TeamVectorCopy<MemberType, ArgTrans> instead.");
+  static_assert(KokkosBlas::is_trans_v<ArgTrans>,
+                "KokkosBatched::TeamVectorCopy: ArgTrans must be a KokkosBlas::Trans.");
+
+  /// \brief invoke the TeamVectorCopy
+  /// \tparam AViewType: Kokkos::View type for A
+  /// \tparam BViewType: Kokkos::View type for B
+  /// \param[in] member Kokkos::TeamPolicy member
+  /// \param[in] A Input view A
+  /// \param[out] B Output view B
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B);
 };
 
-///
-/// Selective Interface
-///
-template <typename MemberType, typename ArgTrans, typename ArgMode, int rank = 2>
+/// \brief General Copy:
+/// Performs B = Op(A)
+/// where Op is one of NoTranspose, Transpose, ConjTranspose
+/// A and B are 1D or 2D views
+/// Dispatches to SerialCopy, TeamCopy, or TeamVectorCopy based on ArgMode
+/// \tparam MemberType: Kokkos::TeamPolicy member type
+/// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
+/// \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
+/// \tparam Args: (deprecated) rank information
+template <typename MemberType, typename ArgTrans, typename ArgMode, class... Args>
 struct Copy {
+  static constexpr size_t size = sizeof...(Args);
+  static_assert(size == 0,
+                "KokkosBatched::Copy<MemberType, ArgTrans, ArgMode, rank> is deprecated. Please use "
+                "KokkosBatched::Copy<MemberType, ArgTrans, ArgMode> instead.");
+
+  /// \brief invoke the Copy
+  /// \tparam AViewType: Kokkos::View type for A
+  /// \tparam BViewType: Kokkos::View type for B
+  /// \param[in] member Kokkos::TeamPolicy member
+  /// \param[in] A Input view A
+  /// \param[out] B Output view B
   template <typename AViewType, typename BViewType>
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
     int r_val = 0;
-    if (std::is_same<ArgMode, Mode::Serial>::value) {
-      r_val = SerialCopy<ArgTrans, rank>::invoke(A, B);
-    } else if (std::is_same<ArgMode, Mode::Team>::value) {
-      r_val = TeamCopy<MemberType, ArgTrans, rank>::invoke(member, A, B);
-    } else if (std::is_same<ArgMode, Mode::TeamVector>::value) {
-      r_val = TeamVectorCopy<MemberType, ArgTrans, rank>::invoke(member, A, B);
+    if constexpr (std::is_same_v<ArgMode, Mode::Serial>) {
+      r_val = SerialCopy<ArgTrans>::invoke(A, B);
+    } else if constexpr (std::is_same_v<ArgMode, Mode::Team>) {
+      r_val = TeamCopy<MemberType, ArgTrans>::invoke(member, A, B);
+    } else if constexpr (std::is_same_v<ArgMode, Mode::TeamVector>) {
+      r_val = TeamVectorCopy<MemberType, ArgTrans>::invoke(member, A, B);
     }
     return r_val;
   }
@@ -75,9 +140,9 @@ struct Copy {
   KokkosBatched::TeamCopyInternal ::invoke(MEMBER, M, A, AS, B, BS)
 
 #define KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(MODETYPE, MEMBER, M, A, AS, B, BS) \
-  if (std::is_same<MODETYPE, KokkosBatched::Mode::Serial>::value) {                               \
+  if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Serial>) {                          \
     KOKKOSBATCHED_SERIAL_COPY_VECTOR_INTERNAL_INVOKE(M, A, AS, B, BS);                            \
-  } else if (std::is_same<MODETYPE, KokkosBatched::Mode::Team>::value) {                          \
+  } else if constexpr (std::is_same_v<MODETYPE, KokkosBatched::Mode::Team>) {                     \
     KOKKOSBATCHED_TEAM_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(MEMBER, M, A, AS, B, BS);         \
   }
 

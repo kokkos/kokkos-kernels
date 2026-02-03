@@ -416,7 +416,7 @@ struct SerialGesv<Gesv::NoPivoting> {
 
     int r_val = SerialLU<Algo::Level3::Unblocked>::invoke(A);
 
-    if (r_val == 0) r_val = SerialCopy<Trans::NoTranspose, 1>::invoke(Y, X);
+    if (r_val == 0) r_val = SerialCopy<Trans::NoTranspose>::invoke(Y, X);
 
     if (r_val == 0)
       r_val = SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Level3::Unblocked>::invoke(
@@ -523,7 +523,7 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
     member.team_barrier();
 
     if (r_val == 0) {
-      TeamCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
+      TeamCopy<MemberType, Trans::NoTranspose>::invoke(member, Y, X);
       member.team_barrier();
     }
 
@@ -637,7 +637,7 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
     member.team_barrier();
 
     if (r_val == 0) {
-      TeamVectorCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
+      TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, Y, X);
       member.team_barrier();
     }
 
