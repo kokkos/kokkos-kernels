@@ -98,10 +98,10 @@ void run_newton_test(const system_type& mySys, KokkosODE::Experimental::Newton_p
   std::cout << "  [(";
   for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
     std::cout << " " << x_h(eqIdx);
-  }
-  std::cout << " ), " << KokkosBlas::serial_nrm2(rhs) << ", (";
-  for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
-    std::cout << " " << Kokkos::abs(x_h(eqIdx) - solution[eqIdx]) / Kokkos::abs(solution[eqIdx]);
+    if (Kokkos::abs(solution[eqIdx]) > 0)
+      std::cout << ", " << Kokkos::abs(x_h(eqIdx) - solution[eqIdx]) / Kokkos::abs(solution[eqIdx]);
+    else
+      std::cout << ", " << Kokkos::abs(x_h(eqIdx) - solution[eqIdx]);
   }
   std::cout << " )]" << std::endl;
 #else
