@@ -117,7 +117,8 @@ int HostLapack<float>::trtri(const char uplo, const char diag, int n, const floa
 }
 #endif
 template <>
-void HostLapack<float>::geqrf(const int m, const int n, float* a, const int lda, float* tau, float* work, int lwork, int* info) {
+void HostLapack<float>::geqrf(const int m, const int n, float* a, const int lda, float* tau, float* work, int lwork,
+                              int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   sgeqrf_(&m, &n, a, &lda, tau, work, &lwork, info);
 #else
@@ -148,7 +149,8 @@ int HostLapack<double>::trtri(const char uplo, const char diag, int n, const dou
 }
 #endif
 template <>
-void HostLapack<double>::geqrf(const int m, const int n, double* a, const int lda, double* tau, double* work, int lwork, int* info) {
+void HostLapack<double>::geqrf(const int m, const int n, double* a, const int lda, double* tau, double* work, int lwork,
+                               int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   dgeqrf_(&m, &n, a, &lda, tau, work, &lwork, info);
 #else
@@ -182,8 +184,8 @@ int HostLapack<std::complex<float>>::trtri(const char uplo, const char diag, int
 }
 #endif
 template <>
-void HostLapack<std::complex<float>>::geqrf(const int m, const int n, std::complex<float>* a, const int lda, std::complex<float>* tau,
-                                            std::complex<float>* work, int lwork, int* info) {
+void HostLapack<std::complex<float>>::geqrf(const int m, const int n, std::complex<float>* a, const int lda,
+                                            std::complex<float>* tau, std::complex<float>* work, int lwork, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   cgeqrf_(&m, &n, a, &lda, tau, work, &lwork, info);
 #else
@@ -217,8 +219,9 @@ int HostLapack<std::complex<double>>::trtri(const char uplo, const char diag, in
 }
 #endif
 template <>
-void HostLapack<std::complex<double>>::geqrf(const int m, const int n, std::complex<double>* a, const int lda, std::complex<double>* tau,
-                                             std::complex<double>* work, int lwork, int* info) {
+void HostLapack<std::complex<double>>::geqrf(const int m, const int n, std::complex<double>* a, const int lda,
+                                             std::complex<double>* tau, std::complex<double>* work, int lwork,
+                                             int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   zgeqrf_(&m, &n, a, &lda, tau, work, &lwork, info);
 #else
