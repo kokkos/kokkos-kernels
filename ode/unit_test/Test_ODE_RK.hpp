@@ -304,7 +304,9 @@ void test_rate(ode_type& my_ode, const scalar_type& tstart, const scalar_type& t
 
 #ifndef NDEBUG
     scalar_type dt = (tend - tstart) / num_steps(idx);
-    std::cout << "count=" << count(0) << ", dt=" << dt << ", error=" << error(idx) << ", solution: {" << y_new_h(0)
+    auto h_count   = Kokkos::create_mirror_view(count);
+    Kokkos::deep_copy(h_count, count);
+    std::cout << "h_count=" << h_count(0) << ", dt=" << dt << ", error=" << error(idx) << ", solution: {" << y_new_h(0)
               << ", " << y_new_h(1) << "}" << std::endl;
 #endif
   }
