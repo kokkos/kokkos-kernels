@@ -10,6 +10,14 @@
 
 namespace KokkosBatched {
 
+template <bool>
+struct SerialCopy_Deprecated_Warning {};
+
+template <>
+struct [[deprecated(
+    "KokkosBatched::SerialCopy<ArgTrans, rank> is deprecated. Please use "
+    "KokkosBatched::SerialCopy<ArgTrans> instead.")]] SerialCopy_Deprecated_Warning<true> {};
+
 /// \brief Serial Batched Copy:
 /// Performs B = Op(A)
 /// where Op is one of NoTranspose, Transpose, ConjTranspose
@@ -18,11 +26,7 @@ namespace KokkosBatched {
 /// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
 /// \tparam Args: (deprecated) rank information
 template <typename ArgTrans = Trans::NoTranspose, class... Args>
-struct SerialCopy {
-  static constexpr size_t size = sizeof...(Args);
-  static_assert(size == 0,
-                "KokkosBatched::SerialCopy<ArgTrans, rank> is deprecated. Please use "
-                "KokkosBatched::SerialCopy<ArgTrans> instead.");
+struct SerialCopy : SerialCopy_Deprecated_Warning<sizeof...(Args) != 0> {
   static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::SerialCopy: ArgTrans must be a KokkosBlas::Trans.");
 
   /// \brief invoke the SerialCopy
@@ -34,6 +38,14 @@ struct SerialCopy {
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const BViewType &B);
 };
 
+template <bool>
+struct TeamCopy_Deprecated_Warning {};
+
+template <>
+struct [[deprecated(
+    "KokkosBatched::TeamCopy<ArgTrans, rank> is deprecated. Please use "
+    "KokkosBatched::TeamCopy<ArgTrans> instead.")]] TeamCopy_Deprecated_Warning<true> {};
+
 /// \brief Team Batched Copy:
 /// Performs B = Op(A)
 /// where Op is one of NoTranspose, Transpose, ConjTranspose
@@ -43,11 +55,7 @@ struct SerialCopy {
 /// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
 /// \tparam Args: (deprecated) rank information
 template <typename MemberType, typename ArgTrans = Trans::NoTranspose, class... Args>
-struct TeamCopy {
-  static constexpr size_t size = sizeof...(Args);
-  static_assert(size == 0,
-                "KokkosBatched::TeamCopy<MemberType, ArgTrans, rank> is deprecated. Please use "
-                "KokkosBatched::TeamCopy<MemberType, ArgTrans> instead.");
+struct TeamCopy : TeamCopy_Deprecated_Warning<sizeof...(Args) != 0> {
   static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::TeamCopy: ArgTrans must be a KokkosBlas::Trans.");
 
   /// \brief invoke the TeamCopy
@@ -60,6 +68,14 @@ struct TeamCopy {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B);
 };
 
+template <bool>
+struct TeamVectorCopy_Deprecated_Warning {};
+
+template <>
+struct [[deprecated(
+    "KokkosBatched::TeamVectorCopy<ArgTrans, rank> is deprecated. Please use "
+    "KokkosBatched::TeamVectorCopy<ArgTrans> instead.")]] TeamVectorCopy_Deprecated_Warning<true> {};
+
 /// \brief TeamVector Batched Copy:
 /// Performs B = Op(A)
 /// where Op is one of NoTranspose, Transpose, ConjTranspose
@@ -69,11 +85,7 @@ struct TeamCopy {
 /// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
 /// \tparam Args: (deprecated) rank information
 template <typename MemberType, typename ArgTrans = Trans::NoTranspose, class... Args>
-struct TeamVectorCopy {
-  static constexpr size_t size = sizeof...(Args);
-  static_assert(size == 0,
-                "KokkosBatched::TeamVectorCopy<MemberType, ArgTrans, rank> is deprecated. Please use "
-                "KokkosBatched::TeamVectorCopy<MemberType, ArgTrans> instead.");
+struct TeamVectorCopy : TeamVectorCopy_Deprecated_Warning<sizeof...(Args) != 0> {
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::TeamVectorCopy: ArgTrans must be a KokkosBlas::Trans.");
 
@@ -87,6 +99,14 @@ struct TeamVectorCopy {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B);
 };
 
+template <bool>
+struct Copy_Deprecated_Warning {};
+
+template <>
+struct [[deprecated(
+    "KokkosBatched::Copy<MemberType, ArgTrans, rank> is deprecated. Please use "
+    "KokkosBatched::Copy<MemberType, ArgTrans> instead.")]] Copy_Deprecated_Warning<true> {};
+
 /// \brief General Copy:
 /// Performs B = Op(A)
 /// where Op is one of NoTranspose, Transpose, ConjTranspose
@@ -97,11 +117,8 @@ struct TeamVectorCopy {
 /// \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
 /// \tparam Args: (deprecated) rank information
 template <typename MemberType, typename ArgTrans, typename ArgMode, class... Args>
-struct Copy {
-  static constexpr size_t size = sizeof...(Args);
-  static_assert(size == 0,
-                "KokkosBatched::Copy<MemberType, ArgTrans, ArgMode, rank> is deprecated. Please use "
-                "KokkosBatched::Copy<MemberType, ArgTrans, ArgMode> instead.");
+struct Copy : Copy_Deprecated_Warning<sizeof...(Args) != 0> {
+  static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::Copy: ArgTrans must be a KokkosBlas::Trans.");
 
   /// \brief invoke the Copy
   /// \tparam AViewType: Kokkos::View type for A
