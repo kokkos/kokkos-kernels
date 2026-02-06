@@ -25,7 +25,7 @@ struct [[deprecated(
 ///
 /// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
 /// \tparam Args: (deprecated) rank information
-template <typename ArgTrans = Trans::NoTranspose, class... Args>
+template <typename ArgTrans = Trans::NoTranspose, int... Args>
 struct SerialCopy : SerialCopy_Deprecated_Warning<sizeof...(Args) != 0> {
   static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::SerialCopy: ArgTrans must be a KokkosBlas::Trans.");
 
@@ -54,7 +54,7 @@ struct [[deprecated(
 /// \tparam MemberType: Kokkos::TeamPolicy member type
 /// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
 /// \tparam Args: (deprecated) rank information
-template <typename MemberType, typename ArgTrans = Trans::NoTranspose, class... Args>
+template <typename MemberType, typename ArgTrans = Trans::NoTranspose, int... Args>
 struct TeamCopy : TeamCopy_Deprecated_Warning<sizeof...(Args) != 0> {
   static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::TeamCopy: ArgTrans must be a KokkosBlas::Trans.");
 
@@ -84,7 +84,7 @@ struct [[deprecated(
 /// \tparam MemberType: Kokkos::TeamPolicy member type
 /// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
 /// \tparam Args: (deprecated) rank information
-template <typename MemberType, typename ArgTrans = Trans::NoTranspose, class... Args>
+template <typename MemberType, typename ArgTrans = Trans::NoTranspose, int... Args>
 struct TeamVectorCopy : TeamVectorCopy_Deprecated_Warning<sizeof...(Args) != 0> {
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::TeamVectorCopy: ArgTrans must be a KokkosBlas::Trans.");
@@ -116,7 +116,7 @@ struct [[deprecated(
 /// \tparam ArgTrans: one of NoTranspose, Transpose, ConjTranspose
 /// \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
 /// \tparam Args: (deprecated) rank information
-template <typename MemberType, typename ArgTrans, typename ArgMode, class... Args>
+template <typename MemberType, typename ArgTrans, typename ArgMode, int... Args>
 struct Copy : Copy_Deprecated_Warning<sizeof...(Args) != 0> {
   static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::Copy: ArgTrans must be a KokkosBlas::Trans.");
 
