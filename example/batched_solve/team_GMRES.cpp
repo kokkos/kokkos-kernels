@@ -68,7 +68,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     const int first_matrix = _handle.first_index(member.league_rank());
     const int last_matrix  = _handle.last_index(member.league_rank());
-    using TeamVectorCopy1D = KokkosBatched::TeamVectorCopy<MemberType, KokkosBatched::Trans::NoTranspose, 1>;
+    using TeamVectorCopy1D = KokkosBatched::TeamVectorCopy<MemberType, KokkosBatched::Trans::NoTranspose>;
 
     auto d = Kokkos::subview(_values, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
     auto x = Kokkos::subview(X_, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
