@@ -19,12 +19,12 @@ jobs:
     
     steps:
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: kokkos/kokkos
           ref: ${{ inputs.kokkos_version }}
@@ -50,7 +50,7 @@ jobs:
             -D Kokkos_ENABLE_TESTS=OFF \
             -D Kokkos_ENABLE_EXAMPLES=OFF \
             -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF
+            -D Kokkos_ENABLE_DEPRECATED_CODE_5=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
@@ -93,12 +93,12 @@ jobs:
     
     steps:
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: kokkos/kokkos
           ref: ${{ inputs.kokkos_version }}
@@ -121,8 +121,7 @@ jobs:
             -D Kokkos_ARCH_VEGA90A=ON \
             -D Kokkos_ENABLE_TESTS=OFF \
             -D Kokkos_ENABLE_EXAMPLES=OFF \
-            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -D Kokkos_ENABLE_DEPRECATED_CODE_5=OFF \
             -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF
 
       - name: build_and_install_kokkos

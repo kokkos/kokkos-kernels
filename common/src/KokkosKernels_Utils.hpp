@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include <iostream>
 #include <limits>
@@ -737,7 +724,7 @@ template <class ExecSpaceIn, typename value_array_type>
 void zero_vector(ExecSpaceIn &exec_space_in, typename value_array_type::value_type /* num_elements */,
                  value_array_type &vector) {
   typedef typename value_array_type::non_const_value_type val_type;
-  Kokkos::deep_copy(exec_space_in, vector, Kokkos::ArithTraits<val_type>::zero());
+  Kokkos::deep_copy(exec_space_in, vector, KokkosKernels::ArithTraits<val_type>::zero());
   exec_space_in.fence();
 }
 
@@ -1305,9 +1292,8 @@ KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr *p) {
 }  // namespace KokkosKernels
 
 // Define the identity for array_sum_reduce
-namespace Kokkos {
 template <typename scalar_t, int N>
-struct reduction_identity<KokkosKernels::Impl::array_sum_reduce<scalar_t, N>> {
+struct Kokkos::reduction_identity<KokkosKernels::Impl::array_sum_reduce<scalar_t, N>> {
   typedef KokkosKernels::Impl::array_sum_reduce<scalar_t, N> T;
   KOKKOS_FORCEINLINE_FUNCTION static T sum() {
     // default constructor default-initializes each element (this should always
@@ -1315,6 +1301,5 @@ struct reduction_identity<KokkosKernels::Impl::array_sum_reduce<scalar_t, N>> {
     return T();
   }
 };
-}  // namespace Kokkos
 
 #endif

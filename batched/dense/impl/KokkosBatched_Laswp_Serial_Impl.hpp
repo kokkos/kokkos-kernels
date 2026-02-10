@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBATCHED_LASWP_SERIAL_IMPL_HPP_
 #define KOKKOSBATCHED_LASWP_SERIAL_IMPL_HPP_
@@ -26,13 +13,14 @@ namespace KokkosBatched {
 namespace Impl {
 
 template <typename PivViewType, typename AViewType>
-KOKKOS_INLINE_FUNCTION static int checkLaswpInput(const PivViewType &piv, const AViewType &A) {
+KOKKOS_INLINE_FUNCTION static int checkLaswpInput([[maybe_unused]] const PivViewType &piv,
+                                                  [[maybe_unused]] const AViewType &A) {
   static_assert(Kokkos::is_view_v<PivViewType>, "KokkosBatched::laswp: PivViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::laswp: AViewType is not a Kokkos::View.");
   static_assert(AViewType::rank == 1 || AViewType::rank == 2, "KokkosBatched::laswp: AViewType must have rank 1 or 2.");
   static_assert(PivViewType::rank == 1, "KokkosBatched::laswp: PivViewType must have rank 1.");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int npiv = piv.extent(0);
   const int lda  = A.extent(0);
   if (npiv > lda) {

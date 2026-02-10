@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // Created by David Poliakoff and Amy Powell on 6/15/2021
 
@@ -20,17 +7,8 @@
 #define KOKKOSKERNELS_KOKKOSBLAS_GEMV_TEST_RPS_HPP
 
 #include <Kokkos_Core.hpp>
-#include "blas/KokkosBlas1_dot.hpp"
+#include "KokkosBlas1_dot.hpp"
 #include <Kokkos_Random.hpp>
-
-// These headers are required for RPS perf test implementation
-//
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-#include <PerfTestUtilities.hpp>
-
-test_list construct_gemv_kernel_base(const rajaperf::RunParams& run_params);
-
-#endif  // KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 
 template <class ExecSpace, class Layout>
 struct testData_gemv {

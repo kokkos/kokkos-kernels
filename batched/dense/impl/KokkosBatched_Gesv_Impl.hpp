@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_GESV_IMPL_HPP
 #define KOKKOSBATCHED_GESV_IMPL_HPP
 
@@ -59,7 +46,7 @@ KOKKOS_INLINE_FUNCTION int SerialStaticPivoting::invoke(const MatrixType1 A, con
   // First, the algorithm loops over the rows and columns and search
   // for the maximal absolute value per row and column.
   for (size_t i = 0; i < n; ++i) {
-    D2(i)      = Kokkos::ArithTraits<value_type>::zero();
+    D2(i)      = KokkosKernels::ArithTraits<value_type>::zero();
     tmp_v_1(i) = 0;
     tmp_v_2(i) = 1.;
     for (size_t j = 0; j < n; ++j) {
@@ -82,7 +69,7 @@ KOKKOS_INLINE_FUNCTION int SerialStaticPivoting::invoke(const MatrixType1 A, con
   // of A and Y.
   value_type D1_i;
   for (size_t i = 0; i < n; ++i) {
-    D1_i = Kokkos::ArithTraits<value_type>::zero();
+    D1_i = KokkosKernels::ArithTraits<value_type>::zero();
     for (size_t j = 0; j < n; ++j) {
       if (D1_i < Kokkos::abs(A(i, j))) D1_i = Kokkos::abs(A(i, j));
     }
@@ -104,8 +91,8 @@ KOKKOS_INLINE_FUNCTION int SerialStaticPivoting::invoke(const MatrixType1 A, con
   for (size_t i = 0; i < n; ++i) {
     int row_index    = 0;
     int col_index    = 0;
-    value_type tmp_0 = Kokkos::ArithTraits<value_type>::zero();
-    value_type tmp_1 = Kokkos::ArithTraits<value_type>::zero();
+    value_type tmp_0 = KokkosKernels::ArithTraits<value_type>::zero();
+    value_type tmp_1 = KokkosKernels::ArithTraits<value_type>::zero();
     for (size_t j = 0; j < n; ++j) {
       if (tmp_0 < tmp_v_1(j)) {
         tmp_0     = tmp_v_1(j);
@@ -118,9 +105,9 @@ KOKKOS_INLINE_FUNCTION int SerialStaticPivoting::invoke(const MatrixType1 A, con
         col_index = j;
       }
     }
-    if (tmp_1 == Kokkos::ArithTraits<value_type>::zero()) return 1;
-    tmp_v_1(row_index) = Kokkos::ArithTraits<value_type>::zero();
-    tmp_v_2(col_index) = Kokkos::ArithTraits<value_type>::zero();
+    if (tmp_1 == KokkosKernels::ArithTraits<value_type>::zero()) return 1;
+    tmp_v_1(row_index) = KokkosKernels::ArithTraits<value_type>::zero();
+    tmp_v_2(col_index) = KokkosKernels::ArithTraits<value_type>::zero();
 
     for (size_t j = 0; j < n; ++j) {
       PDAD(col_index, j) = A(row_index, j);
@@ -147,7 +134,7 @@ KOKKOS_INLINE_FUNCTION int TeamStaticPivoting<MemberType>::invoke(const MemberTy
   size_t n = A.extent(0);
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
-    D2(i)      = Kokkos::ArithTraits<value_type>::zero();
+    D2(i)      = KokkosKernels::ArithTraits<value_type>::zero();
     tmp_v_1(i) = 0;
     tmp_v_2(i) = 1.;
     for (size_t j = 0; j < n; ++j) {
@@ -164,7 +151,7 @@ KOKKOS_INLINE_FUNCTION int TeamStaticPivoting<MemberType>::invoke(const MemberTy
   });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
-    value_type D1_i = Kokkos::ArithTraits<value_type>::zero();
+    value_type D1_i = KokkosKernels::ArithTraits<value_type>::zero();
     for (size_t j = 0; j < n; ++j) {
       if (D1_i < Kokkos::abs(A(i, j))) D1_i = Kokkos::abs(A(i, j));
     }
@@ -190,7 +177,7 @@ KOKKOS_INLINE_FUNCTION int TeamStaticPivoting<MemberType>::invoke(const MemberTy
         reducer_value);
     row_index = value.loc;
     value.loc = 0;
-    value.val = Kokkos::ArithTraits<value_type>::zero();
+    value.val = KokkosKernels::ArithTraits<value_type>::zero();
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(member, n),
         [&](const int &j, reducer_value_type &update) {
@@ -201,9 +188,9 @@ KOKKOS_INLINE_FUNCTION int TeamStaticPivoting<MemberType>::invoke(const MemberTy
         },
         reducer_value);
     col_index = value.loc;
-    if (value.val == Kokkos::ArithTraits<value_type>::zero()) return 1;
-    tmp_v_1(row_index) = Kokkos::ArithTraits<value_type>::zero();
-    tmp_v_2(col_index) = Kokkos::ArithTraits<value_type>::zero();
+    if (value.val == KokkosKernels::ArithTraits<value_type>::zero()) return 1;
+    tmp_v_1(row_index) = KokkosKernels::ArithTraits<value_type>::zero();
+    tmp_v_2(col_index) = KokkosKernels::ArithTraits<value_type>::zero();
 
     for (size_t j = 0; j < n; ++j) {
       PDAD(col_index, j) = A(row_index, j);
@@ -228,7 +215,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
   const size_t n = A.extent(0);
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
-    D2(i)      = Kokkos::ArithTraits<value_type>::zero();
+    D2(i)      = KokkosKernels::ArithTraits<value_type>::zero();
     tmp_v_1(i) = 0;
     tmp_v_2(i) = 1.;
     reducer_value_type value;
@@ -260,7 +247,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
   });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
-    value_type D1_i = Kokkos::ArithTraits<value_type>::zero();
+    value_type D1_i = KokkosKernels::ArithTraits<value_type>::zero();
     reducer_value_type value;
     Kokkos::MaxLoc<value_type, int> reducer_value(value);
     Kokkos::parallel_reduce(
@@ -292,7 +279,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
         reducer_value);
     row_index = value.loc;
     value.loc = 0;
-    value.val = Kokkos::ArithTraits<value_type>::zero();
+    value.val = KokkosKernels::ArithTraits<value_type>::zero();
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, n),
         [&](const int &j, reducer_value_type &update) {
@@ -303,9 +290,9 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
         },
         reducer_value);
     col_index = value.loc;
-    if (value.val == Kokkos::ArithTraits<value_type>::zero()) return 1;
-    tmp_v_1(row_index) = Kokkos::ArithTraits<value_type>::zero();
-    tmp_v_2(col_index) = Kokkos::ArithTraits<value_type>::zero();
+    if (value.val == KokkosKernels::ArithTraits<value_type>::zero()) return 1;
+    tmp_v_1(row_index) = KokkosKernels::ArithTraits<value_type>::zero();
+    tmp_v_2(col_index) = KokkosKernels::ArithTraits<value_type>::zero();
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
                          [&](const int &j) { PDAD(col_index, j) = A(row_index, j); });
@@ -347,7 +334,6 @@ struct SerialGesv<Gesv::StaticPivoting> {
   template <typename MatrixType, typename XVectorType, typename YVectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const XVectorType X, const YVectorType Y,
                                            const MatrixType tmp) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<XVectorType>::value, "KokkosBatched::gesv: XVectorType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YVectorType>::value, "KokkosBatched::gesv: YVectorType is not a Kokkos::View.");
@@ -355,8 +341,8 @@ struct SerialGesv<Gesv::StaticPivoting> {
     static_assert(XVectorType::rank == 1, "KokkosBatched::gesv: XVectorType must have rank 1.");
     static_assert(YVectorType::rank == 1, "KokkosBatched::gesv: YVectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
-
     if (A.extent(0) != tmp.extent(0) || A.extent(1) + 4 != tmp.extent(1)) {
       Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and tmp do not match: A: "
@@ -410,7 +396,6 @@ struct SerialGesv<Gesv::NoPivoting> {
   template <typename MatrixType, typename XVectorType, typename YVectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const XVectorType X, const YVectorType Y,
                                            const MatrixType /*tmp*/) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<XVectorType>::value, "KokkosBatched::gesv: XVectorType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YVectorType>::value, "KokkosBatched::gesv: YVectorType is not a Kokkos::View.");
@@ -418,8 +403,8 @@ struct SerialGesv<Gesv::NoPivoting> {
     static_assert(XVectorType::rank == 1, "KokkosBatched::gesv: XVectorType must have rank 1.");
     static_assert(YVectorType::rank == 1, "KokkosBatched::gesv: YVectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
-
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
@@ -431,7 +416,7 @@ struct SerialGesv<Gesv::NoPivoting> {
 
     int r_val = SerialLU<Algo::Level3::Unblocked>::invoke(A);
 
-    if (r_val == 0) r_val = SerialCopy<Trans::NoTranspose, 1>::invoke(Y, X);
+    if (r_val == 0) r_val = SerialCopy<Trans::NoTranspose>::invoke(Y, X);
 
     if (r_val == 0)
       r_val = SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Level3::Unblocked>::invoke(
@@ -454,12 +439,12 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
     static_assert(VectorType::rank == 1, "KokkosBatched::gesv: VectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
@@ -518,12 +503,12 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
     static_assert(VectorType::rank == 1, "KokkosBatched::gesv: VectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
@@ -538,7 +523,7 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
     member.team_barrier();
 
     if (r_val == 0) {
-      TeamCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
+      TeamCopy<MemberType, Trans::NoTranspose>::invoke(member, Y, X);
       member.team_barrier();
     }
 
@@ -567,12 +552,12 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
     static_assert(VectorType::rank == 1, "KokkosBatched::gesv: VectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
@@ -632,12 +617,12 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
     static_assert(VectorType::rank == 1, "KokkosBatched::gesv: VectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
@@ -652,7 +637,7 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
     member.team_barrier();
 
     if (r_val == 0) {
-      TeamVectorCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
+      TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, Y, X);
       member.team_barrier();
     }
 

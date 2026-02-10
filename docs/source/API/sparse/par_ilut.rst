@@ -21,7 +21,7 @@ PARILUT - A New Parallel Threshold ILU Factorization - Anzt, Chow, Dongarra
 
 Defined in header: :code:`KokkosSparse_par_ilut.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename KernelHandle, typename ARowMapType, typename AEntriesType, typename LRowMapType,
             typename URowMapType>
@@ -64,7 +64,7 @@ KokkosSparse::par_ilut_numeric
 
 Defined in header: :code:`KokkosSparse_par_ilut.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename KernelHandle, typename ARowMapType, typename AEntriesType, typename AValuesType,
             typename LRowMapType, typename LEntriesType, typename LValuesType, typename URowMapType,
@@ -112,7 +112,7 @@ KokkosSparse::PAR_ILUTHandle
 
 Defined in header: :code:`KokkosSparse_par_ilut_handle.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   PAR_ILUTHandle(const size_type max_iter, const float_t residual_norm_delta_stop, const float_t fill_in_limit,
                  const bool async_update, const bool verbose);
@@ -152,7 +152,7 @@ Parameters
 Example
 =======
 
-.. code:: cppkokkos
+.. code:: c++
 
   #include "Kokkos_Core.hpp"
   #include "KokkosSparse_par_ilut.hpp"
@@ -172,7 +172,7 @@ Example
        using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
        using KernelHandle =
            KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
-       using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+       using float_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
        // Create a diagonally dominant sparse matrix to test:
        //  par_ilut settings max_iters, res_delta_stop, fill_in_limit, and

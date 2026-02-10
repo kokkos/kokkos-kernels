@@ -6,7 +6,7 @@ Defined in header ``KokkosSparse_sort_crs.hpp``
 SortAlgorithm Enum
 ==================
 
-.. code:: cppkokkos
+.. code:: c++
 
   enum class SortAlgorithm {
     DEFAULT,
@@ -51,13 +51,13 @@ Functions
 sort_crs_matrix
 ^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename execution_space, typename rowmap_t, typename entries_t, typename values_t>
   void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const entries_t& entries,
                        const values_t& values,
                        typename entries_t::non_const_value_type numCols =
-                           Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                           KokkosKernels::ArithTraits<typename entries_t::non_const_value_type>::max(),
                        SortAlgorithm option = SortAlgorithm::DEFAULT);
 
 Sorts the adjacent column list for each row of a CRS matrix into ascending order. Permutes the values accordingly.
@@ -85,13 +85,13 @@ Parameters
 sort_bsr_matrix
 ^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename execution_space, typename rowmap_t, typename entries_t, typename values_t, typename Ordinal>
   void sort_bsr_matrix(const execution_space& exec, Ordinal blockSize, const rowmap_t& rowmap, const entries_t& entries,
                        const values_t& values,
                        typename entries_t::non_const_value_type numCols =
-                           Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max());
+                           KokkosKernels::ArithTraits<typename entries_t::non_const_value_type>::max());
 
 Sorts the rows of a Block Row Storage (BRS) matrix, permuting the values accordingly.
 
@@ -119,12 +119,12 @@ Parameters
 sort_crs_graph
 ^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename execution_space, typename rowmap_t, typename entries_t>
   void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const entries_t& entries,
                       typename entries_t::non_const_value_type numCols =
-                          Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                          KokkosKernels::ArithTraits<typename entries_t::non_const_value_type>::max(),
                       SortAlgorithm option = SortAlgorithm::DEFAULT);
 
 Sorts the adjacent column list for each row of a CRS graph into ascending order.
@@ -150,14 +150,14 @@ Parameters
 sort_and_merge_matrix
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename exec_space, typename rowmap_t, typename entries_t, typename values_t>
   void sort_and_merge_matrix(const exec_space& exec, const typename rowmap_t::const_type& rowmap_in,
                              const entries_t& entries_in, const values_t& values_in, rowmap_t& rowmap_out,
                              entries_t& entries_out, values_t& values_out,
                              typename entries_t::const_value_type& numCols =
-                                 Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                                 KokkosKernels::ArithTraits<typename entries_t::non_const_value_type>::max(),
                              SortAlgorithm option = SortAlgorithm::DEFAULT);
 
 Produces a new CRS matrix that is sorted and has no duplicate entries. Values for duplicate entries are summed.
@@ -188,13 +188,13 @@ Parameters
 sort_and_merge_graph
 ^^^^^^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename exec_space, typename rowmap_t, typename entries_t>
   void sort_and_merge_graph(const exec_space& exec, const typename rowmap_t::const_type& rowmap_in,
                             const entries_t& entries_in, rowmap_t& rowmap_out, entries_t& entries_out,
                             typename entries_t::const_value_type& numCols =
-                                Kokkos::ArithTraits<typename entries_t::non_const_value_type>::max(),
+                                KokkosKernels::ArithTraits<typename entries_t::non_const_value_type>::max(),
                             SortAlgorithm option = SortAlgorithm::DEFAULT);
 
 Produces a new CRS graph that is sorted and has no duplicate entries.

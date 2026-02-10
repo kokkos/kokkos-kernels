@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS3_GEMM_PERF_TEST_H_
 #define KOKKOSBLAS3_GEMM_PERF_TEST_H_
 
@@ -25,7 +12,7 @@
 
 #include <KokkosBlas3_gemm.hpp>
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBatched_HostLevel_Gemm.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Util.hpp"
@@ -1369,7 +1356,7 @@ static inline bool gemm_print_compare_failure(ViewType h_expected, ViewType h_ac
  */
 template <class ScalarType, class LayoutType>
 static inline bool gemm_do_compare(view_type_3d expected, view_type_3d actual) {
-  double epsilon = Kokkos::ArithTraits<ScalarType>::eps() * 1e3;
+  double epsilon = KokkosKernels::ArithTraits<ScalarType>::eps() * 1e3;
 
   STATUS;
 

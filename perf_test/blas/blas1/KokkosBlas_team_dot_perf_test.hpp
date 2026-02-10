@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSKERNELS_KOKKOSBLAS_TEAM_DOT_TEST_RPS_HPP
 #define KOKKOSKERNELS_KOKKOSBLAS_TEAM_DOT_TEST_RPS_HPP
@@ -21,9 +8,6 @@
 #include "KokkosBlas1_team_dot.hpp"
 #include <Kokkos_Random.hpp>
 
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-#include <PerfTestUtilities.hpp>
-#endif
 //  Team Dot documenation
 //  https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1%3A%3Ateam-dot
 
@@ -59,10 +43,6 @@ struct testData_rps_team_dot {
 };
 
 // Instantiate the machinery needed to run as an RPS test
-
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-test_list construct_team_dot_kernel_base(const rajaperf::RunParams& params);
-#endif
 
 // Templated function
 template <typename ExecSpace, typename Layout>

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_COO2CRS_HPP
 #define KOKKOSSPARSE_COO2CRS_HPP
@@ -40,14 +27,12 @@ namespace KokkosSparse {
 // clang-format on
 template <class DimType, class RowViewType, class ColViewType, class DataViewType>
 auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col, DataViewType data) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<RowViewType>::value, "RowViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<ColViewType>::value, "CalViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<DataViewType>::value, "DataViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(RowViewType::rank) == 1, "RowViewType must have rank 1.");
   static_assert(static_cast<int>(ColViewType::rank) == 1, "ColViewType must have rank 1.");
   static_assert(static_cast<int>(DataViewType::rank) == 1, "DataViewType must have rank 1.");
-#endif
 
   static_assert(std::is_integral<typename RowViewType::value_type>::value,
                 "RowViewType::value_type must be an integral.");

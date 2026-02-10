@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBATCHED_GBTRF_SERIAL_IMPL_HPP_
 #define KOKKOSBATCHED_GBTRF_SERIAL_IMPL_HPP_
@@ -31,7 +18,7 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrfInput([[maybe_unused]] const ABViewT
   static_assert(Kokkos::is_view_v<PivViewType>, "KokkosBatched::gbtrf: PivViewType is not a Kokkos::View.");
   static_assert(ABViewType::rank == 2, "KokkosBatched::gbtrf: ABViewType must have rank 2.");
   static_assert(PivViewType::rank == 1, "KokkosBatched::gbtrf: PivViewType must have rank 1.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int n    = AB.extent(1);
   const int npiv = ipiv.extent(0);
   if (npiv != Kokkos::min(m, n)) {

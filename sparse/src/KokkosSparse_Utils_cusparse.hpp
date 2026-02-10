@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
 #define KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
@@ -28,29 +15,7 @@ namespace Impl {
 inline void cusparse_internal_error_throw(cusparseStatus_t cusparseStatus, const char* name, const char* file,
                                           const int line) {
   std::ostringstream out;
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
   out << name << " error( " << cusparseGetErrorName(cusparseStatus) << "): " << cusparseGetErrorString(cusparseStatus);
-#else
-  out << name << " error( ";
-  switch (cusparseStatus) {
-    case CUSPARSE_STATUS_NOT_INITIALIZED:
-      out << "CUSPARSE_STATUS_NOT_INITIALIZED): cusparse handle was not "
-             "created correctly.";
-      break;
-    case CUSPARSE_STATUS_ALLOC_FAILED:
-      out << "CUSPARSE_STATUS_ALLOC_FAILED): you might tried to allocate too "
-             "much memory";
-      break;
-    case CUSPARSE_STATUS_INVALID_VALUE: out << "CUSPARSE_STATUS_INVALID_VALUE)"; break;
-    case CUSPARSE_STATUS_ARCH_MISMATCH: out << "CUSPARSE_STATUS_ARCH_MISMATCH)"; break;
-    case CUSPARSE_STATUS_MAPPING_ERROR: out << "CUSPARSE_STATUS_MAPPING_ERROR)"; break;
-    case CUSPARSE_STATUS_EXECUTION_FAILED: out << "CUSPARSE_STATUS_EXECUTION_FAILED)"; break;
-    case CUSPARSE_STATUS_INTERNAL_ERROR: out << "CUSPARSE_STATUS_INTERNAL_ERROR)"; break;
-    case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED: out << "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED)"; break;
-    case CUSPARSE_STATUS_ZERO_PIVOT: out << "CUSPARSE_STATUS_ZERO_PIVOT)"; break;
-    default: out << "unrecognized error code): this is bad!"; break;
-  }
-#endif  // CUSPARSE_VERSION
   if (file) {
     out << " " << file << ":" << line;
   }
@@ -66,21 +31,6 @@ inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus, const c
 
 #define KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(call) \
   KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, __LINE__)
-
-// Deprecated public interface for the cuSparse safe calls
-#if defined(KOKKOS_COMPILER_MSVC)
-#define KOKKOS_CUSPARSE_SAFE_CALL(call)                                                                          \
-  (__pragma(message("warning: KOKKOS_CUSPARSE_SAFE_CALL is deprecated and will be removed in a future version")) \
-       KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL(call))
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define KOKKOS_CUSPARSE_SAFE_CALL(call)                                                             \
-  (__extension__({                                                                                  \
-    _Pragma("\"KOKKOS_CUSPARSE_SAFE_CALL is deprecated and will be removed in a future version\""); \
-    KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL(call);                                                      \
-  }))
-#else
-#define KOKKOS_CUSPARSE_SAFE_CALL(call) KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL(call)  // no good way to deprecate?
-#endif
 
 template <typename T>
 cudaDataType cuda_data_type_from() {
@@ -125,8 +75,6 @@ inline cudaDataType cuda_data_type_from<Kokkos::complex<double>>() {
   return CUDA_C_64F;
 }
 
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
-
 template <typename T>
 cusparseIndexType_t cusparse_index_type_t_from() {
 #define AS_STR_LITERAL_IMPL_(x) #x
@@ -159,7 +107,6 @@ template <>
 inline cusparseIndexType_t cusparse_index_type_t_from<unsigned short>() {
   return CUSPARSE_INDEX_16U;
 }
-#endif
 
 // Set the stream on the given cuSPARSE handle when this object
 // is constructed, and reset to the default stream when this object is

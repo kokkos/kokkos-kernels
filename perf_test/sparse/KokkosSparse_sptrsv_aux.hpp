@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include <cusparse_v2.h>
@@ -63,7 +50,7 @@ bool check_errors(mag_t tol, crsmat_t &Mtx, scalar_view_t rhs, scalar_view_t sol
   using lno_t          = typename entries_view_t::non_const_value_type;
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using scalar_t       = typename values_view_t::value_type;
-  using STS            = Kokkos::ArithTraits<scalar_t>;
+  using STS            = KokkosKernels::ArithTraits<scalar_t>;
 
   using execution_space = typename scalar_view_t::execution_space;
 

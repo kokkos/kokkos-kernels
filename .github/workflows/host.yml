@@ -1,0 +1,322 @@
+name: Reusable Host workflow
+
+permissions:
+  contents: none
+
+on:
+  workflow_call:
+    inputs:
+      kokkos_version:
+        description: 'The Kokkos Core version to build'
+        default: ''
+        required: true
+        type: string
+
+jobs:
+  PR_GNU1050_THREADS_SERIAL_RIGHT_REL:
+    name: PR_GNU1050_THREADS_SERIAL_RIGHT_REL
+    runs-on: [gcc-10.5.0_openblas-0.3.30_x86-64]
+
+    steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ inputs.kokkos_version }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cd kokkos/build
+          cmake \
+            -S "$PWD/.." \
+            -B "$PWD" \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS=-O3  \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
+            -DKokkos_ENABLE_SERIAL=ON \
+            -DKokkos_ENABLE_THREADS=ON \
+            -DKokkos_ARCH_NATIVE=ON \
+            -DKokkos_ENABLE_TESTS=OFF \
+            -DKokkos_ENABLE_EXAMPLES=OFF \
+            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j12 install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cd kokkos-kernels/build
+          cmake \
+            -S "$PWD/.." \
+            -B "$PWD" \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS="-O3 " \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DKokkos_ROOT=$PWD/../../kokkos/install \
+            -DKokkosKernels_ENABLE_TESTS=ON \
+            -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+            -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
+            -DKokkosKernels_INST_DOUBLE=ON \
+            -DKokkosKernels_INST_ORDINAL_INT=ON \
+            -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
+            -DKokkosKernels_INST_OFFSET_INT=ON \
+            -DKokkosKernels_INST_LAYOUTLEFT=ON \
+            -DKokkosKernels_ENABLE_DOCS=OFF
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        run: make -j8 all
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest --output-on-failure -V --timeout 3600
+
+  PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL:
+    name: PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL
+    runs-on: [gcc-10.5.0_openblas-0.3.30_x86-64]
+    
+    steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ inputs.kokkos_version }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cd kokkos/build
+
+          cmake \
+            -S "$PWD/.." \
+            -B "$PWD" \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS=-O3 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
+            -DKokkos_ENABLE_SERIAL=ON \
+            -DKokkos_ENABLE_OPENMP=ON \
+            -DKokkos_ARCH_NATIVE=ON \
+            -DKokkos_ENABLE_TESTS=OFF \
+            -DKokkos_ENABLE_EXAMPLES=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
+            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j12 install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cd kokkos-kernels/build
+
+          cmake \
+            -S "$PWD/.." \
+            -B "$PWD" \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS="-O3 " \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DKokkos_ROOT=$PWD/../../kokkos/install \
+            -DKokkosKernels_ENABLE_TESTS=ON \
+            -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+            -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
+            -DKokkosKernels_INST_DOUBLE=ON \
+            -DKokkosKernels_INST_ORDINAL_INT=ON \
+            -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
+            -DKokkosKernels_INST_OFFSET_INT=ON \
+            -DKokkosKernels_INST_LAYOUTLEFT=ON \
+            -DKokkosKernels_ENABLE_TPL_BLAS=ON \
+            -DKokkosKernels_ENABLE_DOCS=OFF
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        run: make -j12 all
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest --output-on-failure -V --timeout 3600
+
+  # PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL_NO_ETI_TESTS:
+  #   name: PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL_NO_ETI_TESTS
+  #   runs-on: [gcc-10.5.0_openblas-0.3.30_x86-64]
+    
+  #   steps:
+  #     - name: checkout_kokkos_kernels
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+  #       with:
+  #         path: kokkos-kernels
+
+  #     - name: checkout_kokkos
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+  #       with:
+  #         repository: kokkos/kokkos
+  #         ref: ${{ inputs.kokkos_version }}
+  #         path: kokkos
+
+  #     - name: configure_kokkos
+  #       run: |
+  #         mkdir -p kokkos/{build,install}
+  #         cd kokkos/build
+
+  #         cmake \
+  #           -S "$PWD/.." \
+  #           -B "$PWD" \
+  #           -DBUILD_SHARED_LIBS=OFF \
+  #           -DCMAKE_CXX_COMPILER=$(spack location -i gcc@10.5.0)/bin/g++ \
+  #           -DCMAKE_CXX_FLAGS=-O3 \
+  #           -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+  #           -DCMAKE_VERBOSE_MAKEFILE=ON \
+  #           -DCMAKE_CXX_EXTENSIONS=OFF \
+  #           -DCMAKE_CXX_STANDARD=20 \
+  #           -DKokkos_ENABLE_SERIAL=OFF \
+  #           -DKokkos_ENABLE_OPENMP=ON \
+  #           -DKokkos_ARCH_NATIVE=ON \
+  #           -DKokkos_ENABLE_TESTS=OFF \
+  #           -DKokkos_ENABLE_EXAMPLES=OFF \
+  #           -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
+  #           -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF
+
+  #     - name: build_and_install_kokkos
+  #       working-directory: kokkos/build
+  #       run: make -j12 install
+
+  #     - name: configure_kokkos_kernels
+  #       run: |
+  #         mkdir -p kokkos-kernels/{build,install}
+  #         cd kokkos-kernels/build
+
+  #         cmake \
+  #           -S "$PWD/.." \
+  #           -B "$PWD" \
+  #           -DBUILD_SHARED_LIBS=OFF \
+  #           -DCMAKE_C_COMPILER=$(spack location -i gcc@10.5.0)/bin/gcc \
+  #           -DCMAKE_CXX_COMPILER=$(spack location -i gcc@10.5.0)/bin/g++ \
+  #           -DCMAKE_Fortran_COMPILER=$(spack location -i gcc@10.5.0)/bin/gfortran \
+  #           -DCMAKE_CXX_FLAGS="-O3 " \
+  #           -DCMAKE_CXX_EXTENSIONS=OFF \
+  #           -DCMAKE_CXX_STANDARD=20 \
+  #           -DKokkos_ROOT=$PWD/../../kokkos/install \
+  #           -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+  #           -DKokkosKernels_ENABLE_TESTS=ON \
+  #           -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+  #           -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
+  #           -DKokkosKernels_INST_DOUBLE=ON \
+  #           -DKokkosKernels_INST_ORDINAL_INT=ON \
+  #           -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
+  #           -DKokkosKernels_INST_OFFSET_INT=OFF \
+  #           -DKokkosKernels_INST_LAYOUTLEFT=ON \
+  #           -DKokkosKernels_TEST_ETI_ONLY=OFF \
+  #           -DKokkosKernels_ENABLE_TPL_BLAS=ON \
+  #           -DKokkosKernels_ENABLE_DOCS=OFF
+
+  #     - name: build_kokkos_kernels
+  #       working-directory: kokkos-kernels/build
+  #       run: make -j12 all
+
+  #     - name: test
+  #       working-directory: kokkos-kernels/build
+  #       run: ctest --output-on-failure -V --timeout 3600
+  # PR_SPR_ONEAPI202310_OPENMP_LEFT_MKLBLAS_MKLLAPACK_REL:
+  #   name: PR_SPR_ONEAPI202310_OPENMP_LEFT_MKLBLAS_MKLLAPACK_REL
+  #   runs-on: [kk-env-intel-oneapi-compilers-2023.1.0-latest]
+    
+  #   steps:
+  #     - name: checkout_kokkos_kernels
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+  #       with:
+  #         path: kokkos-kernels
+
+  #     - name: checkout_kokkos
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+  #       with:
+  #         repository: kokkos/kokkos
+  #         ref: ${{ inputs.kokkos_version }}
+  #         path: kokkos
+
+  #     - name: configure_kokkos
+  #       run: |
+  #         mkdir -p kokkos/{build,install}
+  #         cd kokkos/build
+
+  #         cmake \
+  #           -S "$PWD/.." \
+  #           -B "$PWD" \
+  #           -DBUILD_SHARED_LIBS=OFF \
+  #           -DCMAKE_CXX_COMPILER=icpx \
+  #           -DCMAKE_CXX_FLAGS="-fp-model=precise" \
+  #           -DCMAKE_INSTALL_PREFIX="$PWD/../install" \
+  #           -DCMAKE_VERBOSE_MAKEFILE=ON \
+  #           -DCMAKE_CXX_EXTENSIONS=OFF \
+  #           -DKokkos_ENABLE_SERIAL=ON \
+  #           -DKokkos_ENABLE_OPENMP=ON \
+  #           -DKokkos_ARCH_SPR=ON \
+  #           -DKokkos_ENABLE_TESTS=OFF \
+  #           -DKokkos_ENABLE_EXAMPLES=OFF \
+  #           -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+  #           -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
+  #           -DKokkos_ENABLE_ONEDPL=OFF
+
+  #     - name: build_and_install_kokkos
+  #       run: |
+  #         cmake --build "$PWD/kokkos/build" -j 12
+  #         cmake --install "$PWD/kokkos/build"
+
+  #     - name: configure_kokkos_kernels
+  #       run: |
+  #         mkdir -p kokkos-kernels/{build,install}
+  #         cd kokkos-kernels/build
+
+  #         cmake \
+  #         -S "$PWD/.." \
+  #         -B "$PWD" \
+  #         -D BUILD_SHARED_LIBS=OFF \
+  #         -D CMAKE_CXX_COMPILER=icpx \
+  #         -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
+  #         -D CMAKE_CXX_FLAGS="-fp-model=precise -Wno-pass-failed -Wno-unused-command-line-argument" \
+  #         -D Kokkos_ROOT="$PWD/../../kokkos/install" \
+  #         -D KokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+  #         -D KokkosKernels_ENABLE_TESTS=ON \
+  #         -D KokkosKernels_ENABLE_PERFTESTS=ON \
+  #         -D KokkosKernels_ENABLE_EXAMPLES=ON \
+  #         -D KokkosKernels_INST_FLOAT=ON \
+  #         -D KokkosKernels_INST_COMPLEX_FLOAT=ON \
+  #         -D KokkosKernels_INST_DOUBLE=ON \
+  #         -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
+  #         -D KokkosKernels_INST_ORDINAL_INT64_T=ON \
+  #         -D KokkosKernels_INST_ORDINAL_INT=ON \
+  #         -D KokkosKernels_INST_OFFSET_SIZE_T=ON \
+  #         -D KokkosKernels_INST_OFFSET_INT=ON \
+  #         -D KokkosKernels_ENABLE_TPL_MKL=ON
+
+  #     - name: build_kokkos_kernels
+  #       run: cmake --build "$PWD/kokkos-kernels/build" -j 12
+
+  #     - name: test
+  #       working-directory: kokkos-kernels/build
+  #       run: ctest --output-on-failure -V --timeout 3600

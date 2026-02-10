@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBATCHED_SYR_SERIAL_IMPL_HPP_
 #define KOKKOSBATCHED_SYR_SERIAL_IMPL_HPP_
@@ -30,7 +17,7 @@ KOKKOS_INLINE_FUNCTION static int checkSyrInput([[maybe_unused]] const XViewType
   static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::syr: AViewType is not a Kokkos::View.");
   static_assert(XViewType::rank == 1, "KokkosBatched::syr: XViewType must have rank 1.");
   static_assert(AViewType::rank == 2, "KokkosBatched::syr: AViewType must have rank 2.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int lda = A.extent_int(0), n = A.extent_int(1);
 
   if (n < 0) {

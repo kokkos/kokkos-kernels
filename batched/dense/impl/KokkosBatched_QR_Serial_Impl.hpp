@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_QR_SERIAL_IMPL_HPP
 #define KOKKOSBATCHED_QR_SERIAL_IMPL_HPP
 
@@ -40,7 +27,7 @@ KOKKOS_INLINE_FUNCTION int SerialQR<Algo::QR::Unblocked>::invoke(const AViewType
   static_assert(Kokkos::is_view_v<wViewType>, "KokkosBatched::SerialQR::invoke: wViewType must be a Kokkos::View");
   static_assert(wViewType::rank() == 1, "KokkosBatched::SerialQR::invoke: wViewType must have rank 1");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialQR::invoke: w must have a contiguous span.");
     return 1;

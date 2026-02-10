@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // only enable this test where KokkosLapack supports gesv:
 // CUDA+(MAGMA or CUSOLVER), HIP+(MAGMA or ROCSOLVER) and HOST+LAPACK
@@ -38,7 +25,7 @@ template <class ViewTypeA, class ViewTypeB, class Device, bool MAGMA>
 void impl_test_gesv(const char* mode, const char* padding, int N) {
   using execution_space = typename Device::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using ats             = Kokkos::ArithTraits<ScalarA>;
+  using ats             = KokkosKernels::ArithTraits<ScalarA>;
 
   execution_space space{};
 
@@ -146,7 +133,7 @@ template <class ViewTypeA, class ViewTypeB, class Device, bool MAGMA>
 void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs) {
   using execution_space = typename Device::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using ats             = Kokkos::ArithTraits<ScalarA>;
+  using ats             = KokkosKernels::ArithTraits<ScalarA>;
 
   execution_space space{};
 

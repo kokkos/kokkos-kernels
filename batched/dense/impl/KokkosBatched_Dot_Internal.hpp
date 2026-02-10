@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_DOT_INTERNAL_HPP
 #define KOKKOSBATCHED_DOT_INTERNAL_HPP
 
@@ -34,7 +21,7 @@ struct SerialDotInternal {
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const int m, const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     C[0]      = ValueType(0);
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -70,7 +57,7 @@ struct TeamDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     ValueType t(0);
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(member, m),
@@ -90,7 +77,7 @@ struct TeamDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C, const int cs) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
       ValueType t(0);
       const ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
@@ -117,7 +104,7 @@ struct TeamVectorDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     ValueType t(0);
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, m),
@@ -137,7 +124,7 @@ struct TeamVectorDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C, const int cs) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
       ValueType t(0);
       const ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
@@ -163,7 +150,6 @@ template <>
 struct SerialDot<Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X, const YViewType &Y, const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -171,6 +157,7 @@ struct SerialDot<Trans::Transpose> {
     static_assert(YViewType::rank == 2, "KokkosBatched::dot: YViewType must have rank 2.");
     static_assert(NormViewType::rank == 1, "KokkosBatched::dot: NormViewType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(
@@ -199,7 +186,6 @@ template <>
 struct SerialDot<Trans::NoTranspose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X, const YViewType &Y, const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -207,6 +193,7 @@ struct SerialDot<Trans::NoTranspose> {
     static_assert(YViewType::rank == 2, "KokkosBatched::dot: YViewType must have rank 2.");
     static_assert(NormViewType::rank == 1, "KokkosBatched::dot: NormViewType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(
@@ -239,7 +226,6 @@ struct TeamDot<MemberType, Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -247,6 +233,7 @@ struct TeamDot<MemberType, Trans::Transpose> {
     static_assert(YViewType::rank == 2, "KokkosBatched::dot: YViewType must have rank 2.");
     static_assert(NormViewType::rank == 1, "KokkosBatched::dot: NormViewType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(
@@ -283,7 +270,6 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -291,6 +277,7 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
     static_assert(YViewType::rank == 2, "KokkosBatched::dot: YViewType must have rank 2.");
     static_assert(NormViewType::rank == 1, "KokkosBatched::dot: NormViewType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(
@@ -330,7 +317,6 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -338,6 +324,7 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
     static_assert(YViewType::rank == 2, "KokkosBatched::dot: YViewType must have rank 2.");
     static_assert(NormViewType::rank == 1, "KokkosBatched::dot: NormViewType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(
@@ -374,7 +361,6 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<XViewType>::value, "KokkosBatched::dot: XViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value, "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
@@ -382,6 +368,7 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
     static_assert(YViewType::rank == 2, "KokkosBatched::dot: YViewType must have rank 2.");
     static_assert(NormViewType::rank == 1, "KokkosBatched::dot: NormViewType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(

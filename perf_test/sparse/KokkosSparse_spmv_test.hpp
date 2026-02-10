@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 //
 // Created by Poliakoff, David Zoeller on 4/26/21.
 //
@@ -29,10 +16,6 @@
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
 
 #include <spmv/KokkosKernels_spmv_data.hpp>
-
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-#include <PerfTestUtilities.hpp>
-#endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
 #include <spmv/OpenMPStatic_SPMV.hpp>
@@ -58,15 +41,6 @@ using Scalar  = KokkosKernels::default_scalar;
 using Ordinal = KokkosKernels::default_lno_t;
 using Offset  = KokkosKernels::default_size_type;
 using Layout  = KokkosKernels::default_layout;
-
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(const rajaperf::RunParams& params);
-
-test_list construct_kernel_base(const rajaperf::RunParams& run_params, Ordinal numRows, Ordinal numCols,
-                                spmv_additional_data* data, Ordinal rows_per_thread, int team_size, int vector_length,
-                                int schedule, int loop);
-
-#endif
 
 struct SPMVTestData {
   using matrix_type   = KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset>;

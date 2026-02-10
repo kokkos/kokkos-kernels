@@ -1,22 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <fstream>
-
-#define KOKKOSKERNELS_DEBUG_LEVEL 0
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Timer.hpp"
@@ -29,7 +14,7 @@
 #include "KokkosBatched_Vector.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
 #include "examples_helper.hpp"
 #include <KokkosBatched_Spmv.hpp>
@@ -83,7 +68,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     const int first_matrix = _handle.first_index(member.league_rank());
     const int last_matrix  = _handle.last_index(member.league_rank());
-    using TeamVectorCopy1D = KokkosBatched::TeamVectorCopy<MemberType, KokkosBatched::Trans::NoTranspose, 1>;
+    using TeamVectorCopy1D = KokkosBatched::TeamVectorCopy<MemberType, KokkosBatched::Trans::NoTranspose>;
 
     auto d = Kokkos::subview(_values, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
     auto x = Kokkos::subview(X_, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
@@ -160,6 +145,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
     timer.reset();
     Kokkos::parallel_for(name.c_str(), policy, *this);
     exec_space().fence();
+    Kokkos::Profiling::popRegion();
     double sec = timer.seconds();
 
     return sec;
@@ -204,7 +190,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     using Layout     = typename AMatrixValueView::array_layout;
     using EXSP       = typename AMatrixValueView::execution_space;
 
-    using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+    using MagnitudeType = typename KokkosKernels::ArithTraits<ScalarType>::mag_type;
 
     using Norm2DViewType   = Kokkos::View<MagnitudeType **, Layout, EXSP>;
     using Scalar3DViewType = Kokkos::View<ScalarType ***, Layout, EXSP>;

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
@@ -224,7 +211,7 @@ int main(int argc, char** argv) {
     using matrix_type = KokkosSparse::CrsMatrix<Scalar, lno_t, Kokkos::DefaultExecutionSpace, void, lno_t>;
     using values_type = typename matrix_type::values_type::non_const_type;
     using handle_type = KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, values_type, values_type>;
-    const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
+    const Scalar SC_ONE = KokkosKernels::ArithTraits<Scalar>::one();
     const Scalar alpha  = SC_ONE + SC_ONE;
     const Scalar beta   = alpha + SC_ONE;
 

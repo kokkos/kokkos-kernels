@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_SPMV_HANDLE_HPP_
 #define KOKKOSSPARSE_SPMV_HANDLE_HPP_
@@ -116,14 +103,7 @@ struct CuSparse10_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
   ~CuSparse10_SpMV_Data() {
     // Prefer cudaFreeAsync on the stream that last executed a spmv, but
     // async memory management was introduced in 11.2
-#if (CUDA_VERSION >= 11020)
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeAsync(buffer, exec.cuda_stream()));
-#else
-    // Fence here to ensure spmv is not still using buffer
-    // (cudaFree does not do a device synchronize)
-    exec.fence();
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer));
-#endif
     KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(mat));
   }
 

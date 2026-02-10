@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include "KokkosKernels_TestUtils.hpp"
@@ -34,7 +21,7 @@ struct Logistic {
 
   const double r, K;
 
-  Logistic(double r_, double K_) : r(r_), K(K_){};
+  Logistic(double r_, double K_) : r(r_), K(K_) {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
@@ -71,7 +58,7 @@ struct LotkaVolterra {
   const double alpha, beta, delta, gamma;
 
   LotkaVolterra(double alpha_, double beta_, double delta_, double gamma_)
-      : alpha(alpha_), beta(beta_), delta(delta_), gamma(gamma_){};
+      : alpha(alpha_), beta(beta_), delta(delta_), gamma(gamma_) {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
@@ -212,7 +199,7 @@ void test_BDF_Logistic() {
   scalar_type measured_order;
 
   // Test BDF1
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF1 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -233,13 +220,13 @@ void test_BDF_Logistic() {
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
   EXPECT_NEAR_KK_REL(measured_order, 2.0, 0.15);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 2, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 2.0) / 2.0 << std::endl;
 #endif
 
   // Test BDF2
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF2 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -258,13 +245,13 @@ void test_BDF_Logistic() {
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
   EXPECT_NEAR_KK_REL(measured_order, 4.0, 0.15);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 4, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 4.0) / 4.0 << std::endl;
 #endif
 
   // Test BDF3
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF3 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -283,13 +270,13 @@ void test_BDF_Logistic() {
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
   EXPECT_NEAR_KK_REL(measured_order, 8.0, 0.15);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 8, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 8.0) / 8.0 << std::endl;
 #endif
 
   // Test BDF4
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF4 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -307,13 +294,13 @@ void test_BDF_Logistic() {
     errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) / Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 16, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 16.0) / 16.0 << std::endl;
 #endif
 
   // Test BDF5
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF5 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -331,7 +318,7 @@ void test_BDF_Logistic() {
     errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) / Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 32, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 32.0) / 32.0 << std::endl;
 #endif
@@ -670,7 +657,7 @@ template <class execution_space, class scalar_type>
 void test_adaptive_BDF_v2() {
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
-  using KAT      = Kokkos::ArithTraits<scalar_type>;
+  using KAT      = KokkosKernels::ArithTraits<scalar_type>;
 
   std::cout << "\n\n\nBDF_v2 test starting\n" << std::endl;
 
@@ -700,7 +687,7 @@ void test_BDF_adaptive_stiff() {
   using execution_space = typename Device::execution_space;
   using vec_type        = Kokkos::View<scalar_type*, execution_space>;
   using mat_type        = Kokkos::View<scalar_type**, execution_space>;
-  using KAT             = Kokkos::ArithTraits<scalar_type>;
+  using KAT             = KokkosKernels::ArithTraits<scalar_type>;
 
   StiffChemistry mySys{};
 

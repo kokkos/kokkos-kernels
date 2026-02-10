@@ -1,25 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef TEST_BATCHED_DENSE_HPP
 #define TEST_BATCHED_DENSE_HPP
 
 // Serial kernels
 #include "Test_Batched_SerialAxpy.hpp"
-#include "Test_Batched_SerialAxpy_Real.hpp"
-#include "Test_Batched_SerialAxpy_Complex.hpp"
+#include "Test_Batched_SerialCopy.hpp"
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
 #include "Test_Batched_SerialGesv.hpp"
@@ -63,11 +49,10 @@
 #include "Test_Batched_SerialLacgv.hpp"
 #include "Test_Batched_SerialGbtrf.hpp"
 #include "Test_Batched_SerialGbtrs.hpp"
+#include "Test_Batched_SerialHouseholder.hpp"
 
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"
-#include "Test_Batched_TeamAxpy_Real.hpp"
-#include "Test_Batched_TeamAxpy_Complex.hpp"
 #include "Test_Batched_TeamGesv.hpp"
 #include "Test_Batched_TeamGesv_Real.hpp"
 #include "Test_Batched_TeamInverseLU.hpp"
@@ -88,8 +73,6 @@
 
 // TeamVector Kernels
 #include "Test_Batched_TeamVectorAxpy.hpp"
-#include "Test_Batched_TeamVectorAxpy_Real.hpp"
-#include "Test_Batched_TeamVectorAxpy_Complex.hpp"
 #include "Test_Batched_TeamVectorEigendecomposition.hpp"
 #include "Test_Batched_TeamVectorEigendecomposition_Real.hpp"
 #include "Test_Batched_TeamVectorGesv.hpp"

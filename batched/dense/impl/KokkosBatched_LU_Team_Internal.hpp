@@ -1,24 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_LU_TEAM_INTERNAL_HPP
 #define KOKKOSBATCHED_LU_TEAM_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_InnerLU_Serial_Impl.hpp"
@@ -65,7 +51,7 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Unblocked>::invoke(
     if (tiny != 0) {
       if (member.team_rank() == 0) {
         ValueType &alpha11_reference = A[p * as0 + p * as1];
-        const auto alpha11_real      = Kokkos::ArithTraits<ValueType>::real(alpha11_reference);
+        const auto alpha11_real      = KokkosKernels::ArithTraits<ValueType>::real(alpha11_reference);
         alpha11_reference += minus_abs_tiny * ValueType(alpha11_real < 0);
         alpha11_reference += abs_tiny * ValueType(alpha11_real >= 0);
       }
@@ -139,9 +125,8 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
       member.team_barrier();
 
       // gemm update
-      KokkosBatched::Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
-          member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0,
-          as1, Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
+      TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
+                                                    Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
     }
   };
 

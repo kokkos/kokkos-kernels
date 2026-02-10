@@ -4,11 +4,26 @@ API: Batched Dense (DLA)
 .. toctree::
    :maxdepth: 2
    :hidden:
-
+   
+   dense/batched_axpy
+   dense/batched_iamax
+   dense/batched_trsv
+   dense/batched_tbsv
+   dense/batched_ger
+   dense/batched_syr
+   dense/batched_getrf
+   dense/batched_getrs
+   dense/batched_gbtrf
+   dense/batched_gbtrs
    dense/batched_pbtrf
    dense/batched_pbtrs
    dense/batched_pttrf
    dense/batched_pttrs
+   dense/batched_lacgv
+   dense/batched_laswp
+   dense/batched_apply_householder
+   dense/batched_householder
+   dense/batched_trsm
 
 Our implementation of batched dense linear algebra (DLA) allows user to compose various batched DLA operations.
 For example, consider a case where small element matrices are created via `gemm` and those matrices are triangular solved by `lu` and `trsv`.
@@ -114,9 +129,9 @@ BLAS 1
      - `TeamCopy`
      - `TeamVectorCopy`
    * - AXPY
-     - `SerialAxpy`
-     - `TeamAxpy`
-     - `TeamVectorAxpy`
+     - :doc:`SerialAxpy <dense/batched_axpy>`
+     - :doc:`TeamAxpy <dense/batched_axpy>`
+     - :doc:`TeamVectorAxpy <dense/batched_axpy>`
    * - DOT*
      - `SerialDot`
      - `TeamDot`
@@ -138,7 +153,7 @@ BLAS 1
      - --
      - --
    * - IAMAX
-     - `SerialIamax`
+     - :doc:`SerialIamax <dense/batched_iamax>`
      - --
      - --
 
@@ -186,11 +201,11 @@ BLAS 2
      - --
      - --
    * - TRSV
-     - `SerialTrsv`
-     - `TeamTrsv`
-     - `TeamVectorTrsv`
+     - :doc:`SerialTrsv <dense/batched_trsv>`
+     - :doc:`TeamTrsv <dense/batched_trsv>`
+     - :doc:`TeamVectorTrsv <dense/batched_trsv>`
    * - TBSV
-     - `SerialTbsv`
+     - :doc:`SerialTbsv <dense/batched_tbsv>`
      - --
      - --
    * - TPSV
@@ -198,23 +213,23 @@ BLAS 2
      - --
      - --
    * - GER
-     - `SerialGer`
+     - :doc:`SerialGer <dense/batched_ger>`
      - --
      - --
    * - GERU
-     - --
+     - :doc:`SerialGer <dense/batched_ger>`
      - --
      - --
    * - GERC
-     - --
+     - :doc:`SerialGer <dense/batched_ger>`
      - --
      - --
    * - SYR
-     - `SerialSyr`
+     - :doc:`SerialSyr <dense/batched_syr>`
      - --
      - --
    * - HER
-     - `SerialSyr`
+     - :doc:`SerialSyr <dense/batched_syr>`
      - --
      - --
    * - SPR
@@ -270,9 +285,9 @@ BLAS 3
      - `TeamTrmm`
      - `TeamVectorTrmm`
    * - TRSM
-     - `SerialTrsm`
-     - `TeamTrsm`
-     - `TeamVectorTrsm`
+     - :doc:`SerialTrsm <dense/batched_trsm>`
+     - :doc:`TeamTrsm <dense/batched_trsm>`
+     - :doc:`TeamVectorTrsm <dense/batched_trsm>`
 
 LAPACK support
 ==============
@@ -288,11 +303,11 @@ Below are tables summarizing the currently supported function calls in Kokkos Ke
      - Team
      - TeamVector
    * - getrf
-     - `SerialGetrf`
+     - :doc:`SerialGetrf <dense/batched_getrf>`
      - --
      - --
    * - getrs
-     - `SerialGetrs`
+     - :doc:`SerialGetrs <dense/batched_getrs>`
      - --
      - --
    * - gesv
@@ -300,11 +315,11 @@ Below are tables summarizing the currently supported function calls in Kokkos Ke
      - `TeamGesv`
      - `TeamVectorGesv`
    * - gbtrf
-     - `SerialGbtrf`
+     - :doc:`SerialGbtrf <dense/batched_gbtrf>`
      - --
      - --
    * - gbtrs
-     - `SerialGbtrs`
+     - :doc:`SerialGbtrs <dense/batched_gbtrs>`
      - --
      - --
    * - pbtrf
@@ -356,10 +371,10 @@ Below are tables summarizing the currently supported function calls in Kokkos Ke
      - --
      - --
    * - lacgv
-     - `SerialLacgv`
+     - :doc:`SerialLacgv <dense/batched_lacgv>`
      - --
      - --
    * - laswp
-     - `SerialLaswp`
+     - :doc:`SerialLaswp <dense/batched_laswp>`
      - --
      - --

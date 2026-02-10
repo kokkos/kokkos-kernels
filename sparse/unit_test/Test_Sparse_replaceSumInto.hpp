@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // #include "Teuchos_UnitTestHarness.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include <gtest/gtest.h>
 #include "KokkosSparse_CrsMatrix.hpp"
 
@@ -44,7 +31,7 @@ class ModifyEvenNumberedRows {
       ordinal_type cols[1];
       value_type vals[1];
 
-      const value_type ONE   = Kokkos::ArithTraits<value_type>::one();
+      const value_type ONE   = KokkosKernels::ArithTraits<value_type>::one();
       const value_type THREE = ONE + ONE + ONE;
 
       cols[0] = lclRow;
@@ -84,7 +71,7 @@ bool checkWhetherEvenNumberedRowsWereModified(const CrsMatrixType& A, const bool
   typedef typename CrsMatrixType::value_type SC;
   typedef typename CrsMatrixType::ordinal_type LO;
 
-  const SC ONE   = Kokkos::ArithTraits<SC>::one();
+  const SC ONE   = KokkosKernels::ArithTraits<SC>::one();
   const SC TWO   = ONE + ONE;
   const SC THREE = ONE + ONE + ONE;
 
@@ -120,7 +107,7 @@ template <class CrsMatrixType>
 void testOneCase(bool& /*success*/,
                  // Teuchos::FancyOStream& out,
                  std::ostream& out, const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic) {
-  using Kokkos::ArithTraits;
+  using KokkosKernels::ArithTraits;
   typedef typename CrsMatrixType::value_type value_type;
 
   // Teuchos::OSTab tab0 (out);
@@ -203,7 +190,7 @@ void test_replaceSumInto() {
   using std::endl;
   class NullBuffer : public std::streambuf {
    public:
-    int overflow(int c) { return c; }
+    int overflow(int c) override { return c; }
   };
   NullBuffer null_buffer;
   // std::ostream &out = std::cout;

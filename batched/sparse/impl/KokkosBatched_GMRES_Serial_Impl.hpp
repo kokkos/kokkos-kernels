@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_GMRES_SERIAL_IMPL_HPP
 #define KOKKOSBATCHED_GMRES_SERIAL_IMPL_HPP
 
@@ -41,11 +28,8 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
                                                const PrecOperatorType& P, const KrylovHandleType& handle,
                                                const int GMRES_id) {
   typedef int OrdinalType;
-  typedef typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
-  typedef Kokkos::ArithTraits<MagnitudeType> ATM;
-
-  using SerialCopy1D = SerialCopy<Trans::NoTranspose, 1>;
-  using SerialCopy2D = SerialCopy<Trans::NoTranspose, 2>;
+  typedef typename KokkosKernels::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
+  typedef KokkosKernels::ArithTraits<MagnitudeType> ATM;
 
   const OrdinalType numMatrices = X.extent(0);
   const OrdinalType numRows     = X.extent(1);
@@ -89,7 +73,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
   auto tmp  = Kokkos::subview(handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix), offset_tmp);
 
   // Deep copy of b into r_0:
-  SerialCopy2D::invoke(B, W);
+  SerialCopy<Trans::NoTranspose>::invoke(B, W);
 
   // r_0 := b - A x_0
   A.template apply<Trans::NoTranspose>(X, W, -1, 1);
@@ -147,7 +131,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
       for (size_t i = 0; i < j + 1; ++i) {
         auto V_i = Kokkos::subview(V_view, Kokkos::ALL, i, Kokkos::ALL);
         SerialDot<Trans::NoTranspose>::invoke(W, V_i, tmp);
-        SerialCopy1D::invoke(tmp, Kokkos::subview(H_view, Kokkos::ALL, j, i));
+        SerialCopy<Trans::NoTranspose>::invoke(tmp, Kokkos::subview(H_view, Kokkos::ALL, j, i));
         for (OrdinalType ii = 0; ii < numMatrices; ++ii) tmp(ii) = -tmp(ii);
 
         SerialAxpy::invoke(tmp, V_i, W);
@@ -206,7 +190,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
         G(l, j + 1) = 0.;
       }
 
-      auto res_norm = Kokkos::ArithTraits<double>::abs(G(l, j + 1)) / G(l, 0);
+      auto res_norm = KokkosKernels::ArithTraits<double>::abs(G(l, j + 1)) / G(l, 0);
 
       handle.set_norm(GMRES_id, l, j + 1, res_norm);
 
@@ -248,7 +232,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
   }
 
   if (handle.get_compute_last_residual()) {
-    SerialCopy2D::invoke(B, W);
+    SerialCopy<Trans::NoTranspose>::invoke(B, W);
     A.template apply<Trans::NoTranspose>(X, W, -1, 1);
     P.template apply<Trans::NoTranspose, 1>(W, W);
     SerialDot<Trans::NoTranspose>::invoke(W, W, tmp);

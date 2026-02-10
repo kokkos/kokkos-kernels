@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosSparse_coo2crs.hpp"
 #include "KokkosSparse_crs2coo.hpp"
@@ -90,7 +77,7 @@ template <class CrsType, class RowType, class ColType, class DataType>
 void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data,
                       std::string failure_info = "no failure information!") {
   using value_type = typename DataType::value_type;
-  using ats        = Kokkos::ArithTraits<value_type>;
+  using ats        = KokkosKernels::ArithTraits<value_type>;
 
   // Copy coo to host
   typename RowType::host_mirror_type row_h = Kokkos::create_mirror_view(row);

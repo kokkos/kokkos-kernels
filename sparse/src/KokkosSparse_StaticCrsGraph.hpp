@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_STATICCRSGRAPH_HPP_
 #define KOKKOSSPARSE_STATICCRSGRAPH_HPP_
@@ -266,12 +253,6 @@ class StaticCrsGraph {
   using staticcrsgraph_type = StaticCrsGraph<DataType, Arg1Type, Arg2Type, Arg3Type, SizeType>;
   using host_mirror_type =
       StaticCrsGraph<data_type, array_layout, typename traits::host_mirror_space, memory_traits, size_type>;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  [[deprecated(
-      "KokkosSparse::StaticCrsGraph::HostMirror is deprecated please use "
-      "KokkosSparse::StaticCrsGraph::host_mirror_type instead.")]] using HostMirror = host_mirror_type;
-#endif
-
   using row_map_type   = Kokkos::View<const size_type*, array_layout, device_type, memory_traits>;
   using entries_type   = Kokkos::View<data_type*, array_layout, device_type, memory_traits>;
   using row_block_type = Kokkos::View<const size_type*, array_layout, device_type, memory_traits>;

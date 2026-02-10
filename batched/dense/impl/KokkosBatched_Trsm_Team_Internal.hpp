@@ -1,24 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_TRSM_TEAM_INTERNAL_HPP
 #define KOKKOSBATCHED_TRSM_TEAM_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
@@ -134,9 +120,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invok
         member.team_barrier();
 
         // gemm update
-        KokkosBatched::Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
-            member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), ib - p - pb, jb, pb, minus_one, Ap + pb * as0,
-            as0, as1, Bp, bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
+        TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, ib - p - pb, jb, pb, minus_one, Ap + pb * as0, as0, as1,
+                                                      Bp, bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
       }
     };
 
@@ -253,9 +238,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invok
         member.team_barrier();
 
         // gemm update
-        KokkosBatched::Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
-            member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), p, jb, pb, minus_one, Ap - p * as0, as0, as1,
-            Bp, bs0, bs1, one, BB, bs0, bs1);
+        TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, p, jb, pb, minus_one, Ap - p * as0, as0, as1, Bp, bs0,
+                                                      bs1, one, BB, bs0, bs1);
       }
     };
 

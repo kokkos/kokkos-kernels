@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_PTTRS_SERIAL_IMPL_HPP_
 #define KOKKOSBATCHED_PTTRS_SERIAL_IMPL_HPP_
 
@@ -39,7 +26,7 @@ KOKKOS_INLINE_FUNCTION static int checkPttrsInput([[maybe_unused]] const DViewTy
   static_assert(std::is_same_v<typename BViewType::value_type, typename BViewType::non_const_value_type>,
                 "KokkosBatched::pttrs: BViewType must have non-const value type.");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int nd  = d.extent_int(0);
   const int ne  = e.extent_int(0);
   const int ldb = b.extent_int(0);

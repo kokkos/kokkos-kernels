@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS1_NRM2_HPP_
 #define KOKKOSBLAS1_NRM2_HPP_
@@ -180,18 +167,15 @@ void nrm2(const RV& R, const XMV& X, typename std::enable_if<Kokkos::is_view<RV>
 template <class XMV>
 KOKKOS_INLINE_FUNCTION typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type
 serial_nrm2(const XMV X) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<XMV>::value, "KokkosBlas::serial_nrm2: XMV is not a Kokkos::View");
   static_assert(XMV::rank == 1, "KokkosBlas::serial_nrm2: XMV must have rank 1");
-#endif  // KOKKOSKERNELS_DEBUG_LEVEL
 
   return Impl::serial_nrm2(X.extent(0), X.data(), X.stride(0));
 }
 
 template <class RV, class XMV>
 KOKKOS_INLINE_FUNCTION int serial_nrm2(const XMV X, const RV& R) {
-// Do some compile time check when debug is enabled
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+  // Do some compile time check when debug is enabled
   static_assert(Kokkos::is_view<XMV>::value, "KokkosBlas::serial_nrm2: XMV is not a Kokkos::View");
   static_assert(Kokkos::is_view<RV>::value, "KokkosBlas::serial_nrm2: RV is not a Kokkos::View");
   static_assert(std::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
@@ -202,10 +186,11 @@ KOKKOS_INLINE_FUNCTION int serial_nrm2(const XMV X, const RV& R) {
                 "KokkosBlas::serial_nrm2: "
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
+#ifndef NDEBUG
   using norm_type = typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type;
   static_assert(std::is_same<typename RV::non_const_value_type, norm_type>::value,
                 "KokkosBlas::serial_nrm2: RV must have same value_type as"
-                " Kokkos::ArithTraits<XMV::value_type>::mag_type");
+                " KokkosKernels::ArithTraits<XMV::value_type>::mag_type");
 
   if (R.extent(0) != X.extent(1)) {
     Kokkos::printf(
@@ -214,7 +199,7 @@ KOKKOS_INLINE_FUNCTION int serial_nrm2(const XMV X, const RV& R) {
         R.extent_int(0), X.extent_int(0), X.extent_int(1));
     return 1;
   }
-#endif  // KOKKOSKERNELS_DEBUG_LEVEL
+#endif  // NDEBUG
   if constexpr (XMV::rank() == 1)
     Impl::serial_nrm2(X.extent(0), X.data(), X.stride(0), R.data());
   else

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBATCHED_GBTRS_SERIAL_IMPL_HPP_
 #define KOKKOSBATCHED_GBTRS_SERIAL_IMPL_HPP_
@@ -38,7 +25,7 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
                 "KokkosBatched::gbtrs: Value type of PivViewType must be an integral type.");
   static_assert(std::is_same_v<typename BViewType::value_type, typename BViewType::non_const_value_type>,
                 "KokkosBatched::gbtrs: BViewType must have non-const value type.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (kl < 0) {
     Kokkos::printf(
         "KokkosBatched::gbtrs: input parameter kl must not be less than 0: kl "

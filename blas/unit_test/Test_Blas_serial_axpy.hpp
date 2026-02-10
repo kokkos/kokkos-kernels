@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef TEST_BLAS_SERIAL_AXPY_HPP_
 #define TEST_BLAS_SERIAL_AXPY_HPP_
@@ -77,7 +64,7 @@ template <typename DeviceType, typename ViewType, typename ScalarType>
 void impl_test_blas_serial_axpy(const int N, const int BlkSize) {
   /// typedefs
   using value_type = typename ViewType::value_type;
-  using ats        = Kokkos::ArithTraits<value_type>;
+  using ats        = KokkosKernels::ArithTraits<value_type>;
 
   /// radomized input testing views
   const ScalarType alpha = 11.1;

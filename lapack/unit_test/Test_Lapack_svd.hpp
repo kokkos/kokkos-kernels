@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <chrono>
 
@@ -27,7 +14,7 @@ namespace Test {
 
 template <class AMatrix, class SVector, class UMatrix, class VMatrix>
 void check_triple_product(const AMatrix& A, const SVector& S, const UMatrix& U, const VMatrix& Vt,
-                          typename Kokkos::ArithTraits<typename AMatrix::non_const_value_type>::mag_type tol) {
+                          typename KokkosKernels::ArithTraits<typename AMatrix::non_const_value_type>::mag_type tol) {
   // After a successful SVD decomposition we have A=U*S*V
   // So using gemm we should be able to compare the above
   // triple product to the original matrix A.
@@ -66,7 +53,7 @@ void check_triple_product(const AMatrix& A, const SVector& S, const UMatrix& U, 
 
 template <class Matrix>
 void check_unitary_orthogonal_matrix(
-    const Matrix& M, typename Kokkos::ArithTraits<typename Matrix::non_const_value_type>::mag_type tol) {
+    const Matrix& M, typename KokkosKernels::ArithTraits<typename Matrix::non_const_value_type>::mag_type tol) {
   // After a successful SVD decomposition the matrices
   // U and V are unitary matrices. Thus we can check
   // the property UUt=UtU=I and VVt=VtV=I using gemm.
@@ -79,9 +66,9 @@ void check_unitary_orthogonal_matrix(
   for (int rowIdx = 0; rowIdx < M.extent_int(0); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(0); ++colIdx) {
       if (rowIdx == colIdx) {
-        EXPECT_NEAR_KK_REL(I0_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::one(), tol);
+        EXPECT_NEAR_KK_REL(I0_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::one(), tol);
       } else {
-        EXPECT_NEAR_KK(I0_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::zero(), tol);
+        EXPECT_NEAR_KK(I0_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::zero(), tol);
       }
     }
   }
@@ -93,9 +80,9 @@ void check_unitary_orthogonal_matrix(
   for (int rowIdx = 0; rowIdx < M.extent_int(1); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(1); ++colIdx) {
       if (rowIdx == colIdx) {
-        EXPECT_NEAR_KK_REL(I1_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::one(), tol);
+        EXPECT_NEAR_KK_REL(I1_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::one(), tol);
       } else {
-        EXPECT_NEAR_KK(I1_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::zero(), tol);
+        EXPECT_NEAR_KK(I1_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::zero(), tol);
       }
     }
   }
@@ -104,9 +91,9 @@ void check_unitary_orthogonal_matrix(
 template <class AMatrix, class Device>
 int impl_analytic_2x2_svd() {
   using scalar_type = typename AMatrix::value_type;
-  using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+  using mag_type    = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
   using vector_type = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
-  using KAT_S       = Kokkos::ArithTraits<scalar_type>;
+  using KAT_S       = KokkosKernels::ArithTraits<scalar_type>;
 
   const mag_type eps = KAT_S::eps();
 
@@ -203,9 +190,9 @@ int impl_analytic_2x2_svd() {
 template <class AMatrix, class Device>
 int impl_analytic_2x3_svd() {
   using scalar_type = typename AMatrix::value_type;
-  using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+  using mag_type    = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
   using vector_type = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
-  using KAT_S       = Kokkos::ArithTraits<scalar_type>;
+  using KAT_S       = KokkosKernels::ArithTraits<scalar_type>;
 
   const mag_type tol = 100 * KAT_S::eps();
 
@@ -332,9 +319,9 @@ int impl_analytic_2x3_svd() {
 template <class AMatrix, class Device>
 int impl_analytic_3x2_svd() {
   using scalar_type = typename AMatrix::value_type;
-  using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+  using mag_type    = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
   using vector_type = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
-  using KAT_S       = Kokkos::ArithTraits<scalar_type>;
+  using KAT_S       = KokkosKernels::ArithTraits<scalar_type>;
 
   const mag_type tol = 100 * KAT_S::eps();
 
@@ -450,7 +437,7 @@ template <class AMatrix, class Device>
 int impl_test_svd(const int m, const int n) {
   using execution_space = typename Device::execution_space;
   using scalar_type     = typename AMatrix::value_type;
-  using KAT_S           = Kokkos::ArithTraits<scalar_type>;
+  using KAT_S           = KokkosKernels::ArithTraits<scalar_type>;
   using mag_type        = typename KAT_S::mag_type;
   using vector_type     = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
 

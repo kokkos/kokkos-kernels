@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_APPLY_Q_SERIAL_IMPL_HPP
 #define KOKKOSBATCHED_APPLY_Q_SERIAL_IMPL_HPP
 
@@ -43,7 +30,7 @@ KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Left, Trans::NoTranspose, Algo::Ap
   static_assert(Kokkos::is_view_v<wViewType>, "KokkosBatched::SerialApplyQ::invoke: wViewType must be a Kokkos::View");
   static_assert(wViewType::rank() == 1, "KokkosBatched::SerialApplyQ::invoke: wViewType must have rank 1");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialApplyQ::invoke: w must have a contiguous span.");
     return 1;
@@ -75,7 +62,7 @@ KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Left, Trans::Transpose, Algo::Appl
   static_assert(Kokkos::is_view_v<wViewType>, "KokkosBatched::SerialApplyQ::invoke: wViewType must be a Kokkos::View");
   static_assert(wViewType::rank() == 1, "KokkosBatched::SerialApplyQ::invoke: wViewType must have rank 1");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialApplyQ::invoke: w must have a contiguous span.");
     return 1;
@@ -107,7 +94,7 @@ KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Right, Trans::NoTranspose, Algo::A
   static_assert(Kokkos::is_view_v<wViewType>, "KokkosBatched::SerialApplyQ::invoke: wViewType must be a Kokkos::View");
   static_assert(wViewType::rank() == 1, "KokkosBatched::SerialApplyQ::invoke: wViewType must have rank 1");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialApplyQ::invoke: w must have a contiguous span.");
     return 1;

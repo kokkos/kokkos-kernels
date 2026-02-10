@@ -1,19 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-// ************************************************************************
-//@HEADER
 
 /// @file KokkosSparse_LUPrec.hpp
 
@@ -48,7 +34,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using EXSP       = typename CRS::execution_space;
   using MEMSP      = typename CRS::memory_space;
   using DEVICE     = typename Kokkos::Device<EXSP, MEMSP>;
-  using karith     = typename Kokkos::ArithTraits<ScalarType>;
+  using karith     = typename KokkosKernels::ArithTraits<ScalarType>;
   using View1d     = typename Kokkos::View<ScalarType *, DEVICE>;
 
  private:
@@ -88,7 +74,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //
   virtual void apply(const Kokkos::View<const ScalarType *, DEVICE> &X, const Kokkos::View<ScalarType *, DEVICE> &Y,
                      const char transM[] = "N", ScalarType alpha = karith::one(),
-                     ScalarType beta = karith::zero()) const {
+                     ScalarType beta = karith::zero()) const override {
     KK_REQUIRE_MSG(transM[0] == NoTranspose[0], "LUPrec::apply only supports 'N' for transM");
 
     KokkosSparse::sptrsv_symbolic(&_khL, L_.graph.row_map, L_.graph.entries);
@@ -102,20 +88,20 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //@}
 
   //! Set this preconditioner's parameters.
-  void setParameters() {}
+  void setParameters() override {}
 
-  void initialize() {}
+  void initialize() override {}
 
   //! True if the preconditioner has been successfully initialized, else false.
-  bool isInitialized() const { return true; }
+  bool isInitialized() const override { return true; }
 
-  void compute() {}
+  void compute() override {}
 
   //! True if the preconditioner has been successfully computed, else false.
-  bool isComputed() const { return true; }
+  bool isComputed() const override { return true; }
 
   //! True if the preconditioner implements a transpose operator apply.
-  bool hasTransposeApply() const { return true; }
+  bool hasTransposeApply() const override { return true; }
 };
 
 }  // namespace Experimental

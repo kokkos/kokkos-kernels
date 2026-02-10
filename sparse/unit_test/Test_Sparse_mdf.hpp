@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -116,7 +103,7 @@ void run_test_mdf() {
     }
     for (int idx = 0; idx < 40; ++idx) {
       EXPECT_TRUE(entries_U_ref[idx] == entries_U(idx)) << "entries_U(" << idx << ") is wrong!";
-      EXPECT_NEAR_KK(values_U_ref[idx], values_U(idx), 10 * Kokkos::ArithTraits<scalar_type>::eps(),
+      EXPECT_NEAR_KK(values_U_ref[idx], values_U(idx), 10 * KokkosKernels::ArithTraits<scalar_type>::eps(),
                      "An entry in U.values is wrong!");
     }
 
@@ -143,7 +130,7 @@ void run_test_mdf() {
       EXPECT_TRUE(entries_L_ref[idx] == entries_L(idx))
           << "entries_L(" << idx << ")=" << entries_L(idx) << " is wrong, entries_L_ref[" << idx
           << "]=" << entries_L_ref[idx] << "!";
-      EXPECT_NEAR_KK(values_L_ref[idx], values_L(idx), 10 * Kokkos::ArithTraits<scalar_type>::eps(),
+      EXPECT_NEAR_KK(values_L_ref[idx], values_L(idx), 10 * KokkosKernels::ArithTraits<scalar_type>::eps(),
                      "An entry in L.values is wrong!");
     }
   }

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include "KokkosKernels_TestUtils.hpp"
@@ -106,15 +93,15 @@ void run_newton_test(const system_type& mySys, KokkosODE::Experimental::Newton_p
 
   Kokkos::deep_copy(x_h, x);
   Kokkos::deep_copy(r_h, rhs);
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   std::cout << "Non-linear problem solution and residual:" << std::endl;
   std::cout << "  [(";
   for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
     std::cout << " " << x_h(eqIdx);
-  }
-  std::cout << " ), " << KokkosBlas::serial_nrm2(rhs) << ", (";
-  for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
-    std::cout << " " << Kokkos::abs(x_h(eqIdx) - solution[eqIdx]) / Kokkos::abs(solution[eqIdx]);
+    if (Kokkos::abs(solution[eqIdx]) > 0)
+      std::cout << ", " << Kokkos::abs(x_h(eqIdx) - solution[eqIdx]) / Kokkos::abs(solution[eqIdx]);
+    else
+      std::cout << ", " << Kokkos::abs(x_h(eqIdx) - solution[eqIdx]);
   }
   std::cout << " )]" << std::endl;
 #else
@@ -206,7 +193,7 @@ void test_newton_status() {
   QuadraticEquation<Device, scalar_type> my_system{};
 
   scalar_type initial_value[3] = {1.0, -0.5, 0.5};
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
   scalar_type solution[3] = {2.0, -1.0, 0.0};
 #endif
   newton_solver_status newton_status[3] = {newton_solver_status::NLS_SUCCESS, newton_solver_status::NLS_DIVERGENCE,
@@ -229,7 +216,7 @@ void test_newton_status() {
     Kokkos::deep_copy(status_h, status);
     EXPECT_TRUE(status_h(0) == newton_status[idx]);
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     Kokkos::deep_copy(x_h, x);
     Kokkos::deep_copy(r_h, rhs);
     printf("Non-linear problem solution and residual with initial value %f:\n", initial_value[idx]);
@@ -256,7 +243,7 @@ void test_simple_problems() {
     // Test the Newton solver on a quadratci equation
     // with two different initial guess that lead to
     // the two solutions of the equation.
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "\nStarting Quadratic Equation problem" << std::endl;
 #endif
     using system_type = QuadraticEquation<Device, scalar_type>;
@@ -265,28 +252,28 @@ void test_simple_problems() {
     for (int idx = 0; idx < 2; ++idx) {
       run_newton_test<system_type, Device, scalar_type>(mySys, params, &(initial_value[idx]), &(solution[idx]));
     }
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "Finished Quadratic Equation problem" << std::endl;
 #endif
   }
 
   {
     // Test the Newton solver on a trigonometric equation
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "\nStarting Trigonometric Equation problem" << std::endl;
 #endif
     using system_type = TrigonometricEquation<Device, scalar_type>;
     system_type mySys{};
     scalar_type initial_value[1] = {0.1}, solution[1] = {0.739085};
     run_newton_test<system_type, Device, scalar_type>(mySys, params, initial_value, solution);
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "Finished Trigonometric Equation problem" << std::endl;
 #endif
   }
 
   {
     // Test the Newton solver on a logarithmic equation
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "\nStarting Logarithmic Equation problem" << std::endl;
 #endif
     using system_type = LogarithmicEquation<Device, scalar_type>;
@@ -294,7 +281,7 @@ void test_simple_problems() {
     scalar_type initial_value[1] = {static_cast<scalar_type>(0.5)},
                 solution[1]      = {static_cast<scalar_type>(1.0) / static_cast<scalar_type>(7.0)};
     run_newton_test<system_type, Device, scalar_type>(mySys, params, initial_value, solution);
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "Finished Logarithmic Equation problem" << std::endl;
 #endif
   }
@@ -387,7 +374,7 @@ void test_simple_systems() {
 
   {
     // First problem: intersection of two circles
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "\nStarting Circles Intersetcion problem" << std::endl;
 #endif
     using system_type = CirclesIntersections<Device, scalar_type>;
@@ -395,14 +382,14 @@ void test_simple_systems() {
     scalar_type initial_values[2] = {1.5, 1.5};
     scalar_type solution[2]       = {10.75 / 6, 0.8887803753};
     run_newton_test<system_type, Device, scalar_type>(mySys, params, initial_values, solution);
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "Finished Circles Intersetcion problem" << std::endl;
 #endif
   }
 
   {
     // Second problem: circle / hyperbola intersection
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "\nStarting Circle/Hyperbola Intersetcion problem" << std::endl;
 #endif
     using system_type = CircleHyperbolaIntersection<Device, scalar_type>;
@@ -410,11 +397,11 @@ void test_simple_systems() {
 
     scalar_type init_vals[2] = {0.0, 1.0};
     scalar_type solutions[2] = {
-        Kokkos::ArithTraits<scalar_type>::one() /
+        KokkosKernels::ArithTraits<scalar_type>::one() /
             Kokkos::sqrt(static_cast<scalar_type>(4 + Kokkos::sqrt(static_cast<scalar_type>(12.0)) / 2)),
         Kokkos::sqrt(static_cast<scalar_type>((4 + Kokkos::sqrt(static_cast<scalar_type>(12.0))) / 2))};
     run_newton_test<system_type, Device, scalar_type>(mySys, params, init_vals, solutions);
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#ifndef NDEBUG
     std::cout << "Finished Circle/Hyperbola Intersetcion problem" << std::endl;
 #endif
   }

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSPARSE_SPMV_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPMV_TPL_SPEC_DECL_HPP_
@@ -54,12 +41,9 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   }
   // cuSPARSE doesn't directly support mode H with real values, but this is
   // equivalent to mode T
-  if (myCusparseOperation == CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE && !Kokkos::ArithTraits<value_type>::isComplex)
+  if (myCusparseOperation == CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE &&
+      !KokkosKernels::ArithTraits<value_type>::isComplex)
     myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;
-
-// Hopefully this corresponds to CUDA reelase 10.1, which is the first to
-// include the "generic" API
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
   using entry_type = typename AMatrix::non_const_ordinal_type;
 
@@ -86,23 +70,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x.extent_int(0), (void*)x.data(), myCudaDataType));
   KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
 
-  // Prior to CUDA 11.2.1, ALG2 was more performant than default for imbalanced
-  // matrices. After 11.2.1, the default is performant for imbalanced matrices,
-  // and ALG2 now means something else. CUDA >= 11.2.1 corresponds to
-  // CUSPARSE_VERSION >= 11402.
-#if CUSPARSE_VERSION >= 11402
-  const bool useAlg2 = false;
-#else
-  const bool useAlg2     = handle->get_algorithm() == SPMV_MERGE_PATH;
-#endif
-
-  // In CUDA 11.2.0, the algorithm enums were renamed.
-  // This corresponds to CUSPARSE_VERSION >= 11400.
-#if CUSPARSE_VERSION >= 11400
-  cusparseSpMVAlg_t algo = useAlg2 ? CUSPARSE_SPMV_CSR_ALG2 : CUSPARSE_SPMV_ALG_DEFAULT;
-#else
-  cusparseSpMVAlg_t algo = useAlg2 ? CUSPARSE_CSRMV_ALG2 : CUSPARSE_MV_ALG_DEFAULT;
-#endif
+  cusparseSpMVAlg_t algo = CUSPARSE_SPMV_ALG_DEFAULT;
 
   KokkosSparse::Impl::CuSparse10_SpMV_Data* subhandle;
 
@@ -138,62 +106,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
 
   KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
   KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
-
-#elif (9000 <= CUDA_VERSION)
-
-  KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
-
-  if (handle->tpl_rank1) {
-    subhandle = dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(handle->tpl_rank1);
-    if (!subhandle) throw std::runtime_error("KokkosSparse::spmv: subhandle is not set up for cusparse");
-    subhandle->set_exec_space(exec);
-  } else {
-    /* create and set the subhandle and matrix descriptor */
-    subhandle                 = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
-    handle->tpl_rank1         = subhandle;
-    cusparseMatDescr_t descrA = 0;
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
-  }
-
-  /* perform the actual SpMV operation */
-  static_assert(std::is_same_v<int, offset_type>,
-                "With cuSPARSE pre-10.0, offset type must be int. Something wrong with "
-                "TPL avail logic.");
-  if constexpr (std::is_same_v<value_type, float>) {
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseScsrmv(
-        cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(), reinterpret_cast<float const*>(&alpha),
-        subhandle->mat, reinterpret_cast<float const*>(A.values.data()), A.graph.row_map.data(), A.graph.entries.data(),
-        reinterpret_cast<float const*>(x.data()), reinterpret_cast<float const*>(&beta),
-        reinterpret_cast<float*>(y.data())));
-
-  } else if constexpr (std::is_same_v<value_type, double>) {
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDcsrmv(
-        cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(), reinterpret_cast<double const*>(&alpha),
-        subhandle->mat, reinterpret_cast<double const*>(A.values.data()), A.graph.row_map.data(),
-        A.graph.entries.data(), reinterpret_cast<double const*>(x.data()), reinterpret_cast<double const*>(&beta),
-        reinterpret_cast<double*>(y.data())));
-  } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCcsrmv(
-        cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(),
-        reinterpret_cast<cuComplex const*>(&alpha), subhandle->mat, reinterpret_cast<cuComplex const*>(A.values.data()),
-        A.graph.row_map.data(), A.graph.entries.data(), reinterpret_cast<cuComplex const*>(x.data()),
-        reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(y.data())));
-  } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
-        cusparseZcsrmv(cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(),
-                       reinterpret_cast<cuDoubleComplex const*>(&alpha), subhandle->mat,
-                       reinterpret_cast<cuDoubleComplex const*>(A.values.data()), A.graph.row_map.data(),
-                       A.graph.entries.data(), reinterpret_cast<cuDoubleComplex const*>(x.data()),
-                       reinterpret_cast<cuDoubleComplex const*>(&beta), reinterpret_cast<cuDoubleComplex*>(y.data())));
-  } else {
-    static_assert(
-      static_assert(KokkosKernels::Impl::always_false_v<value_type>,
-        "Trying to call cusparse SpMV with a scalar type not float/double, "
-        "nor complex of either!");
-  }
-#endif  // CUDA_VERSION
 }
 
 #define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE)                                          \
@@ -217,14 +129,13 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
                                                                                                                     \
     static void spmv(const Kokkos::Cuda& exec, Handle* handle, const char mode[], const coefficient_type& alpha,    \
                      const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {          \
-      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]";           \
+      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";    \
       Kokkos::Profiling::pushRegion(label);                                                                         \
       spmv_cusparse(exec, handle, mode, alpha, A, x, beta, y);                                                      \
       Kokkos::Profiling::popRegion();                                                                               \
     }                                                                                                               \
   };
 
-#if (9000 <= CUDA_VERSION)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int, int, Kokkos::LayoutLeft, Kokkos::CudaSpace)
@@ -241,8 +152,6 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::CudaSpace)
@@ -259,8 +168,6 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::Lay
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif  // defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
-#endif  // 9000 <= CUDA_VERSION
 
 #undef KOKKOSSPARSE_SPMV_CUSPARSE
 
@@ -408,7 +315,7 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
                                                                                                                        \
     static void spmv(const Kokkos::HIP& exec, Handle* handle, const char mode[], const coefficient_type& alpha,        \
                      const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {             \
-      std::string label = "KokkosSparse::spmv[TPL_ROCSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]";             \
+      std::string label = "KokkosSparse::spmv[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";      \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spmv_rocsparse(exec, handle, mode, alpha, A, x, beta, y);                                                        \
       Kokkos::Profiling::popRegion();                                                                                  \
@@ -525,7 +432,7 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha, Scalar
                                                                                                                      \
     static void spmv(const EXECSPACE&, Handle* handle, const char mode[], const coefficient_type& alpha,             \
                      const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {           \
-      std::string label = "KokkosSparse::spmv[TPL_MKL," + Kokkos::ArithTraits<SCALAR>::name() + "]";                 \
+      std::string label = "KokkosSparse::spmv[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";          \
       Kokkos::Profiling::pushRegion(label);                                                                          \
       spmv_mkl(handle, mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), A.numCols(), A.graph.row_map.data(),       \
                A.graph.entries.data(), A.values.data(), x.data(), y.data());                                         \
@@ -571,7 +478,7 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle, oneapi::mkl
 
   // oneAPI doesn't directly support mode H with real values, but this is
   // equivalent to mode T
-  if (mkl_mode == oneapi::mkl::transpose::conjtrans && !Kokkos::ArithTraits<scalar_type>::isComplex)
+  if (mkl_mode == oneapi::mkl::transpose::conjtrans && !KokkosKernels::ArithTraits<scalar_type>::isComplex)
     mkl_mode = oneapi::mkl::transpose::trans;
 
   OneMKL_SpMV_Data* subhandle;
@@ -627,7 +534,7 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle, oneapi::mkl
                                                                                                                        \
     static void spmv(const execution_space& exec, Handle* handle, const char mode[], const coefficient_type& alpha,    \
                      const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {             \
-      std::string label = "KokkosSparse::spmv[TPL_ONEMKL," + Kokkos::ArithTraits<SCALAR>::name() + "]";                \
+      std::string label = "KokkosSparse::spmv[TPL_ONEMKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";         \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       oneapi::mkl::transpose mkl_mode = mode_kk_to_onemkl(mode[0]);                                                    \
       spmv_onemkl(exec, handle, mkl_mode, alpha, A, x, beta, y);                                                       \

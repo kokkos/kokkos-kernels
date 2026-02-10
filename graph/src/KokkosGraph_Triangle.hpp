@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSGRAPH_TRIANGLE_HPP
 #define KOKKOSGRAPH_TRIANGLE_HPP
 #include "KokkosSparse_spgemm_impl.hpp"
@@ -307,7 +294,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m, 
             m, row_mapA, entriesA, null_values, lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
             null_values, new_indices, handle->is_dynamic_scheduling());
       }
-      KokkosSparse::Impl::kk_create_incidence_tranpose_matrix_from_lower_triangle<
+      KokkosSparse::Impl::kk_create_incidence_transpose_matrix_from_lower_triangle<
           row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, row_lno_persistent_work_view_t,
           nnz_lno_persistent_work_view_t, ExecutionSpace>(m, lower_triangular_matrix_rowmap,
                                                           lower_triangular_matrix_entries, incidence_transpose_rowmap,

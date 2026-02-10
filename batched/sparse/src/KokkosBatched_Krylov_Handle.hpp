@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBATCHED_KRYLOV_HANDLE_HPP
 #define KOKKOSBATCHED_KRYLOV_HANDLE_HPP
@@ -85,7 +72,7 @@ class KrylovHandle {
         batched_size(_batched_size),
         N_team_(N_team),
         monitor_residual(_monitor_residual) {
-    tolerance     = Kokkos::ArithTraits<norm_type>::epsilon();
+    tolerance     = KokkosKernels::ArithTraits<norm_type>::epsilon();
     max_tolerance = 1e-30;
     if (std::is_same<norm_type, double>::value) max_tolerance = 1e-50;
     if (monitor_residual) {

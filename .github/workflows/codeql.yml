@@ -33,18 +33,18 @@ jobs:
 
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+      uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
       with:
         egress-policy: audit
 
     - name: checkout_kokkos_kernels
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         path: kokkos-kernels
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@f1f6e5f6af878fb37288ce1c627459e94dbf7d01 # v3.29.5
+      uses: github/codeql-action/init@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4.32.2
       with:
         languages: c-cpp
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -52,11 +52,11 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
 
     - name: checkout_kokkos
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         repository: 'kokkos/kokkos'
         path: 'kokkos'
-        ref: '4.7.00'
+        ref: '5.0.2'
 
     - name: configure_kokkos
       run: |
@@ -65,11 +65,10 @@ jobs:
         cmake -S ${{github.workspace}}/kokkos \
         -B ${{github.workspace}}/kokkos/build \
         -D Kokkos_ENABLE_SERIAL=ON \
-        -D CMAKE_CXX_FLAGS="-Werror" \
-        -D CMAKE_CXX_STANDARD=17 \
+        -D CMAKE_CXX_STANDARD=20 \
         -D Kokkos_ENABLE_COMPILER_WARNINGS=ON \
         -D Kokkos_ENABLE_TESTS=OFF \
-        -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+        -D Kokkos_ENABLE_DEPRECATED_CODE_5=OFF \
         -D CMAKE_BUILD_TYPE=RELEASE \
         -D CMAKE_INSTALL_PREFIX=${{github.workspace}}/kokkos/install
 
@@ -85,7 +84,8 @@ jobs:
         -S ${{github.workspace}}/kokkos-kernels \
         -DKokkos_ROOT=${{github.workspace}}/kokkos/install \
         -DCMAKE_BUILD_TYPE=RELEASE \
-        -DCMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
+        -DKokkosKernels_ENABLE_COMPILER_WARNINGS=On \
+        -DKokkosKernels_ENABLE_WARNINGS_AS_ERRORS=On \
         -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/kokkos-kernels/install \
         -DKokkosKernels_ENABLE_TESTS=ON \
         -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
@@ -100,6 +100,6 @@ jobs:
       run: make -j2
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@f1f6e5f6af878fb37288ce1c627459e94dbf7d01 # v3.29.5
+      uses: github/codeql-action/analyze@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4.32.2
       with:
         category: "/language:c-cpp"

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_SPMV_TEAMVECTOR_IMPL_HPP
 #define KOKKOSBATCHED_SPMV_TEAMVECTOR_IMPL_HPP
 
@@ -253,7 +240,6 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
                                            const ValuesViewType& values, const IntView& row_ptr,
                                            const IntView& colIndices, const xViewType& X, const betaViewType& beta,
                                            const yViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<ValuesViewType>::value, "KokkosBatched::spmv: ValuesViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<IntView>::value, "KokkosBatched::spmv: IntView is not a Kokkos::View.");
     static_assert(Kokkos::is_view<xViewType>::value, "KokkosBatched::spmv: xViewType is not a Kokkos::View.");
@@ -270,6 +256,7 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
     static_assert(alphaViewType::rank == 1, "KokkosBatched::spmv: alphaViewType must have rank 1.");
     static_assert(betaViewType::rank == 1, "KokkosBatched::spmv: betaViewType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(
@@ -332,11 +319,10 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
   template <typename ValuesViewType, typename IntView, typename xViewType, typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& alpha,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& alpha,
       const ValuesViewType& values, const IntView& row_ptr, const IntView& colIndices, const xViewType& X,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& beta,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& beta,
       const yViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<ValuesViewType>::value, "KokkosBatched::spmv: ValuesViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<IntView>::value, "KokkosBatched::spmv: IntView is not a Kokkos::View.");
     static_assert(Kokkos::is_view<xViewType>::value, "KokkosBatched::spmv: xViewType is not a Kokkos::View.");
@@ -347,6 +333,7 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
     static_assert(xViewType::rank == 2, "KokkosBatched::spmv: xViewType must have rank 2.");
     static_assert(yViewType::rank == 2, "KokkosBatched::spmv: yViewType must have rank 2.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(
@@ -385,7 +372,7 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
     }
 
     return TeamVectorSpmvInternal::template invoke<
-        MemberType, typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type,
+        MemberType, typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type,
         typename ValuesViewType::non_const_value_type, typename IntView::non_const_value_type,
         typename ValuesViewType::array_layout, dobeta, N_team>(
         member, X.extent(0), X.extent(1), alpha, values.data(), values.stride(0), values.stride(1), row_ptr.data(),

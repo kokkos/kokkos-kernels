@@ -1,25 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // #include "KokkosKernels_ETIHelperMacros.h"
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <stdexcept>
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 // #ifndef kokkos_complex_double
 // #define kokkos_complex_double Kokkos::complex<double>
@@ -147,7 +134,7 @@ void testCrsMatrixRawConstructor() {
   std::vector<lno_t> entries = {3, 4, 0, 1, 2, 2, 0, 3, 4};
   std::vector<scalar_t> values;
   for (size_type i = 0; i < nnz; i++)
-    values.push_back(Kokkos::ArithTraits<scalar_t>::one() * (1.0 * rand() / RAND_MAX));
+    values.push_back(KokkosKernels::ArithTraits<scalar_t>::one() * (1.0 * rand() / RAND_MAX));
   KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> A("A", nrows, ncols, nnz, values.data(),
                                                                       rowmap.data(), entries.data());
   EXPECT_EQ(A.numRows(), nrows);
