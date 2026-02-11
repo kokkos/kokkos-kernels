@@ -3,6 +3,7 @@ kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../../test_common)
 
+kokkoskernels_add_executable_and_test(wiki_blas1_axpy        SOURCES KokkosBlas1_wiki_axpy.cpp)
 kokkoskernels_add_executable_and_test(wiki_blas1_dot         SOURCES KokkosBlas1_wiki_dot.cpp)
 kokkoskernels_add_executable_and_test(wiki_blas1_iamax       SOURCES KokkosBlas1_wiki_iamax.cpp)
 kokkoskernels_add_executable_and_test(wiki_blas1_nrm1        SOURCES KokkosBlas1_wiki_nrm1.cpp)
