@@ -11,12 +11,16 @@ SortAlgorithm Enum
   enum class SortAlgorithm {
     DEFAULT,
     PARALLEL_THREAD_LEVEL,
-    BULK_SORT
+    BULK_SORT,
+    RADIX,
+    SHELL
   };
 
 The `SortAlgorithm` enum specifies the sorting strategy to use for CRS matrices and graphs. The available options are:
 
 - `DEFAULT`: Automatically selects the best sorting strategy based on the execution space and matrix properties.
+- `SHELL`: Shell sort, only available on CPU. Default selection on CPU.
+- `RADIX`: Radix sort, only available on CPU.
 - `PARALLEL_THREAD_LEVEL`: Forces parallel thread-level sorting within each row.
 - `BULK_SORT`: Order all entries in the matrix/graph using a single sort-by-key. This is the default algorithm for highly imbalanced matrices or graphs.
 
