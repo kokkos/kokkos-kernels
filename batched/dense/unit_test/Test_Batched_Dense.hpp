@@ -5,7 +5,7 @@
 
 // Serial kernels
 #include "Test_Batched_SerialAxpy.hpp"
-#include "Test_Batched_SerialCopy.hpp"
+#include "Test_Batched_Copy.hpp"
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
 #include "Test_Batched_SerialGesv.hpp"
