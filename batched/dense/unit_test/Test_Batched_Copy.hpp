@@ -293,16 +293,11 @@ void impl_test_batched_copy(const std::size_t N, const std::size_t m_A, const st
   // Check if B0 and B1 are same as Ref_B0 and Ref_B1
   for (std::size_t ib = 0; ib < h_B0.extent(0); ib++) {
     for (std::size_t j = 0; j < h_B0.extent(1); j++) {
-      std::string msg = "N: " + std::to_string(N) + ", m_A: " + std::to_string(m_A) + ", n_A: " + std::to_string(n_A) +
-                        ", ib: " + std::to_string(ib) + ", j: " + std::to_string(j);
-      EXPECT_NEAR_KK(h_B0(ib, j), h_Ref_B0(ib, j), eps, msg);
+      EXPECT_NEAR_KK(h_B0(ib, j), h_Ref_B0(ib, j), eps);
     }
     for (std::size_t i = 0; i < h_B1.extent(1); i++) {
       for (std::size_t j = 0; j < h_B1.extent(2); j++) {
-        std::string msg = "N: " + std::to_string(N) + ", m_A: " + std::to_string(m_A) +
-                          ", n_A: " + std::to_string(n_A) + ", ib: " + std::to_string(ib) +
-                          ", i: " + std::to_string(i) + ", j: " + std::to_string(j);
-        EXPECT_NEAR_KK(h_B1(ib, i, j), h_Ref_B1(ib, i, j), eps, msg);
+        EXPECT_NEAR_KK(h_B1(ib, i, j), h_Ref_B1(ib, i, j), eps);
       }
     }
   }
