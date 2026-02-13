@@ -31,4 +31,4 @@ kokkoskernels_add_executable(serial_trsm SOURCES serial_trsm.cpp)
 
 kokkoskernels_add_executable(serial_axpy SOURCES serial_axpy.cpp)
 
-kokkoskernels_add_executable(serial_axpy SOURCES serial_copy.cpp)
+kokkoskernels_add_executable(serial_copy SOURCES serial_copy.cpp)
