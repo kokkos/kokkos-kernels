@@ -46,6 +46,7 @@
 #include "Test_Batched_SerialGetrs.hpp"
 #include "Test_Batched_SerialGer.hpp"
 #include "Test_Batched_SerialSyr.hpp"
+#include "Test_Batched_SerialSyr2.hpp"
 #include "Test_Batched_SerialLacgv.hpp"
 #include "Test_Batched_SerialGbtrf.hpp"
 #include "Test_Batched_SerialGbtrs.hpp"
