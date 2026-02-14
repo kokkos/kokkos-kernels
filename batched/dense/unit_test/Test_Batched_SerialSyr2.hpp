@@ -26,7 +26,6 @@ struct Functor_BatchedSerialSyr2 {
   AViewType m_A;
   ScalarType m_alpha;
 
-  KOKKOS_INLINE_FUNCTION
   Functor_BatchedSerialSyr2(const ScalarType alpha, const XViewType &x, const YViewType &y, const AViewType &A)
       : m_x(x), m_y(y), m_A(A), m_alpha(alpha) {}
 
