@@ -37,7 +37,7 @@ struct Functor_BatchedSerialSyr2 {
     auto sub_A = Kokkos::subview(m_A, k, Kokkos::ALL(), Kokkos::ALL());
 
     info += KokkosBatched::SerialSyr2<typename ParamTagType::uplo, typename ParamTagType::trans>::invoke(m_alpha, sub_x,
-                                                                                                        sub_y, sub_A);
+                                                                                                         sub_y, sub_A);
   }
 
   inline int run() {
@@ -56,7 +56,6 @@ struct Functor_BatchedSerialSyr2 {
 
 /// \brief Implementation details of batched syr2 analytical test
 ///        to confirm A:= alpha*x*y**T + alpha*y*x**T + A is computed correctly
-/// \param Nb [in] Batch size
 ///        alpha = 1.5
 ///        4x4 matrix (upper)
 ///        U: [[1, -3, -2,  0],
@@ -183,18 +182,18 @@ void impl_test_batched_syr2_analytical(const std::size_t Nb) {
 
   const ScalarType alpha = 1.5;
 
-  auto info =
-      Functor_BatchedSerialSyr2<DeviceType, View2DType, View2DType, View3DType, ScalarType, ParamTagType>(alpha, x, y,
-                                                                                                          A)
-          .run();
+  auto info = Functor_BatchedSerialSyr2<DeviceType, View2DType, View2DType, View3DType, ScalarType, ParamTagType>(
+                  alpha, x, y, A)
+                  .run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
   // With strided views
-  info = Functor_BatchedSerialSyr2<DeviceType, StridedView2DType, StridedView2DType, View3DType, ScalarType,
-                                   ParamTagType>(alpha, x_s, y_s, A_s)
-             .run();
+  info =
+      Functor_BatchedSerialSyr2<DeviceType, StridedView2DType, StridedView2DType, View3DType, ScalarType, ParamTagType>(
+          alpha, x_s, y_s, A_s)
+          .run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
@@ -228,8 +227,7 @@ void impl_test_batched_syr2(const std::size_t Nb, const std::size_t BlkSize) {
   using ArgUplo           = typename ParamTagType::uplo;
 
   View3DType A("A", Nb, BlkSize, BlkSize), A0("A0", Nb, BlkSize, BlkSize), A_s("A_s", Nb, BlkSize, BlkSize),
-      A0_s("A0_s", Nb, BlkSize, BlkSize), A_ref("A_ref", Nb, BlkSize, BlkSize),
-      A0_ref("A0_ref", Nb, BlkSize, BlkSize);
+      A0_s("A0_s", Nb, BlkSize, BlkSize), A_ref("A_ref", Nb, BlkSize, BlkSize), A0_ref("A0_ref", Nb, BlkSize, BlkSize);
   View2DType x("x", Nb, BlkSize), y("y", Nb, BlkSize);
 
   const std::size_t incx = 2, incy = 2;
@@ -261,30 +259,33 @@ void impl_test_batched_syr2(const std::size_t Nb, const std::size_t BlkSize) {
 
   // When A0 is zero
   const ScalarType alpha = 1.5;
-  auto info0 =
-      Functor_BatchedSerialSyr2<DeviceType, View2DType, View2DType, View3DType, ScalarType, ParamTagType>(alpha, x, y,
-                                                                                                          A0)
-          .run();
+  auto info0 = Functor_BatchedSerialSyr2<DeviceType, View2DType, View2DType, View3DType, ScalarType, ParamTagType>(
+                   alpha, x, y, A0)
+                   .run();
 
   // When A is a random matrix
-  auto info1 =
-      Functor_BatchedSerialSyr2<DeviceType, View2DType, View2DType, View3DType, ScalarType, ParamTagType>(alpha, x, y,
-                                                                                                          A)
-          .run();
+  auto info1 = Functor_BatchedSerialSyr2<DeviceType, View2DType, View2DType, View3DType, ScalarType, ParamTagType>(
+                   alpha, x, y, A)
+                   .run();
 
   Kokkos::fence();
   EXPECT_EQ(info0, 0);
   EXPECT_EQ(info1, 0);
 
   // With strided Views
-  info0 = Functor_BatchedSerialSyr2<DeviceType, StridedView2DType, StridedView2DType, View3DType, ScalarType,
-                                    ParamTagType>(alpha, x_s, y_s, A0_s)
-              .run();
+  info0 =
+      Functor_BatchedSerialSyr2<DeviceType, StridedView2DType, StridedView2DType, View3DType, ScalarType, ParamTagType>(
+          alpha, x_s, y_s, A0_s)
+          .run();
 
   // When A is a random matrix
-  info1 = Functor_BatchedSerialSyr2<DeviceType, StridedView2DType, StridedView2DType, View3DType, ScalarType,
-                                    ParamTagType>(alpha, x_s, y_s, A_s)
-              .run();
+  info1 =
+      Functor_BatchedSerialSyr2<DeviceType, StridedView2DType, StridedView2DType, View3DType, ScalarType, ParamTagType>(
+          alpha, x_s, y_s, A_s)
+          .run();
+
+  EXPECT_EQ(info0, 0);
+  EXPECT_EQ(info1, 0);
 
   // Make a reference at host
   auto h_x      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);

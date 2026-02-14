@@ -17,9 +17,9 @@ KOKKOS_INLINE_FUNCTION static int checkSyr2Input([[maybe_unused]] const XViewTyp
   static_assert(Kokkos::is_view_v<XViewType>, "KokkosBatched::syr2: XViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<YViewType>, "KokkosBatched::syr2: YViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::syr2: AViewType is not a Kokkos::View.");
-  static_assert(XViewType::rank == 1, "KokkosBatched::syr2: XViewType must have rank 1.");
-  static_assert(YViewType::rank == 1, "KokkosBatched::syr2: YViewType must have rank 1.");
-  static_assert(AViewType::rank == 2, "KokkosBatched::syr2: AViewType must have rank 2.");
+  static_assert(XViewType::rank() == 1, "KokkosBatched::syr2: XViewType must have rank 1.");
+  static_assert(YViewType::rank() == 1, "KokkosBatched::syr2: YViewType must have rank 1.");
+  static_assert(AViewType::rank() == 2, "KokkosBatched::syr2: AViewType must have rank 2.");
 #ifndef NDEBUG
   const int lda = A.extent_int(0), n = A.extent_int(1);
 
@@ -78,8 +78,8 @@ struct SerialSyr2<Uplo::Lower, Trans::Transpose> {
     auto info = Impl::checkSyr2Input(x, y, A);
     if (info) return info;
 
-    return Impl::SerialSyr2InternalLower::invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), n, alpha,
-                                                 x.data(), x.stride(0), y.data(), y.stride(0), A.data(), A.stride(0),
+    return Impl::SerialSyr2InternalLower::invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), n, alpha, x.data(),
+                                                 x.stride(0), y.data(), y.stride(0), A.data(), A.stride(0),
                                                  A.stride(1));
   }
 };
@@ -99,8 +99,8 @@ struct SerialSyr2<Uplo::Upper, Trans::Transpose> {
     auto info = Impl::checkSyr2Input(x, y, A);
     if (info) return info;
 
-    return Impl::SerialSyr2InternalUpper::invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), n, alpha,
-                                                 x.data(), x.stride(0), y.data(), y.stride(0), A.data(), A.stride(0),
+    return Impl::SerialSyr2InternalUpper::invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), n, alpha, x.data(),
+                                                 x.stride(0), y.data(), y.stride(0), A.data(), A.stride(0),
                                                  A.stride(1));
   }
 };

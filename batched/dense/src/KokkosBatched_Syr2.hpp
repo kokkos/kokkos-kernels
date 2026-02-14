@@ -24,10 +24,10 @@ namespace KokkosBatched {
 /// \tparam YViewType: Input type for the vector y, needs to be a 1D view
 /// \tparam AViewType: Input/output type for the matrix A, needs to be a 2D view
 ///
-/// \param alpha [in]: alpha is a scalar
-/// \param x [in]: x is a length n vector, a rank 1 view
-/// \param y [in]: y is a length n vector, a rank 1 view
-/// \param A [inout]: A is a n by n matrix, a rank 2 view
+/// \param[in] alpha : alpha is a scalar
+/// \param[in] x : x is a length n vector, a rank 1 view
+/// \param[in] y : y is a length n vector, a rank 1 view
+/// \param[inout] A : A is a n by n matrix, a rank 2 view
 ///
 /// No nested parallel_for is used inside of the function.
 ///
