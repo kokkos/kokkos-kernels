@@ -908,17 +908,15 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode
     }                                                                                                             \
   };
 
-KOKKOSSPARSE_SPMV_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int, Kokkos::LayoutRight,
-                            Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft,
-                            Kokkos::HIPSpace);
+KOKKOSSPARSE_SPMV_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace)
 KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, rocsparse_int, rocsparse_int, Kokkos::LayoutRight,
-                            Kokkos::HIPSpace);
+                            Kokkos::HIPSpace)
 
 #undef KOKKOSSPARSE_SPMV_ROCSPARSE
 

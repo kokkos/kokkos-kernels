@@ -27,6 +27,9 @@ struct HostLapack {
 
   static void geqrf(const int m, const int n, T *a, const int lda, T *tau, T *work, int lwork, int *info);
 
+  static void mqr(const char side, const char trans, const int m, const int n, const int k, T *a, const int lda, T *tau,
+                  T *c, const int ldc, T *work, int lwork, int *info);
+
   static int potrf(const char uplo, const int n, T *a, const int lda);
 };
 }  // namespace Impl
