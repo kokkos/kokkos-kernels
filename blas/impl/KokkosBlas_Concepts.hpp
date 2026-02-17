@@ -4,6 +4,7 @@
 #ifndef KOKKOSBLAS_CONCEPTS_HPP
 #define KOKKOSBLAS_CONCEPTS_HPP
 
+#include <concepts>
 #include "KokkosBlas_util.hpp"
 
 namespace KokkosBlas {
