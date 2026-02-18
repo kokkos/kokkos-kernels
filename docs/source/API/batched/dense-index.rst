@@ -12,6 +12,7 @@ API: Batched Dense (DLA)
    dense/batched_tbsv
    dense/batched_ger
    dense/batched_syr
+   dense/batched_syr2
    dense/batched_getrf
    dense/batched_getrs
    dense/batched_gbtrf
@@ -238,7 +239,11 @@ BLAS 2
      - --
      - --
    * - SYR2
+     - :doc:`SerialSyr2 <dense/batched_syr2>`
      - --
+     - --
+   * - HER2
+     - :doc:`SerialSyr2 <dense/batched_syr2>`
      - --
      - --
 
