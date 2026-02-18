@@ -11,7 +11,6 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
 
-#include <KokkosKernels_Handle.hpp>
 #include <KokkosKernels_TestStringUtils.hpp>
 #include <KokkosKernels_IOUtils.hpp>
 #include "KokkosSparse_IOUtils.hpp"
@@ -58,7 +57,6 @@ crsMat_t generateLongRowMatrix(const Sort_Parameters& params, typename crsMat_t:
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::index_type::non_const_type entries_view_t;
   typedef typename crsMat_t::row_map_type::non_const_type rowmap_view_t;
-  typedef typename crsMat_t::device_type device;
   // Generate random diag. dominant matrix
   srand(245);
   std::vector<size_type> rowmap = {0};
@@ -146,13 +144,7 @@ void runSort(const Sort_Parameters& params) {
       ncols = minCols;
     }
   }
-  typedef typename device_t::execution_space exec_space;
-  typedef typename device_t::memory_space mem_space;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exec_space, mem_space, mem_space>
-      KernelHandle;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type> crsMat_t;
-  // typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   crsMat_t A;
   bool doShuffle = params.shuffle || (params.matrix_path == nullptr);
   bool doPreSort = params.alreadySorted;
