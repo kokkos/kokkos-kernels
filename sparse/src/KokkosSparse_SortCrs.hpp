@@ -55,7 +55,8 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
   Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if constexpr (!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
     if (option == SortAlgorithm::DEFAULT) {
-      option = SortAlgorithm::SHELL;
+      Ordinal nnzPerRow = entries.extent(0) / numRows;
+      option            = (nnzPerRow < 20) ? SortAlgorithm::SHELL : SortAlgorithm::RADIX;
     } else if ((option != SortAlgorithm::RADIX) && (option != SortAlgorithm::SHELL)) {
       throw std::invalid_argument("sort_csr_matrix: Only RADIX and SHELL sort are available on CPU.");
     }
@@ -224,7 +225,8 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
     // If on CPU, sort each row independently. Don't need to know numCols for
     // this.
     if (option == SortAlgorithm::DEFAULT) {
-      option = SortAlgorithm::SHELL;
+      Ordinal nnzPerRow = entries.extent(0) / numRows;
+      option            = (nnzPerRow < 20) ? SortAlgorithm::SHELL : SortAlgorithm::RADIX;
     } else if ((option != SortAlgorithm::RADIX) && (option != SortAlgorithm::SHELL)) {
       throw std::invalid_argument("sort_csr_graph: Only RADIX and SHELL sort are available on CPU.");
     }
