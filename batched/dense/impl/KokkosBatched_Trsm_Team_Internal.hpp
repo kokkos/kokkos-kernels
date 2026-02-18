@@ -74,7 +74,7 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invok
     const MemberType &member, const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
+  constexpr int mbAlgo = Algo::Trsm::Blocked::Impl::mb();
 
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
@@ -199,7 +199,7 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invok
     const MemberType &member, const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
+  constexpr int mbAlgo = Algo::Trsm::Blocked::Impl::mb();
 
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 

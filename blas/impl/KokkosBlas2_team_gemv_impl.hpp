@@ -104,7 +104,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
   // y = beta y + alpha A x
   // y (m), A(m x n), B(n)
 
-  constexpr int mbAlgo = Algo::Gemv::Blocked::mb();
+  constexpr int mbAlgo = Algo::Gemv::Blocked::Impl::mb();
 
   if (beta == zero)
     KokkosBlas::Impl::TeamSetInternal::invoke(member, m, zero, y, ys0);
