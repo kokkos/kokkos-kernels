@@ -250,7 +250,6 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
         Impl::SPMV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal, false>::spmv(
             space, handle, mode, alpha, A_i, x_i, beta, y_i);
       } else {
-        // note: TPL wrappers also define labels, so we may get some redundancy here when TPLs are used
         Impl::SPMV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal>::spmv(
             space, handle, mode, alpha, A_i, x_i, beta, y_i);
       }
