@@ -101,16 +101,13 @@ struct Algo {
         // - space (gpu vs host)
         // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
         template <typename Where>
-        static constexpr KOKKOS_FUNCTION int mb();
-
-        template <>
-        constexpr KOKKOS_FUNCTION int mb<Host>() {
-          return 4;
-        }
-
-        template <>
-        constexpr KOKKOS_FUNCTION int mb<Device>() {
-          return 2;
+          requires std::is_same_v<Where, Host> || std::is_same_v<Where, Device>
+        constexpr static KOKKOS_INLINE_FUNCTION int mb() {
+          if constexpr (std::is_same_v<Where, Host>) {
+            return 4;
+          } else {
+            return 2;
+          }
         }
       };
 
@@ -172,16 +169,13 @@ struct Algo {
         // - space (cuda vs host)ß
         // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
         template <typename Where>
-        static constexpr KOKKOS_FUNCTION int mb();
-
-        template <>
-        constexpr KOKKOS_FUNCTION int mb<Host>() {
-          return 4;
-        }
-
-        template <>
-        constexpr KOKKOS_FUNCTION int mb<Device>() {
-          return 1;
+          requires std::is_same_v<Where, Host> || std::is_same_v<Where, Device>
+        constexpr static KOKKOS_INLINE_FUNCTION int mb() {
+          if constexpr (std::is_same_v<Where, Host>) {
+            return 4;
+          } else {
+            return 1;
+          }
         }
       };  // Impl
 
