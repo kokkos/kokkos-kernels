@@ -130,6 +130,8 @@ struct SPMV<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, KOKKOSKERN
 
   static void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const coefficient_type& alpha,
                    const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {
+    std::string label = "KokkosSparse::spmv[NATIVE," + KokkosKernels::ArithTraits<coefficient_type>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
     typedef KokkosKernels::ArithTraits<coefficient_type> KAT;
 
     if (beta == KAT::zero()) {
@@ -141,6 +143,7 @@ struct SPMV<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, KOKKOSKERN
     } else {
       spmv_beta<ExecutionSpace, Handle, AMatrix, XVector, YVector, 2>(space, handle, mode, alpha, A, x, beta, y);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -154,6 +157,8 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, false, 
   static void spmv_mv(const ExecutionSpace& space, Handle* /* handle */, const char mode[],
                       const coefficient_type& alpha, const AMatrix& A, const XVector& x, const coefficient_type& beta,
                       const YVector& y) {
+    std::string label = "KokkosSparse::spmv[NATIVE,MV," + KokkosKernels::ArithTraits<coefficient_type>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
     typedef KokkosKernels::ArithTraits<coefficient_type> KAT;
     if (alpha == KAT::zero()) {
       spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 0>(space, mode, alpha, A, x, beta, y);
@@ -164,6 +169,7 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, false, 
     } else {
       spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 2>(space, mode, alpha, A, x, beta, y);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
