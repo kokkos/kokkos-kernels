@@ -105,6 +105,8 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
                                                                           as1, bp, bs0, one, bp + pb * bs0, bs0);
       }
     };
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsv::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsv::Blocked::Impl::Device{});))
   }
   return 0;
 }
