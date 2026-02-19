@@ -165,7 +165,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
 
   static void spmv_mv_bsrmatrix(const ExecutionSpace &space, Handle *handle, const char mode[], const YScalar &alpha,
                                 const AMatrix &A, const XVector &X, const YScalar &beta, const YVector &Y) {
-    std::string label = "KokkosSparse::spmv[NATIVE,MV,BSMATRIX," + KokkosKernels::ArithTraits<YScalar>::name() + "]";
+    std::string label = "KokkosSparse::spmv[NATIVE,MV,BSRMATRIX," + KokkosKernels::ArithTraits<YScalar>::name() + "]";
     Kokkos::Profiling::pushRegion(label);
 #if defined(KOKKOS_ENABLE_CUDA) && (defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA))
     Method method = Method::Fallback;
