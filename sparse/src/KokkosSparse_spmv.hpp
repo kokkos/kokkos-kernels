@@ -287,23 +287,18 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
         std::string label = "KokkosSparse::spmv[NATIVE,MV," +
                             KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
         Kokkos::Profiling::pushRegion(label);
-        auto ret =
-            Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
-                          std::is_integral<typename AMatrix_Internal::value_type>::value, false>::spmv_mv(space, handle,
-                                                                                                          mode, alpha,
-                                                                                                          A_i, x_i,
-                                                                                                          beta, y_i);
+        Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
+                      std::is_integral<typename AMatrix_Internal::value_type>::value, false>::spmv_mv(space, handle,
+                                                                                                      mode, alpha, A_i,
+                                                                                                      x_i, beta, y_i);
         Kokkos::Profiling::popRegion();
-        return ret;
       } else {
         std::string label = "KokkosSparse::spmv[AUTO,MV," +
                             KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
         Kokkos::Profiling::pushRegion(label);
-        auto ret =
-            Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal>::spmv_mv(
-                space, handle, mode, alpha, A_i, x_i, beta, y_i);
+        Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal>::spmv_mv(
+            space, handle, mode, alpha, A_i, x_i, beta, y_i);
         Kokkos::Profiling::popRegion();
-        return ret;
       }
     }
   } else {
