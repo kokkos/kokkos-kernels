@@ -123,8 +123,8 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
       }
     };
 
-    KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Gemm::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Gemm::Blocked::Impl::Device{});))
   }
 
   return 0;

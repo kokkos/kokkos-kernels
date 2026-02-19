@@ -124,8 +124,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invok
                                                         Bp, bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
         }
       };
-      KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+      KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
     };
 
     const bool is_small = true;  //(m*n <= 64*64);
@@ -244,8 +244,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invok
                                                         bs1, one, BB, bs0, bs1);
         }
       };
-      KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+      KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
     };
 
     const bool is_small = true;  //(m*n <= 64*64);

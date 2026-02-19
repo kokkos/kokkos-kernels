@@ -195,8 +195,8 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
                                                                           bs0, one, b, bs0);
       }
     };
-    KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
   }
   return 0;
 }

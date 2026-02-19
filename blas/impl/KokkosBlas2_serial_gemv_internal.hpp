@@ -97,8 +97,8 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
       for (int i = 0; i < m; i += mb)
         inner.template serial_invoke<OpA>(alpha, A + i * as0, x, (i + mb) > m ? (m - i) : mb, n, y + i * ys0);
     };
-    KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Gemv::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Gemv::Blocked::Impl::Device{});))
   }
   return 0;
 }

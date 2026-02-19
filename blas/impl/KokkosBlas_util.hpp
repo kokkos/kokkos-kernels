@@ -83,9 +83,6 @@ template <class T>
 static constexpr bool is_trans_v = is_trans<T>::value;
 
 struct Algo {
-  struct Host {};
-  struct Device {};
-
   struct Level3 {
     struct Unblocked {
       static const char* name() { return "Unblocked"; }
@@ -94,6 +91,9 @@ struct Algo {
       static const char* name() { return "Blocked"; }
 
       struct Impl {
+        struct Host {};
+        struct Device {};
+
         // TODO:: for now hardwire the blocksizes; this should reflect
         // register blocking (not about team parallelism).
         // this mb should vary according to
@@ -121,8 +121,8 @@ struct Algo {
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
       [[deprecated]] static constexpr KOKKOS_FUNCTION int mb() {
-        KOKKOS_IF_ON_HOST((return Impl::mb<Host>();))
-        KOKKOS_IF_ON_DEVICE((return Impl::mb<Device>();))
+        KOKKOS_IF_ON_HOST((return Impl::mb<Impl::Host>();))
+        KOKKOS_IF_ON_DEVICE((return Impl::mb<Impl::Device>();))
       }
     };
     struct MKL {
@@ -162,6 +162,9 @@ struct Algo {
     struct Unblocked {};
     struct Blocked {
       struct Impl {
+        struct Host {};
+        struct Device {};
+
         // TODO:: for now hardwire the blocksizes; this should reflect
         // register blocking (not about team parallelism).
         // this mb should vary according to
@@ -189,8 +192,8 @@ struct Algo {
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
       [[deprecated]] static constexpr KOKKOS_FUNCTION int mb() {
-        KOKKOS_IF_ON_HOST((return Impl::mb<Host>();))
-        KOKKOS_IF_ON_DEVICE((return Impl::mb<Device>();))
+        KOKKOS_IF_ON_HOST((return Impl::mb<Impl::Host>();))
+        KOKKOS_IF_ON_DEVICE((return Impl::mb<Impl::Device>();))
       }
     };
     struct MKL {};

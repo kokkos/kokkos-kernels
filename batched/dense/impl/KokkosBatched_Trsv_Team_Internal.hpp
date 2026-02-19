@@ -113,8 +113,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
             member, m - p - pb, pb, minus_one, Ap + pb * as0, as0, as1, bp, 1, one, bp + pb * bs0, bs0);
       }
     };
-    KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsv::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsv::Blocked::Impl::Device{});))
   }
   return 0;
 }
@@ -215,8 +215,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
                                                                           as1, bp, 1, one, b, bs0);
       }
     };
-    KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
   }
   return 0;
 }

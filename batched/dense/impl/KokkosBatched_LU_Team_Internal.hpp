@@ -128,8 +128,8 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
                                                       Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
       }
     };
-    KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::LU::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::LU::Blocked::Impl::Device{});))
   };
 
   const bool is_small = true;  //(m*n <= 64*64);

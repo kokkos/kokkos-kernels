@@ -113,8 +113,8 @@ KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::inv
           }
         }
       };
-      KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+      KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
     };
 
     const bool is_small = true;  //(m*n <= 64*64);
@@ -222,8 +222,8 @@ KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::inv
           }
         }
       };
-      KOKKOS_IF_ON_HOST((host_or_device(Algo::Host{});))
-      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Device{});))
+      KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
     };
 
     const bool is_small = (m * n <= 64 * 64);
