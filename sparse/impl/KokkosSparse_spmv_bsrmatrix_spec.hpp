@@ -116,11 +116,13 @@ struct SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, 
     // use V41 if requested
     if (handle->algo == SPMV_BSR_V41) {
       if (modeIsNoTrans || modeIsConjugate) {
+        Bsr::spMatVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
         Kokkos::Profiling::popRegion();
-        return Bsr::spMatVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+        return;
       } else if (modeIsTrans || modeIsConjugateTrans) {
+        Bsr::spMatVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
         Kokkos::Profiling::popRegion();
-        return Bsr::spMatVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+        return;
       }
     }
 
@@ -135,11 +137,13 @@ struct SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, 
 
     // fall back to V41 all else fails
     if (modeIsNoTrans || modeIsConjugate) {
+      Bsr::spMatVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
       Kokkos::Profiling::popRegion();
-      return Bsr::spMatVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+      return;
     } else if (modeIsTrans || modeIsConjugateTrans) {
+      Bsr::spMatVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
       Kokkos::Profiling::popRegion();
-      return Bsr::spMatVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+      return;
     }
 
     Kokkos::Profiling::popRegion();
@@ -253,11 +257,13 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
     // use V41 if requested
     if (handle->algo == SPMV_BSR_V41) {
       if (modeIsNoTrans || modeIsConjugate) {
+        Bsr::spMatMultiVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
         Kokkos::Profiling::popRegion();
-        return Bsr::spMatMultiVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+        return;
       } else if (modeIsTrans || modeIsConjugateTrans) {
+        Bsr::spMatMultiVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
         Kokkos::Profiling::popRegion();
-        return Bsr::spMatMultiVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+        return;
       }
     }
 
@@ -272,11 +278,13 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
 
     // use V41 as the ultimate fallback
     if (modeIsNoTrans || modeIsConjugate) {
+      Bsr::spMatMultiVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
       Kokkos::Profiling::popRegion();
-      return Bsr::spMatMultiVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+      return;
     } else if (modeIsTrans || modeIsConjugateTrans) {
+      Bsr::spMatMultiVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
       Kokkos::Profiling::popRegion();
-      return Bsr::spMatMultiVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+      return;
     }
 
     Kokkos::Profiling::popRegion();
