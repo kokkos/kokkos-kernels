@@ -8,6 +8,10 @@
 #include <KokkosKernels_TestUtils.hpp>
 
 namespace Test {
+
+template <KokkosBlas::TransposeOperation ArgTrans>
+struct DummyFunctor {};
+
 void test_blas_concepts() {
   // Check that the concepts compile for valid types
   static_assert(KokkosBlas::TransposeOperation<KokkosBlas::Trans::Transpose>);
@@ -36,8 +40,15 @@ void test_blas_concepts() {
   static_assert(!KokkosBlas::BlasLevel3<KokkosBlas::Algo::Level2::MKL>);
   static_assert(!KokkosBlas::BlasLevel3<KokkosBlas::Algo::Level2::CompactMKL>);
 }
+
+void test_concepts_in_functor() {
+  [[maybe_unused]] DummyFunctor<KokkosBlas::Trans::NoTranspose> dummy_no_trans;
+  [[maybe_unused]] DummyFunctor<KokkosBlas::Trans::Transpose> dummy_trans;
+  [[maybe_unused]] DummyFunctor<KokkosBlas::Trans::ConjTranspose> dummy_conj_trans;
+}
 }  // namespace Test
 
 TEST_F(TestCategory, blas_concepts) { ::Test::test_blas_concepts(); }
+TEST_F(TestCategory, concepts_in_functor) { ::Test::test_concepts_in_functor(); }
 
 #endif  // TEST_BLAS_CONCEPTS_HPP
