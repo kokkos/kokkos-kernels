@@ -307,12 +307,15 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, true
                                 const AMatrix &A, const XVector &X, const YScalar &beta, const YVector &Y) {
     static_assert(std::is_integral_v<typename AMatrix::non_const_value_type>,
                   "This implementation is only for integer Scalar types.");
+    std::string label = "KokkosSparse::spmv[NATIVE,MV,BSRMATRIX," + KokkosKernels::ArithTraits<YScalar>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
     for (size_t j = 0; j < X.extent(1); ++j) {
       const auto x_j = Kokkos::subview(X, Kokkos::ALL(), j);
       auto y_j       = Kokkos::subview(Y, Kokkos::ALL(), j);
       typedef SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, decltype(x_j), decltype(y_j)> impl_type;
       impl_type::spmv_bsrmatrix(space, handle, mode, alpha, A, x_j, beta, y_j);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif  // !defined(KOKKOSKERNELS_ETI_ONLY) ||
