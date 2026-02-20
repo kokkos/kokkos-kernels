@@ -181,6 +181,8 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, true, false, K
                       const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {
     static_assert(std::is_integral_v<typename AMatrix::non_const_value_type>,
                   "This implementation is only for integer Scalar types.");
+    std::string label = "KokkosSparse::spmv[NATIVE,MV," + KokkosKernels::ArithTraits<coefficient_type>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
     KokkosKernels::Experimental::Controls defaultControls;
     for (size_t j = 0; j < x.extent(1); ++j) {
       auto x_j = Kokkos::subview(x, Kokkos::ALL(), j);
@@ -188,6 +190,7 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, true, false, K
       typedef SPMV<ExecutionSpace, Handle, AMatrix, decltype(x_j), decltype(y_j)> impl_type;
       impl_type::spmv(space, handle, mode, alpha, A, x_j, beta, y_j);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif
