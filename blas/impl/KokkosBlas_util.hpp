@@ -117,7 +117,7 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-      [[deprecated]] static constexpr KOKKOS_FUNCTION int mb() {
+      [[deprecated("Do not use: implementation detail")]] static constexpr KOKKOS_FUNCTION int mb() {
         KOKKOS_IF_ON_HOST((return Impl::mb<Impl::Host>();))
         KOKKOS_IF_ON_DEVICE((return Impl::mb<Impl::Device>();))
       }
@@ -185,7 +185,7 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-      [[deprecated]] static constexpr KOKKOS_FUNCTION int mb() {
+      [[deprecated("Do not use: implementation detail")]] static constexpr KOKKOS_FUNCTION int mb() {
         KOKKOS_IF_ON_HOST((return Impl::mb<Impl::Host>();))
         KOKKOS_IF_ON_DEVICE((return Impl::mb<Impl::Device>();))
       }
