@@ -30,7 +30,7 @@ KOKKOS_INLINE_FUNCTION static int checkRotInput([[maybe_unused]] const XViewType
            !KokkosKernels::ArithTraits<y_value_type>::is_complex),
       "KokkosBatched::rot: XViewType and YViewType must be either both complex or both real.");
   if constexpr (std::is_same_v<ArgTrans, Trans::Transpose>) {
-    // {c,r,cs,zd}rot, S must be real
+    // {s,d,cs,zd}rot, S must be real
     static_assert(!KokkosKernels::ArithTraits<SType>::is_complex,
                   "KokkosBatched::rot: SType must be real for Trans::Transpose.");
   } else {
