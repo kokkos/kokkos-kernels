@@ -11,13 +11,8 @@
 namespace Test {
 namespace Rot {
 
-template <typename T>
-struct ParamTag {
-  using trans = T;
-};
-
 template <typename DeviceType, typename XViewType, typename YViewType, typename CType, typename SType,
-          typename ParamTagType>
+          typename ArgTrans>
 struct Functor_BatchedSerialRot {
   using execution_space = typename DeviceType::execution_space;
   XViewType m_x;
@@ -33,7 +28,7 @@ struct Functor_BatchedSerialRot {
     auto sub_x = Kokkos::subview(m_x, k, Kokkos::ALL());
     auto sub_y = Kokkos::subview(m_y, k, Kokkos::ALL());
 
-    info += KokkosBatched::SerialRot<typename ParamTagType::trans>::invoke(sub_x, sub_y, m_c, m_s);
+    info += KokkosBatched::SerialRot<ArgTrans>::invoke(sub_x, sub_y, m_c, m_s);
   }
 
   inline int run() {
@@ -58,8 +53,8 @@ struct Functor_BatchedSerialRot {
 ///        x_ref: [4.6, 6.0, 7.4, 8.8]
 ///        y_ref: [2.2, 2.0, 1.8, 1.6]
 ///
-/// \param Nb [in] Batch size of vectors
-template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType>
+/// \param[in] Nb Batch size of vectors
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgTrans>
 void impl_test_batched_rot_analytical(const std::size_t Nb) {
   using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
@@ -113,46 +108,59 @@ void impl_test_batched_rot_analytical(const std::size_t Nb) {
   Kokkos::deep_copy(x_s, x);
   Kokkos::deep_copy(y_s, y);
 
-  const RealType c   = 0.6;
-  const ScalarType s = ScalarType(0.8);
+  // S is complex only for {c,z}rot and real for {s,d,cs,zd}rot.
+  using MabyBeComplexType =
+      std::conditional_t<std::is_same_v<ArgTrans, KokkosBatched::Trans::Transpose>, RealType, ScalarType>;
 
-  auto info = Functor_BatchedSerialRot<DeviceType, View2DType, View2DType, RealType, ScalarType, ParamTagType>(x, y, c,
-                                                                                                               s)
-                  .run();
+  const RealType c          = 0.6;
+  const MabyBeComplexType s = MabyBeComplexType(0.8);
+
+  auto info =
+      Functor_BatchedSerialRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, ArgTrans>(x, y, c, s)
+          .run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
   // With strided views
-  info = Functor_BatchedSerialRot<DeviceType, StridedView2DType, StridedView2DType, RealType, ScalarType,
-                                  ParamTagType>(x_s, y_s, c, s)
-             .run();
+  info =
+      Functor_BatchedSerialRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType, ArgTrans>(
+          x_s, y_s, c, s)
+          .run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
   RealType eps = 1.0e1 * ats::epsilon();
-  auto h_x_out   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
-  auto h_y_out   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y);
-  auto h_x_s_out = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_s);
-  auto h_y_s_out = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y_s);
+  Kokkos::deep_copy(h_x, x);
+  Kokkos::deep_copy(h_y, y);
 
   // Check if x := c*x + s*y and y := c*y - op(s)*x
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      EXPECT_NEAR_KK(h_x_out(ib, i), h_x_ref(ib, i), eps);
-      EXPECT_NEAR_KK(h_y_out(ib, i), h_y_ref(ib, i), eps);
-      EXPECT_NEAR_KK(h_x_s_out(ib, i), h_x_ref(ib, i), eps);
-      EXPECT_NEAR_KK(h_y_s_out(ib, i), h_y_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_x(ib, i), h_x_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_y(ib, i), h_y_ref(ib, i), eps);
+    }
+  }
+
+  // Testing for strided views x_s and y_s, reusing x and y
+  Kokkos::deep_copy(x, x_s);
+  Kokkos::deep_copy(y, y_s);
+  Kokkos::deep_copy(h_x, x);
+  Kokkos::deep_copy(h_y, y);
+  for (std::size_t ib = 0; ib < Nb; ib++) {
+    for (std::size_t i = 0; i < N; i++) {
+      EXPECT_NEAR_KK(h_x(ib, i), h_x_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_y(ib, i), h_y_ref(ib, i), eps);
     }
   }
 }
 
 /// \brief Implementation details of batched rot test
 ///
-/// \param Nb [in] Batch size of vectors
-/// \param N [in] Length of vectors x and y
-template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType>
+/// \param[in] Nb Batch size of vectors
+/// \param[in] N Length of vectors x and y
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgTrans>
 void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
   using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
@@ -184,40 +192,46 @@ void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
   Kokkos::deep_copy(x_s, x);
   Kokkos::deep_copy(y_s, y);
 
+  // S is complex only for {c,z}rot and real for {s,d,cs,zd}rot.
+  using MabyBeComplexType =
+      std::conditional_t<std::is_same_v<ArgTrans, KokkosBatched::Trans::Transpose>, RealType, ScalarType>;
   const RealType c_val = 0.6;
-  ScalarType s_val;
-  if constexpr (ats::is_complex) {
-    s_val = ScalarType(0.6, 0.8);
+  MabyBeComplexType s_val;
+  if constexpr (KokkosKernels::ArithTraits<MabyBeComplexType>::is_complex) {
+    s_val = MabyBeComplexType(0.6, 0.8);
   } else {
-    s_val = ScalarType(0.8);
+    s_val = MabyBeComplexType(0.8);
   }
 
   // Run rot on (x, y)
-  auto info =
-      Functor_BatchedSerialRot<DeviceType, View2DType, View2DType, RealType, ScalarType, ParamTagType>(x, y, c_val,
-                                                                                                       s_val)
-          .run();
+  auto info = Functor_BatchedSerialRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, ArgTrans>(
+                  x, y, c_val, s_val)
+                  .run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
   // With strided views
-  auto info_s = Functor_BatchedSerialRot<DeviceType, StridedView2DType, StridedView2DType, RealType, ScalarType,
-                                         ParamTagType>(x_s, y_s, c_val, s_val)
-                    .run();
+  auto info_s =
+      Functor_BatchedSerialRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType, ArgTrans>(
+          x_s, y_s, c_val, s_val)
+          .run();
 
   Kokkos::fence();
   EXPECT_EQ(info_s, 0);
 
   // Make a reference at host
-  auto h_x_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_ref);
-  auto h_y_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y_ref);
+  auto h_x_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x_ref);
+  auto h_y_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y_ref);
 
   // Note: ConjTranspose corresponds to zrot where conj(s) is used
-  const bool is_conj = std::is_same_v<typename ParamTagType::trans, Trans::ConjTranspose>;
+  using Op = std::conditional_t<std::is_same_v<ArgTrans, KokkosBatched::Trans::ConjTranspose>, KokkosBlas::Impl::OpConj,
+                                KokkosBlas::Impl::OpID>;
+  Op op;
+
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      auto s_applied = is_conj ? KokkosKernels::ArithTraits<ScalarType>::conj(s_val) : s_val;
+      auto s_applied = op(s_val);
       auto temp      = c_val * h_x_ref(ib, i) + s_val * h_y_ref(ib, i);
       h_y_ref(ib, i) = c_val * h_y_ref(ib, i) - s_applied * h_x_ref(ib, i);
       h_x_ref(ib, i) = temp;
@@ -226,18 +240,26 @@ void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
 
   RealType eps = 1.0e1 * ats::epsilon();
 
-  auto h_x   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
-  auto h_y   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y);
-  auto h_x_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_s);
-  auto h_y_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y_s);
+  auto h_x = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x);
+  auto h_y = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y);
 
   // Check if x := c*x + s*y and y := c*y - op(s)*x
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
       EXPECT_NEAR_KK(h_x(ib, i), h_x_ref(ib, i), eps);
       EXPECT_NEAR_KK(h_y(ib, i), h_y_ref(ib, i), eps);
-      EXPECT_NEAR_KK(h_x_s(ib, i), h_x_ref(ib, i), eps);
-      EXPECT_NEAR_KK(h_y_s(ib, i), h_y_ref(ib, i), eps);
+    }
+  }
+
+  // Testing for strided views x_s and y_s, reusing x and y
+  Kokkos::deep_copy(x, x_s);
+  Kokkos::deep_copy(y, y_s);
+  Kokkos::deep_copy(h_x, x);
+  Kokkos::deep_copy(h_y, y);
+  for (std::size_t ib = 0; ib < Nb; ib++) {
+    for (std::size_t i = 0; i < N; i++) {
+      EXPECT_NEAR_KK(h_x(ib, i), h_x_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_y(ib, i), h_y_ref(ib, i), eps);
     }
   }
 }
@@ -245,27 +267,27 @@ void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
 }  // namespace Rot
 }  // namespace Test
 
-template <typename DeviceType, typename ScalarType, typename ParamTagType>
+template <typename DeviceType, typename ScalarType, typename ArgTrans>
 int test_batched_rot() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     using LayoutType = Kokkos::LayoutLeft;
-    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(1);
-    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(2);
+    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ArgTrans>(1);
+    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ArgTrans>(2);
     for (int i = 0; i < 10; i++) {
-      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ParamTagType>(1, i);
-      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ParamTagType>(2, i);
+      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ArgTrans>(1, i);
+      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ArgTrans>(2, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     using LayoutType = Kokkos::LayoutRight;
-    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(1);
-    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(2);
+    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ArgTrans>(1);
+    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ArgTrans>(2);
     for (int i = 0; i < 10; i++) {
-      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ParamTagType>(1, i);
-      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ParamTagType>(2, i);
+      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ArgTrans>(1, i);
+      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ArgTrans>(2, i);
     }
   }
 #endif
@@ -275,44 +297,36 @@ int test_batched_rot() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, test_batched_rot_t_float) {
-  using param_tag_type = ::Test::Rot::ParamTag<Trans::Transpose>;
-  test_batched_rot<TestDevice, float, param_tag_type>();
+  test_batched_rot<TestDevice, float, KokkosBatched::Trans::Transpose>();
 }
 TEST_F(TestCategory, test_batched_rot_c_float) {
-  using param_tag_type = ::Test::Rot::ParamTag<Trans::ConjTranspose>;
-  test_batched_rot<TestDevice, float, param_tag_type>();
+  test_batched_rot<TestDevice, float, KokkosBatched::Trans::ConjTranspose>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, test_batched_rot_t_double) {
-  using param_tag_type = ::Test::Rot::ParamTag<Trans::Transpose>;
-  test_batched_rot<TestDevice, double, param_tag_type>();
+  test_batched_rot<TestDevice, double, KokkosBatched::Trans::Transpose>();
 }
 TEST_F(TestCategory, test_batched_rot_c_double) {
-  using param_tag_type = ::Test::Rot::ParamTag<Trans::ConjTranspose>;
-  test_batched_rot<TestDevice, double, param_tag_type>();
+  test_batched_rot<TestDevice, double, KokkosBatched::Trans::ConjTranspose>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, test_batched_rot_t_fcomplex) {
-  using param_tag_type = ::Test::Rot::ParamTag<Trans::Transpose>;
-  test_batched_rot<TestDevice, Kokkos::complex<float>, param_tag_type>();
+  test_batched_rot<TestDevice, Kokkos::complex<float>, KokkosBatched::Trans::Transpose>();
 }
 TEST_F(TestCategory, test_batched_rot_c_fcomplex) {
-  using param_tag_type = ::Test::Rot::ParamTag<Trans::ConjTranspose>;
-  test_batched_rot<TestDevice, Kokkos::complex<float>, param_tag_type>();
+  test_batched_rot<TestDevice, Kokkos::complex<float>, KokkosBatched::Trans::ConjTranspose>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, test_batched_rot_t_dcomplex) {
-  using param_tag_type = ::Test::Rot::ParamTag<Trans::Transpose>;
-  test_batched_rot<TestDevice, Kokkos::complex<double>, param_tag_type>();
+  test_batched_rot<TestDevice, Kokkos::complex<double>, KokkosBatched::Trans::Transpose>();
 }
 TEST_F(TestCategory, test_batched_rot_c_dcomplex) {
-  using param_tag_type = ::Test::Rot::ParamTag<Trans::ConjTranspose>;
-  test_batched_rot<TestDevice, Kokkos::complex<double>, param_tag_type>();
+  test_batched_rot<TestDevice, Kokkos::complex<double>, KokkosBatched::Trans::ConjTranspose>();
 }
 #endif
