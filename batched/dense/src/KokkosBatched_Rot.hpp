@@ -33,7 +33,7 @@ namespace KokkosBatched {
 template <typename ArgTrans>
 struct SerialRot {
   static_assert(std::is_same_v<ArgTrans, Trans::Transpose> || std::is_same_v<ArgTrans, Trans::ConjTranspose>,
-                "KokkosBatched::rot: Use Trans::Transpose for {s,d,c,z}rot or Trans::ConjTranspose for zrot");
+                "KokkosBatched::rot: Use Trans::Transpose for {s,d,cs,zd}rot or Trans::ConjTranspose for {c,z}rot");
 
   template <typename XViewType, typename YViewType, typename CType, typename SType>
   KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &x, const YViewType &y, const CType c, const SType s);
