@@ -7,5 +7,6 @@
 #include "Test_Lapack_trtri.hpp"
 #include "Test_Lapack_svd.hpp"
 #include "Test_Lapack_geqrf.hpp"
+#include "Test_Lapack_potrf.hpp"
 
 #endif  // TEST_LAPACK_HPP
