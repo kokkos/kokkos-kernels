@@ -184,7 +184,8 @@ class BatchedDblBufGemm {
     // all __n_tile_k_tiles one at a time.
     size_t league_size = c_batch_size_ * functor.get_n_sub_tiles();
     int team_size      = stride_m;
-    int vector_len     = stride_n;
+    // vector_len >= 1 is required precondition by TeamPolicy ctor
+    int vector_len     = stride_n > 0 ? stride_n : 1;
 
     const int max_team_size =
         policy_type(league_size, Kokkos::AUTO, vector_len).team_size_max(functor, Kokkos::ParallelForTag());
