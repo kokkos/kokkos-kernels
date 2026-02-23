@@ -15,17 +15,14 @@ namespace Impl {
 
 struct SerialRotInternal {
   template <typename Op, typename ValueType, typename CType, typename SType>
-  KOKKOS_INLINE_FUNCTION static int invoke(Op op, const int n,
-                                           ValueType *KOKKOS_RESTRICT x, const int xs0,
-                                           ValueType *KOKKOS_RESTRICT y, const int ys0,
-                                           const CType c, const SType s);
+  KOKKOS_INLINE_FUNCTION static int invoke(Op op, const int n, ValueType *KOKKOS_RESTRICT x, const int xs0,
+                                           ValueType *KOKKOS_RESTRICT y, const int ys0, const CType c, const SType s);
 };
 
 template <typename Op, typename ValueType, typename CType, typename SType>
-KOKKOS_INLINE_FUNCTION int SerialRotInternal::invoke(Op op, const int n,
-                                                     ValueType *KOKKOS_RESTRICT x, const int xs0,
-                                                     ValueType *KOKKOS_RESTRICT y, const int ys0,
-                                                     const CType c, const SType s) {
+KOKKOS_INLINE_FUNCTION int SerialRotInternal::invoke(Op op, const int n, ValueType *KOKKOS_RESTRICT x, const int xs0,
+                                                     ValueType *KOKKOS_RESTRICT y, const int ys0, const CType c,
+                                                     const SType s) {
   for (int i = 0; i < n; i++) {
     auto temp  = c * x[i * xs0] + s * y[i * ys0];
     y[i * ys0] = c * y[i * ys0] - op(s) * x[i * xs0];
