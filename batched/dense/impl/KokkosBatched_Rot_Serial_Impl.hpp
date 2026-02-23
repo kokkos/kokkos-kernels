@@ -10,24 +10,43 @@
 
 namespace KokkosBatched {
 namespace Impl {
-template <typename XViewType, typename YViewType>
+template <typename ArgTrans, typename CType, typename SType, typename XViewType, typename YViewType>
 KOKKOS_INLINE_FUNCTION static int checkRotInput([[maybe_unused]] const XViewType &x,
                                                 [[maybe_unused]] const YViewType &y) {
   static_assert(Kokkos::is_view_v<XViewType>, "KokkosBatched::rot: XViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<YViewType>, "KokkosBatched::rot: YViewType is not a Kokkos::View.");
-  static_assert(XViewType::rank == 1, "KokkosBatched::rot: XViewType must have rank 1.");
-  static_assert(YViewType::rank == 1, "KokkosBatched::rot: YViewType must have rank 1.");
+  static_assert(XViewType::rank() == 1, "KokkosBatched::rot: XViewType must have rank 1.");
+  static_assert(YViewType::rank() == 1, "KokkosBatched::rot: YViewType must have rank 1.");
+  static_assert(std::is_same_v<typename XViewType::value_type, typename XViewType::non_const_value_type>,
+                "KokkosBatched::rot: XViewType must have non-const value type.");
+  static_assert(std::is_same_v<typename YViewType::value_type, typename YViewType::non_const_value_type>,
+                "KokkosBatched::rot: YViewType must have non-const value type.");
+  static_assert(!KokkosKernels::ArithTraits<CType>::is_complex, "KokkosBatched::rot: CType must be real.");
+  using x_value_type = typename XViewType::non_const_value_type;
+  using y_value_type = typename YViewType::non_const_value_type;
+  static_assert(
+      (KokkosKernels::ArithTraits<x_value_type>::is_complex && KokkosKernels::ArithTraits<y_value_type>::is_complex) ||
+          (!KokkosKernels::ArithTraits<x_value_type>::is_complex &&
+           !KokkosKernels::ArithTraits<y_value_type>::is_complex),
+      "KokkosBatched::rot: XViewType and YViewType must be either both complex or both real.");
+  if constexpr (std::is_same_v<ArgTrans, Trans::Transpose>) {
+    // {c,r,cs,zd}rot, S must be real
+    static_assert(!KokkosKernels::ArithTraits<SType>::is_complex,
+                  "KokkosBatched::rot: SType must be real for Trans::Transpose.");
+  } else {
+    if constexpr (KokkosKernels::ArithTraits<x_value_type>::is_complex) {
+      // {c,z}rot, S must be complex
+      static_assert(KokkosKernels::ArithTraits<SType>::is_complex,
+                    "KokkosBatched::rot: SType must be complex for complex input with Trans::ConjTranspose.");
+    } else {
+      // {s,d}rot, S must be real
+      static_assert(!KokkosKernels::ArithTraits<SType>::is_complex,
+                    "KokkosBatched::rot: SType must be real for real input with Trans::ConjTranspose.");
+    }
+  }
+
 #ifndef NDEBUG
   const int n = x.extent_int(0);
-
-  if (n < 0) {
-    Kokkos::printf(
-        "KokkosBatched::rot: input parameter n must not be less than 0: n "
-        "= "
-        "%d\n",
-        n);
-    return 1;
-  }
 
   if (y.extent_int(0) != n) {
     Kokkos::printf(
@@ -42,7 +61,7 @@ KOKKOS_INLINE_FUNCTION static int checkRotInput([[maybe_unused]] const XViewType
 }
 }  // namespace Impl
 
-// {s,d,c,z}rot / {c,z}drot interface
+// {s,d,cs,zd}rot interface
 // T
 // x(i) := c*x(i) + s*y(i)
 // y(i) := c*y(i) - s*x(i)
@@ -54,15 +73,15 @@ struct SerialRot<Trans::Transpose> {
     const int n = x.extent_int(0);
     if (n == 0) return 0;
 
-    auto info = Impl::checkRotInput(x, y);
+    auto info = Impl::checkRotInput<Trans::Transpose, CType, SType>(x, y);
     if (info) return info;
 
-    return Impl::SerialRotInternal::invoke(KokkosBlas::Impl::OpID(), n, x.data(), x.stride(0),
-                                           y.data(), y.stride(0), c, s);
+    return Impl::SerialRotInternal::invoke(KokkosBlas::Impl::OpID(), n, x.data(), x.stride(0), y.data(), y.stride(0), c,
+                                           s);
   }
 };
 
-// zrot interface
+// {c,z}rot interface
 // C
 // x(i) := c*x(i) + s*y(i)
 // y(i) := c*y(i) - conj(s)*x(i)
@@ -74,11 +93,11 @@ struct SerialRot<Trans::ConjTranspose> {
     const int n = x.extent_int(0);
     if (n == 0) return 0;
 
-    auto info = Impl::checkRotInput(x, y);
+    auto info = Impl::checkRotInput<Trans::ConjTranspose, CType, SType>(x, y);
     if (info) return info;
 
-    return Impl::SerialRotInternal::invoke(KokkosBlas::Impl::OpConj(), n, x.data(), x.stride(0),
-                                           y.data(), y.stride(0), c, s);
+    return Impl::SerialRotInternal::invoke(KokkosBlas::Impl::OpConj(), n, x.data(), x.stride(0), y.data(), y.stride(0),
+                                           c, s);
   }
 };
 

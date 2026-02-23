@@ -12,8 +12,8 @@ namespace KokkosBatched {
 /// \brief Serial Batched Rot:
 /// Applies a plane rotation to vectors x and y:
 ///   x(i) := c*x(i) + s*y(i)
-///   y(i) := c*y(i) - s*x(i)          (Trans::Transpose, drot/zdrot)
-///   y(i) := c*y(i) - conj(s)*x(i)    (Trans::ConjTranspose, zrot)
+///   y(i) := c*y(i) - s*x(i)          (Trans::Transpose, {s,d,cs,zd}rot)
+///   y(i) := c*y(i) - conj(s)*x(i)    (Trans::ConjTranspose, {c,z}rot)
 ///
 /// \tparam ArgTrans: Type indicating whether s is used directly (Trans::Transpose)
 /// or its conjugate is used (Trans::ConjTranspose)
