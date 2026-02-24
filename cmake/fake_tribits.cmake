@@ -45,7 +45,7 @@ function(kokkoskernels_add_option SUFFIX DEFAULT TYPE DOCSTRING)
       if("${OPT_UC}" STREQUAL "${UC_NAME}")
         if(NOT "${opt}" STREQUAL "${CAMEL_NAME}")
           message(FATAL_ERROR
-            "You provded ${opt} but Kokkos Kernels understands ${CAMEL_NAME}. Please delete your CMakeCache.txt and change option to -D${CAMEL_NAME}=${${opt}}. This is now enforced to avoid hard-to-debug CMake cache inconsistencies.")
+            "You provided ${opt} but Kokkos Kernels understands ${CAMEL_NAME}. Please delete your CMakeCache.txt and change option to -D${CAMEL_NAME}=${${opt}}. This is now enforced to avoid hard-to-debug CMake cache inconsistencies.")
         endif()
       endif()
     endif()
