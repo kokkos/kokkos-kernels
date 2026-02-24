@@ -38,8 +38,75 @@ struct SerialRot {
   template <typename XViewType, typename YViewType, typename CType, typename SType>
   KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &x, const YViewType &y, const CType c, const SType s);
 };
+
+/// \brief Team Batched Rot:
+/// Applies a plane rotation to vectors x and y:
+///   x(i) := c*x(i) + s*y(i)
+///   y(i) := c*y(i) - s*x(i)          (Trans::Transpose, {s,d,cs,zd}rot)
+///   y(i) := c*y(i) - conj(s)*x(i)    (Trans::ConjTranspose, {c,z}rot)
+///
+/// \tparam MemberType: TeamPolicy member type
+/// \tparam ArgTrans: Type indicating whether s is used directly (Trans::Transpose)
+/// or its conjugate is used (Trans::ConjTranspose)
+///
+/// \tparam XViewType: Input/output type for the vector x, needs to be a 1D view
+/// \tparam YViewType: Input/output type for the vector y, needs to be a 1D view
+/// \tparam CType: Input type for the cosine c (typically real)
+/// \tparam SType: Input type for the sine s (real or complex)
+///
+/// \param[in] member: TeamPolicy member
+/// \param[inout] x: x is a length n vector, a rank 1 view
+/// \param[inout] y: y is a length n vector, a rank 1 view
+/// \param[in] c: cosine of the rotation (real scalar)
+/// \param[in] s: sine of the rotation (real or complex scalar)
+///
+/// A nested parallel_for with TeamThreadRange is used.
+///
+template <typename MemberType, typename ArgTrans>
+struct TeamRot {
+  static_assert(std::is_same_v<ArgTrans, Trans::Transpose> || std::is_same_v<ArgTrans, Trans::ConjTranspose>,
+                "KokkosBatched::rot: Use Trans::Transpose for {s,d,cs,zd}rot or Trans::ConjTranspose for {c,z}rot");
+
+  template <typename XViewType, typename YViewType, typename CType, typename SType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
+                                           const CType c, const SType s);
+};
+
+/// \brief TeamVector Batched Rot:
+/// Applies a plane rotation to vectors x and y:
+///   x(i) := c*x(i) + s*y(i)
+///   y(i) := c*y(i) - s*x(i)          (Trans::Transpose, {s,d,cs,zd}rot)
+///   y(i) := c*y(i) - conj(s)*x(i)    (Trans::ConjTranspose, {c,z}rot)
+///
+/// \tparam MemberType: TeamPolicy member type
+/// \tparam ArgTrans: Type indicating whether s is used directly (Trans::Transpose)
+/// or its conjugate is used (Trans::ConjTranspose)
+///
+/// \tparam XViewType: Input/output type for the vector x, needs to be a 1D view
+/// \tparam YViewType: Input/output type for the vector y, needs to be a 1D view
+/// \tparam CType: Input type for the cosine c (typically real)
+/// \tparam SType: Input type for the sine s (real or complex)
+///
+/// \param[in] member: TeamPolicy member
+/// \param[inout] x: x is a length n vector, a rank 1 view
+/// \param[inout] y: y is a length n vector, a rank 1 view
+/// \param[in] c: cosine of the rotation (real scalar)
+/// \param[in] s: sine of the rotation (real or complex scalar)
+///
+/// A nested parallel_for with TeamVectorRange is used.
+///
+template <typename MemberType, typename ArgTrans>
+struct TeamVectorRot {
+  static_assert(std::is_same_v<ArgTrans, Trans::Transpose> || std::is_same_v<ArgTrans, Trans::ConjTranspose>,
+                "KokkosBatched::rot: Use Trans::Transpose for {s,d,cs,zd}rot or Trans::ConjTranspose for {c,z}rot");
+
+  template <typename XViewType, typename YViewType, typename CType, typename SType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
+                                           const CType c, const SType s);
+};
+
 }  // namespace KokkosBatched
 
-#include "KokkosBatched_Rot_Serial_Impl.hpp"
+#include "KokkosBatched_Rot_Impl.hpp"
 
 #endif  // KOKKOSBATCHED_ROT_HPP_

@@ -6,6 +6,7 @@
 // Serial kernels
 #include "Test_Batched_SerialAxpy.hpp"
 #include "Test_Batched_Copy.hpp"
+#include "Test_Batched_Rot.hpp"
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
 #include "Test_Batched_SerialGesv.hpp"
@@ -51,7 +52,6 @@
 #include "Test_Batched_SerialGbtrf.hpp"
 #include "Test_Batched_SerialGbtrs.hpp"
 #include "Test_Batched_SerialHouseholder.hpp"
-#include "Test_Batched_SerialRot.hpp"
 
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"

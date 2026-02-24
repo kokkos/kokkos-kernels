@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef KOKKOSBATCHED_ROT_SERIAL_IMPL_HPP_
-#define KOKKOSBATCHED_ROT_SERIAL_IMPL_HPP_
+#ifndef KOKKOSBATCHED_ROT_IMPL_HPP_
+#define KOKKOSBATCHED_ROT_IMPL_HPP_
 
 #include <KokkosBlas_util.hpp>
 #include <KokkosBatched_Util.hpp>
-#include "KokkosBatched_Rot_Serial_Internal.hpp"
+#include "KokkosBatched_Rot_Internal.hpp"
 
 namespace KokkosBatched {
 namespace Impl {
@@ -61,6 +61,10 @@ KOKKOS_INLINE_FUNCTION static int checkRotInput([[maybe_unused]] const XViewType
 }
 }  // namespace Impl
 
+///
+/// Serial Impl
+/// ===========
+
 // {s,d,cs,zd}rot interface
 // T
 // x(i) := c*x(i) + s*y(i)
@@ -101,6 +105,98 @@ struct SerialRot<Trans::ConjTranspose> {
   }
 };
 
+///
+/// Team Impl
+/// ===========
+
+// {s,d,cs,zd}rot interface
+// T
+// x(i) := c*x(i) + s*y(i)
+// y(i) := c*y(i) - s*x(i)
+template <typename MemberType>
+struct TeamRot<MemberType, Trans::Transpose> {
+  template <typename XViewType, typename YViewType, typename CType, typename SType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
+                                           const CType c, const SType s) {
+    // Quick return if possible
+    const int n = x.extent_int(0);
+    if (n == 0) return 0;
+
+    auto info = Impl::checkRotInput<Trans::Transpose, CType, SType>(x, y);
+    if (info) return info;
+
+    return Impl::TeamRotInternal::invoke(member, KokkosBlas::Impl::OpID(), n, x.data(), x.stride(0), y.data(),
+                                         y.stride(0), c, s);
+  }
+};
+
+// {c,z}rot interface
+// C
+// x(i) := c*x(i) + s*y(i)
+// y(i) := c*y(i) - conj(s)*x(i)
+template <typename MemberType>
+struct TeamRot<MemberType, Trans::ConjTranspose> {
+  template <typename XViewType, typename YViewType, typename CType, typename SType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
+                                           const CType c, const SType s) {
+    // Quick return if possible
+    const int n = x.extent_int(0);
+    if (n == 0) return 0;
+
+    auto info = Impl::checkRotInput<Trans::ConjTranspose, CType, SType>(x, y);
+    if (info) return info;
+
+    return Impl::TeamRotInternal::invoke(member, KokkosBlas::Impl::OpConj(), n, x.data(), x.stride(0), y.data(),
+                                         y.stride(0), c, s);
+  }
+};
+
+///
+/// TeamVector Impl
+/// ===============
+
+// {s,d,cs,zd}rot interface
+// T
+// x(i) := c*x(i) + s*y(i)
+// y(i) := c*y(i) - s*x(i)
+template <typename MemberType>
+struct TeamVectorRot<MemberType, Trans::Transpose> {
+  template <typename XViewType, typename YViewType, typename CType, typename SType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
+                                           const CType c, const SType s) {
+    // Quick return if possible
+    const int n = x.extent_int(0);
+    if (n == 0) return 0;
+
+    auto info = Impl::checkRotInput<Trans::Transpose, CType, SType>(x, y);
+    if (info) return info;
+
+    return Impl::TeamVectorRotInternal::invoke(member, KokkosBlas::Impl::OpID(), n, x.data(), x.stride(0), y.data(),
+                                               y.stride(0), c, s);
+  }
+};
+
+// {c,z}rot interface
+// C
+// x(i) := c*x(i) + s*y(i)
+// y(i) := c*y(i) - conj(s)*x(i)
+template <typename MemberType>
+struct TeamVectorRot<MemberType, Trans::ConjTranspose> {
+  template <typename XViewType, typename YViewType, typename CType, typename SType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
+                                           const CType c, const SType s) {
+    // Quick return if possible
+    const int n = x.extent_int(0);
+    if (n == 0) return 0;
+
+    auto info = Impl::checkRotInput<Trans::ConjTranspose, CType, SType>(x, y);
+    if (info) return info;
+
+    return Impl::TeamVectorRotInternal::invoke(member, KokkosBlas::Impl::OpConj(), n, x.data(), x.stride(0), y.data(),
+                                               y.stride(0), c, s);
+  }
+};
+
 }  // namespace KokkosBatched
 
-#endif  // KOKKOSBATCHED_ROT_SERIAL_IMPL_HPP_
+#endif  // KOKKOSBATCHED_ROT_IMPL_HPP_
