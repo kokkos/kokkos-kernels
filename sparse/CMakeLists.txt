@@ -25,14 +25,15 @@ endmacro()
 #that should be instantiated based on input options
 #Generate @X@ variables in the template X.hpp.in and X.cpp.in
 #files containing the list of all needed macros
-gen_sparse_eti(Sparse_spmv_struct        spmv)
-gen_sparse_eti(Sparse_spmv_mv_struct     spmv)
-gen_sparse_eti(Sparse_spmv_bsrmatrix     spmv)
-gen_sparse_eti(Sparse_spmv_mv_bsrmatrix  spmv)
-gen_sparse_eti(Sparse_spmv               spmv)
-gen_sparse_eti(Sparse_spmv_mv            spmv)
-gen_sparse_eti(Sparse_spgemm_symbolic    spgemm_symbolic)
-gen_sparse_eti(Sparse_spgemm_numeric     spgemm_numeric)
+gen_sparse_eti(Sparse_spmv_struct       spmv)
+gen_sparse_eti(Sparse_spmv_mv_struct    spmv)
+gen_sparse_eti(Sparse_spmv_bsrmatrix    spmv)
+gen_sparse_eti(Sparse_spmv_mv_bsrmatrix spmv)
+gen_sparse_eti(Sparse_spmv_sellmatrix   spmv)
+gen_sparse_eti(Sparse_spmv              spmv)
+gen_sparse_eti(Sparse_spmv_mv           spmv)
+gen_sparse_eti(Sparse_spgemm_symbolic   spgemm_symbolic)
+gen_sparse_eti(Sparse_spgemm_numeric    spgemm_numeric)
 kokkoskernels_generate_eti(Sparse_spgemm_noreuse spgemm_noreuse
   COMPONENTS  sparse
   HEADER_LIST ETI_HEADERS

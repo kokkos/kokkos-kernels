@@ -14,6 +14,7 @@
 #include <stdexcept>
 
 #include "Kokkos_Core.hpp"
+#include "KokkosKernels_default_types.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -58,15 +59,15 @@ class SellMatrix {
   //! Type of the view containing the offset to each slice of the matrix.
   using offsets_type = Kokkos::View<size_type*, Kokkos::LayoutRight, device_type, MemoryTraits>;
   //! Const version of the type of the offsets_type in the sparse matrix.
-  using const_offset_type = typename offsets_type::const_value_type;
+  using const_size_type = typename offsets_type::const_value_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
-  using non_const_offset_type = typename offsets_type::non_const_value_type;
+  using non_const_size_type = typename offsets_type::non_const_value_type;
   //! Type of the view containing the column indices of the matrix entries.
   using entries_type = Kokkos::View<ordinal_type*, Kokkos::LayoutRight, device_type, MemoryTraits>;
   //! Const version of the type of the column indices in the sparse matrix.
-  using const_entry_type = typename entries_type::const_value_type;
+  using const_ordinal_type = typename entries_type::const_value_type;
   //! Nonconst version of the type of the column indices in the sparse matrix.
-  using non_const_entry_type = typename entries_type::non_const_value_type;
+  using non_const_ordinal_type = typename entries_type::non_const_value_type;
   //! Type of the view containing the values of the matrix entries.
   using values_type = Kokkos::View<value_type*, Kokkos::LayoutRight, device_type, MemoryTraits>;
   //! Const version of the type of the entries in the sparse matrix.
@@ -106,6 +107,20 @@ class SellMatrix {
 
   /// \brief Default constructor that constructs an empty matrix
   KOKKOS_INLINE_FUNCTION SellMatrix() {}
+
+  //! Copy constructor (shallow copy).
+  template <class InScalarType, class InOrdinalType, class InDevice, class InMemoryTraits, class InSizeType>
+  KOKKOS_INLINE_FUNCTION SellMatrix(
+      const SellMatrix<InScalarType, InOrdinalType, InDevice, InMemoryTraits, InSizeType>& B)
+      : num_rows(B.num_rows),
+        num_cols(B.num_cols),
+        nnz(B.nnz),
+        sell_nnz(B.sell_nnz),
+        num_rows_per_slice(B.num_rows_per_slice),
+        num_slices(B.num_slices),
+        slice_offsets(B.slice_offsets),
+        entries(B.entries),
+        values(B.values) {}
 
   /// \brief Constructor
   SellMatrix(const OrdinalType nrows, const OrdinalType ncols, const SizeType nnz_, const SizeType padded_nnz,
@@ -166,6 +181,9 @@ struct is_sell_matrix<const SellMatrix<P...>> : public std::true_type {};
 /// \brief Equivalent to is_crs_matrix<T>::value.
 template <typename T>
 inline constexpr bool is_sell_matrix_v = is_sell_matrix<T>::value;
+
+template <class T>
+concept SellFormat = is_sell_matrix_v<T> == true;
 
 }  // namespace Experimental
 }  // namespace KokkosSparse

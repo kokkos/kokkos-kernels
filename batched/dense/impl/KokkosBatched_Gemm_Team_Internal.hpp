@@ -73,8 +73,8 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
 
-  constexpr int mbAlgo = Algo::Gemm::Blocked::mb();
-  constexpr int nbAlgo = Algo::Gemm::Blocked::mb();
+  constexpr int mbAlgo = Algo::Gemm::Blocked::Impl::mb();
+  constexpr int nbAlgo = Algo::Gemm::Blocked::Impl::mb();
 
   const ScalarType one(1.0), zero(0.0);
 

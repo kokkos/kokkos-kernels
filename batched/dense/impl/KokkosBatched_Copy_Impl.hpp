@@ -122,13 +122,15 @@ struct TeamCopy<MemberType, Trans::NoTranspose> {
     if (A.size() == 0 || B.size() == 0) return 0;
 
     if constexpr (AViewType::rank() == 1) {
-      return Impl::TeamCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
+      return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(0), A.data(), A.stride(0),
+                                            B.data(), B.stride(0));
     } else {
       if (A.extent(0) == 1) {
-        return Impl::TeamCopyInternal::invoke(member, A.extent(1), A.data(), A.stride(0), B.data(), B.stride(0));
+        return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(1), A.data(), A.stride(1),
+                                              B.data(), B.stride(1));
       }
-      return Impl::TeamCopyInternal::invoke(member, A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1),
-                                            B.data(), B.stride(0), B.stride(1));
+      return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(0), A.extent(1), A.data(),
+                                            A.stride(0), A.stride(1), B.data(), B.stride(0), B.stride(1));
     }
   }
 };
@@ -144,13 +146,39 @@ struct TeamCopy<MemberType, Trans::Transpose> {
     if (A.size() == 0 || B.size() == 0) return 0;
 
     if constexpr (AViewType::rank() == 1) {
-      return Impl::TeamCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
+      return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(0), A.data(), A.stride(0),
+                                            B.data(), B.stride(0));
     } else {
       if (A.extent(1) == 1) {
-        return Impl::TeamCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
+        return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(0), A.data(), A.stride(0),
+                                              B.data(), B.stride(1));
       }
-      return Impl::TeamCopyInternal::invoke(member, A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1),
-                                            B.data(), B.stride(0), B.stride(1));
+      return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(1), A.extent(0), A.data(),
+                                            A.stride(1), A.stride(0), B.data(), B.stride(0), B.stride(1));
+    }
+  }
+};
+
+template <typename MemberType>
+struct TeamCopy<MemberType, Trans::ConjTranspose> {
+  template <typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
+    auto info = Impl::checkCopyInput<Trans::ConjTranspose>(A, B);
+    if (info) return info;
+
+    // Quick return if possible
+    if (A.size() == 0 || B.size() == 0) return 0;
+
+    if constexpr (AViewType::rank() == 1) {
+      return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpConj(), A.extent(0), A.data(), A.stride(0),
+                                            B.data(), B.stride(0));
+    } else {
+      if (A.extent(1) == 1) {
+        return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpConj(), A.extent(0), A.data(), A.stride(0),
+                                              B.data(), B.stride(1));
+      }
+      return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpConj(), A.extent(1), A.extent(0), A.data(),
+                                            A.stride(1), A.stride(0), B.data(), B.stride(0), B.stride(1));
     }
   }
 };
@@ -170,13 +198,15 @@ struct TeamVectorCopy<MemberType, Trans::NoTranspose> {
     if (A.size() == 0 || B.size() == 0) return 0;
 
     if constexpr (AViewType::rank() == 1) {
-      return Impl::TeamVectorCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
+      return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(0), A.data(), A.stride(0),
+                                                  B.data(), B.stride(0));
     } else {
       if (A.extent(0) == 1) {
-        return Impl::TeamVectorCopyInternal::invoke(member, A.extent(1), A.data(), A.stride(0), B.data(), B.stride(0));
+        return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(1), A.data(),
+                                                    A.stride(1), B.data(), B.stride(1));
       }
-      return Impl::TeamVectorCopyInternal::invoke(member, A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1),
-                                                  B.data(), B.stride(0), B.stride(1));
+      return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(0), A.extent(1), A.data(),
+                                                  A.stride(0), A.stride(1), B.data(), B.stride(0), B.stride(1));
     }
   }
 };
@@ -185,20 +215,47 @@ template <typename MemberType>
 struct TeamVectorCopy<MemberType, Trans::Transpose> {
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
-    auto info = Impl::checkCopyInput<Trans::NoTranspose>(A, B);
+    auto info = Impl::checkCopyInput<Trans::Transpose>(A, B);
     if (info) return info;
 
     // Quick return if possible
     if (A.size() == 0 || B.size() == 0) return 0;
 
     if constexpr (AViewType::rank() == 1) {
-      return Impl::TeamVectorCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
+      return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(0), A.data(), A.stride(0),
+                                                  B.data(), B.stride(0));
     } else {
       if (A.extent(1) == 1) {
-        return Impl::TeamVectorCopyInternal::invoke(member, A.extent(0), A.data(), A.stride(0), B.data(), B.stride(0));
+        return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(0), A.data(),
+                                                    A.stride(0), B.data(), B.stride(1));
       }
-      return Impl::TeamVectorCopyInternal::invoke(member, A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1),
-                                                  B.data(), B.stride(0), B.stride(1));
+      return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), A.extent(1), A.extent(0), A.data(),
+                                                  A.stride(1), A.stride(0), B.data(), B.stride(0), B.stride(1));
+    }
+  }
+};
+
+template <typename MemberType>
+struct TeamVectorCopy<MemberType, Trans::ConjTranspose> {
+  template <typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
+    auto info = Impl::checkCopyInput<Trans::ConjTranspose>(A, B);
+    if (info) return info;
+
+    // Quick return if possible
+    if (A.size() == 0 || B.size() == 0) return 0;
+
+    if constexpr (AViewType::rank() == 1) {
+      return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpConj(), A.extent(0), A.data(),
+                                                  A.stride(0), B.data(), B.stride(0));
+    } else {
+      if (A.extent(1) == 1) {
+        return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpConj(), A.extent(0), A.data(),
+                                                    A.stride(0), B.data(), B.stride(1));
+      }
+      return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpConj(), A.extent(1), A.extent(0),
+                                                  A.data(), A.stride(1), A.stride(0), B.data(), B.stride(0),
+                                                  B.stride(1));
     }
   }
 };

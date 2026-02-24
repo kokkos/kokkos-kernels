@@ -98,24 +98,34 @@ namespace Impl {
 /// float
 ///
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 template <>
 void HostLapack<float>::gesv(int n, int rhs, float* a, int lda, int* ipiv, float* b, int ldb, int info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  sgesv_(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
+#else
   F77_FUNC_SGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
+#endif
 }
 template <>
 void HostLapack<float>::gesvd(const char jobu, const char jobvt, const int m, const int n, float* a, const int lda,
                               float* s, float* u, const int ldu, float* vt, const int ldvt, float* work, int lwork,
                               float* /*rwork*/, int info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  sgesvd_(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
+#else
   F77_FUNC_SGESVD(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
+#endif
 }
 template <>
 int HostLapack<float>::trtri(const char uplo, const char diag, int n, const float* a, int lda) {
   int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  strtri_(&uplo, &diag, &n, const_cast<float*>(a), &lda, &info);
+#else
   F77_FUNC_STRTRI(&uplo, &diag, &n, a, &lda, &info);
+#endif
   return info;
 }
-#endif
 template <>
 void HostLapack<float>::geqrf(const int m, const int n, float* a, const int lda, float* tau, float* work, int lwork,
                               int* info) {
@@ -130,24 +140,34 @@ void HostLapack<float>::geqrf(const int m, const int n, float* a, const int lda,
 /// double
 ///
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 template <>
 void HostLapack<double>::gesv(int n, int rhs, double* a, int lda, int* ipiv, double* b, int ldb, int info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  dgesv_(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
+#else
   F77_FUNC_DGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
+#endif
 }
 template <>
 void HostLapack<double>::gesvd(const char jobu, const char jobvt, const int m, const int n, double* a, const int lda,
                                double* s, double* u, const int ldu, double* vt, const int ldvt, double* work, int lwork,
                                double* /*rwork*/, int info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  dgesvd_(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
+#else
   F77_FUNC_DGESVD(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
+#endif
 }
 template <>
 int HostLapack<double>::trtri(const char uplo, const char diag, int n, const double* a, int lda) {
   int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  dtrtri_(&uplo, &diag, &n, const_cast<double*>(a), &lda, &info);
+#else
   F77_FUNC_DTRTRI(&uplo, &diag, &n, a, &lda, &info);
+#endif
   return info;
 }
-#endif
 template <>
 void HostLapack<double>::geqrf(const int m, const int n, double* a, const int lda, double* tau, double* work, int lwork,
                                int* info) {
@@ -162,27 +182,37 @@ void HostLapack<double>::geqrf(const int m, const int n, double* a, const int ld
 /// std::complex<float>
 ///
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 template <>
 void HostLapack<std::complex<float>>::gesv(int n, int rhs, std::complex<float>* a, int lda, int* ipiv,
                                            std::complex<float>* b, int ldb, int info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  cgesv_(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
+#else
   F77_FUNC_CGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
+#endif
 }
 template <>
 void HostLapack<std::complex<float>>::gesvd(const char jobu, const char jobvt, const int m, const int n,
                                             std::complex<float>* a, const int lda, float* s, std::complex<float>* u,
                                             const int ldu, std::complex<float>* vt, const int ldvt,
                                             std::complex<float>* work, int lwork, float* rwork, int info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  cgesvd_(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, &info);
+#else
   F77_FUNC_CGESVD(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, &info);
+#endif
 }
 template <>
 int HostLapack<std::complex<float>>::trtri(const char uplo, const char diag, int n, const std::complex<float>* a,
                                            int lda) {
   int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  ctrtri_(&uplo, &diag, &n, const_cast<std::complex<float>*>(a), &lda, &info);
+#else
   F77_FUNC_CTRTRI(&uplo, &diag, &n, a, &lda, &info);
+#endif
   return info;
 }
-#endif
 template <>
 void HostLapack<std::complex<float>>::geqrf(const int m, const int n, std::complex<float>* a, const int lda,
                                             std::complex<float>* tau, std::complex<float>* work, int lwork, int* info) {
@@ -197,27 +227,37 @@ void HostLapack<std::complex<float>>::geqrf(const int m, const int n, std::compl
 /// std::complex<double>
 ///
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 template <>
 void HostLapack<std::complex<double>>::gesv(int n, int rhs, std::complex<double>* a, int lda, int* ipiv,
                                             std::complex<double>* b, int ldb, int info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  zgesv_(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
+#else
   F77_FUNC_ZGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
+#endif
 }
 template <>
 void HostLapack<std::complex<double>>::gesvd(const char jobu, const char jobvt, const int m, const int n,
                                              std::complex<double>* a, const int lda, double* s, std::complex<double>* u,
                                              const int ldu, std::complex<double>* vt, const int ldvt,
                                              std::complex<double>* work, int lwork, double* rwork, int info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  zgesvd_(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, &info);
+#else
   F77_FUNC_ZGESVD(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, &info);
+#endif
 }
 template <>
 int HostLapack<std::complex<double>>::trtri(const char uplo, const char diag, int n, const std::complex<double>* a,
                                             int lda) {
   int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  ztrtri_(&uplo, &diag, &n, const_cast<std::complex<double>*>(a), &lda, &info);
+#else
   F77_FUNC_ZTRTRI(&uplo, &diag, &n, a, &lda, &info);
+#endif
   return info;
 }
-#endif
 template <>
 void HostLapack<std::complex<double>>::geqrf(const int m, const int n, std::complex<double>* a, const int lda,
                                              std::complex<double>* tau, std::complex<double>* work, int lwork,
@@ -231,4 +271,4 @@ void HostLapack<std::complex<double>>::geqrf(const int m, const int n, std::comp
 
 }  // namespace Impl
 }  // namespace KokkosLapack
-#endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK || KOKKOSKERNELS_ENABLE_TPL_ACCELERATE
+#endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK OR KOKKOSKERNELS_ENABLE_TPL_ACCELERATE

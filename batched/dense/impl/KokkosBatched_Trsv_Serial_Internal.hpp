@@ -77,7 +77,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
     /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
-  constexpr int mbAlgo = Algo::Trsv::Blocked::mb();
+  constexpr int mbAlgo = Algo::Trsv::Blocked::Impl::mb();
 
   if (alpha == zero)
     KokkosBlas::Impl::SerialSetInternal::invoke(m, zero, b, bs0);
@@ -167,7 +167,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
     /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
+  constexpr int mbAlgo = Algo::Trsm::Blocked::Impl::mb();
 
   // note that parallel range is different ( m*n vs m-1*n);
   if (alpha == zero)

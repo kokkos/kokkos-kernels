@@ -42,25 +42,25 @@ struct SerialCopyInternal {
 /// Team Internal Impl
 /// ==================
 struct TeamCopyInternal {
-  template <typename MemberType, typename ValueType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const int m,
+  template <typename MemberType, typename Op, typename ValueType>
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, Op op, const int m,
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 /* */ ValueType *KOKKOS_RESTRICT B, const int bs0) {
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) { B[i * bs0] = A[i * as0]; });
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) { B[i * bs0] = op(A[i * as0]); });
     // member.team_barrier();
     return 0;
   }
-  template <typename MemberType, typename ValueType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n,
+  template <typename MemberType, typename Op, typename ValueType>
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, Op op, const int m, const int n,
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 /* */ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
     if (m >= n) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
-        SerialCopyInternal::invoke(KokkosBlas::Impl::OpID(), n, A + i * as0, as1, B + i * bs0, bs1);
+        SerialCopyInternal::invoke(op, n, A + i * as0, as1, B + i * bs0, bs1);
       });
     } else {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
-        SerialCopyInternal::invoke(KokkosBlas::Impl::OpID(), m, A + j * as1, as0, B + j * bs1, bs0);
+        SerialCopyInternal::invoke(op, m, A + j * as1, as0, B + j * bs1, bs0);
       });
     }
     // member.team_barrier();
@@ -72,27 +72,27 @@ struct TeamCopyInternal {
 /// TeamVector Internal Impl
 /// ========================
 struct TeamVectorCopyInternal {
-  template <typename MemberType, typename ValueType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const int m,
+  template <typename MemberType, typename Op, typename ValueType>
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, Op op, const int m,
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 /* */ ValueType *KOKKOS_RESTRICT B, const int bs0) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int &i) { B[i * bs0] = A[i * as0]; });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int &i) { B[i * bs0] = op(A[i * as0]); });
     // member.team_barrier();
     return 0;
   }
-  template <typename MemberType, typename ValueType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n,
+  template <typename MemberType, typename Op, typename ValueType>
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, Op op, const int m, const int n,
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 /* */ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
     if (as0 > as1) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n),
-                             [&](const int &j) { B[i * bs0 + j * bs1] = A[i * as0 + j * as1]; });
+                             [&](const int &j) { B[i * bs0 + j * bs1] = op(A[i * as0 + j * as1]); });
       });
     } else {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m), [&](const int &i) {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n),
-                             [&](const int &j) { B[i * bs0 + j * bs1] = A[i * as0 + j * as1]; });
+                             [&](const int &j) { B[i * bs0 + j * bs1] = op(A[i * as0 + j * as1]); });
       });
     }
     // member.team_barrier();
@@ -121,13 +121,13 @@ struct [[deprecated("Use KokkosBatched::TeamCopy instead")]] TeamCopyInternal {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const ValueType *KOKKOS_RESTRICT A,
                                            const int as0,
                                            /* */ ValueType *KOKKOS_RESTRICT B, const int bs0) {
-    return Impl::TeamCopyInternal::invoke(member, m, A, as0, B, bs0);
+    return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), m, A, as0, B, bs0);
   }
   template <typename MemberType, typename ValueType>
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n,
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 /* */ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-    return Impl::TeamCopyInternal::invoke(member, m, n, A, as0, as1, B, bs0, bs1);
+    return Impl::TeamCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), m, n, A, as0, as1, B, bs0, bs1);
   }
 };
 
@@ -136,13 +136,13 @@ struct [[deprecated("Use KokkosBatched::TeamVectorCopy instead")]] TeamVectorCop
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const ValueType *KOKKOS_RESTRICT A,
                                            const int as0,
                                            /* */ ValueType *KOKKOS_RESTRICT B, const int bs0) {
-    return Impl::TeamVectorCopyInternal::invoke(member, m, A, as0, B, bs0);
+    return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), m, A, as0, B, bs0);
   }
   template <typename MemberType, typename ValueType>
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n,
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 /* */ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-    return Impl::TeamVectorCopyInternal::invoke(member, m, n, A, as0, as1, B, bs0, bs1);
+    return Impl::TeamVectorCopyInternal::invoke(member, KokkosBlas::Impl::OpID(), m, n, A, as0, as1, B, bs0, bs1);
   }
 };
 
