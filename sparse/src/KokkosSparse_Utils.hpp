@@ -2097,7 +2097,7 @@ kk_extract_diagonal_blocks_crsmatrix_sequential(const crsMat_t &A, std::vector<c
  * @param perm_rcb [in] The permutation array describing the mapping from the original ordering to RCB ordering
  * @param reverse_perm_rcb [in] The reverse permutation array describing the mapping from the RCB ordering to original
  * ordering
- * @param partition_sizes_rcb [in] The vector containing sizes of RCB partitions 
+ * @param partition_sizes_rcb [in] The vector containing sizes of RCB partitions
  * @param DiagBlk_v [out] The vector of the extracted CRS diagonal blocks
  * (1 <= the number of diagonal blocks <= A_nrows, which is also the number of partitions in the RCB and has to be a
  * power of 2)
@@ -2106,10 +2106,10 @@ kk_extract_diagonal_blocks_crsmatrix_sequential(const crsMat_t &A, std::vector<c
  *   kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A_in, perm, reverse_perm, partition_sizes, diagBlk_out);
  */
 template <typename crsMat_t, typename perm_view_type>
-void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A, const perm_view_type &perm_rcb,
-                                                              const perm_view_type &reverse_perm_rcb,
-                                                              const std::vector<typename crsMat_t::non_const_ordinal_type> partition_sizes_rcb,
-                                                              std::vector<crsMat_t> &DiagBlk_v) {
+void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(
+    const crsMat_t &A, const perm_view_type &perm_rcb, const perm_view_type &reverse_perm_rcb,
+    const std::vector<typename crsMat_t::non_const_ordinal_type> partition_sizes_rcb,
+    std::vector<crsMat_t> &DiagBlk_v) {
   using row_map_type     = typename crsMat_t::row_map_type;
   using entries_type     = typename crsMat_t::index_type;
   using values_type      = typename crsMat_t::values_type;
@@ -2175,19 +2175,22 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A,
 
       if (static_cast<ordinal_type>(partition_sizes_rcb.size()) != n_blocks) {
         std::ostringstream os;
-        os << "The number of diagonal blocks (" << n_blocks << ") must be equal to the number of partitions (" << partition_sizes_rcb.size() << ')';
+        os << "The number of diagonal blocks (" << n_blocks << ") must be equal to the number of partitions ("
+           << partition_sizes_rcb.size() << ')';
         throw std::runtime_error(os.str());
       }
 
       if (static_cast<ordinal_type>(perm_rcb.extent(0)) != A_nrows) {
         std::ostringstream os;
-        os << "The size of the permutation array (" << perm_rcb.extent(0) << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
+        os << "The size of the permutation array (" << perm_rcb.extent(0)
+           << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
         throw std::runtime_error(os.str());
       }
 
       if (static_cast<ordinal_type>(reverse_perm_rcb.extent(0)) != A_nrows) {
         std::ostringstream os;
-        os << "The size of the reverse permutation array (" << reverse_perm_rcb.extent(0) << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
+        os << "The size of the reverse permutation array (" << reverse_perm_rcb.extent(0)
+           << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
         throw std::runtime_error(os.str());
       }
 
