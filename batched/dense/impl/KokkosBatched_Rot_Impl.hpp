@@ -65,137 +65,85 @@ KOKKOS_INLINE_FUNCTION static int checkRotInput([[maybe_unused]] const XViewType
 /// Serial Impl
 /// ===========
 
-// {s,d,cs,zd}rot interface
-// T
+// {s,d,cs,zd}rot interface for Trans::Transpose
 // x(i) := c*x(i) + s*y(i)
 // y(i) := c*y(i) - s*x(i)
-template <>
-struct SerialRot<Trans::Transpose> {
-  template <typename XViewType, typename YViewType, typename CType, typename SType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &x, const YViewType &y, const CType c, const SType s) {
-    // Quick return if possible
-    const int n = x.extent_int(0);
-    if (n == 0) return 0;
-
-    auto info = Impl::checkRotInput<Trans::Transpose, CType, SType>(x, y);
-    if (info) return info;
-
-    return Impl::SerialRotInternal::invoke(KokkosBlas::Impl::OpID(), n, x.data(), x.stride(0), y.data(), y.stride(0), c,
-                                           s);
-  }
-};
-
-// {c,z}rot interface
-// C
+//
+// {c,z}rot interface for Trans::ConjTranspose
 // x(i) := c*x(i) + s*y(i)
 // y(i) := c*y(i) - conj(s)*x(i)
-template <>
-struct SerialRot<Trans::ConjTranspose> {
-  template <typename XViewType, typename YViewType, typename CType, typename SType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &x, const YViewType &y, const CType c, const SType s) {
-    // Quick return if possible
-    const int n = x.extent_int(0);
-    if (n == 0) return 0;
+template <typename ArgTrans>
+template <typename XViewType, typename YViewType, typename CType, typename SType>
+KOKKOS_INLINE_FUNCTION int SerialRot<ArgTrans>::invoke(const XViewType &x, const YViewType &y, const CType c,
+                                                       const SType s) {
+  // Quick return if possible
+  const int n = x.extent_int(0);
+  if (n == 0) return 0;
 
-    auto info = Impl::checkRotInput<Trans::ConjTranspose, CType, SType>(x, y);
-    if (info) return info;
+  auto info = Impl::checkRotInput<ArgTrans, CType, SType>(x, y);
+  if (info) return info;
 
-    return Impl::SerialRotInternal::invoke(KokkosBlas::Impl::OpConj(), n, x.data(), x.stride(0), y.data(), y.stride(0),
-                                           c, s);
-  }
-};
+  using op = std::conditional_t<std::is_same_v<ArgTrans, Trans::ConjTranspose>, KokkosBlas::Impl::OpConj,
+                                KokkosBlas::Impl::OpID>;
+  return Impl::SerialRotInternal::invoke(op(), n, x.data(), x.stride(0), y.data(), y.stride(0), c, s);
+}
 
 ///
 /// Team Impl
 /// ===========
 
-// {s,d,cs,zd}rot interface
-// T
+// {s,d,cs,zd}rot interface for Trans::Transpose
 // x(i) := c*x(i) + s*y(i)
 // y(i) := c*y(i) - s*x(i)
-template <typename MemberType>
-struct TeamRot<MemberType, Trans::Transpose> {
-  template <typename XViewType, typename YViewType, typename CType, typename SType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
-                                           const CType c, const SType s) {
-    // Quick return if possible
-    const int n = x.extent_int(0);
-    if (n == 0) return 0;
-
-    auto info = Impl::checkRotInput<Trans::Transpose, CType, SType>(x, y);
-    if (info) return info;
-
-    return Impl::TeamRotInternal::invoke(member, KokkosBlas::Impl::OpID(), n, x.data(), x.stride(0), y.data(),
-                                         y.stride(0), c, s);
-  }
-};
-
-// {c,z}rot interface
-// C
+//
+// {c,z}rot interface for Trans::ConjTranspose
 // x(i) := c*x(i) + s*y(i)
 // y(i) := c*y(i) - conj(s)*x(i)
-template <typename MemberType>
-struct TeamRot<MemberType, Trans::ConjTranspose> {
-  template <typename XViewType, typename YViewType, typename CType, typename SType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
-                                           const CType c, const SType s) {
-    // Quick return if possible
-    const int n = x.extent_int(0);
-    if (n == 0) return 0;
+template <typename MemberType, typename ArgTrans>
+template <typename XViewType, typename YViewType, typename CType, typename SType>
+KOKKOS_INLINE_FUNCTION int TeamRot<MemberType, ArgTrans>::invoke(const MemberType &member, const XViewType &x,
+                                                                 const YViewType &y, const CType c, const SType s) {
+  // Quick return if possible
+  const int n = x.extent_int(0);
+  if (n == 0) return 0;
 
-    auto info = Impl::checkRotInput<Trans::ConjTranspose, CType, SType>(x, y);
-    if (info) return info;
+  auto info = Impl::checkRotInput<ArgTrans, CType, SType>(x, y);
+  if (info) return info;
 
-    return Impl::TeamRotInternal::invoke(member, KokkosBlas::Impl::OpConj(), n, x.data(), x.stride(0), y.data(),
-                                         y.stride(0), c, s);
-  }
-};
+  using op = std::conditional_t<std::is_same_v<ArgTrans, Trans::ConjTranspose>, KokkosBlas::Impl::OpConj,
+                                KokkosBlas::Impl::OpID>;
+
+  return Impl::TeamRotInternal::invoke(member, op(), n, x.data(), x.stride(0), y.data(), y.stride(0), c, s);
+}
 
 ///
 /// TeamVector Impl
 /// ===============
 
-// {s,d,cs,zd}rot interface
-// T
+// {s,d,cs,zd}rot interface for Trans::Transpose
 // x(i) := c*x(i) + s*y(i)
 // y(i) := c*y(i) - s*x(i)
-template <typename MemberType>
-struct TeamVectorRot<MemberType, Trans::Transpose> {
-  template <typename XViewType, typename YViewType, typename CType, typename SType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
-                                           const CType c, const SType s) {
-    // Quick return if possible
-    const int n = x.extent_int(0);
-    if (n == 0) return 0;
-
-    auto info = Impl::checkRotInput<Trans::Transpose, CType, SType>(x, y);
-    if (info) return info;
-
-    return Impl::TeamVectorRotInternal::invoke(member, KokkosBlas::Impl::OpID(), n, x.data(), x.stride(0), y.data(),
-                                               y.stride(0), c, s);
-  }
-};
-
-// {c,z}rot interface
-// C
+//
+// {c,z}rot interface for Trans::ConjTranspose
 // x(i) := c*x(i) + s*y(i)
 // y(i) := c*y(i) - conj(s)*x(i)
-template <typename MemberType>
-struct TeamVectorRot<MemberType, Trans::ConjTranspose> {
-  template <typename XViewType, typename YViewType, typename CType, typename SType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
-                                           const CType c, const SType s) {
-    // Quick return if possible
-    const int n = x.extent_int(0);
-    if (n == 0) return 0;
+template <typename MemberType, typename ArgTrans>
+template <typename XViewType, typename YViewType, typename CType, typename SType>
+KOKKOS_INLINE_FUNCTION int TeamVectorRot<MemberType, ArgTrans>::invoke(const MemberType &member, const XViewType &x,
+                                                                       const YViewType &y, const CType c,
+                                                                       const SType s) {
+  // Quick return if possible
+  const int n = x.extent_int(0);
+  if (n == 0) return 0;
 
-    auto info = Impl::checkRotInput<Trans::ConjTranspose, CType, SType>(x, y);
-    if (info) return info;
+  auto info = Impl::checkRotInput<ArgTrans, CType, SType>(x, y);
+  if (info) return info;
 
-    return Impl::TeamVectorRotInternal::invoke(member, KokkosBlas::Impl::OpConj(), n, x.data(), x.stride(0), y.data(),
-                                               y.stride(0), c, s);
-  }
-};
+  using op = std::conditional_t<std::is_same_v<ArgTrans, Trans::ConjTranspose>, KokkosBlas::Impl::OpConj,
+                                KokkosBlas::Impl::OpID>;
+
+  return Impl::TeamVectorRotInternal::invoke(member, op(), n, x.data(), x.stride(0), y.data(), y.stride(0), c, s);
+}
 
 }  // namespace KokkosBatched
 
