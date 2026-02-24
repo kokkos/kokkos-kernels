@@ -47,13 +47,13 @@ typename coors_view_t::value_type generate_3d_coordinates_for_sparse_rows(int n_
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
-  using RowMapType       = Kokkos::View<size_type *, device>;
-  using EntriesType      = Kokkos::View<lno_t *, device>;
-  using ValuesType       = Kokkos::View<scalar_t *, device>;
-  using magnitude_t      = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
-  using CoorsViewType    = Kokkos::View<magnitude_t **, device>;
-  using PermViewType     = Kokkos::View<lno_t *, device>;
-  using crsMat_t         = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using RowMapType    = Kokkos::View<size_type *, device>;
+  using EntriesType   = Kokkos::View<lno_t *, device>;
+  using ValuesType    = Kokkos::View<scalar_t *, device>;
+  using magnitude_t   = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
+  using CoorsViewType = Kokkos::View<magnitude_t **, device>;
+  using PermViewType  = Kokkos::View<lno_t *, device>;
+  using crsMat_t      = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 
   crsMat_t A;
   std::vector<crsMat_t> DiagBlks(nblocks);
@@ -110,9 +110,11 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
   PermViewType perm_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_rcb"), n_coordinates);
   PermViewType reverse_perm_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb"), n_coordinates);
   lno_t n_levels = static_cast<lno_t>(std::log2(static_cast<double>(nblocks)) + 1);
-  std::vector<lno_t> partition_sizes = KokkosGraph::Experimental::recursive_coordinate_bisection(coordinates, perm_rcb, reverse_perm_rcb, n_levels);
+  std::vector<lno_t> partition_sizes =
+      KokkosGraph::Experimental::recursive_coordinate_bisection(coordinates, perm_rcb, reverse_perm_rcb, n_levels);
 
-  KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, perm_rcb, reverse_perm_rcb, partition_sizes, DiagBlks);
+  KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, perm_rcb, reverse_perm_rcb,
+                                                                               partition_sizes, DiagBlks);
 
   // Checking results
   lno_t numRows = 0;
