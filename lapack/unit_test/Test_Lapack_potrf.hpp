@@ -20,8 +20,7 @@ void impl_test_potrf(int N) {
 
   view_stride_adapter<AViewType> A("A", N, N); // TODO: Adjust dimensions
   const char uplo[] = "N"; // TODO: Set appropriate value
-  ScalarType n = AT::one(); // TODO: Set appropriate value
-  ScalarType lda = AT::one(); // TODO: Set appropriate value
+  const int lda = N/2; // TODO: Set appropriate value
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -37,7 +36,7 @@ void impl_test_potrf(int N) {
   // Example: Kokkos::deep_copy(x.h_base, x.d_base);
 
   // Call your function
-  KokkosLapack::potrf(uplo, n, A.d_view, lda);
+  KokkosLapack::potrf(uplo, N, A.d_view, lda);
 
   // TODO: Copy results back to host
   // Example: Kokkos::deep_copy(y.h_base, y.d_base);
