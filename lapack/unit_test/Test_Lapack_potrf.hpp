@@ -11,18 +11,18 @@ namespace Test {
 
 template <class AViewType, class Device>
 void impl_test_potrf(int N) {
-  using ScalarType = typename AViewType::value_type;
-  using AT = KokkosKernels::ArithTraits<ScalarType>;
-  using MagnitudeType = typename AT::mag_type;
+  // using ScalarType = typename AViewType::value_type;
+  // using AT = KokkosKernels::ArithTraits<ScalarType>;
+  // using MagnitudeType = typename AT::mag_type;
 
-  const MagnitudeType eps = AT::epsilon() * 1000;
-  const MagnitudeType max_val = 10.0;
+  // const MagnitudeType eps = AT::epsilon() * 1000;
+  // const MagnitudeType max_val = 10.0;
 
   view_stride_adapter<AViewType> A("A", N, N); // TODO: Adjust dimensions
   const char uplo[] = "N"; // TODO: Set appropriate value
   const int lda = N/2; // TODO: Set appropriate value
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+  // Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   // TODO: Initialize input views with random data
   // Example:

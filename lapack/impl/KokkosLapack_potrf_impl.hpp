@@ -14,7 +14,7 @@ namespace Impl {
 template <class AViewType>
 struct PotrfImpl {
   // TODO: Add your implementation here
-  static void potrf(const char uplo[], const int& n, AViewType& A, const int& lda) {
+  static void potrf([[maybe_unused]] const char uplo[], [[maybe_unused]] const int& n, [[maybe_unused]] AViewType& A, [[maybe_unused]] const int& lda) {
     // TODO: Implement your kernel here
     // Kokkos::abort("KokkosLapack::potrf: Not yet implemented");
   }
