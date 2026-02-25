@@ -17,11 +17,11 @@ namespace KokkosLapack {
 /// \tparam AViewType TODO: describe this parameter
 ///
 template <class execution_space, class AViewType>
-void potrf(const execution_space& space,
-                const char uplo[],
-                const int& n,
-                AViewType& A,
-                const int& lda) {
+void potrf([[maybe_unused]] const execution_space& space,
+           const char uplo[],
+           const int& n,
+           AViewType& A,
+           const int& lda) {
   static_assert(Kokkos::is_execution_space<execution_space>::value,
                 "KokkosLapack::potrf: execution_space must be a valid Kokkos execution space");
   static_assert(Kokkos::is_view<AViewType>::value,

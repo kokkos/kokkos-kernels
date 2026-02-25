@@ -15,19 +15,21 @@ namespace Impl {
 
 // TODO: Define TPL specializations for your supported TPLs
 // Example for LAPACK:
-// #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
-// #define KOKKOSLAPACK_POTRF_TPL_LAPACK(SCALAR, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
-//   template <class ExecSpace> \
-//   struct Potrf<Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+/*
+ #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+ #define KOKKOSLAPACK_POTRF_TPL_LAPACK(SCALAR, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
+   template <class ExecSpace> \
+   struct Potrf<Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-//                          true, ETI_SPEC_AVAIL> { \
-//     static void potrf(const char uplo[], const int& n, AViewType& A, const int& lda) { \
-//       // TODO: Call TPL library here \
-//     } \
-//   };
-// #else
-// #define KOKKOSLAPACK_POTRF_TPL_LAPACK(SCALAR, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
-// #endif
+                          true, ETI_SPEC_AVAIL> { \
+     static void potrf(const char uplo[], const int& n, AViewType& A, const int& lda) { \
+       // TODO: Call TPL library here \
+     } \
+   };
+ #else
+ #define KOKKOSLAPACK_POTRF_TPL_LAPACK(SCALAR, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
+ #endif
+*/
 
 }  // namespace Impl
 }  // namespace KokkosLapack

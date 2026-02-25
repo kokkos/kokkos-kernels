@@ -15,17 +15,19 @@ struct potrf_tpl_spec_avail {
 
 // TODO: Define TPL availability macros for your supported TPLs
 // Example for LAPACK/BLAS:
-// #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
-// #define KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE) \
-//   template <class ExecSpace> \
-//   struct potrf_tpl_spec_avail< \
-//       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
-//     enum : bool { value = true }; \
-//   };
-// #else
-// #define KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)
-// #endif
+/*
+ #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+ #define KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE) \
+   template <class ExecSpace> \
+   struct potrf_tpl_spec_avail< \
+       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
+     enum : bool { value = true }; \
+   };
+ #else
+ #define KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)
+ #endif
+*/
 
 }  // namespace Impl
 }  // namespace KokkosLapack
