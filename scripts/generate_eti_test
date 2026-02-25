@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
-"""Unit tests for generate_eti script."""
+"""
+Unit tests for generate_eti script. These tests are not run by
+CI and are only used manually.
+"""
 
 import unittest
 import sys
@@ -523,7 +526,7 @@ class TestBuildApiParamList(unittest.TestCase):
         """Test API params with integer scalar."""
         params = gen.parse_signature("0dii_count,1dsi_x")
         result = gen.build_api_param_list(params, include_exec_space=False)
-        self.assertIn("const typename XViewType::value_type& count", result)
+        self.assertIn("const int& count", result)
         self.assertIn("const XViewType& x", result)
 
     ###########################################################################
@@ -747,7 +750,7 @@ class TestBuildEtiMacroViewSpecs(unittest.TestCase):
         result = gen.build_eti_macro_view_specs(view_params)
 
         self.assertEqual(len(result), 1)
-        self.assertIn("const SCALAR*", result[0])
+        self.assertIn("const int*", result[0])
 
     ###########################################################################
     def test_mixed_dimensions(self):

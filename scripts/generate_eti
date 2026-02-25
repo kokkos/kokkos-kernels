@@ -225,7 +225,9 @@ def build_api_param_list(params, include_exec_space=True):
             # For API, scalars need to reference a view's value_type
             # We'll use the first view parameter if available
             view_params = [x for x in params if not x.is_scalar and not x.is_char]
-            if view_params:
+            if p.cpp_type == "int":
+                param_parts.append(f"const int& {p.name}")
+            elif view_params:
                 param_parts.append(f"const typename {view_params[0].cpp_type}::value_type& {p.name}")
             else:
                 # Fallback for scalar-only functions
@@ -318,7 +320,10 @@ def build_test_setup_code(params):
 
     # Initialize scalars
     for p in scalar_params:
-        setup_lines.append(f"  ScalarType {p.name} = AT::one(); // TODO: Set appropriate value")
+        if p.cpp_type == "int":
+            setup_lines.append(f"  int {p.name} = 0; // TODO: Set appropriate value")
+        else:
+            setup_lines.append(f"  ScalarType {p.name} = AT::one(); // TODO: Set appropriate value")
 
     return '\n'.join(setup_lines)
 
@@ -660,7 +665,7 @@ void {function_lower}({api_param_list_no_exec}) {{
 namespace Kokkos{package.capitalize()} {{
 namespace Impl {{
 @{package_upper}{blas_level}_{function_upper}_ETI_INST_BLOCK@
-  }} //IMPL
+}} //IMPL
 }} //Kokkos
 """
 
