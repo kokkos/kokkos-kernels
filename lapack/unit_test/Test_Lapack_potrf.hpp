@@ -18,9 +18,9 @@ void impl_test_potrf(int N) {
   // const MagnitudeType eps = AT::epsilon() * 1000;
   // const MagnitudeType max_val = 10.0;
 
-  view_stride_adapter<AViewType> A("A", N, N); // TODO: Adjust dimensions
-  const char uplo[] = "N"; // TODO: Set appropriate value
-  const int lda = N/2; // TODO: Set appropriate value
+  view_stride_adapter<AViewType> A("A", N, N);  // TODO: Adjust dimensions
+  const char uplo[] = "N";                      // TODO: Set appropriate value
+  const int lda     = N / 2;                    // TODO: Set appropriate value
 
   // Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -53,10 +53,9 @@ void impl_test_potrf(int N) {
 }  // namespace Test
 
 template <class Scalar, class Device>
-void test_potrf(int N)
-{
+void test_potrf(int N) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
-  (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   {
     using AViewType = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
 
@@ -65,7 +64,7 @@ void test_potrf(int N)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-  (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   {
     using AViewType = Kokkos::View<Scalar**, Kokkos::LayoutRight, Device>;
 

@@ -25,12 +25,11 @@ struct potrf_eti_spec_avail {
 // Macro for declaration of full specialization availability
 // KokkosLapack::Impl::Potrf.  This is NOT for users!!!
 //
-#define KOKKOSLAPACK_POTRF_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template <> \
-  struct potrf_eti_spec_avail< \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
-    enum : bool { value = true }; \
+#define KOKKOSLAPACK_POTRF_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                    \
+  template <>                                                                                       \
+  struct potrf_eti_spec_avail<Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {              \
+    enum : bool { value = true };                                                                   \
   };
 
 // Include the actual specialization declarations
@@ -45,8 +44,7 @@ namespace Impl {
 //
 
 // Unification layer
-template <class AViewType,
-          bool tpl_spec_avail = potrf_tpl_spec_avail<AViewType>::value,
+template <class AViewType, bool tpl_spec_avail = potrf_tpl_spec_avail<AViewType>::value,
           bool eti_spec_avail = potrf_eti_spec_avail<AViewType>::value>
 struct Potrf {
   static void potrf(const char uplo[], const int& n, AViewType& A, const int& lda);
@@ -59,9 +57,8 @@ struct Potrf<AViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void potrf(const char uplo[], const int& n, AViewType& A, const int& lda) {
     static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
 
-    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                    ? "KokkosLapack::potrf[ETI]"
-                                    : "KokkosLapack::potrf[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosLapack::potrf[ETI]"
+                                                                     : "KokkosLapack::potrf[noETI]");
 
     PotrfImpl<AViewType>::potrf(uplo, n, A, lda);
 
@@ -77,20 +74,18 @@ struct Potrf<AViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 // Macro for declaration of full specialization of
 // KokkosLapack::Impl::Potrf.  This is NOT for users!!!
 //
-#define KOKKOSLAPACK_POTRF_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  extern template struct Potrf< \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+#define KOKKOSLAPACK_POTRF_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
+  extern template struct Potrf<                                                                                       \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       false, true>;
 
 //
 // Macro for definition of full specialization of
 // KokkosLapack::Impl::Potrf.  This is NOT for users!!!
 //
-#define KOKKOSLAPACK_POTRF_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template struct Potrf< \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+#define KOKKOSLAPACK_POTRF_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
+  template struct Potrf<                                                                                              \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       false, true>;
 
 #include <KokkosLapack_potrf_tpl_spec_decl.hpp>
