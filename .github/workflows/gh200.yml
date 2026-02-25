@@ -1,0 +1,83 @@
+# The jobs show up in the github actions UI like this:
+# name: (1) / (2) / (3)
+# e.g.: github-AT2 / lychee / PR_LYCHEE_HOPPER90_CUDA1180_CUDA_LEFT_RIGHT_REL
+# (1) is set by the `name:` field in at2.yaml
+# (2) is set by the name of this file
+# (3) is set by the job name
+
+name: Reusable H100 workflow
+
+permissions:
+  contents: none
+
+on:
+  workflow_call:
+    inputs:
+      kokkos_version:
+        description: 'The Kokkos Core version to build'
+        default: ''
+        required: true
+        type: string
+
+jobs:
+  PR_GH200_CUDA_131_ARMPL_2601:
+    name: PR_GH200_CUDA_131_ARMPL_2601:
+    runs-on: [brewster-cuda-13.1-armpl-26.01]
+    
+    steps:
+      - name: nvidia-smi
+        run: nvidia-smi
+
+      - name: cuda-visible-devices
+        run: echo $CUDA_VISIBLE_DEVICES
+
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ inputs.kokkos_version }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cmake -S kokkos -B kokkos/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=nvc++ \
+            -DCMAKE_INSTALL_PREFIX=kokkos/install \
+            -DKokkos_ENABLE_CUDA=ON \
+            -DKokkos_ARCH_HOPPER90=ON \
+            -DKokkos_ENABLE_TESTS=OFF \
+            -DKokkos_ENABLE_EXAMPLES=OFF \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j50 install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=nvc++ \
+            -DKokkos_ROOT=kokkos/install \
+            -DKokkosKernels_ENABLE_TESTS=ON \
+            -DKokkosKernels_ENABLE_EXAMPLES=ON \
+            -DKokkosKernels_INST_LAYOUTRIGHT=ON
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        run: make -j50 all
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest --output-on-failure -V --timeout 3600
