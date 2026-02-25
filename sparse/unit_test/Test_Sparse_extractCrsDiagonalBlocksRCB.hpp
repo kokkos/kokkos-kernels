@@ -61,8 +61,8 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
   // Generate coordinates
   lno_t n_coordinates = n_pts_per_dim * n_pts_per_dim * n_pts_per_dim;
   CoorsViewType coordinates(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coordinates"), n_coordinates, 3);
-  CoorsViewType_hm h_coordinates = Kokkos::create_mirror(coordinates);
-  magnitude_t dx = generate_3d_coordinates_for_sparse_rows<CoorsViewType_hm>(n_pts_per_dim, h_coordinates);
+  auto h_coordinates = Kokkos::create_mirror(coordinates);
+  magnitude_t dx = generate_3d_coordinates_for_sparse_rows(n_pts_per_dim, h_coordinates);
   Kokkos::deep_copy(coordinates, h_coordinates);
 
   // Generate test matrix consisting of near interactions calculated based on coordinates
