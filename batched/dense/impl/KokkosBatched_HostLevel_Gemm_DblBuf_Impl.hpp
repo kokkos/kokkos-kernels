@@ -182,11 +182,12 @@ class BatchedDblBufGemm {
 
     // Each team solves a single tile. Within each tile, the team solves
     // all __n_tile_k_tiles one at a time.
-    size_t league_size       = c_batch_size_ * functor.get_n_sub_tiles();
-    int team_size            = stride_m;
+    size_t league_size                = c_batch_size_ * functor.get_n_sub_tiles();
+    int team_size                     = stride_m;
     const unsigned int max_vector_len = policy_type::vector_length_max();
-     // vector_len >= 1 and vector_len <= max_vector_len are required preconditions by TeamPolicy ctor
-    unsigned int vector_len = (stride_n > 0) ? (stride_n > max_vector_len ? max_vector_len : (unsigned int)stride_n) : 1;
+    // vector_len >= 1 and vector_len <= max_vector_len are required preconditions by TeamPolicy ctor
+    unsigned int vector_len =
+        (stride_n > 0) ? (stride_n > max_vector_len ? max_vector_len : (unsigned int)stride_n) : 1;
     // adjust to power of 2 < vector_len if necessary
     vector_len = std::has_single_bit(vector_len) ? vector_len : std::bit_floor(vector_len);
 
