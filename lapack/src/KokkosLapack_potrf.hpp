@@ -19,9 +19,9 @@ namespace KokkosLapack {
 template <class execution_space, class AViewType>
 void potrf(const execution_space& space,
                 const char uplo[],
-                const typename AViewType::value_type& n,
+                const int& n,
                 AViewType& A,
-                const typename AViewType::value_type& lda) {
+                const int& lda) {
   static_assert(Kokkos::is_execution_space<execution_space>::value,
                 "KokkosLapack::potrf: execution_space must be a valid Kokkos execution space");
   static_assert(Kokkos::is_view<AViewType>::value,
@@ -39,9 +39,9 @@ void potrf(const execution_space& space,
 // Overload without execution space (uses default)
 template <class AViewType>
 void potrf(const char uplo[],
-                const typename AViewType::value_type& n,
+                const int& n,
                 AViewType& A,
-                const typename AViewType::value_type& lda) {
+                const int& lda) {
   potrf(typename AViewType::execution_space{}, uplo, n, A, lda);
 }
 
