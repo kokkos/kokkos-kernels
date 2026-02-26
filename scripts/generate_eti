@@ -919,10 +919,10 @@ def parse_command_line(args, description):
         epilog="""
 \033[1mEXAMPLES:\033[0m
    \033[1;32m# Create stub files for a new BLAS function\033[0m
-  > ./scripts/%(prog)s blas axpby
+  > ./scripts/%(prog)s blas axpby 0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y
 
    \033[1;32m# Create stub files for a new sparse function in different KK repo\033[0m
-  > %(prog)s sparse spmv -d /path/to/kokkos-kernels
+  > %(prog)s sparse spmv 1dsi_x,1dso_y -d /path/to/kokkos-kernels
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -962,10 +962,10 @@ Examples: '0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y' (axpby), 'ci_trans,0dsi_alpha,2d
         help="Suppress all output messages."
     )
 
-    args = parser.parse_args()
-    args.directory = Path(args.directory).resolve()
+    parsed_args = parser.parse_args(args[1:])
+    parsed_args.directory = Path(args.directory).resolve()
 
-    return args
+    return parsed_args
 
 ###############################################################################
 def main(description):
