@@ -17,7 +17,7 @@ The number of diagonal blocks is the number of partitions for RCB.
 
 The function will return a vector of diagonal blocks corresponding to the RCB partitions.
 
-The function will throw a runtime exception if any of the following conditions are not met:
+The function will throw a runtime exception if any of the following conditions are true:
 
 - the sparse matrix ``A`` is not square
 - the size of the vector of diagonal blocks ``DiagBlk_v`` is not set or is larger than the number of rows in ``A``
