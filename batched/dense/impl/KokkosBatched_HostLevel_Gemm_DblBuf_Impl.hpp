@@ -189,7 +189,7 @@ class BatchedDblBufGemm {
     unsigned int vector_len =
         (stride_n > 0) ? (stride_n > max_vector_len ? max_vector_len : (unsigned int)stride_n) : 1;
     // adjust to power of 2 < vector_len if necessary
-    vector_len = std::has_single_bit(vector_len) ? vector_len : std::bit_floor(vector_len);
+    vector_len = std::bit_floor(vector_len);
 
     const int max_team_size =
         policy_type(league_size, Kokkos::AUTO, vector_len).team_size_max(functor, Kokkos::ParallelForTag());
