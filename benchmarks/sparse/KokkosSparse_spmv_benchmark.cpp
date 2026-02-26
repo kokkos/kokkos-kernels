@@ -64,7 +64,7 @@ void parse_inputs(int argc, char** argv, spmv_parameters& params) {
     if (benchmark::check_arg_int(i, argc, argv, "-n", params.N)) {
       ++i;
     } else if (benchmark::check_arg_str(i, argc, argv, "--mode", params.alg)) {
-      if ((params.mode != "") && (params.mode != "auto") && (params.alg != "manual")) {
+      if ((params.mode != "") && (params.mode != "auto") && (params.mode != "manual")) {
         throw std::runtime_error("--mode can only be an empty string, `auto` or `manual`!");
       }
       ++i;
