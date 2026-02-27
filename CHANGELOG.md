@@ -3,6 +3,9 @@
 ## [5.0.2](https://github.com/kokkos/kokkos-kernels/tree/5.0.2)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.0.1...5.0.2)
 
+### Deprecations:
+- Deprecate unused `KOKKOSKERNELS_ENABLE_HOST_ONLY` macro
+
 ### Bug and Warning Fixes:
 - Cleanup warning and warning system [\#2861](https://github.com/kokkos/kokkos-kernels/pull/2861)
 - Batched - Vector: marking defaulted method properly [\#2908](https://github.com/kokkos/kokkos-kernels/pull/2908)
