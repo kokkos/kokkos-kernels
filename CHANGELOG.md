@@ -106,7 +106,6 @@
 ### New Features
 
 #### Batched updates
-- Implement batched serial gbtrf [\#2489](https://github.com/kokkos/kokkos-kernels/pull/2489)
 - Implement batched serial gbtrs [\#2539](https://github.com/kokkos/kokkos-kernels/pull/2539)
 
 ### Enhancements:
