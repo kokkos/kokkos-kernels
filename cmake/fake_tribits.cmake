@@ -36,12 +36,17 @@ function(kokkoskernels_add_option SUFFIX DEFAULT TYPE DOCSTRING)
   set(${CAMEL_NAME} ${DEFAULT} CACHE ${TYPE} ${DOCSTRING})
 
   #I don't love doing it this way because it's N^2 in number options, but cest la vie
+  get_cmake_property(KOKKOSKERNELS_GIVEN_VARIABLES VARIABLES)
   foreach(opt ${KOKKOSKERNELS_GIVEN_VARIABLES})
     string(TOUPPER ${opt} OPT_UC)
-    if("${OPT_UC}" STREQUAL "${UC_NAME}")
-      if(NOT "${opt}" STREQUAL "${CAMEL_NAME}")
-        message(FATAL_ERROR
-          "Matching option found for ${CAMEL_NAME} with the wrong case ${opt}. Please delete your CMakeCache.txt and change option to -D${CAMEL_NAME}=${${opt}}. This is now enforced to avoid hard-to-debug CMake cache inconsistencies.")
+    # only care if it starts with KokkosKernels
+    string(FIND ${OPT_UC} KOKKOSKERNELS IDX)
+    if(${IDX} EQUAL 0)
+      if("${OPT_UC}" STREQUAL "${UC_NAME}")
+        if(NOT "${opt}" STREQUAL "${CAMEL_NAME}")
+          message(FATAL_ERROR
+            "You provided ${opt} but Kokkos Kernels understands ${CAMEL_NAME}. Please delete your CMakeCache.txt and change option to -D${CAMEL_NAME}=${${opt}}. This is now enforced to avoid hard-to-debug CMake cache inconsistencies.")
+        endif()
       endif()
     endif()
   endforeach()
