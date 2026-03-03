@@ -91,15 +91,23 @@ struct Algo {
       static const char* name() { return "Blocked"; }
 
       struct Impl {
-        // TODO:: for now harwire the blocksizes; this should reflect
+        struct Host {};
+        struct Device {};
+
+        // TODO:: for now hardwire the blocksizes; this should reflect
         // register blocking (not about team parallelism).
         // this mb should vary according to
         // - team policy (smaller) or range policy (bigger)
         // - space (gpu vs host)
         // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-        static constexpr KOKKOS_FUNCTION int mb() {
-          KOKKOS_IF_ON_HOST((return 4;))
-          KOKKOS_IF_ON_DEVICE((return 2;))
+        template <typename Where>
+          requires std::is_same_v<Where, Host> || std::is_same_v<Where, Device>
+        constexpr static KOKKOS_INLINE_FUNCTION int mb() {
+          if constexpr (std::is_same_v<Where, Host>) {
+            return 4;
+          } else {
+            return 2;
+          }
         }
       };
 
@@ -109,7 +117,10 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-      [[deprecated]] static constexpr KOKKOS_FUNCTION int mb() { return Impl::mb(); }
+      [[deprecated("Do not use: implementation detail")]] static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return Impl::mb<Impl::Host>();))
+        KOKKOS_IF_ON_DEVICE((return Impl::mb<Impl::Device>();))
+      }
     };
     struct MKL {
       static const char* name() { return "MKL"; }
@@ -148,15 +159,23 @@ struct Algo {
     struct Unblocked {};
     struct Blocked {
       struct Impl {
+        struct Host {};
+        struct Device {};
+
         // TODO:: for now hardwire the blocksizes; this should reflect
         // register blocking (not about team parallelism).
         // this mb should vary according to
         // - team policy (smaller) or range policy (bigger)
         // - space (cuda vs host)ß
         // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-        static constexpr KOKKOS_FUNCTION int mb() {
-          KOKKOS_IF_ON_HOST((return 4;))
-          KOKKOS_IF_ON_DEVICE((return 1;))
+        template <typename Where>
+          requires std::is_same_v<Where, Host> || std::is_same_v<Where, Device>
+        constexpr static KOKKOS_INLINE_FUNCTION int mb() {
+          if constexpr (std::is_same_v<Where, Host>) {
+            return 4;
+          } else {
+            return 1;
+          }
         }
       };  // Impl
 
@@ -166,7 +185,10 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-      [[deprecated]] static constexpr KOKKOS_FUNCTION int mb() { return Impl::mb(); }
+      [[deprecated("Do not use: implementation detail")]] static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return Impl::mb<Impl::Host>();))
+        KOKKOS_IF_ON_DEVICE((return Impl::mb<Impl::Device>();))
+      }
     };
     struct MKL {};
     struct CompactMKL {};
