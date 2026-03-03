@@ -2087,27 +2087,29 @@ kk_extract_diagonal_blocks_crsmatrix_sequential(const crsMat_t &A, std::vector<c
 }
 
 /**
- * @brief Apply RCB to the coordinates associated with the rows/columns of a crs matrix then perform matrix permutation
- * using the RCB ordering while extract the diagonal blocks corresponding to the RCB partitions. This is a blocking
- * function that runs on the host.
+ * @brief Extract the diagonal blocks corresponding to the RCB partitions from a crs matrix. This is a blocking
+ * function that runs on the host. This function must be called after applying RCB to the coordinates associated with
+ * the rows/columns of the crs matrix.
  *
  * @tparam crsMat_t The type of the CRS matrix.
- * @tparam coor_view_type The type of coordinate list.
  * @tparam perm_view_type The type of permutation array.
  * @param A [in] The square CrsMatrix. It is expected that column indices are in ascending order
- * @param coors [in] The 1/2/3-D coordinates associated with the rows/columns of A
+ * @param perm_rcb [in] The permutation array describing the mapping from the original ordering to RCB ordering
+ * @param reverse_perm_rcb [in] The reverse permutation array describing the mapping from the RCB ordering to original
+ * ordering
+ * @param partition_sizes_rcb [in] The vector containing sizes of RCB partitions
  * @param DiagBlk_v [out] The vector of the extracted CRS diagonal blocks
  * (1 <= the number of diagonal blocks <= A_nrows, which is also the number of partitions in the RCB and has to be a
  * power of 2)
- * @param perm_rcb [out] The permutation array describing the mapping from the original ordering to RCB ordering
  *
  * Usage example:
- *   kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A_in, coors, diagBlk_out, perm);
+ *   kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A_in, perm, reverse_perm, partition_sizes, diagBlk_out);
  */
-template <typename crsMat_t, typename coor_view_type, typename perm_view_type>
-void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A, coor_view_type &coors,
-                                                              std::vector<crsMat_t> &DiagBlk_v,
-                                                              perm_view_type &perm_rcb) {
+template <typename crsMat_t, typename perm_view_type>
+void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(
+    const crsMat_t &A, const perm_view_type &perm_rcb, const perm_view_type &reverse_perm_rcb,
+    const std::vector<typename crsMat_t::non_const_ordinal_type> partition_sizes_rcb,
+    std::vector<crsMat_t> &DiagBlk_v) {
   using row_map_type     = typename crsMat_t::row_map_type;
   using entries_type     = typename crsMat_t::index_type;
   using values_type      = typename crsMat_t::values_type;
@@ -2119,15 +2121,10 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A,
   using ordinal_type = typename crsMat_t::non_const_ordinal_type;
   using size_type    = typename crsMat_t::non_const_size_type;
 
-  static_assert(Kokkos::is_view_v<coor_view_type>,
-                "KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential: coor_view_type must be "
-                "a Kokkos::View.");
   static_assert(Kokkos::is_view_v<perm_view_type>,
                 "KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential: perm_view_type must be "
                 "a Kokkos::View.");
 
-  static_assert(static_cast<int>(coor_view_type::rank()) == 2,
-                "KokkosSparse::Impl::recursive_coordinate_bisection: coor_view_type must have rank 2.");
   static_assert(static_cast<int>(perm_view_type::rank()) == 1,
                 "KokkosSparse::Impl::recursive_coordinate_bisection: perm_view_type must have rank 1.");
 
@@ -2154,9 +2151,6 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A,
   if (n_blocks == 1) {
     // One block case: simply shallow copy A to DiagBlk_v[0]
     DiagBlk_v[0] = crsMat_t(A);
-    Kokkos::parallel_for(
-        Kokkos::RangePolicy<typename perm_view_type::device_type::execution_space>(0, static_cast<int>(A_nrows)),
-        KOKKOS_LAMBDA(const ordinal_type &i) { perm_rcb(i) = i; });
   } else {
     // n_blocks > 1
     if (A_nrows == 0) {
@@ -2179,13 +2173,28 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A,
         throw std::runtime_error(os.str());
       }
 
-      // Perform RCB on the coordinates associated with the row/col indices first
-      perm_view_type reverse_perm_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb"), A_nrows);
-      ordinal_type n_levels = static_cast<ordinal_type>(std::log2(static_cast<double>(n_blocks)) + 1);
-      std::vector<ordinal_type> partition_sizes =
-          KokkosGraph::Experimental::recursive_coordinate_bisection<coor_view_type, perm_view_type>(
-              coors, perm_rcb, reverse_perm_rcb, n_levels);
+      if (static_cast<ordinal_type>(partition_sizes_rcb.size()) != n_blocks) {
+        std::ostringstream os;
+        os << "The number of diagonal blocks (" << n_blocks << ") must be equal to the number of partitions ("
+           << partition_sizes_rcb.size() << ')';
+        throw std::runtime_error(os.str());
+      }
 
+      if (static_cast<ordinal_type>(perm_rcb.extent(0)) != A_nrows) {
+        std::ostringstream os;
+        os << "The size of the permutation array (" << perm_rcb.extent(0)
+           << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
+        throw std::runtime_error(os.str());
+      }
+
+      if (static_cast<ordinal_type>(reverse_perm_rcb.extent(0)) != A_nrows) {
+        std::ostringstream os;
+        os << "The size of the reverse permutation array (" << reverse_perm_rcb.extent(0)
+           << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
+        throw std::runtime_error(os.str());
+      }
+
+      // Permute and extract
       auto h_perm_rcb         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_rcb);
       auto h_reverse_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), reverse_perm_rcb);
 
@@ -2194,7 +2203,7 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A,
       ordinal_type blk_nrows, blk_ncols;  // Nrows, Ncols of i-th diagonal block
 
       for (ordinal_type i = 0; i < n_blocks; i++) {
-        blk_nrows     = partition_sizes[i];
+        blk_nrows     = partition_sizes_rcb[i];
         blk_ncols     = blk_nrows;
         blk_col_start = blk_row_start;
 

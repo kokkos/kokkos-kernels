@@ -95,6 +95,6 @@ Linear Solver / Preconditioners
 Utility Functions
 =================
 
-- Apply RCB to the coordinates associated with rows/columns of a crs matrix then extract the diagonal blocks corresponding to the RCB partitions
+- Extract the diagonal blocks corresponding to the RCB partitions from a crs matrix (this function must be called after applying RCB to the coordinates associated with the rows/columns of the crs matrix)
 
   - :doc:`extract_diagonal_blocks_rcb <sparse/extract_diagonal_blocks_rcb>`
