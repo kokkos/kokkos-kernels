@@ -47,15 +47,13 @@ typename coors_view_t::value_type generate_3d_coordinates_for_sparse_rows(int n_
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
-  using RowMapType       = Kokkos::View<size_type *, device>;
-  using EntriesType      = Kokkos::View<lno_t *, device>;
-  using ValuesType       = Kokkos::View<scalar_t *, device>;
-  using magnitude_t      = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
-  using CoorsViewType    = Kokkos::View<magnitude_t **, device>;
-  using PermViewType     = Kokkos::View<lno_t *, device>;
-  using CoorsViewType_hm = typename CoorsViewType::host_mirror_type;
-  using PermViewType_hm  = typename PermViewType::host_mirror_type;
-  using crsMat_t         = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using RowMapType    = Kokkos::View<size_type *, device>;
+  using EntriesType   = Kokkos::View<lno_t *, device>;
+  using ValuesType    = Kokkos::View<scalar_t *, device>;
+  using magnitude_t   = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
+  using CoorsViewType = Kokkos::View<magnitude_t **, device>;
+  using PermViewType  = Kokkos::View<lno_t *, device>;
+  using crsMat_t      = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 
   crsMat_t A;
   std::vector<crsMat_t> DiagBlks(nblocks);
@@ -63,8 +61,8 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
   // Generate coordinates
   lno_t n_coordinates = n_pts_per_dim * n_pts_per_dim * n_pts_per_dim;
   CoorsViewType coordinates(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coordinates"), n_coordinates, 3);
-  CoorsViewType_hm h_coordinates = Kokkos::create_mirror(coordinates);
-  magnitude_t dx = generate_3d_coordinates_for_sparse_rows<CoorsViewType_hm>(n_pts_per_dim, h_coordinates);
+  auto h_coordinates = Kokkos::create_mirror(coordinates);
+  magnitude_t dx     = generate_3d_coordinates_for_sparse_rows(n_pts_per_dim, h_coordinates);
   Kokkos::deep_copy(coordinates, h_coordinates);
 
   // Generate test matrix consisting of near interactions calculated based on coordinates
@@ -110,7 +108,13 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
 
   // Extract diagonal blocks
   PermViewType perm_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_rcb"), n_coordinates);
-  KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, coordinates, DiagBlks, perm_rcb);
+  PermViewType reverse_perm_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb"), n_coordinates);
+  lno_t n_levels = static_cast<lno_t>(std::log2(static_cast<double>(nblocks)) + 1);
+  std::vector<lno_t> partition_sizes =
+      KokkosGraph::Experimental::recursive_coordinate_bisection(coordinates, perm_rcb, reverse_perm_rcb, n_levels);
+
+  KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, perm_rcb, reverse_perm_rcb,
+                                                                               partition_sizes, DiagBlks);
 
   // Checking results
   lno_t numRows = 0;
@@ -123,12 +127,8 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
   ASSERT_EQ(numRows, nrows);
   ASSERT_EQ(numCols, nrows);
 
-  lno_t n_levels = static_cast<lno_t>(std::log2(static_cast<double>(nblocks)) + 1);
-  PermViewType_hm perm_rcb_ref(Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_rcb_ref"), n_coordinates);
-  PermViewType_hm reverse_perm_rcb_ref(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb_ref"),
-                                       n_coordinates);
-  std::vector<lno_t> partition_sizes = KokkosGraph::Experimental::recursive_coordinate_bisection(
-      h_coordinates, perm_rcb_ref, reverse_perm_rcb_ref, n_levels);
+  auto h_perm_rcb         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_rcb);
+  auto h_reverse_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), reverse_perm_rcb);
 
   std::map<lno_t, scalar_t> colIdx_Value_rcb;
 
@@ -146,12 +146,12 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
     for (lno_t ii = 0; ii < blk_size; ii++) {  // row loop in each block
       ASSERT_EQ(h_row_map_diagblk(ii), blk_nnz);
       colIdx_Value_rcb.clear();
-      lno_t origRow = reverse_perm_rcb_ref(blk_start + ii);  // get the original row idx of the reordered row idx, ii
+      lno_t origRow = h_reverse_perm_rcb(blk_start + ii);  // get the original row idx of the reordered row idx, ii
       for (size_type j = h_row_map(origRow); j < h_row_map(origRow + 1); j++) {
         lno_t origEi   = h_entries(j);
         scalar_t origV = h_values(j);
-        lno_t Ei       = perm_rcb_ref(origEi);  // get the reordered col idx of the
-                                                // original col idx, origEi
+        lno_t Ei       = h_perm_rcb(origEi);  // get the reordered col idx of the
+                                              // original col idx, origEi
         colIdx_Value_rcb[Ei] = origV;
       }
       for (typename std::map<lno_t, scalar_t>::iterator it = colIdx_Value_rcb.begin(); it != colIdx_Value_rcb.end();

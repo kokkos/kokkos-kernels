@@ -247,15 +247,9 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
 #endif
       if (useNative) {
         // Explicitly call the non-TPL SPMV implementation
-        std::string label = "KokkosSparse::spmv[NATIVE," +
-                            KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
-        Kokkos::Profiling::pushRegion(label);
         Impl::SPMV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal, false>::spmv(
             space, handle, mode, alpha, A_i, x_i, beta, y_i);
-        Kokkos::Profiling::popRegion();
       } else {
-        // note: the cuSPARSE spmv wrapper defines a profiling region, so one is
-        // not needed here.
         Impl::SPMV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal>::spmv(
             space, handle, mode, alpha, A_i, x_i, beta, y_i);
       }
@@ -281,19 +275,12 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
 #endif
 
       if (useNative) {
-        std::string label = "KokkosSparse::spmv[NATIVE,MV," +
-                            KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
-        Kokkos::Profiling::pushRegion(label);
-        return Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
-                             std::is_integral<typename AMatrix_Internal::value_type>::value, false>::spmv_mv(space,
-                                                                                                             handle,
-                                                                                                             mode,
-                                                                                                             alpha, A_i,
-                                                                                                             x_i, beta,
-                                                                                                             y_i);
-        Kokkos::Profiling::popRegion();
+        Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
+                      std::is_integral<typename AMatrix_Internal::value_type>::value, false>::spmv_mv(space, handle,
+                                                                                                      mode, alpha, A_i,
+                                                                                                      x_i, beta, y_i);
       } else {
-        return Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal>::spmv_mv(
+        Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal>::spmv_mv(
             space, handle, mode, alpha, A_i, x_i, beta, y_i);
       }
     }
@@ -323,12 +310,8 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
 #endif
       if (useNative) {
         // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
-        std::string label = "KokkosSparse::spmv[NATIVE,BSRMATRIX," +
-                            KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
-        Kokkos::Profiling::pushRegion(label);
         Impl::SPMV_BSRMATRIX<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
                              false>::spmv_bsrmatrix(space, handle, mode, alpha, A_i, x_i, beta, y_i);
-        Kokkos::Profiling::popRegion();
       } else {
         Impl::SPMV_BSRMATRIX<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal,
                              YVector_Internal>::spmv_bsrmatrix(space, handle, mode, alpha, A_i, x_i, beta, y_i);
@@ -351,13 +334,9 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
 #endif
       if (useNative) {
         // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
-        std::string label = "KokkosSparse::spmv[NATIVE,MV,BSMATRIX," +
-                            KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
-        Kokkos::Profiling::pushRegion(label);
         Impl::SPMV_MV_BSRMATRIX<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
                                 std::is_integral<typename AMatrix_Internal::const_value_type>::value,
                                 false>::spmv_mv_bsrmatrix(space, handle, mode, alpha, A_i, x_i, beta, y_i);
-        Kokkos::Profiling::popRegion();
       } else {
         Impl::SPMV_MV_BSRMATRIX<
             ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
