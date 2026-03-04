@@ -18,9 +18,7 @@ It is not used in Kokkos Kernels or Trilinos and will be removed in a future rel
 Deprecated in Kokkos Kernels 5.1.0
 ===================================
 
-``template <typename crsMat_t, typename coor_view_type, typename perm_view_type>
-  void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A, coor_view_type &coors,
-                                                                std::vector<crsMat_t> &DiagBlk_v, perm_view_type &perm_rcb);``
+``void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A, coor_view_type &coors, std::vector<crsMat_t> &DiagBlk_v, perm_view_type &perm_rcb);``
 ----------------------------------
 
 The ``kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential`` function with RCB run internally (i.e., with input ``coors``) is deprecated.
