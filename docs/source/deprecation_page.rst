@@ -19,7 +19,7 @@ Deprecated in Kokkos Kernels 5.1.0
 ===================================
 
 ``void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A, coor_view_type &coors, std::vector<crsMat_t> &DiagBlk_v, perm_view_type &perm_rcb);``
-----------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 The ``kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential`` function with RCB run internally (i.e., with input ``coors``) is deprecated.
 It is replaced with the function (same function name) which takes the pre-run RCB partition information as inputs.
