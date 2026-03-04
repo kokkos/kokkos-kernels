@@ -14,7 +14,7 @@ namespace Impl {
 // reciprocal
 //
 
-#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13)) && !defined(__NVCC__)
+#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
 #define KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE 1
 #else
 #define KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE 0
@@ -48,8 +48,14 @@ struct MV_Reciprocal_Functor {
   // disable vectorization in this function
   // work-around https://github.com/kokkos/kokkos-kernels/issues/2091
 #if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
+#ifdef __NVCC__
+#pragma nv_diag_suppress 1675
+#endif
 #pragma GCC push_options
 #pragma GCC optimize("no-tree-vectorize")
+#ifdef __NVCC__
+#pragma nv_diag_default 1675
+#endif
 #endif
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {
@@ -62,7 +68,13 @@ struct MV_Reciprocal_Functor {
   }
 };
 #if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
+#ifdef __NVCC__
+#pragma nv_diag_suppress 1675
+#endif
 #pragma GCC pop_options
+#ifdef __NVCC__
+#pragma nv_diag_default 1675
+#endif
 #endif
 
 // Entry-wise, in-place reciprocalolute value / magnitude: R(i,j) =
@@ -87,8 +99,14 @@ struct MV_ReciprocalSelf_Functor {
   // disable vectorization in this function
   // work-around https://github.com/kokkos/kokkos-kernels/issues/2091
 #if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
+#ifdef __NVCC__
+#pragma nv_diag_suppress 1675
+#endif
 #pragma GCC push_options
 #pragma GCC optimize("no-tree-vectorize")
+#ifdef __NVCC__
+#pragma nv_diag_default 1675
+#endif
 #endif
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {
@@ -101,7 +119,13 @@ struct MV_ReciprocalSelf_Functor {
   }
 };
 #if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
+#ifdef __NVCC__
+#pragma nv_diag_suppress 1675
+#endif
 #pragma GCC pop_options
+#ifdef __NVCC__
+#pragma nv_diag_default 1675
+#endif
 #endif
 
 // Single-vector, entry-wise reciprocalolute value / magnitude: R(i) =
