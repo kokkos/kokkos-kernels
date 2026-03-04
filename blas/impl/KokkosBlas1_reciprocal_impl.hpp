@@ -14,6 +14,7 @@ namespace Impl {
 // reciprocal
 //
 
+// clang-format off
 // Work-around for GCC 12/13 internal compiler bug triggered by
 // tree-vectorization on complex types.
 // See https://github.com/kokkos/kokkos-kernels/issues/2091
@@ -42,6 +43,7 @@ namespace Impl {
 #define KOKKOSKERNELS_IMPL_GCC_BUG_PUSH_NO_TREE_VECTORIZE
 #define KOKKOSKERNELS_IMPL_GCC_BUG_POP_NO_TREE_VECTORIZE
 #endif
+// clang-format on
 
 // Entry-wise reciprocalolute value / magnitude: R(i,j) = reciprocal(X(i,j)).
 template <class RMV, class XMV, class SizeType = typename RMV::size_type>
