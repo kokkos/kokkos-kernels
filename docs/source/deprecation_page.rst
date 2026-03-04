@@ -15,6 +15,9 @@ Deprecated in Kokkos Kernels 5.0.2
 The ``KOKKOSKERNELS_ENABLE_HOST_ONLY`` macro (defined in ``KokkosKernels_config.h`` when no device backend is enabled) is deprecated with no replacement.
 It is not used in Kokkos Kernels or Trilinos and will be removed in a future release.
 
+Deprecated in Kokkos Kernels 5.1.0
+===================================
+
 ``template <typename crsMat_t, typename coor_view_type, typename perm_view_type>
   void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A, coor_view_type &coors,
                                                                 std::vector<crsMat_t> &DiagBlk_v, perm_view_type &perm_rcb);``
