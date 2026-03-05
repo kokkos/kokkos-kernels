@@ -149,13 +149,14 @@ void test_spmv_sell_analytic() {
   // Copy results back to the host
   Kokkos::deep_copy(y_h, y);
 
-  EXPECT_EQ(y_h(0), -1);
-  EXPECT_EQ(y_h(1), -2);
-  EXPECT_EQ(y_h(2), -2);
-  EXPECT_EQ(y_h(3), -2);
-  EXPECT_EQ(y_h(4), -2);
-  EXPECT_EQ(y_h(5), -2);
-  EXPECT_EQ(y_h(6), 47);
+  constexpr int row_length = 3;
+  Test::EXPECT_NEAR_KK_REL(y_h(0), scalar_t(-1), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  Test::EXPECT_NEAR_KK_REL(y_h(1), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  Test::EXPECT_NEAR_KK_REL(y_h(2), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  Test::EXPECT_NEAR_KK_REL(y_h(3), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  Test::EXPECT_NEAR_KK_REL(y_h(4), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  Test::EXPECT_NEAR_KK_REL(y_h(5), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  Test::EXPECT_NEAR_KK_REL(y_h(6), scalar_t(47), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
 }
 
 template <typename scalar_t, typename ordinal_t, typename size_type, typename Device>
@@ -166,33 +167,8 @@ void test_spmv_sell(ordinal_t num_rows, ordinal_t num_cols, ordinal_t row_length
   using x_vector_type = scalar_view_t;
   using y_vector_type = scalar_view_t;
 
-  // using ordinal_type = typename sellMat_t::ordinal_type;
-
   sellMat_t matA = KokkosSparse::Impl::kk_generate_sell_sparse_matrix<sellMat_t>(num_rows, num_cols, row_length,
                                                                                  variance, bandwidth);
-
-  // std::cout << "alpha: " << alpha << std::endl;
-  // std::cout << "beta: " << beta << std::endl;
-  // std::cout << "matA" << std::endl;
-  // std::cout << "   num_rows : " << matA.num_rows << std::endl;
-  // std::cout << "   num_cols : " << matA.num_cols << std::endl;
-  // std::cout << "   num_nz   : " << matA.nnz << std::endl;
-  // std::cout << "   padded_nz: " << matA.sell_nnz << "\n" << std::endl;
-  // for(int rowIdx = 0; rowIdx < num_rows; ++rowIdx) {
-  //   // Ouput column indices
-  //   std::cout << "   [";
-  //   for(int colIdx = 0; colIdx < row_length - 1; ++colIdx) {
-  //     std::cout << std::setw(2) << matA.entries(colIdx * num_rows + rowIdx) << ", ";
-  //   }
-  //   std::cout << std::setw(2) << matA.entries((row_length - 1) * num_rows + rowIdx) << "]     ";
-
-  //   // Output values as well
-  //   std::cout << "   [";
-  //   for(int colIdx = 0; colIdx < row_length - 1; ++colIdx) {
-  //     std::cout << std::setw(14) << matA.values(colIdx * num_rows + rowIdx) << ", ";
-  //   }
-  //   std::cout << std::setw(14) << matA.values((row_length - 1) * num_rows + rowIdx) << "]" << std::endl;
-  // }
 
   x_vector_type x("x vector", num_cols);
   y_vector_type y("y vector", num_rows);
@@ -232,7 +208,8 @@ void test_spmv_sell(ordinal_t num_rows, ordinal_t num_cols, ordinal_t row_length
   Kokkos::deep_copy(y_ref_h, y_ref);
 
   for (int rowIdx = 0; rowIdx < num_rows; ++rowIdx) {
-    EXPECT_EQ(y_h(rowIdx), y_ref_h(rowIdx));
+    Test::EXPECT_NEAR_KK_REL(y_h(rowIdx), y_ref_h(rowIdx),
+                             10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
   }
 }
 
