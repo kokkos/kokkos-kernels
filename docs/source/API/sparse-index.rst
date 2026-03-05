@@ -29,6 +29,7 @@ API: Sparse
    sparse/spiluk_numeric
    sparse/par_ilut
 
+   sparse/extract_diagonal_blocks_rcb_deprecated.rst
    sparse/extract_diagonal_blocks_rcb.rst
 
 Containers
