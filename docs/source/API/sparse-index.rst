@@ -29,6 +29,7 @@ API: Sparse
    sparse/spiluk_numeric
    sparse/par_ilut
 
+   sparse/extract_diagonal_blocks_rcb_deprecated.rst
    sparse/extract_diagonal_blocks_rcb.rst
 
 Containers
@@ -94,6 +95,10 @@ Linear Solver / Preconditioners
 
 Utility Functions
 =================
+
+- Apply RCB to the coordinates associated with rows/columns of a crs matrix then extract the diagonal blocks corresponding to the RCB partitions (deprecated in the 5.1.0 release, and replaced by the one below)
+
+  - :doc:`extract_diagonal_blocks_rcb_deprecated <sparse/extract_diagonal_blocks_rcb_deprecated>`
 
 - Extract the diagonal blocks corresponding to the RCB partitions from a crs matrix (this function must be called after applying RCB to the coordinates associated with the rows/columns of the crs matrix)
 
