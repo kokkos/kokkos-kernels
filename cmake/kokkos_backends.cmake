@@ -16,3 +16,5 @@ check_kokkos_backend(OPENMPTARGET)
 check_kokkos_backend(CUDA)
 check_kokkos_backend(HIP)
 check_kokkos_backend(SYCL)
+
+include(cmake/kokkoskernels_backendFixes.cmake)
