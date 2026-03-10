@@ -11,7 +11,7 @@
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosBlas1_nrm2.hpp"
 
-int main() {
+int main(int argc, char *argv[]) {
   using Scalar  = KokkosKernels::default_scalar;
   using Ordinal = KokkosKernels::default_lno_t;
   using Offset  = KokkosKernels::default_size_type;
@@ -26,35 +26,63 @@ int main() {
   using Handle =
       KokkosKernels::Experimental::KokkosKernelsHandle<Offset, Ordinal, Scalar, ExecSpace, MemSpace, MemSpace>;
 
+  std::string filename;
+  Ordinal fillLevel = 2;
+
+  for (int i = 1; i < argc; ++i) {
+    const std::string token = argv[i];
+    if (token == "--filename" || token == "-f") {
+      filename = argv[++i];
+    } else if (token == "--fill-level" || token == "-l") {
+      fillLevel = std::atoi(argv[++i]);
+    } else if (token == "--help" || token == "-h") {
+      std::cout << "KokkosSparse spiluk example options:\n"
+                << "  --filename,   -f <file>  : Path to a MatrixMarket (.mtx) sparse matrix file\n"
+                << "                             (if omitted, a synthetic matrix is generated)\n"
+                << "  --fill-level, -l <level> : ILU(k) fill level (default: 2)\n"
+                << "  --help,       -h         : Print this message\n"
+                << "Example: ./KokkosSparse_example_spiluk -f mymatrix.mtx -l 3\n";
+      return 0;
+    }
+  }
+
   const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
   const Scalar one  = KokkosKernels::ArithTraits<Scalar>::one();
   int return_value  = 0;
 
   Kokkos::initialize();
   {
-    // Generate a diagonally dominant sparse matrix A to factorize.
-    // The matrix has 5000 rows and approximately 10 nonzeros per row.
-    const Ordinal numRows      = 5000;
-    Offset nnz                 = numRows * 10;
-    const Ordinal bandwidth    = static_cast<Ordinal>(0.05 * numRows);
-    const Scalar diagDominance = 2 * one;
-    Matrix A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Matrix>(numRows, numRows, nnz, 0,
-                                                                                         bandwidth, diagDominance);
+    Matrix A;
+    if (filename.empty()) {
+      const Ordinal numRows      = 5000;
+      Offset nnz                 = numRows * 10;
+      const Ordinal bandwidth    = static_cast<Ordinal>(0.05 * numRows);
+      const Scalar diagDominance = 2 * one;
+      std::cout << "No filename provided; generating a " << numRows << "x" << numRows
+                << " diagonally dominant sparse matrix.\n";
+      A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Matrix>(numRows, numRows, nnz, 0, bandwidth,
+                                                                                    diagDominance);
+    } else {
+      // Read the sparse matrix A from a MatrixMarket file.
+      std::cout << "Reading matrix from file: " << filename << "\n";
+      A = KokkosSparse::Impl::read_kokkos_crst_matrix<Matrix>(filename.c_str());
+    }
 
-    // spiluk requires the matrix entries to be sorted within each row.
+    // spiluk requires sorted column indices within each row.
     KokkosSparse::sort_crs_matrix(A);
 
-    // Level of fill controls how many additional nonzeros appear in L and U.
-    // Higher fill levels give a more accurate factorization at greater cost.
-    const Ordinal fillLevel = 2;
+    const Ordinal numRows = A.numRows();
 
-    // A conservative upper bound on the number of nonzeros in L and U.
-    // spiluk will resize these after the symbolic phase determines the exact count.
-    const Offset nnzLU = static_cast<Offset>(5) * nnz * (fillLevel + 1);
+    const Offset nnz = A.nnz();
+    std::cout << "Matrix: " << numRows << " x " << A.numCols() << ", nnz=" << nnz << "\n";
 
-    // Create the KokkosKernels handle and an spiluk sub-handle.
+    // Conservative upper bound for nnz in L and U.
+    constexpr Offset expand_fact = 5;
+    const Offset nnzLU           = expand_fact * nnz * (fillLevel + 1);
+
     // SEQLVLSCHD_TP1 uses a team-parallel level-scheduling algorithm.
     Handle kh;
+    // kh.create_spiluk_handle(KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP, numRows, nnzLU, nnzLU);
     kh.create_spiluk_handle(KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, numRows, nnzLU, nnzLU);
 
     // Allocate output row maps and initial entry arrays for L and U.
@@ -63,10 +91,7 @@ int main() {
     Entries L_entries("L_entries", kh.get_spiluk_handle()->get_nnzL());
     Entries U_entries("U_entries", kh.get_spiluk_handle()->get_nnzU());
 
-    // --- Symbolic phase ---
     // Determines the sparsity pattern (row maps and entries) of L and U.
-    // After this call, spiluk_handle->get_nnzL() and get_nnzU() hold
-    // the exact nonzero counts.
     KokkosSparse::spiluk_symbolic(&kh, fillLevel, A.graph.row_map, A.graph.entries, L_row_map, L_entries, U_row_map,
                                   U_entries);
 
@@ -78,7 +103,6 @@ int main() {
     Values L_values("L_values", kh.get_spiluk_handle()->get_nnzL());
     Values U_values("U_values", kh.get_spiluk_handle()->get_nnzU());
 
-    // --- Numeric phase ---
     // Computes the values of L and U given the sparsity pattern from symbolic.
     KokkosSparse::spiluk_numeric(&kh, fillLevel, A.graph.row_map, A.graph.entries, A.values, L_row_map, L_entries,
                                  L_values, U_row_map, U_entries, U_values);
