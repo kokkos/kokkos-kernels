@@ -74,6 +74,6 @@ Example
 
 .. literalinclude:: ../../../../example/sparse/KokkosSparse_example_spiluk.cpp
   :language: c++
-  :lines: 14-
+  :lines: 3-
 
 
