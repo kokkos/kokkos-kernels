@@ -85,7 +85,7 @@
 - Workaround issues with legacy View in Trilinos [\#2856](https://github.com/kokkos/kokkos-kernels/pull/2856)
 - swap: add missing include [\#2984](https://github.com/kokkos/kokkos-kernels/pull/2984)
 - Batched GEMM compatibility fixes [\#2829](https://github.com/kokkos/kokkos-kernels/pull/2829)
-
+- Fix batched getrs [\#2981](https://github.com/kokkos/kokkos-kernels/pull/2981)
 ## [5.0.2](https://github.com/kokkos/kokkos-kernels/tree/5.0.2)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.0.1...5.0.2)
 
