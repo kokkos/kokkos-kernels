@@ -111,7 +111,7 @@ void run_test_extract_diagonal_blocks_rcb_deprecated(lno_t n_pts_per_dim, lno_t 
 
   // Extract diagonal blocks
   PermViewType perm_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_rcb"), n_coordinates);
-  KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, coordinates, DiagBlks, perm_rcb);
+  KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, coordinates, DiagBlks, perm_rcb);
 
   // Checking results
   lno_t numRows = 0;
@@ -237,8 +237,8 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
   std::vector<lno_t> partition_sizes =
       KokkosGraph::Experimental::recursive_coordinate_bisection(coordinates, perm_rcb, reverse_perm_rcb, n_levels);
 
-  KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, perm_rcb, reverse_perm_rcb,
-                                                                               partition_sizes, DiagBlks);
+  KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, perm_rcb, reverse_perm_rcb,
+                                                                                       partition_sizes, DiagBlks);
 
   // Checking results
   lno_t numRows = 0;
