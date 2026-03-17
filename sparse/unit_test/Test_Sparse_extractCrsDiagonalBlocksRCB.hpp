@@ -111,7 +111,8 @@ void run_test_extract_diagonal_blocks_rcb_deprecated(lno_t n_pts_per_dim, lno_t 
 
   // Extract diagonal blocks
   PermViewType perm_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_rcb"), n_coordinates);
-  KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, coordinates, DiagBlks, perm_rcb);
+  KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, coordinates, DiagBlks,
+                                                                                       perm_rcb);
 
   // Checking results
   lno_t numRows = 0;

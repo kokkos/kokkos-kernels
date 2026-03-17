@@ -2027,8 +2027,8 @@ kk_extract_diagonal_blocks_crsmatrix_sequential(const crsMat_t &A, std::vector<c
         out_entries_hostmirror_type entries_h(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries_h"), blk_nnz);
         out_values_hostmirror_type values_h(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_h"), blk_nnz);
 
-        KokkosSparse::Impl::kk_extract_subblock_crsmatrix_sequential(A_entries_h, A_values_h, blk_col_start, blk_nrows, blk_nnz, first,
-                                                 last, row_map_h, entries_h, values_h);
+        KokkosSparse::Impl::kk_extract_subblock_crsmatrix_sequential(
+            A_entries_h, A_values_h, blk_col_start, blk_nrows, blk_nnz, first, last, row_map_h, entries_h, values_h);
 
         if (!UseRCMReordering) {
           Kokkos::deep_copy(row_map, row_map_h);
