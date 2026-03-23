@@ -56,6 +56,7 @@ src_doc_mapping = dict([
                         ('blas/src/KokkosBlas3_trmm.hpp', ['blas3_trmm.rst']),
                         ('blas/src/KokkosBlas3_trsm.hpp', ['blas3_trsm.rst']),
                         ('lapack/src/KokkosLapack_geqrf.hpp', ['docs/source/API/lapack/geqrf.rst']),
+                        ('lapack/src/KokkosLapack_potrf.hpp', ['docs/source/API/lapack/potrf.rst']),
                         ('lapack/src/KokkosLapack_gesv.hpp', ['docs/source/API/lapack/gesv.rst']),
                         ('lapack/src/KokkosLapack_svd.hpp', ['docs/source/API/lapack/gesvd.rst']),
                         ('lapack/src/KokkosLapack_trtri.hpp', ['docs/source/API/lapack/trtri.rst']),
