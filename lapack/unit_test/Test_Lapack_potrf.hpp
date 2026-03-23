@@ -25,11 +25,11 @@ namespace Test {
 ///   reconstructs L*L^H, and verifies it matches the original A.
 template <class AViewType, class Device>
 void impl_test_potrf(int N) {
-  using ScalarType    = typename AViewType::value_type;
-  using ats           = KokkosKernels::ArithTraits<ScalarType>;
-  using MagnitudeType = typename ats::mag_type;
+  using ScalarType      = typename AViewType::value_type;
+  using ats             = KokkosKernels::ArithTraits<ScalarType>;
+  using MagnitudeType   = typename ats::mag_type;
   using execution_space = typename Device::execution_space;
-  using ALayout_t     = typename AViewType::array_layout;
+  using ALayout_t       = typename AViewType::array_layout;
 
   // potrf TPL specializations require column-major storage (LayoutLeft)
   if constexpr (!std::is_same_v<ALayout_t, Kokkos::LayoutLeft>) return;
@@ -55,9 +55,15 @@ void impl_test_potrf(int N) {
     AViewType A("A", 3, 3);
     typename AViewType::host_mirror_type h_A = Kokkos::create_mirror_view(A);
 
-    h_A(0, 0) = ScalarType(4); h_A(0, 1) = ScalarType(2); h_A(0, 2) = ScalarType(2);
-    h_A(1, 0) = ScalarType(2); h_A(1, 1) = ScalarType(5); h_A(1, 2) = ScalarType(3);
-    h_A(2, 0) = ScalarType(2); h_A(2, 1) = ScalarType(3); h_A(2, 2) = ScalarType(6);
+    h_A(0, 0) = ScalarType(4);
+    h_A(0, 1) = ScalarType(2);
+    h_A(0, 2) = ScalarType(2);
+    h_A(1, 0) = ScalarType(2);
+    h_A(1, 1) = ScalarType(5);
+    h_A(1, 2) = ScalarType(3);
+    h_A(2, 0) = ScalarType(2);
+    h_A(2, 1) = ScalarType(3);
+    h_A(2, 2) = ScalarType(6);
     Kokkos::deep_copy(A, h_A);
 
     const int lda = static_cast<int>(A.stride(1));
@@ -75,11 +81,8 @@ void impl_test_potrf(int N) {
       for (int j = 0; (j <= i) && test_flag; ++j) {
         if (ats::abs(h_A(i, j) - refL[i][j]) > absTol) {
           std::cout << "potrf N=3 lower-triangle check FAILED"
-                    << " i=" << i << " j=" << j
-                    << " h_A(i,j)=" << h_A(i, j)
-                    << " expected=" << refL[i][j]
-                    << " |diff|=" << ats::abs(h_A(i, j) - refL[i][j])
-                    << " absTol=" << absTol << std::endl;
+                    << " i=" << i << " j=" << j << " h_A(i,j)=" << h_A(i, j) << " expected=" << refL[i][j]
+                    << " |diff|=" << ats::abs(h_A(i, j) - refL[i][j]) << " absTol=" << absTol << std::endl;
           test_flag = false;
         }
       }
@@ -118,8 +121,7 @@ void impl_test_potrf(int N) {
   typename AViewType::host_mirror_type h_A     = Kokkos::create_mirror_view(A);
   typename AViewType::host_mirror_type h_Aorig = Kokkos::create_mirror_view(Aorig);
 
-  Kokkos::fill_random(B, rand_pool,
-                      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarType>::max());
+  Kokkos::fill_random(B, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarType>::max());
   Kokkos::deep_copy(h_B, B);
 
   // h_A = B^H * B
@@ -166,11 +168,9 @@ void impl_test_potrf(int N) {
       MagnitudeType scale = std::max(ats::abs(h_Aorig(i, j)), MagnitudeType(1));
       if (diff > relTol * scale) {
         std::cout << "potrf reconstruction check FAILED"
-                  << " N=" << N << " i=" << i << " j=" << j
-                  << " Areconst(i,j)=" << h_Areconst(i, j)
-                  << " Aorig(i,j)=" << h_Aorig(i, j)
-                  << " |diff|=" << diff
-                  << " relTol*scale=" << relTol * scale << std::endl;
+                  << " N=" << N << " i=" << i << " j=" << j << " Areconst(i,j)=" << h_Areconst(i, j)
+                  << " Aorig(i,j)=" << h_Aorig(i, j) << " |diff|=" << diff << " relTol*scale=" << relTol * scale
+                  << std::endl;
         test_flag = false;
       }
     }
