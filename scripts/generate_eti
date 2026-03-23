@@ -5,7 +5,7 @@ This script generates stub files for new kernel functions with all necessary
 ETI (Explicit Template Instantiation) infrastructure. It is meant for
 developers adding new kernels to KokkosKernels.
 """
-import sys, argparse
+import sys, argparse, re
 from pathlib import Path
 
 # Template content for new ETI files
@@ -116,7 +116,6 @@ def parse_signature(signature_str):
             dim_str = 'c'
         else:
             # Try to match {digit}d{type}{mut}_{name}
-            import re
             match = re.match(r'(\d+d[sic](?:io|i|o))_(.+)$', spec)
             if not match:
                 raise ValueError(f"Invalid signature spec: '{spec}'. Expected format like '1dsi_x' or 'ci_trans' (name is REQUIRED after underscore)")
@@ -141,20 +140,10 @@ def parse_signature(signature_str):
             else:
                 cpp_type = "ScalarType"
             template_param = None  # Will use view's value_type
-        elif dim == 1:
-            # Vector/1D view - convert to CamelCase
-            base_name = _to_camel_case(name)
-            cpp_type = f"{base_name}ViewType"
-            template_param = cpp_type
-        elif dim == 2:
-            # Matrix/2D view - convert to CamelCase
-            base_name = _to_camel_case(name)
-            cpp_type = f"{base_name}ViewType"
-            template_param = cpp_type
         else:
-            # Higher dimensional tensor - convert to CamelCase
+            # View - convert to CamelCase
             base_name = _to_camel_case(name)
-            cpp_type = f"Tensor{dim}DViewType{base_name}"
+            cpp_type = f"{base_name}ViewType"
             template_param = cpp_type
 
         params.append(Param(
@@ -176,7 +165,7 @@ def build_template_params_list(params):
     if template_params:
         return ', '.join([f"class {p.template_param}" for p in template_params])
     else:
-        return "class DummyType = void"  # For functions with no view parameters
+        return "class ScalarType"  # For functions with no view parameters
 
 ###############################################################################
 def build_function_params_list(params):
@@ -187,19 +176,19 @@ def build_function_params_list(params):
 
     param_list_parts = []
     for p in params:
+        const_qual = "const " if p.is_const else ""
         if p.is_char:
             param_list_parts.append(f"const char {p.name}[]")
         elif p.is_scalar:
             # Use cpp_type directly for int scalars, otherwise use view's value_type
             if p.cpp_type == "int":
-                param_list_parts.append(f"const {p.cpp_type}& {p.name}")
+                param_list_parts.append(f"{const_qual}{p.cpp_type}& {p.name}")
             elif first_view:
-                param_list_parts.append(f"const typename {first_view.cpp_type}::value_type& {p.name}")
+                param_list_parts.append(f"{const_qual}typename {first_view.cpp_type}::value_type& {p.name}")
             else:
-                # Fallback if no views (should be rare)
-                param_list_parts.append(f"const double& {p.name}")
+                # Fallback if no views (should be rare), ScalarType will need to be adjusted by user
+                param_list_parts.append(f"{const_qual}ScalarType& {p.name}")
         else:
-            const_qual = "const " if p.is_const else ""
             param_list_parts.append(f"{const_qual}{p.cpp_type}& {p.name}")
 
     return ', '.join(param_list_parts)
@@ -400,7 +389,7 @@ def build_test_template_args(view_params):
     return ', '.join(view_types)
 
 ###############################################################################
-def generate_eti(package, function, directory, overwrite, signature, quiet=False):
+def generate_eti(package, function, directory, overwrite, signature, create_dirs=False, quiet=False):
 ###############################################################################
     """Generate stub ETI files for a new kernel function."""
     topdir = directory
@@ -461,13 +450,18 @@ def generate_eti(package, function, directory, overwrite, signature, quiet=False
     eti_cpp_dir   = package_root / "eti" / "generated_specializations_cpp" / function_lower
     eti_hpp_dir   = package_root / "eti" / "generated_specializations_hpp"
 
-    # Create directories if they don't exist
-    impl_dir.mkdir(parents=True, exist_ok=True)
-    src_dir.mkdir(parents=True, exist_ok=True)
-    tpls_dir.mkdir(parents=True, exist_ok=True)
-    unit_test_dir.mkdir(parents=True, exist_ok=True)
+    # We always allow for creation the eti_cpp_dir, since we don't expect that to exist yet
     eti_cpp_dir.mkdir(parents=True, exist_ok=True)
-    eti_hpp_dir.mkdir(parents=True, exist_ok=True)
+
+    # For dirs we do expect to already exist...
+    dirs = [impl_dir, src_dir, tpls_dir, unit_test_dir, eti_hpp_dir]
+    if create_dirs:
+        # Create all directories if they don't exist
+        for dirobj in dirs:
+            dirobj.mkdir(parents=True, exist_ok=True)
+    else:
+        for dirobj in dirs:
+            assert dirobj.is_dir(), f"Expected dir {dirobj} to exist. Use -c if you want the tool to create these for you"
 
     # Generate file names
     prefix        = f"Kokkos{package.capitalize()}{blas_level}"
@@ -955,6 +949,11 @@ Examples: '0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y' (axpby), 'ci_trans,0dsi_alpha,2d
         "-o", "--overwrite",
         action="store_true",
         help="Overwrite any existing files."
+    )
+    parser.add_argument(
+        "-c", "--create-dirs",
+        action="store_true",
+        help="Create missing directories if needed. Useful for testing."
     )
     parser.add_argument(
         "-q", "--quiet",

@@ -58,7 +58,7 @@ We chose this approach for the following reasons:
   1. It's harder to edit and maintain the equivalent code in CMake
   2. Ensures consistency across all kernel implementations
   3. Reduces boilerplate and potential errors when adding new kernels
-  4. Supports arbitrary function signatures via the -s flag
+  4. Supports arbitrary function signatures via the SIGNATURE positional argument
 
 This approach has the following considerations:
 

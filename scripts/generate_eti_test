@@ -127,7 +127,7 @@ class TestParseSignature(unittest.TestCase):
         result = gen.parse_signature("3dsi_tensor")
         self.assertEqual(len(result), 1)
 
-        self.check_param(result[0], 3, 's', 'i', 'tensor', 'Tensor3DViewTypeTensor', 'Tensor3DViewTypeTensor', True, False, False)
+        self.check_param(result[0], 3, 's', 'i', 'tensor', 'TensorViewType', 'TensorViewType', True, False, False)
 
     ###########################################################################
     def test_integer_types(self):
@@ -203,7 +203,7 @@ class TestBuildTemplateParamsList(unittest.TestCase):
         """Test building template params with scalars only (no views)."""
         params = gen.parse_signature("0dsi_alpha,0dsi_beta")
         result = gen.build_template_params_list(params)
-        self.assertEqual(result, "class DummyType = void")
+        self.assertEqual(result, "class ScalarType")
 
     ###########################################################################
     def test_mixed_params(self):
@@ -235,7 +235,7 @@ class TestBuildTemplateParamsList(unittest.TestCase):
         """Test building template params with 3D tensor."""
         params = gen.parse_signature("3dsi_tensor")
         result = gen.build_template_params_list(params)
-        self.assertEqual(result, "class Tensor3DViewTypeTensor")
+        self.assertEqual(result, "class TensorViewType")
 
     ###########################################################################
     def test_integer_views(self):
@@ -267,7 +267,7 @@ class TestBuildTemplateParamsList(unittest.TestCase):
         """Test building template params with only integer scalars."""
         params = gen.parse_signature("0dii_n,0dii_m")
         result = gen.build_template_params_list(params)
-        self.assertEqual(result, "class DummyType = void")
+        self.assertEqual(result, "class ScalarType")
 
     ###########################################################################
     def test_char_only(self):
@@ -275,7 +275,7 @@ class TestBuildTemplateParamsList(unittest.TestCase):
         """Test building template params with only char parameter."""
         params = gen.parse_signature("c_uplo")
         result = gen.build_template_params_list(params)
-        self.assertEqual(result, "class DummyType = void")
+        self.assertEqual(result, "class ScalarType")
 
 ###############################################################################
 class TestBuildFunctionParamsList(unittest.TestCase):
@@ -338,7 +338,7 @@ class TestBuildFunctionParamsList(unittest.TestCase):
         """Test building function params with 3D tensor."""
         params = gen.parse_signature("3dsi_tensor")
         result = gen.build_function_params_list(params)
-        self.assertEqual(result, "const Tensor3DViewTypeTensor& tensor")
+        self.assertEqual(result, "const TensorViewType& tensor")
 
     ###########################################################################
     def test_underscored_names(self):
@@ -374,7 +374,7 @@ class TestBuildFunctionParamsList(unittest.TestCase):
         params = gen.parse_signature("0dsi_alpha,0dsi_beta")
         result = gen.build_function_params_list(params)
         # Fallback to double when no views available
-        self.assertEqual(result, "const double& alpha, const double& beta")
+        self.assertEqual(result, "const ScalarType& alpha, const ScalarType& beta")
 
 ###############################################################################
 class TestBuildFunctionCallParamsList(unittest.TestCase):
@@ -535,7 +535,7 @@ class TestBuildApiParamList(unittest.TestCase):
         """Test API params with 3D tensor."""
         params = gen.parse_signature("3dsi_tensor")
         result = gen.build_api_param_list(params, include_exec_space=False)
-        self.assertIn("const Tensor3DViewTypeTensor& tensor", result)
+        self.assertIn("const TensorViewType& tensor", result)
 
     ###########################################################################
     def test_underscored_names(self):
@@ -866,7 +866,7 @@ class TestBuildTestSetupCode(unittest.TestCase):
         params = gen.parse_signature("0dii_count,1dsi_x")
         result = gen.build_test_setup_code(params)
 
-        self.assertIn("ScalarType count = AT::one()", result)
+        self.assertIn("int count = 0;", result)
 
     ###########################################################################
     def test_3d_tensor(self):
@@ -1179,7 +1179,7 @@ class TestBuildTestViewTypedefs(unittest.TestCase):
         view_params = [p for p in params if not p.is_scalar and not p.is_char]
         result = gen.build_test_view_typedefs(view_params, "LayoutRight")
 
-        self.assertIn("using Tensor3DViewTypeTensor = Kokkos::View<const Scalar***, Kokkos::LayoutRight, Device>;", result)
+        self.assertIn("using TensorViewType = Kokkos::View<const Scalar***, Kokkos::LayoutRight, Device>;", result)
 
     ###########################################################################
     def test_4d_view(self):
@@ -1189,7 +1189,7 @@ class TestBuildTestViewTypedefs(unittest.TestCase):
         view_params = [p for p in params if not p.is_scalar and not p.is_char]
         result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
 
-        self.assertIn("using Tensor4DViewTypeHyper = Kokkos::View<const Scalar****, Kokkos::LayoutLeft, Device>;", result)
+        self.assertIn("using HyperViewType = Kokkos::View<const Scalar****, Kokkos::LayoutLeft, Device>;", result)
 
     ###########################################################################
     def test_gemv_signature(self):
@@ -1261,7 +1261,7 @@ class TestBuildTestViewTypedefs(unittest.TestCase):
 
         self.assertIn("using XViewType = Kokkos::View<const Scalar*, Kokkos::LayoutLeft, Device>;", result)
         self.assertIn("using AViewType = Kokkos::View<const Scalar**, Kokkos::LayoutLeft, Device>;", result)
-        self.assertIn("using Tensor3DViewTypeT = Kokkos::View<const Scalar***, Kokkos::LayoutLeft, Device>;", result)
+        self.assertIn("using TViewType = Kokkos::View<const Scalar***, Kokkos::LayoutLeft, Device>;", result)
 
     ###########################################################################
     def test_multiple_outputs(self):
@@ -1340,7 +1340,7 @@ class TestBuildTestTemplateArgs(unittest.TestCase):
         view_params = [p for p in params if not p.is_scalar and not p.is_char]
         result = gen.build_test_template_args(view_params)
 
-        self.assertEqual(result, "Tensor3DViewTypeTensor, XViewType, Device")
+        self.assertEqual(result, "TensorViewType, XViewType, Device")
 
     ###########################################################################
     def test_underscored_names(self):
@@ -1391,7 +1391,7 @@ class TestBuildTestTemplateArgs(unittest.TestCase):
         view_params = [p for p in params if not p.is_scalar and not p.is_char]
         result = gen.build_test_template_args(view_params)
 
-        self.assertEqual(result, "XViewType, AViewType, Tensor3DViewTypeT, Device")
+        self.assertEqual(result, "XViewType, AViewType, TViewType, Device")
 
 ###############################################################################
 class TestGenerateEti(unittest.TestCase):
@@ -1409,7 +1409,7 @@ class TestGenerateEti(unittest.TestCase):
         # Create required directory structure
         for subdir in ['src', 'impl', 'tpls',
                       'eti/generated_specializations_hpp',
-                      'eti/generated_specializations_cpp/test_func',
+                      'eti/generated_specializations_cpp',
                       'unit_test']:
             (self.test_dir / 'blas' / subdir).mkdir(parents=True, exist_ok=True)
 
