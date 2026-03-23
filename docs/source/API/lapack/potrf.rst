@@ -1,0 +1,46 @@
+KokkosLapack::potrf
+###################
+
+Defined in header: :code:`KokkosLapack_potrf.hpp`
+
+.. code:: c++
+
+  template <class execution_space, class AViewType>
+  void potrf([[maybe_unused]] const execution_space& space, const char uplo[], const int& n, AViewType& A, const int& lda) {
+
+Computes the Cholesky factorization of a complex Hermitian positive definite matrix A :math:`A`
+
+.. math::
+
+    A = U**H * U,  if UPLO = 'U', or
+    A = L  * L**H,  if UPLO = 'L', A=Q*R
+
+where :math:`A` is the input matrix and is the the factor U or L from the Cholesky factorization :math:`A = U**H*U or A = L*L**H` on exit.
+
+1. Overwrites :math:`A` with the Cholesky factorization using the resources of ``space``.
+
+Parameters
+==========
+
+:space: execution space instance.
+
+:uplo: 'U':  Upper triangle of A is stored, else lower triangle
+
+:n: The order of the matrix A.  n >= 0.
+
+:A: The input matrix (lda,n) on entry and the Cholesky factorization on return.
+
+:lda: The leading dimension of matrix A.  lda >= max(1,n).
+
+
+Type Requirements
+=================
+
+- `ExecutionSpace` must be a Kokkos `execution space <https://kokkos.org/kokkos-core-wiki/API/core/execution_spaces.html>`_
+
+- `AMatrix` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 2 that satisfies
+
+Example
+=======
+
+TBD
