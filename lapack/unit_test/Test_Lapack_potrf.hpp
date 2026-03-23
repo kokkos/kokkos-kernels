@@ -19,7 +19,7 @@ void impl_test_potrf(int N) {
   // const MagnitudeType max_val = 10.0;
 
   view_stride_adapter<AViewType> A("A", N, N);  // TODO: Adjust dimensions
-  const char uplo[] = "N";                      // TODO: Set appropriate value
+  const char uplo[] = "L";                      // TODO: Set appropriate value
   const int lda     = N / 2;                    // TODO: Set appropriate value
 
   // Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);

@@ -41,7 +41,7 @@ namespace KokkosLapack {
 ///
 ///                       On exit, the factor U or L from the Cholesky
 ///                       factorization A = U**H*U or A = L*L**H.
-/// \param                The leading dimension of matrix A.  LDA >= max(1,N).
+/// \param lda            The leading dimension of matrix A.  LDA >= max(1,N).
 ///
 template <class execution_space, class AViewType>
 void potrf([[maybe_unused]] const execution_space& space, const char uplo[], const int& n, AViewType& A,
