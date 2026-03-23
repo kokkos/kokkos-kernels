@@ -13,23 +13,73 @@ struct potrf_tpl_spec_avail {
   enum : bool { value = false };
 };
 
-// TODO: Define TPL availability macros for your supported TPLs
-// Example for LAPACK/BLAS:
-/*
- #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
- #define KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE) \
-   template <class ExecSpace> \
-   struct potrf_tpl_spec_avail< \
-       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
-     enum : bool { value = true }; \
-   };
- #else
- #define KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)
- #endif
-*/
+// Generic Host side LAPACK (could be MKL or whatever)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+
+#define KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)                                           \
+  template <class ExecSpace>                                                                                          \
+  struct potrf_tpl_spec_avail<                                                                                        \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
+    enum : bool { value = true };                                                                                     \
+  };
+
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(double, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(float, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+#endif
 
 }  // namespace Impl
 }  // namespace KokkosLapack
+
+// CUSOLVER
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
+namespace KokkosLapack {
+namespace Impl {
+
+#define KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_CUSOLVER(SCALAR, LAYOUT, MEMSPACE)                                              \
+  template <>                                                                                                              \
+  struct potrf_tpl_spec_avail<                                                                                             \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {  \
+    enum : bool { value = true };                                                                                          \
+  };
+
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_CUSOLVER(double, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+
+#if defined(KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_CUSOLVER(double, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+#endif
+
+}  // namespace Impl
+}  // namespace KokkosLapack
+#endif  // CUSOLVER
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
+#include <rocsolver/rocsolver.h>
+
+namespace KokkosLapack {
+namespace Impl {
+
+#define KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_ROCSOLVER(SCALAR, LAYOUT, MEMSPACE)                                            \
+  template <>                                                                                                             \
+  struct potrf_tpl_spec_avail<                                                                                            \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {  \
+    enum : bool { value = true };                                                                                         \
+  };
+
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_ROCSOLVER(double, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_ROCSOLVER(float, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_ROCSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_ROCSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+
+}  // namespace Impl
+}  // namespace KokkosLapack
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
 
 #endif  // KOKKOSLAPACK_POTRF_TPL_SPEC_AVAIL_HPP_

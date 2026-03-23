@@ -66,6 +66,15 @@ void F77_BLAS_MANGLE(cgeqrf, CGEQRF)(const int*, const int*, std::complex<float>
                                      std::complex<float>*, int*, int*);
 void F77_BLAS_MANGLE(zgeqrf, ZGEQRF)(const int*, const int*, std::complex<double>*, const int*, std::complex<double>*,
                                      std::complex<double>*, int*, int*);
+
+///
+/// Potrf
+///
+
+void F77_BLAS_MANGLE(spotrf, SPOTRF)(const char*, const int*, float*, const int*, int*);
+void F77_BLAS_MANGLE(dpotrf, DPOTRF)(const char*, const int*, double*, const int*, int*);
+void F77_BLAS_MANGLE(cpotrf, CPOTRF)(const char*, const int*, std::complex<float>*, const int*, int*);
+void F77_BLAS_MANGLE(zpotrf, ZPOTRF)(const char*, const int*, std::complex<double>*, const int*, int*);
 }
 
 #define F77_FUNC_SGESV F77_BLAS_MANGLE(sgesv, SGESV)
@@ -87,6 +96,11 @@ void F77_BLAS_MANGLE(zgeqrf, ZGEQRF)(const int*, const int*, std::complex<double
 #define F77_FUNC_DGEQRF F77_BLAS_MANGLE(dgeqrf, DGEQRF)
 #define F77_FUNC_CGEQRF F77_BLAS_MANGLE(cgeqrf, CGEQRF)
 #define F77_FUNC_ZGEQRF F77_BLAS_MANGLE(zgeqrf, ZGEQRF)
+
+#define F77_FUNC_SPOTRF F77_BLAS_MANGLE(spotrf, SPOTRF)
+#define F77_FUNC_DPOTRF F77_BLAS_MANGLE(dpotrf, DPOTRF)
+#define F77_FUNC_CPOTRF F77_BLAS_MANGLE(cpotrf, CPOTRF)
+#define F77_FUNC_ZPOTRF F77_BLAS_MANGLE(zpotrf, ZPOTRF)
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
@@ -135,6 +149,16 @@ void HostLapack<float>::geqrf(const int m, const int n, float* a, const int lda,
   F77_FUNC_SGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 #endif
 }
+template <>
+int HostLapack<float>::potrf(const char uplo, const int n, float* a, const int lda) {
+  int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  spotrf_(&uplo, &n, a, &lda, &info);
+#else
+  F77_FUNC_SPOTRF(&uplo, &n, a, &lda, &info);
+#endif
+  return info;
+}
 
 ///
 /// double
@@ -176,6 +200,16 @@ void HostLapack<double>::geqrf(const int m, const int n, double* a, const int ld
 #else
   F77_FUNC_DGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 #endif
+}
+template <>
+int HostLapack<double>::potrf(const char uplo, const int n, double* a, const int lda) {
+  int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  dpotrf_(&uplo, &n, a, &lda, &info);
+#else
+  F77_FUNC_DPOTRF(&uplo, &n, a, &lda, &info);
+#endif
+  return info;
 }
 
 ///
@@ -222,6 +256,16 @@ void HostLapack<std::complex<float>>::geqrf(const int m, const int n, std::compl
   F77_FUNC_CGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 #endif
 }
+template <>
+int HostLapack<std::complex<float>>::potrf(const char uplo, const int n, std::complex<float>* a, const int lda) {
+  int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  cpotrf_(&uplo, &n, a, &lda, &info);
+#else
+  F77_FUNC_CPOTRF(&uplo, &n, a, &lda, &info);
+#endif
+  return info;
+}
 
 ///
 /// std::complex<double>
@@ -267,6 +311,16 @@ void HostLapack<std::complex<double>>::geqrf(const int m, const int n, std::comp
 #else
   F77_FUNC_ZGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 #endif
+}
+template <>
+int HostLapack<std::complex<double>>::potrf(const char uplo, const int n, std::complex<double>* a, const int lda) {
+  int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  zpotrf_(&uplo, &n, a, &lda, &info);
+#else
+  F77_FUNC_ZPOTRF(&uplo, &n, a, &lda, &info);
+#endif
+  return info;
 }
 
 }  // namespace Impl
