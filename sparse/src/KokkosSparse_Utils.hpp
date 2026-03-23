@@ -1902,6 +1902,10 @@ void kk_extract_subblock_crsmatrix_sequential(const entries_type &A_entries, con
   blk_row_map(blk_nrows) = blk_nnz;  // last element
 }
 
+}  // namespace Impl
+
+namespace Experimental {
+
 /**
  * @brief Extract the diagonal blocks out of a crs matrix.
  * This is a blocking function that runs on the host.
@@ -2011,7 +2015,7 @@ kk_extract_diagonal_blocks_crsmatrix_sequential(const crsMat_t &A, std::vector<c
         offset_view1d_type last(Kokkos::view_alloc(Kokkos::WithoutInitializing, "last"),
                                 blk_nrows);  // last position per row
 
-        kk_find_nnz_first_last_indices_subblock_crsmatrix_sequential(
+        KokkosSparse::Impl::kk_find_nnz_first_last_indices_subblock_crsmatrix_sequential(
             A_row_map_h, A_entries_h, blk_row_start, blk_col_start, blk_nrows, blk_ncols, blk_nnz, first, last);
 
         // Second round: extract
@@ -2023,8 +2027,8 @@ kk_extract_diagonal_blocks_crsmatrix_sequential(const crsMat_t &A, std::vector<c
         out_entries_hostmirror_type entries_h(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries_h"), blk_nnz);
         out_values_hostmirror_type values_h(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_h"), blk_nnz);
 
-        kk_extract_subblock_crsmatrix_sequential(A_entries_h, A_values_h, blk_col_start, blk_nrows, blk_nnz, first,
-                                                 last, row_map_h, entries_h, values_h);
+        KokkosSparse::Impl::kk_extract_subblock_crsmatrix_sequential(
+            A_entries_h, A_values_h, blk_col_start, blk_nrows, blk_nnz, first, last, row_map_h, entries_h, values_h);
 
         if (!UseRCMReordering) {
           Kokkos::deep_copy(row_map, row_map_h);
@@ -2423,7 +2427,7 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(
   }      // n_blocks > 1
 }
 
-}  // namespace Impl
+}  // namespace Experimental
 
 using Impl::isCrsGraphSorted;
 using Impl::removeCrsMatrixZeros;
