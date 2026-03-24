@@ -6,7 +6,7 @@
 
 /// \file Kokkos_InnerProductSpaceTraits.hpp
 /// \brief Declaration and definition of
-/// KokkosKernels::Details::InnerProductSpaceTraits
+/// Kokkos::Details::InnerProductSpaceTraits
 
 #include <KokkosKernels_InnerProductSpaceTraits.hpp>
 
