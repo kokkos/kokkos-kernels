@@ -35,7 +35,8 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
                 "KokkosBlas::nrm2_squared: "
                 "Both Vector inputs must have rank 1.");
 
-  typedef typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type mag_type;
+  typedef typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+      mag_type;
 
   typedef Kokkos::View<typename XVector::const_value_type*,
                        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
@@ -109,7 +110,8 @@ void nrm2_squared(const execution_space& space, const RV& R, const XMV& X,
   static_assert(((RV::rank == 0) && (XMV::rank == 1)) || ((RV::rank == 1) && (XMV::rank == 2)),
                 "KokkosBlas::nrm2_squared: "
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
-  typedef typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
+  typedef
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
   static_assert(std::is_same<typename RV::value_type, mag_type>::value,
                 "KokkosBlas::nrm2: R must have the magnitude type of"
                 "the xvectors value_type it is an output argument "

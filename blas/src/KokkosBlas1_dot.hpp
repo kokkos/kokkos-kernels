@@ -57,7 +57,8 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
                                         typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
                                         typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  using dot_type = typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type;
+  using dot_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type;
   // result_type is usually just dot_type, except:
   //  if dot_type is float, result_type is double
   //  if dot_type is complex<float>, result_type is complex<double>

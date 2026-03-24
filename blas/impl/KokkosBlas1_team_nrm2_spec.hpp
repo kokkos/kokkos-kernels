@@ -21,7 +21,8 @@ struct team_nrm2_tpl_spec_avail {
 // Unification and Specialization layer
 template <class TeamType, class XV, bool tpl_spec_avail = team_nrm2_tpl_spec_avail<XV>::value>
 struct TeamNrm2 {
-  typedef typename KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::mag_type mag_type;
+  typedef
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::mag_type mag_type;
   typedef KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
   typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
 
@@ -30,7 +31,8 @@ struct TeamNrm2 {
 
 template <class TeamType, class XV>
 struct TeamNrm2<TeamType, XV, false> {
-  typedef typename KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::mag_type mag_type;
+  typedef
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::mag_type mag_type;
   typedef KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
   typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
 
