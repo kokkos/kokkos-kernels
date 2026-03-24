@@ -75,6 +75,7 @@
 - Sparse - SpMV: removing cusparse < 11500 path [\#2888](https://github.com/kokkos/kokkos-kernels/pull/2888)
 
 ### Deprecations:
+- Deprecate old kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential interface [\#2980](https://github.com/kokkos/kokkos-kernels/pull/2980)
 - Deprecate KOKKOSKERNELS_ENABLE_HOST_ONLY [\#2971](https://github.com/kokkos/kokkos-kernels/pull/2971)
 - Deprecate `Level2::Blocked::mb` and `Level3::Blocked::mb` [\#2950](https://github.com/kokkos/kokkos-kernels/pull/2950)
 - Refactor KK debug guards [\#2917](https://github.com/kokkos/kokkos-kernels/pull/2917)
