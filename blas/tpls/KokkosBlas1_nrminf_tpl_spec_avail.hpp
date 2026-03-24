@@ -23,7 +23,7 @@ namespace Impl {
 #define KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)                                          \
   template <class ExecSpace>                                                                                      \
   struct nrminf_tpl_spec_avail<ExecSpace,                                                                         \
-                               Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
+                               Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
                                             LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                                Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,           \
                                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                            \

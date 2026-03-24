@@ -6,7 +6,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_ArithTraits.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -33,7 +33,7 @@ struct nrminf_eti_spec_avail {
 #define KOKKOSBLAS1_NRMINF_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                  \
   template <>                                                                                                     \
   struct nrminf_eti_spec_avail<EXEC_SPACE,                                                                        \
-                               Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
+                               Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
                                             LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                                Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,         \
                                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                            \
@@ -52,7 +52,7 @@ struct nrminf_eti_spec_avail {
   template <>                                                                                    \
   struct nrminf_eti_spec_avail<                                                                  \
       EXEC_SPACE,                                                                                \
-      Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, \
+      Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, \
                    Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,         \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
       Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \
@@ -169,7 +169,7 @@ struct NrmInf<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIB
 //
 #define KOKKOSBLAS1_NRMINF_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                    \
   extern template struct NrmInf<EXEC_SPACE,                                                                        \
-                                Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
+                                Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type,  \
                                              LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                                 Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,         \
                                              Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                            \
@@ -182,7 +182,7 @@ struct NrmInf<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIB
 //
 #define KOKKOSBLAS1_NRMINF_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                    \
   template struct NrmInf<EXEC_SPACE,                                                                               \
-                         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
+                         Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
                                       Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
                          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \
                                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                   \
@@ -198,7 +198,7 @@ struct NrmInf<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIB
 #define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)               \
   extern template struct NrmInf<                                                                 \
       EXEC_SPACE,                                                                                \
-      Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, \
+      Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, \
                    Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,         \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                 \
@@ -212,7 +212,7 @@ struct NrmInf<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIB
 //
 #define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                  \
   template struct NrmInf<EXEC_SPACE,                                                                                \
-                         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, \
+                         Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, \
                                       Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,         \
                                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
                          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \

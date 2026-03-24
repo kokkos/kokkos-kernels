@@ -23,7 +23,7 @@ namespace Impl {
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)                                                 \
   template <class ExecSpace>                                                                                           \
   struct nrm1_tpl_spec_avail<ExecSpace,                                                                                \
-                             Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
+                             Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
                                           Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
                              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                   \
@@ -44,7 +44,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, MEMSPACE)                                               \
   template <class ExecSpace>                                                                                           \
   struct nrm1_tpl_spec_avail<ExecSpace,                                                                                \
-                             Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
+                             Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
                                           Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
                              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                   \
@@ -64,7 +64,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutLef
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE)                                              \
   template <class ExecSpace>                                                                                           \
   struct nrm1_tpl_spec_avail<ExecSpace,                                                                                \
-                             Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
+                             Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
                                           Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
                              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                   \
@@ -87,7 +87,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutLe
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_MKL_SYCL(SCALAR, LAYOUT, MEMSPACE)                                             \
   template <class ExecSpace>                                                                                           \
   struct nrm1_tpl_spec_avail<ExecSpace,                                                                                \
-                             Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
+                             Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
                                           Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
                              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                   \
