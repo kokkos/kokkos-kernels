@@ -6,7 +6,7 @@
 
 #include <sstream>
 
-#include "Kokkos_InnerProductSpaceTraits.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
