@@ -659,8 +659,8 @@ void {function_lower}({api_param_list_no_exec}) {{
 namespace Kokkos{package.capitalize()} {{
 namespace Impl {{
 @{package_upper}{blas_level}_{function_upper}_ETI_INST_BLOCK@
-}} //IMPL
-}} //Kokkos
+}} // namespace Impl
+}} // namespace Kokkos{package.capitalize()}
 """
 
     # Generate ETI declaration hpp.in
@@ -669,8 +669,8 @@ namespace Impl {{
 namespace Kokkos{package.capitalize()} {{
 namespace Impl {{
 @{package_upper}{blas_level}_{function_upper}_ETI_DECL_BLOCK@
-}} //IMPL
-}} //Kokkos
+}} // namespace Impl
+}} // namespace Kokkos{package.capitalize()}
 #endif
 """
 
@@ -680,8 +680,8 @@ namespace Impl {{
 namespace Kokkos{package.capitalize()} {{
 namespace Impl {{
 @{package_upper}{blas_level}_{function_upper}_ETI_AVAIL_BLOCK@
-}} //IMPL
-}} //Kokkos
+}} // namespace Impl
+}} // namespace Kokkos{package.capitalize()}
 #endif
 """
 
