@@ -15,7 +15,7 @@ Computes the Cholesky factorization of a complex Hermitian positive definite mat
     A = U**H * U,  if UPLO = 'U', or
     A = L  * L**H,  if UPLO = 'L', A=Q*R
 
-where :math:`A` is the input matrix and is the the factor U or L from the Cholesky factorization :math:`A = U**H*U or A = L*L**H` on exit.
+where :math:`A` is the input matrix and is the factor U or L from the Cholesky factorization :math:`A = U**H*U or A = L*L**H` on exit.
 
 1. Overwrites :math:`A` with the Cholesky factorization using the resources of ``space``.
 

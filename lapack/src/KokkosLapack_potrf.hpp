@@ -9,6 +9,8 @@
 #include "Kokkos_Core.hpp"
 #include "KokkosLapack_potrf_spec.hpp"
 
+#include <type_traits>
+
 namespace KokkosLapack {
 
 /// \brief Computes the Cholesky factorization of a Hermitian positive definite matrix A.
@@ -43,6 +45,7 @@ void potrf(const execution_space& space, const char uplo[], AViewType& A) {
                 "KokkosLapack::potrf: execution_space must be a valid Kokkos execution space");
   static_assert(Kokkos::is_view<AViewType>::value, "KokkosLapack::potrf: AViewType must be a Kokkos::View");
   static_assert(static_cast<int>(AViewType::rank) == 2, "KokkosLapack::potrf: A must have rank 2.");
+  static_assert(!std::is_const_v<typename AViewType::value_type>, "A should not have const value type");
 
   if (A.extent(0) != A.extent(1)) {
     std::ostringstream os;
