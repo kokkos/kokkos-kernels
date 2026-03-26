@@ -18,13 +18,16 @@
 
 namespace Test {
 
-/// \brief Test Cholesky factorization (potrf) for a given matrix size.
+/// \brief Test Cholesky factorization (potrf) for a given matrix size and uplo.
 ///
 /// For N==3: uses a small SPD matrix with known Cholesky factors.
 /// For other N: constructs A = B^H*B + N*I (strictly SPD), runs potrf,
-///   reconstructs L*L^H, and verifies it matches the original A.
+///   reconstructs and verifies it matches the original A.
+///
+/// uplo='L': A = L * L^H  (lower triangular)
+/// uplo='U': A = U^H * U  (upper triangular)
 template <class AViewType, class Device>
-void impl_test_potrf(int N) {
+void impl_test_potrf(int N, const char uplo) {
   using ScalarType      = typename AViewType::value_type;
   using ats             = KokkosKernels::ArithTraits<ScalarType>;
   using MagnitudeType   = typename ats::mag_type;
@@ -33,6 +36,8 @@ void impl_test_potrf(int N) {
 
   // potrf TPL specializations require column-major storage (LayoutLeft)
   if constexpr (!std::is_same_v<ALayout_t, Kokkos::LayoutLeft>) return;
+
+  const char uplo_arr[] = {uplo, '\0'};
 
   // ********************************************************************
   // Absolute tolerance for the N==3 known-value check
@@ -45,11 +50,17 @@ void impl_test_potrf(int N) {
   // ====================================================================
   // Small test with known values (N == 3)
   //
-  //   A = | 4  2  2 |    =>   L = | 2  0  0 |
-  //       | 2  5  3 |             | 1  2  0 |
-  //       | 2  3  6 |             | 1  1  2 |
+  //   A = | 4  2  2 |
+  //       | 2  5  3 |
+  //       | 2  3  6 |
   //
-  //   Verify: L * L^H == A (exact for integer entries)
+  //   L (uplo='L'):  L = | 2  0  0 |    A = L * L^H
+  //                      | 1  2  0 |
+  //                      | 1  1  2 |
+  //
+  //   U (uplo='U'):  U = | 2  1  1 |    A = U^H * U
+  //                      | 0  2  1 |
+  //                      | 0  0  2 |
   // ====================================================================
   if (N == 3) {
     AViewType A("A", 3, 3);
@@ -66,23 +77,39 @@ void impl_test_potrf(int N) {
     h_A(2, 2) = ScalarType(6);
     Kokkos::deep_copy(A, h_A);
 
-    KokkosLapack::potrf("L", A);
+    KokkosLapack::potrf(uplo_arr, A);
     Kokkos::fence();
     Kokkos::deep_copy(h_A, A);
 
-    // Expected lower Cholesky factor (upper triangle is unchanged / not checked)
-    const ScalarType refL[3][3] = {{ScalarType(2), ScalarType(0), ScalarType(0)},
-                                   {ScalarType(1), ScalarType(2), ScalarType(0)},
-                                   {ScalarType(1), ScalarType(1), ScalarType(2)}};
-
     bool test_flag = true;
-    for (int i = 0; (i < 3) && test_flag; ++i) {
-      for (int j = 0; (j <= i) && test_flag; ++j) {
-        if (ats::abs(h_A(i, j) - refL[i][j]) > absTol) {
-          std::cout << "potrf N=3 lower-triangle check FAILED"
-                    << " i=" << i << " j=" << j << " h_A(i,j)=" << h_A(i, j) << " expected=" << refL[i][j]
-                    << " |diff|=" << ats::abs(h_A(i, j) - refL[i][j]) << " absTol=" << absTol << std::endl;
-          test_flag = false;
+    if (uplo == 'L' || uplo == 'l') {
+      // Expected lower Cholesky factor; check lower triangle only
+      const ScalarType refL[3][3] = {{ScalarType(2), ScalarType(0), ScalarType(0)},
+                                     {ScalarType(1), ScalarType(2), ScalarType(0)},
+                                     {ScalarType(1), ScalarType(1), ScalarType(2)}};
+      for (int i = 0; (i < 3) && test_flag; ++i) {
+        for (int j = 0; (j <= i) && test_flag; ++j) {
+          if (ats::abs(h_A(i, j) - refL[i][j]) > absTol) {
+            std::cout << "potrf('L') N=3 lower-triangle check FAILED"
+                      << " i=" << i << " j=" << j << " h_A(i,j)=" << h_A(i, j) << " expected=" << refL[i][j]
+                      << " |diff|=" << ats::abs(h_A(i, j) - refL[i][j]) << " absTol=" << absTol << std::endl;
+            test_flag = false;
+          }
+        }
+      }
+    } else {
+      // Expected upper Cholesky factor; check upper triangle only
+      const ScalarType refU[3][3] = {{ScalarType(2), ScalarType(1), ScalarType(1)},
+                                     {ScalarType(0), ScalarType(2), ScalarType(1)},
+                                     {ScalarType(0), ScalarType(0), ScalarType(2)}};
+      for (int i = 0; (i < 3) && test_flag; ++i) {
+        for (int j = i; (j < 3) && test_flag; ++j) {
+          if (ats::abs(h_A(i, j) - refU[i][j]) > absTol) {
+            std::cout << "potrf('U') N=3 upper-triangle check FAILED"
+                      << " i=" << i << " j=" << j << " h_A(i,j)=" << h_A(i, j) << " expected=" << refU[i][j]
+                      << " |diff|=" << ats::abs(h_A(i, j) - refU[i][j]) << " absTol=" << absTol << std::endl;
+            test_flag = false;
+          }
         }
       }
     }
@@ -96,9 +123,9 @@ void impl_test_potrf(int N) {
   //  1. Fill B with random values.
   //  2. Compute A = B^H * B + N * I  (strictly Hermitian positive definite).
   //  3. Save Aorig = A.
-  //  4. Factorize: potrf("L", A)  ->  A lower triangle = L.
-  //  5. Zero A upper triangle to get L, then compute Areconst = L * L^H.
-  //  6. Verify Areconst ≈ Aorig (lower triangle).
+  //  4. Factorize: potrf(uplo, A)  ->  triangular factor stored in A.
+  //  5. Zero the unused triangle to isolate the factor.
+  //  6. Reconstruct: L*L^H (lower) or U^H*U (upper) and verify vs Aorig.
   // ====================================================================
 
   // Relative tolerance: accumulated error scales with N
@@ -135,39 +162,42 @@ void impl_test_potrf(int N) {
   Kokkos::deep_copy(Aorig, h_Aorig);
 
   // ----------------------------------------------------------------
-  // Factorize A = L * L^H  (potrf overwrites lower triangle of A with L)
+  // Factorize
   // ----------------------------------------------------------------
-  KokkosLapack::potrf("L", A);
+  KokkosLapack::potrf(uplo_arr, A);
   Kokkos::fence();
   Kokkos::deep_copy(h_A, A);
 
   // ----------------------------------------------------------------
-  // Extract L: zero out the upper triangle of h_A
+  // Isolate the triangular factor and reconstruct
   // ----------------------------------------------------------------
-  for (int i = 0; i < N; ++i) {
-    for (int j = i + 1; j < N; ++j) {
-      h_A(i, j) = ats::zero();
-    }
+  typename AViewType::host_mirror_type h_Areconst("Areconst", N, N);
+  if (uplo == 'L' || uplo == 'l') {
+    // Zero strict upper triangle to isolate L
+    for (int i = 0; i < N; ++i)
+      for (int j = i + 1; j < N; ++j) h_A(i, j) = ats::zero();
+    // Reconstruct: L * L^H
+    KokkosBlas::gemm("N", "C", ScalarType(1), h_A, h_A, ScalarType(0), h_Areconst);
+  } else {
+    // Zero strict lower triangle to isolate U
+    for (int i = 0; i < N; ++i)
+      for (int j = 0; j < i; ++j) h_A(i, j) = ats::zero();
+    // Reconstruct: U^H * U
+    KokkosBlas::gemm("C", "N", ScalarType(1), h_A, h_A, ScalarType(0), h_Areconst);
   }
 
   // ----------------------------------------------------------------
-  // Reconstruct: h_Areconst = L * L^H
-  // ----------------------------------------------------------------
-  typename AViewType::host_mirror_type h_Areconst("Areconst", N, N);
-  KokkosBlas::gemm("N", "C", ScalarType(1), h_A, h_A, ScalarType(0), h_Areconst);
-
-  // ----------------------------------------------------------------
-  // Verify lower triangle: |h_Areconst(i,j) - h_Aorig(i,j)| / |h_Aorig(i,j)| < relTol
+  // Verify: |Areconst(i,j) - Aorig(i,j)| / max(|Aorig(i,j)|, 1) < relTol
   // ----------------------------------------------------------------
   bool test_flag = true;
   for (int i = 0; (i < N) && test_flag; ++i) {
-    for (int j = 0; (j <= i) && test_flag; ++j) {
+    for (int j = 0; (j < N) && test_flag; ++j) {
       MagnitudeType diff  = ats::abs(h_Areconst(i, j) - h_Aorig(i, j));
       MagnitudeType scale = std::max(ats::abs(h_Aorig(i, j)), MagnitudeType(1));
       if (diff > relTol * scale) {
-        std::cout << "potrf reconstruction check FAILED"
-                  << " N=" << N << " i=" << i << " j=" << j << " Areconst(i,j)=" << h_Areconst(i, j)
-                  << " Aorig(i,j)=" << h_Aorig(i, j) << " |diff|=" << diff << " relTol*scale=" << relTol * scale
+        std::cout << "potrf('" << uplo << "') reconstruction check FAILED"
+                  << " N=" << N << " i=" << i << " j=" << j << " Areconst=" << h_Areconst(i, j)
+                  << " Aorig=" << h_Aorig(i, j) << " |diff|=" << diff << " relTol*scale=" << relTol * scale
                   << std::endl;
         test_flag = false;
       }
@@ -184,9 +214,12 @@ void test_potrf() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   using AViewType = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
 
-  Test::impl_test_potrf<AViewType, Device>(3);
-  Test::impl_test_potrf<AViewType, Device>(10);
-  Test::impl_test_potrf<AViewType, Device>(100);
+  Test::impl_test_potrf<AViewType, Device>(3, 'L');
+  Test::impl_test_potrf<AViewType, Device>(10, 'L');
+  Test::impl_test_potrf<AViewType, Device>(100, 'L');
+  Test::impl_test_potrf<AViewType, Device>(3, 'U');
+  Test::impl_test_potrf<AViewType, Device>(10, 'U');
+  Test::impl_test_potrf<AViewType, Device>(100, 'U');
 #endif
 }
 

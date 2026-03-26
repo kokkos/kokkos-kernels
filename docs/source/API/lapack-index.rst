@@ -79,11 +79,11 @@ Below are tables summarizing the currently supported function calls and third pa
      -
    * - potrf
      - :doc:`potrf <lapack/potrf>`
-     - 
-     - 
-     - 
-     - 
-     - 
+     - --
+     - X
+     - X
+     - X
+     - --
    * - ungqr
      - 
      - 

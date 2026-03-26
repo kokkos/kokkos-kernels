@@ -27,7 +27,7 @@ namespace KokkosLapack {
 /// is enabled.
 ///
 /// \tparam execution_space The space where the kernel will run.
-/// \tparam AViewType [in] Type of matrix A, as a 2-D Kokkos::View
+/// \tparam AViewType [in] Type of matrix A, as a 2-D Kokkos::View (LayoutLeft!)
 ///
 /// \param space [in] Execution space instance used to specify how to execute
 ///                   the potrf kernels.
@@ -46,6 +46,10 @@ void potrf(const execution_space& space, const char uplo[], AViewType& A) {
   static_assert(Kokkos::is_view<AViewType>::value, "KokkosLapack::potrf: AViewType must be a Kokkos::View");
   static_assert(static_cast<int>(AViewType::rank) == 2, "KokkosLapack::potrf: A must have rank 2.");
   static_assert(!std::is_const_v<typename AViewType::value_type>, "A should not have const value type");
+  static_assert(std::is_same_v<typename AViewType::array_layout, Kokkos::LayoutLeft>,
+                "KokkosLapack::potrf: A must have Kokkos::LayoutLeft (column-major) layout, "
+                "as required by LAPACK/cuSOLVER/rocSOLVER.");
+
 
   if (A.extent(0) != A.extent(1)) {
     std::ostringstream os;

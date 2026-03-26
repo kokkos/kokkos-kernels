@@ -41,7 +41,7 @@ Type Requirements
 - `AMatrix` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 2 that satisfies:
   - ``AMatrix::rank == 2``, i.e., ``AMatrix`` represents a matrix,
   - ``AMatrix::value_type`` is a supported scalar type (for example, ``float``, ``double``, or a corresponding ``Kokkos::complex`` type),
-  - ``AMatrix::array_layout`` is either ``Kokkos::LayoutLeft`` or ``Kokkos::LayoutRight``,
+  - ``AMatrix::array_layout`` is ``Kokkos::LayoutLeft``,
   - the memory space of ``AMatrix`` is accessible from ``ExecutionSpace``, i.e. ``Kokkos::SpaceAccessibility<ExecutionSpace, typename AMatrix::memory_space>::accessible`` is ``true``.
 
 Example
