@@ -6,6 +6,7 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosLapack {
 namespace Impl {
