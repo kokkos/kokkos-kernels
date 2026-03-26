@@ -38,7 +38,7 @@
 - Transpose changes [\#2904](https://github.com/kokkos/kokkos-kernels/pull/2904)
 
 #### TPL support
-- Lapack: adding overall accelerate support [\#2940](https://github.com/kokkos/kokkos-kernels/pull/2940)
+- Lapack: adding Apple Accelerate support [\#2940](https://github.com/kokkos/kokkos-kernels/pull/2940)
 
 ### Build System
 - Fix FindTPLCUBLAS.cmake and friends [\#2956](https://github.com/kokkos/kokkos-kernels/pull/2956)
