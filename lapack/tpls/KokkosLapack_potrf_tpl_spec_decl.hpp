@@ -5,6 +5,7 @@
 #define KOKKOSLAPACK_POTRF_TPL_SPEC_DECL_HPP_
 
 #include <KokkosKernels_ArithTraits.hpp>
+#include <sstream>
 
 namespace KokkosLapack {
 namespace Impl {
@@ -48,7 +49,12 @@ void lapackPotrfWrapper(const ExecutionSpace& /* space */, const char uplo[], co
   }
 
   if (info != 0) {
-    Kokkos::abort("KokkosLapack::potrf: LAPACK potrf failed with nonzero info");
+    std::ostringstream os;
+    if (info < 0)
+      os << "KokkosLapack::potrf: LAPACK potrf: argument " << -info << " had an illegal value";
+    else
+      os << "KokkosLapack::potrf: LAPACK potrf: the leading minor of order " << info << " is not positive definite";
+    Kokkos::abort(os.str().c_str());
   }
 }
 
@@ -143,6 +149,17 @@ void cusolverPotrfWrapper(const Kokkos::Cuda& space, const char uplo[], const in
                          reinterpret_cast<cuDoubleComplex*>(Workspace.data()), lwork, info.data()));
   }
   KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSetStream(s.handle, NULL));
+  space.fence();
+  auto h_info = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, info);
+  if (h_info() != 0) {
+    std::ostringstream os;
+    if (h_info() < 0)
+      os << "KokkosLapack::potrf: cuSOLVER potrf: argument " << -h_info() << " had an illegal value";
+    else
+      os << "KokkosLapack::potrf: cuSOLVER potrf: the leading minor of order " << h_info()
+         << " is not positive definite";
+    Kokkos::abort(os.str().c_str());
+  }
 }
 
 #define KOKKOSLAPACK_POTRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                    \
@@ -216,6 +233,17 @@ void rocsolverPotrfWrapper(const Kokkos::HIP& space, const char uplo[], const in
         rocsolver_zpotrf(s.handle, uplo_t, n_, reinterpret_cast<rocblas_double_complex*>(A.data()), lda_, info.data()));
   }
   KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));
+  space.fence();
+  auto h_info = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, info);
+  if (h_info() != 0) {
+    std::ostringstream os;
+    if (h_info() < 0)
+      os << "KokkosLapack::potrf: rocSOLVER potrf: argument " << -h_info() << " had an illegal value";
+    else
+      os << "KokkosLapack::potrf: rocSOLVER potrf: the leading minor of order " << h_info()
+         << " is not positive definite";
+    Kokkos::abort(os.str().c_str());
+  }
 }
 
 #define KOKKOSLAPACK_POTRF_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                        \
