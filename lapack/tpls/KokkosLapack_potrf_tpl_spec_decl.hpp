@@ -37,11 +37,16 @@ void lapackPotrfWrapper(const char uplo[], const int& n, AViewType& A, const int
   static_assert(std::is_same_v<Layout_t, Kokkos::LayoutLeft>,
                 "KokkosLapack - potrf: A needs to have a Kokkos::LayoutLeft");
 
+  int info = 0;
   if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
     using MagType = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
     HostLapack<std::complex<MagType>>::potrf(uplo[0], n, reinterpret_cast<std::complex<MagType>*>(A.data()), lda);
   } else {
     HostLapack<Scalar>::potrf(uplo[0], n, A.data(), lda);
+  }
+
+  if (info != 0) {
+    Kokkos::abort("KokkosLapack::potrf: LAPACK potrf failed with nonzero info");
   }
 }
 

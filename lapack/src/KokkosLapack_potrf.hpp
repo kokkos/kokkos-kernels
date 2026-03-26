@@ -10,9 +10,9 @@
 
 namespace KokkosLapack {
 
-/// \brief Computes the Cholesky factorization of a complex Hermitian positive definite matrix A.
+/// \brief Computes the Cholesky factorization of a Hermitian positive definite matrix A.
 ///
-/// CPOTRF computes the Cholesky factorization of a complex Hermitian
+/// POTRF computes the Cholesky factorization of a Hermitian
 /// positive definite matrix A.
 ///
 /// The factorization has the form
