@@ -30,8 +30,9 @@ inline void potrf_print_specialization() {
 namespace KokkosLapack {
 namespace Impl {
 
-template <class AViewType>
-void lapackPotrfWrapper(const char uplo[], const int& n, AViewType& A, const int& lda) {
+template <class ExecutionSpace, class AViewType>
+void lapackPotrfWrapper(const ExecutionSpace& /* space */, const char uplo[], const int& n, AViewType& A,
+                        const int& lda) {
   using Scalar   = typename AViewType::non_const_value_type;
   using Layout_t = typename AViewType::array_layout;
   static_assert(std::is_same_v<Layout_t, Kokkos::LayoutLeft>,
@@ -40,9 +41,10 @@ void lapackPotrfWrapper(const char uplo[], const int& n, AViewType& A, const int
   int info = 0;
   if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
     using MagType = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
-    HostLapack<std::complex<MagType>>::potrf(uplo[0], n, reinterpret_cast<std::complex<MagType>*>(A.data()), lda);
+    info =
+        HostLapack<std::complex<MagType>>::potrf(uplo[0], n, reinterpret_cast<std::complex<MagType>*>(A.data()), lda);
   } else {
-    HostLapack<Scalar>::potrf(uplo[0], n, A.data(), lda);
+    info = HostLapack<Scalar>::potrf(uplo[0], n, A.data(), lda);
   }
 
   if (info != 0) {
@@ -53,16 +55,17 @@ void lapackPotrfWrapper(const char uplo[], const int& n, AViewType& A, const int
 #define KOKKOSLAPACK_POTRF_LAPACK(SCALAR, LAYOUT, EXECSPACE, MEM_SPACE)                                                \
   template <>                                                                                                          \
   struct Potrf<                                                                                                        \
+      EXECSPACE,                                                                                                       \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       true,                                                                                                            \
-      potrf_eti_spec_avail<Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                        \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
+      potrf_eti_spec_avail<EXECSPACE, Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,             \
+                                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                 \
     using AViewType =                                                                                                  \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
-    static void potrf(const char uplo[], const int& n, AViewType& A, const int& lda) {                                 \
+    static void potrf(const EXECSPACE& space, const char uplo[], const int& n, AViewType& A, const int& lda) {         \
       Kokkos::Profiling::pushRegion("KokkosLapack::potrf[TPL_LAPACK," #SCALAR "]");                                    \
       potrf_print_specialization<AViewType>();                                                                         \
-      lapackPotrfWrapper(uplo, n, A, lda);                                                                             \
+      lapackPotrfWrapper(space, uplo, n, A, lda);                                                                      \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -100,7 +103,7 @@ namespace KokkosLapack {
 namespace Impl {
 
 template <class AViewType>
-void cusolverPotrfWrapper(const char uplo[], const int& n, AViewType& A, const int& lda) {
+void cusolverPotrfWrapper(const Kokkos::Cuda& space, const char uplo[], const int& n, AViewType& A, const int& lda) {
   using memory_space = typename AViewType::memory_space;
   using Scalar       = typename AViewType::non_const_value_type;
 
@@ -109,6 +112,7 @@ void cusolverPotrfWrapper(const char uplo[], const int& n, AViewType& A, const i
   int lwork = 0;
   Kokkos::View<int, memory_space> info("potrf info");
   CudaLapackSingleton& s = CudaLapackSingleton::singleton();
+  KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSetStream(s.handle, space.cuda_stream()));
 
   if constexpr (std::is_same_v<Scalar, float>) {
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSpotrf_bufferSize(s.handle, uplo_t, n, A.data(), lda, &lwork));
@@ -138,23 +142,26 @@ void cusolverPotrfWrapper(const char uplo[], const int& n, AViewType& A, const i
         cusolverDnZpotrf(s.handle, uplo_t, n, reinterpret_cast<cuDoubleComplex*>(A.data()), lda,
                          reinterpret_cast<cuDoubleComplex*>(Workspace.data()), lwork, info.data()));
   }
+  KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSetStream(s.handle, NULL));
 }
 
-#define KOKKOSLAPACK_POTRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                              \
-  template <>                                                                                               \
-  struct Potrf<Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                      \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                       \
-               true,                                                                                        \
-               potrf_eti_spec_avail<Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
-                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {        \
-    using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,               \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                \
-    static void potrf(const char uplo[], const int& n, AViewType& A, const int& lda) {                      \
-      Kokkos::Profiling::pushRegion("KokkosLapack::potrf[TPL_CUSOLVER," #SCALAR "]");                       \
-      potrf_print_specialization<AViewType>();                                                              \
-      cusolverPotrfWrapper(uplo, n, A, lda);                                                                \
-      Kokkos::Profiling::popRegion();                                                                       \
-    }                                                                                                       \
+#define KOKKOSLAPACK_POTRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                    \
+  template <>                                                                                                     \
+  struct Potrf<                                                                                                   \
+      Kokkos::Cuda,                                                                                               \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
+      true,                                                                                                       \
+      potrf_eti_spec_avail<Kokkos::Cuda, Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
+                                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {         \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                      \
+    static void potrf(const Kokkos::Cuda& space, const char uplo[], const int& n, AViewType& A, const int& lda) { \
+      Kokkos::Profiling::pushRegion("KokkosLapack::potrf[TPL_CUSOLVER," #SCALAR "]");                             \
+      potrf_print_specialization<AViewType>();                                                                    \
+      cusolverPotrfWrapper(space, uplo, n, A, lda);                                                               \
+      Kokkos::Profiling::popRegion();                                                                             \
+    }                                                                                                             \
   };
 
 KOKKOSLAPACK_POTRF_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
@@ -182,7 +189,7 @@ namespace KokkosLapack {
 namespace Impl {
 
 template <class AViewType>
-void rocsolverPotrfWrapper(const char uplo[], const int& n, AViewType& A, const int& lda) {
+void rocsolverPotrfWrapper(const Kokkos::HIP& space, const char uplo[], const int& n, AViewType& A, const int& lda) {
   using Scalar = typename AViewType::non_const_value_type;
 
   rocblas_fill uplo_t = (uplo[0] == 'U' || uplo[0] == 'u') ? rocblas_fill_upper : rocblas_fill_lower;
@@ -192,6 +199,8 @@ void rocsolverPotrfWrapper(const char uplo[], const int& n, AViewType& A, const 
   Kokkos::View<rocblas_int, typename AViewType::memory_space> info("potrf info");
 
   KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();
+  KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));
+
   if constexpr (std::is_same_v<Scalar, float>) {
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_spotrf(s.handle, uplo_t, n_, A.data(), lda_, info.data()));
   }
@@ -206,21 +215,23 @@ void rocsolverPotrfWrapper(const char uplo[], const int& n, AViewType& A, const 
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
         rocsolver_zpotrf(s.handle, uplo_t, n_, reinterpret_cast<rocblas_double_complex*>(A.data()), lda_, info.data()));
   }
+  KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));
 }
 
 #define KOKKOSLAPACK_POTRF_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                        \
   template <>                                                                                                          \
   struct Potrf<                                                                                                        \
+      Kokkos::HIP,                                                                                                     \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       true,                                                                                                            \
-      potrf_eti_spec_avail<Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                      \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
+      potrf_eti_spec_avail<Kokkos::HIP, Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,         \
+                                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {               \
     using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                           \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    static void potrf(const char uplo[], const int& n, AViewType& A, const int& lda) {                                 \
+    static void potrf(const Kokkos::HIP& space, const char uplo[], const int& n, AViewType& A, const int& lda) {       \
       Kokkos::Profiling::pushRegion("KokkosLapack::potrf[TPL_ROCSOLVER," #SCALAR "]");                                 \
       potrf_print_specialization<AViewType>();                                                                         \
-      rocsolverPotrfWrapper(uplo, n, A, lda);                                                                          \
+      rocsolverPotrfWrapper(space, uplo, n, A, lda);                                                                   \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };

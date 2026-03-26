@@ -44,8 +44,7 @@ namespace KokkosLapack {
 /// \param lda            The leading dimension of matrix A.  LDA >= max(1,N).
 ///
 template <class execution_space, class AViewType>
-void potrf([[maybe_unused]] const execution_space& space, const char uplo[], const int& n, AViewType& A,
-           const int& lda) {
+void potrf(const execution_space& space, const char uplo[], const int& n, AViewType& A, const int& lda) {
   static_assert(Kokkos::is_execution_space<execution_space>::value,
                 "KokkosLapack::potrf: execution_space must be a valid Kokkos execution space");
   static_assert(Kokkos::is_view<AViewType>::value, "KokkosLapack::potrf: AViewType must be a Kokkos::View");
@@ -56,7 +55,7 @@ void potrf([[maybe_unused]] const execution_space& space, const char uplo[], con
 
   AViewInternalType uA(A);
 
-  Impl::Potrf<AViewInternalType>::potrf(uplo, n, uA, lda);
+  Impl::Potrf<execution_space, AViewInternalType>::potrf(space, uplo, n, uA, lda);
 }
 
 // Overload without execution space (uses default)
