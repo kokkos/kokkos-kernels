@@ -73,6 +73,7 @@
 
 ### Cleanup
 - Sparse - SpMV: removing cusparse < 11500 path [\#2888](https://github.com/kokkos/kokkos-kernels/pull/2888)
+- Common - ExecUtils: cleaning a preprocessor guard for x86_64 architecture [\#2996](https://github.com/kokkos/kokkos-kernels/pull/2996)
 
 ### Deprecations:
 - Deprecate old kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential interface [\#2980](https://github.com/kokkos/kokkos-kernels/pull/2980)
