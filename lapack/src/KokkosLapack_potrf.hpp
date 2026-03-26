@@ -50,7 +50,6 @@ void potrf(const execution_space& space, const char uplo[], AViewType& A) {
                 "KokkosLapack::potrf: A must have Kokkos::LayoutLeft (column-major) layout, "
                 "as required by LAPACK/cuSOLVER/rocSOLVER.");
 
-
   if (A.extent(0) != A.extent(1)) {
     std::ostringstream os;
     os << "KokkosLapack::potrf: A must be square, got " << A.extent(0) << " x " << A.extent(1);
