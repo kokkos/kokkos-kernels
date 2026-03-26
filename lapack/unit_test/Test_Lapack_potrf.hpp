@@ -66,8 +66,7 @@ void impl_test_potrf(int N) {
     h_A(2, 2) = ScalarType(6);
     Kokkos::deep_copy(A, h_A);
 
-    const int lda = static_cast<int>(A.stride(1));
-    KokkosLapack::potrf("L", 3, A, lda);
+    KokkosLapack::potrf("L", A);
     Kokkos::fence();
     Kokkos::deep_copy(h_A, A);
 
@@ -97,7 +96,7 @@ void impl_test_potrf(int N) {
   //  1. Fill B with random values.
   //  2. Compute A = B^H * B + N * I  (strictly Hermitian positive definite).
   //  3. Save Aorig = A.
-  //  4. Factorize: potrf("L", N, A, lda)  ->  A lower triangle = L.
+  //  4. Factorize: potrf("L", A)  ->  A lower triangle = L.
   //  5. Zero A upper triangle to get L, then compute Areconst = L * L^H.
   //  6. Verify Areconst ≈ Aorig (lower triangle).
   // ====================================================================
@@ -138,8 +137,7 @@ void impl_test_potrf(int N) {
   // ----------------------------------------------------------------
   // Factorize A = L * L^H  (potrf overwrites lower triangle of A with L)
   // ----------------------------------------------------------------
-  const int lda = static_cast<int>(A.stride(1));
-  KokkosLapack::potrf("L", N, A, lda);
+  KokkosLapack::potrf("L", A);
   Kokkos::fence();
   Kokkos::deep_copy(h_A, A);
 

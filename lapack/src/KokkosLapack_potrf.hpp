@@ -5,6 +5,7 @@
 #define KOKKOSLAPACK_POTRF_HPP_
 
 #include "KokkosKernels_config.h"
+#include "KokkosKernels_Error.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosLapack_potrf_spec.hpp"
 
@@ -24,30 +25,33 @@ namespace KokkosLapack {
 /// is enabled.
 ///
 /// \tparam execution_space The space where the kernel will run.
-/// \tparam AViewType [in] Type of matrix A, as a 2-D Kokkos::View.
+/// \tparam AViewType [in] Type of matrix A, as a 2-D Kokkos::View
 ///
-/// \param space [in] Execution space instance used to specified how to execute
+/// \param space [in] Execution space instance used to specify how to execute
 ///                   the potrf kernels.
-/// \param uplo  [in] 'U':  Upper triangle of A is stored, else lower triangle
-/// \param n     [in] The order of the matrix A.  N >= 0.
-/// \param A     [in,out] A is 2d kokkos view, dimension (LDA,N)
-///                       On entry, the Hermitian matrix A.  If UPLO = 'U', the leading
-///                       N-by-N upper triangular part of A contains the upper
-///                       triangular part of the matrix A, and the strictly lower
-///                       triangular part of A is not referenced.  If UPLO = 'L', the
-///                       leading N-by-N lower triangular part of A contains the lower
-///                       triangular part of the matrix A, and the strictly upper
-///                       triangular part of A is not referenced.
-///
+/// \param uplo  [in] 'U': upper triangle of A is stored; 'L': lower triangle.
+/// \param A     [in,out] Square 2-D Kokkos::View of dimension N x N.
+///                       On entry, the Hermitian positive-definite matrix A.
+///                       The order N and leading dimension are derived from the
+///                       view extents: N = A.extent(0), lda = A.stride(1).
 ///                       On exit, the factor U or L from the Cholesky
 ///                       factorization A = U**H*U or A = L*L**H.
-/// \param lda            The leading dimension of matrix A.  LDA >= max(1,N).
 ///
 template <class execution_space, class AViewType>
-void potrf(const execution_space& space, const char uplo[], const int& n, AViewType& A, const int& lda) {
+void potrf(const execution_space& space, const char uplo[], AViewType& A) {
   static_assert(Kokkos::is_execution_space<execution_space>::value,
                 "KokkosLapack::potrf: execution_space must be a valid Kokkos execution space");
   static_assert(Kokkos::is_view<AViewType>::value, "KokkosLapack::potrf: AViewType must be a Kokkos::View");
+  static_assert(static_cast<int>(AViewType::rank) == 2, "KokkosLapack::potrf: A must have rank 2.");
+
+  if (A.extent(0) != A.extent(1)) {
+    std::ostringstream os;
+    os << "KokkosLapack::potrf: A must be square, got " << A.extent(0) << " x " << A.extent(1);
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
+  const int n   = static_cast<int>(A.extent(0));
+  const int lda = static_cast<int>(A.stride(1));
 
   // Convert views to unmanaged
   using AViewInternalType = Kokkos::View<typename AViewType::data_type, typename AViewType::array_layout,
@@ -60,8 +64,8 @@ void potrf(const execution_space& space, const char uplo[], const int& n, AViewT
 
 // Overload without execution space (uses default)
 template <class AViewType>
-void potrf(const char uplo[], const int& n, AViewType& A, const int& lda) {
-  potrf(typename AViewType::execution_space{}, uplo, n, A, lda);
+void potrf(const char uplo[], AViewType& A) {
+  potrf(typename AViewType::execution_space{}, uplo, A);
 }
 
 }  // namespace KokkosLapack
