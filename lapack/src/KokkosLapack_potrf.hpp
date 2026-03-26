@@ -49,7 +49,7 @@ void potrf(const ExecutionSpace& space, const char uplo[], AViewType& A) {
   static_assert(std::is_same_v<typename AViewType::array_layout, Kokkos::LayoutLeft>,
                 "KokkosLapack::potrf: A must have Kokkos::LayoutLeft (column-major) layout, "
                 "as required by LAPACK/cuSOLVER/rocSOLVER.");
-  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AMatrix::memory_space>::accessible);
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AViewType::memory_space>::accessible);
 
   if (A.extent(0) != A.extent(1)) {
     std::ostringstream os;
