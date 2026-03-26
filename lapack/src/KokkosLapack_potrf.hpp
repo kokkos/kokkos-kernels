@@ -39,16 +39,17 @@ namespace KokkosLapack {
 ///                       On exit, the factor U or L from the Cholesky
 ///                       factorization A = U**H*U or A = L*L**H.
 ///
-template <class execution_space, class AViewType>
-void potrf(const execution_space& space, const char uplo[], AViewType& A) {
-  static_assert(Kokkos::is_execution_space<execution_space>::value,
-                "KokkosLapack::potrf: execution_space must be a valid Kokkos execution space");
+template <class ExecutionSpace, class AViewType>
+void potrf(const ExecutionSpace& space, const char uplo[], AViewType& A) {
+  static_assert(Kokkos::is_execution_space<ExecutionSpace>::value,
+                "KokkosLapack::potrf: ExecutionSpace must be a valid Kokkos execution space");
   static_assert(Kokkos::is_view<AViewType>::value, "KokkosLapack::potrf: AViewType must be a Kokkos::View");
   static_assert(static_cast<int>(AViewType::rank) == 2, "KokkosLapack::potrf: A must have rank 2.");
   static_assert(!std::is_const_v<typename AViewType::value_type>, "A should not have const value type");
   static_assert(std::is_same_v<typename AViewType::array_layout, Kokkos::LayoutLeft>,
                 "KokkosLapack::potrf: A must have Kokkos::LayoutLeft (column-major) layout, "
                 "as required by LAPACK/cuSOLVER/rocSOLVER.");
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AMatrix::memory_space>::accessible);
 
   if (A.extent(0) != A.extent(1)) {
     std::ostringstream os;
@@ -65,7 +66,7 @@ void potrf(const execution_space& space, const char uplo[], AViewType& A) {
 
   AViewInternalType uA(A);
 
-  Impl::Potrf<execution_space, AViewInternalType>::potrf(space, uplo, n, uA, lda);
+  Impl::Potrf<ExecutionSpace, AViewInternalType>::potrf(space, uplo, n, uA, lda);
 }
 
 // Overload without execution space (uses default)
