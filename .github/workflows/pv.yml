@@ -13,18 +13,18 @@ on:
         type: string
 
 jobs:
-  PR_PV_ONEAPI202410_SYCL:
-    name: PR_PV_ONEAPI202410_SYCL
-    runs-on: [inteloneapi-basekit-2024.2.1-0-devel-ubuntu22.04-latest-pv]
+  PR_PV_ONEAPI202522_SYCL:
+    name: PR_PV_ONEAPI202522_SYCL
+    runs-on: [intel-oneapi-basekit-2025.2.2-0-devel-ubuntu24.04_gfortran-latest-latest-pv]
     
     steps:
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: kokkos/kokkos
           ref: ${{ inputs.kokkos_version }}
