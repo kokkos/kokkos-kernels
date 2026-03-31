@@ -38,18 +38,19 @@ jobs:
           cmake \
             -S "$PWD/.." \
             -B "$PWD" \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_COMPILER=icpx \
-            -DCMAKE_CXX_FLAGS="-fp-model=precise -fsycl-device-code-split=per_kernel" \
-            -DCMAKE_INSTALL_PREFIX="$PWD/../install" \
-            -DKokkos_ENABLE_SERIAL=ON \
-            -DKokkos_ENABLE_SYCL=ON \
-            -DKokkos_ARCH_INTEL_PVC=ON \
-            -DKokkos_ENABLE_TESTS=OFF \
-            -DKokkos_ENABLE_EXAMPLES=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
-            -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
-            -DKokkos_ENABLE_ONEDPL=OFF
+            -D BUILD_SHARED_LIBS=ON \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D CMAKE_CXX_COMPILER=icpx \
+            -D CMAKE_CXX_FLAGS="-fp-model=precise -fsycl-device-code-split=per_kernel" \
+            -D CMAKE_INSTALL_PREFIX="$PWD/../install" \
+            -D Kokkos_ENABLE_SERIAL=ON \
+            -D Kokkos_ENABLE_SYCL=ON \
+            -D Kokkos_ARCH_INTEL_PVC=ON \
+            -D Kokkos_ENABLE_TESTS=OFF \
+            -D Kokkos_ENABLE_EXAMPLES=OFF \
+            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            -D Kokkos_ENABLE_ONEDPL=OFF
 
       - name: build_and_install_kokkos
         run: |
