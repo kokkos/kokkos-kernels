@@ -39,3 +39,7 @@ jobs:
     uses: ./.github/workflows/mi210.yml
     with:
       kokkos_version: 5.0.2
+  pv:
+    uses: ./.github/workflows/pv.yml
+    with:
+      kokkos_version: 5.0.2

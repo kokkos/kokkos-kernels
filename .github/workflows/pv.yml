@@ -1,0 +1,90 @@
+name: Reusable PV workflow
+
+permissions:
+  contents: none
+
+on:
+  workflow_call:
+    inputs:
+      kokkos_version:
+        description: 'The Kokkos Core version to build'
+        default: ''
+        required: true
+        type: string
+
+jobs:
+  PR_PV_ONEAPI202522_SYCL:
+    name: PR_PV_ONEAPI202522_SYCL
+    runs-on: [intel-oneapi-basekit-2025.2.2-0-devel-ubuntu24.04_gfortran-latest-latest-pv]
+    
+    steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ inputs.kokkos_version }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cd kokkos/build
+
+          cmake \
+            -S "$PWD/.." \
+            -B "$PWD" \
+            -D BUILD_SHARED_LIBS=ON \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D CMAKE_CXX_COMPILER=icpx \
+            -D CMAKE_CXX_FLAGS="-fp-model=precise -fsycl-device-code-split=per_kernel" \
+            -D CMAKE_INSTALL_PREFIX="$PWD/../install" \
+            -D Kokkos_ENABLE_SERIAL=ON \
+            -D Kokkos_ENABLE_SYCL=ON \
+            -D Kokkos_ARCH_INTEL_PVC=ON \
+            -D Kokkos_ENABLE_TESTS=OFF \
+            -D Kokkos_ENABLE_EXAMPLES=OFF \
+            -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+            -D Kokkos_ENABLE_DEPRECATION_WARNINGS=OFF \
+            -D Kokkos_ENABLE_ONEDPL=OFF
+
+      - name: build_and_install_kokkos
+        run: |
+          cmake --build "$PWD/kokkos/build" -j 64
+          cmake --install "$PWD/kokkos/build"
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cd kokkos-kernels/build
+
+          cmake \
+          -S "$PWD/.." \
+          -B "$PWD" \
+          -D BUILD_SHARED_LIBS=ON \
+          -D CMAKE_CXX_COMPILER=icpx \
+          -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=OFF \
+          -D CMAKE_CXX_FLAGS="-fp-model=precise -Wno-pass-failed -Wno-unused-command-line-argument" \
+          -D CMAKE_INSTALL_PREFIX="$PWD/install" \
+          -D Kokkos_ROOT="$PWD/../../kokkos/install" \
+          -D KokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+          -D KokkosKernels_ENABLE_TESTS=ON \
+          -D KokkosKernels_ENABLE_PERFTESTS=ON \
+          -D KokkosKernels_ENABLE_EXAMPLES=ON \
+          -D KokkosKernels_INST_DOUBLE=ON \
+          -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
+          -D KokkosKernels_INST_ORDINAL_INT64_T=ON \
+          -D KokkosKernels_INST_ORDINAL_INT=ON \
+          -D KokkosKernels_INST_OFFSET_SIZE_T=ON \
+          -D KokkosKernels_INST_OFFSET_INT=ON
+
+      - name: build_kokkos_kernels
+        run: cmake --build "$PWD/kokkos-kernels/build" -j 64
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ZES_ENABLE_SYSMAN=1 ctest --output-on-failure -V --timeout 3600
