@@ -601,8 +601,8 @@ int main(int argc, char** argv)
     double residual_norm_delta_stop = 1e-2;
 
     std::map<std::string, int*> option_map = {{"-n", &rows},       {"-z", &nnz_per_row}, {"-b", &bandwidth},
-					      {"-ts", &team_size}, {"-t", &test},        {"-m", &gmres_max_subspace},
-					      {"-i", &max_iter}};
+                                              {"-ts", &team_size}, {"-t", &test},        {"-m", &gmres_max_subspace},
+                                              {"-i", &max_iter}};
 
     std::map<std::string, double*> foption_map = {{"-l", &fill_in_limit}, {"-r", &residual_norm_delta_stop}};
 
@@ -618,16 +618,16 @@ int main(int argc, char** argv)
     // Handle user options
     for (int i = 1; i < argc; i++) {
       if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-h") == 0)) {
-	print_help_par_ilut();
-	return 0;
+        print_help_par_ilut();
+        return 0;
       } else if ((strcmp(argv[i], "-f") == 0)) {
-	mfile = argv[++i];
+        mfile = argv[++i];
       } else if ((strcmp(argv[i], "-v") == 0)) {
-	validate = true;
+        validate = true;
       } else if ((strcmp(argv[i], "-C") == 0)) {
-	no_context = true;
+        no_context = true;
       } else {
-	handle_arg(argc, argv, i, option_map, foption_map);
+        handle_arg(argc, argv, i, option_map, foption_map);
       }
     }
 
