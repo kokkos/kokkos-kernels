@@ -356,10 +356,6 @@ Below are tables summarizing the currently supported function calls in Kokkos Ke
      - --
      - --
      - --
-   * - potrf
-     - --
-     - --
-     - --
    * - geqrf
      - `SerialQR`
      - `TeamQR`

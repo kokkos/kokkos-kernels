@@ -41,9 +41,9 @@ namespace KokkosLapack {
 ///
 template <class ExecutionSpace, class AViewType>
 void potrf(const ExecutionSpace& space, const char uplo[], AViewType& A) {
-  static_assert(Kokkos::is_execution_space<ExecutionSpace>::value,
+  static_assert(Kokkos::is_execution_space_v<ExecutionSpace>,
                 "KokkosLapack::potrf: ExecutionSpace must be a valid Kokkos execution space");
-  static_assert(Kokkos::is_view<AViewType>::value, "KokkosLapack::potrf: AViewType must be a Kokkos::View");
+  static_assert(Kokkos::is_view_v<AViewType>, "KokkosLapack::potrf: AViewType must be a Kokkos::View");
   static_assert(static_cast<int>(AViewType::rank) == 2, "KokkosLapack::potrf: A must have rank 2.");
   static_assert(!std::is_const_v<typename AViewType::value_type>, "A should not have const value type");
   static_assert(std::is_same_v<typename AViewType::array_layout, Kokkos::LayoutLeft>,
