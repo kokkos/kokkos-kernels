@@ -6,6 +6,7 @@ API: LAPACK
    :hidden:
 
    lapack/geqrf
+   lapack/potrf
    lapack/gesv
    lapack/gesvd
    lapack/trtri
@@ -75,7 +76,14 @@ Below are tables summarizing the currently supported function calls and third pa
      - 
      - 
      - 
-     - 
+     -
+   * - potrf
+     - :doc:`potrf <lapack/potrf>`
+     - --
+     - X
+     - X
+     - X
+     - --
    * - ungqr
      - 
      - 
