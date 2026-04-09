@@ -1,4 +1,10 @@
 # Change Log
+## [4.7.04](https://github.com/kokkos/kokkos-kernels/tree/4.7.04)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.03...4.7.04)
+
+### Bug Fixes and Improvements:
+- Prefer bit manipulation functions from Kokkos Core [\#2786](https://github.com/kokkos/kokkos-kernels/pull/2786)
+
 ## [4.7.03](https://github.com/kokkos/kokkos-kernels/tree/4.7.03)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.02...4.7.03)
 
