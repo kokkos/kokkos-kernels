@@ -49,13 +49,14 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGemmInternal<Algo::Gemm::Unblocked, false>:
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
       const ValueType *KOKKOS_RESTRICT pA = A + i * as0;
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n), [&](const int &j) {
-        const ValueType *KOKKOS_RESTRICT pB = B + j * bs1;
+      Kokkos::parallel_for(Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, n),
+                           [&](const int &j) {
+                             const ValueType *KOKKOS_RESTRICT pB = B + j * bs1;
 
-        ValueType c = ValueType(0);
-        for (int p = 0; p < k; ++p) c += pA[p * as1] * pB[p * bs0];
-        C[i * cs0 + j * cs1] += alpha * c;
-      });
+                             ValueType c = ValueType(0);
+                             for (int p = 0; p < k; ++p) c += pA[p * as1] * pB[p * bs0];
+                             C[i * cs0 + j * cs1] += alpha * c;
+                           });
     });
   }
   return 0;
@@ -85,13 +86,15 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGemmInternal<Algo::Gemm::Unblocked, true>::
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
       const ValueType *KOKKOS_RESTRICT pA = A + i * as0;
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n), [&](const int &j) {
-        const ValueType *KOKKOS_RESTRICT pB = B + j * bs1;
+      Kokkos::parallel_for(Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, n),
+                           [&](const int &j) {
+                             const ValueType *KOKKOS_RESTRICT pB = B + j * bs1;
 
-        ValueType c = ValueType(0);
-        for (int p = 0; p < k; ++p) c += KokkosKernels::ArithTraits<ValueType>::conj(pA[p * as1]) * pB[p * bs0];
-        C[i * cs0 + j * cs1] += alpha * c;
-      });
+                             ValueType c = ValueType(0);
+                             for (int p = 0; p < k; ++p)
+                               c += KokkosKernels::ArithTraits<ValueType>::conj(pA[p * as1]) * pB[p * bs0];
+                             C[i * cs0 + j * cs1] += alpha * c;
+                           });
     });
   }
   return 0;

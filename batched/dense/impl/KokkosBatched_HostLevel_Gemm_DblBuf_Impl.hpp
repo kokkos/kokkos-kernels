@@ -373,7 +373,9 @@ class BatchedDblBufGemm {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, STRIDE_M), [&](const int &thread_id) {
         int m_offset = thread_id + start_m;
 
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, 0, STRIDE_N), [&](const int &vlane_id) {
+        Kokkos::parallel_for(
+            Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, STRIDE_N),
+            [&](const int &vlane_id) {
           int n_offset = vlane_id + start_n;
 
           // Here we populate scratch memory with one or more "k" tiles for
@@ -513,7 +515,9 @@ class BatchedDblBufGemm {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, STRIDE_N), [&](const int &thread_id) {
         int n_offset = thread_id + start_n;
 
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, 0, STRIDE_M), [&](const int &vlane_id) {
+        Kokkos::parallel_for(
+            Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, STRIDE_M),
+            [&](const int &vlane_id) {
           int m_offset = vlane_id + start_m;
 
           // Here we populate scratch memory with one or more "k" tiles for
