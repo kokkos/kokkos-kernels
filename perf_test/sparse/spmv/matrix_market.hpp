@@ -6,6 +6,8 @@
 
 #include <cstdio>
 #include <cstddef>
+#include <array>
+#include <memory>
 #include <cstring>
 #include <cstdlib>
 #include <limits>
@@ -48,12 +50,12 @@ template <typename ScalarType, typename OrdinalType>
 int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType& nrows, OrdinalType& ncols, OrdinalType& nnz,
                                    ScalarType*& values, OrdinalType*& rowPtr, OrdinalType*& colInd, bool sort,
                                    OrdinalType idx_offset = 0) {
-  FILE* file = fopen(filename, "r");
+  auto file = std::unique_ptr<FILE, decltype(&fclose)>(fopen(filename, "r"), &fclose);
   if (!file) {
     fprintf(stderr, "SparseMatrix_MatrixMarket_read: could not open \"%s\"\n", filename);
     return -1;
   }
-  char line[512];
+  std::array<char, 512> line{};
   line[0]         = '%';
   int count       = -1;
   char* symmetric = NULL;
@@ -61,34 +63,30 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType& nrows, Ord
   int nlines;
 
   while (line[0] == '%') {
-    if (!fgets(line, 511, file)) {
+    if (!fgets(line.data(), static_cast<int>(line.size()), file.get())) {
       fprintf(stderr, "SparseMatrix_MatrixMarket_read: unexpected EOF in header of \"%s\"\n", filename);
-      fclose(file);
       return -1;
     }
-    line[511] = '\0';
     count++;
     if (count == 0) {
-      symmetric = strstr(line, "symmetric");
-      pattern   = strstr(line, "pattern");
+      symmetric = strstr(line.data(), "symmetric");
+      pattern   = strstr(line.data(), "pattern");
     }
   }
-  rewind(file);
+  rewind(file.get());
   for (int i = 0; i < count; i++) {
-    if (!fgets(line, 511, file)) {
+    if (!fgets(line.data(), static_cast<int>(line.size()), file.get())) {
       fprintf(stderr, "SparseMatrix_MatrixMarket_read: unexpected EOF rewinding \"%s\"\n", filename);
-      fclose(file);
       return -1;
     }
   }
-  if (fscanf(file, "%i", &nrows) != 1 || fscanf(file, "%i", &ncols) != 1 || fscanf(file, "%i", &nlines) != 1) {
+  if (fscanf(file.get(), "%i", &nrows) != 1 || fscanf(file.get(), "%i", &ncols) != 1 ||
+      fscanf(file.get(), "%i", &nlines) != 1) {
     fprintf(stderr, "SparseMatrix_MatrixMarket_read: invalid dimension line in \"%s\"\n", filename);
-    fclose(file);
     return -1;
   }
   if (nrows <= 0 || ncols <= 0 || nlines < 0) {
     fprintf(stderr, "SparseMatrix_MatrixMarket_read: non-positive dimensions in \"%s\"\n", filename);
-    fclose(file);
     return -1;
   }
   printf("Matrix dimension: %i %i %i %s %s\n", nrows, ncols, nlines, symmetric ? "Symmetric" : "General",
@@ -108,10 +106,10 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType& nrows, Ord
   nnz = 0;
   for (int ii = 0; ii < nlines; ii++) {
     if (pattern) {
-      fscanf(file, "%i %i", &rowIndtmp[nnz], &colIndtmp[nnz]);
+      fscanf(file.get(), "%i %i", &rowIndtmp[nnz], &colIndtmp[nnz]);
       valuestmp[nnz] = (1.0 * (ii % nrows)) / ncols;
     } else
-      fscanf(file, "%i %i %le", &rowIndtmp[nnz], &colIndtmp[nnz], &valuestmp[nnz]);
+      fscanf(file.get(), "%i %i %le", &rowIndtmp[nnz], &colIndtmp[nnz], &valuestmp[nnz]);
     if (ii < 10 || ii > nlines - 10)
       printf("Read: %i %i %i %le\n", nnz, rowIndtmp[nnz], colIndtmp[nnz], valuestmp[nnz]);
     rowIndtmp[nnz] -= idx_offset;
@@ -175,7 +173,6 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType& nrows, Ord
 
   printf("%lu Spans: %lu %lu %lu\n", (size_t)nnz, min_span, max_span, ave_span / nrows);
   if (sort) Impl::SparseGraph_SortRows<OrdinalType>(nrows, rowPtr, colInd);
-  fclose(file);
   return nnz;
 }
 
@@ -212,7 +209,7 @@ int SparseMatrix_WriteBinaryFormat(const char* filename, OrdinalType& nrows, Ord
     return -1;
   }
 
-  FILE* file = fopen(filename, "r");
+  auto file = std::unique_ptr<FILE, decltype(&fclose)>(fopen(filename, "r"), &fclose);
   if (!file) {
     fprintf(stderr, "SparseMatrix_WriteBinaryFormat: could not reopen \"%s\" for description copy\n", filename);
     fclose(RowFile);
@@ -221,33 +218,30 @@ int SparseMatrix_WriteBinaryFormat(const char* filename, OrdinalType& nrows, Ord
     fclose(DescrFile);
     return -1;
   }
-  char line[512];
+  std::array<char, 512> line{};
   line[0]   = '%';
   int count = -1;
   // char* symmetric = NULL;
   // int nlines;
 
   while (line[0] == '%') {
-    if (!fgets(line, 511, file)) {
+    if (!fgets(line.data(), static_cast<int>(line.size()), file.get())) {
       fprintf(stderr, "SparseMatrix_WriteBinaryFormat: unexpected EOF in \"%s\"\n", filename);
-      fclose(file);
       fclose(RowFile);
       fclose(ColFile);
       fclose(ValsFile);
       fclose(DescrFile);
       return -1;
     }
-    line[511] = 0;
     count++;
     // if(count==0) symmetric=strstr(line,"symmetric");
 
     if (line[0] == '%')
-      fprintf(DescrFile, "%s", line);
+      fprintf(DescrFile, "%s", line.data());
     else
       fprintf(DescrFile, "%i %i %i\n", nrows, ncols, nnz);
   }
   fprintf(DescrFile, "\n");
-  fclose(file);
 
   fwrite(rowPtr, sizeof(OrdinalType), nrows + 1, RowFile);
   fwrite(colInd, sizeof(OrdinalType), nnz, ColFile);
@@ -287,53 +281,48 @@ int SparseMatrix_ReadBinaryFormat(const char* filename, OrdinalType& nrows, Ordi
   char* filename_descr = new char[strlen(filename) + 7];
   strcpy(filename_descr, filename);
   strcat(filename_descr, "_descr");
-  FILE* file = fopen(filename_descr, "r");
+  auto file = std::unique_ptr<FILE, decltype(&fclose)>(fopen(filename_descr, "r"), &fclose);
   if (!file) {
     fprintf(stderr, "SparseMatrix_ReadBinaryFormat: could not open \"%s\"\n", filename_descr);
     delete[] filename_descr;
     return -1;
   }
-  char line[512];
+  std::array<char, 512> line{};
   line[0]         = '%';
   int count       = -1;
   char* symmetric = NULL;
   // int nlines;
 
   while (line[0] == '%') {
-    if (!fgets(line, 511, file)) {
+    if (!fgets(line.data(), static_cast<int>(line.size()), file.get())) {
       fprintf(stderr, "SparseMatrix_ReadBinaryFormat: unexpected EOF in \"%s\"\n", filename_descr);
-      fclose(file);
       delete[] filename_descr;
       return -1;
     }
-    line[511] = '\0';
     count++;
-    if (count == 0) symmetric = strstr(line, "symmetric");
+    if (count == 0) symmetric = strstr(line.data(), "symmetric");
   }
-  rewind(file);
+  rewind(file.get());
   for (int i = 0; i < count; i++) {
-    if (!fgets(line, 511, file)) {
+    if (!fgets(line.data(), static_cast<int>(line.size()), file.get())) {
       fprintf(stderr, "SparseMatrix_ReadBinaryFormat: unexpected EOF rewinding \"%s\"\n", filename_descr);
-      fclose(file);
       delete[] filename_descr;
       return -1;
     }
   }
-  if (fscanf(file, "%i", &nrows) != 1 || fscanf(file, "%i", &ncols) != 1 || fscanf(file, "%i", &nnz) != 1) {
+  if (fscanf(file.get(), "%i", &nrows) != 1 || fscanf(file.get(), "%i", &ncols) != 1 ||
+      fscanf(file.get(), "%i", &nnz) != 1) {
     fprintf(stderr, "SparseMatrix_ReadBinaryFormat: invalid dimension line in \"%s\"\n", filename_descr);
-    fclose(file);
     delete[] filename_descr;
     return -1;
   }
   if (nrows <= 0 || ncols <= 0 || nnz < 0) {
     fprintf(stderr, "SparseMatrix_ReadBinaryFormat: non-positive dimensions in \"%s\"\n", filename_descr);
-    fclose(file);
     delete[] filename_descr;
     return -1;
   }
   printf("Matrix dimension: %i %i %i %s\n", nrows, ncols, nnz, symmetric ? "Symmetric" : "General");
 
-  fclose(file);
   delete[] filename_descr;
 
   char* filename_row  = new char[strlen(filename) + 5];
