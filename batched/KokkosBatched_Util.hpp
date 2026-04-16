@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include "Kokkos_Complex.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_Macros.hpp"
@@ -677,9 +678,16 @@ KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
 namespace Impl {
 template <typename ViewType>
 KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
-  static_assert(Kokkos::is_view_v<ViewType>, "KokkosBatched: ViewType is not a Kokkos::View.");
-  constexpr std::size_t V_rank = ViewType::rank();
-  static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+  // Check for view and dynrankview
+  if constexpr (Kokkos::is_view_v<ViewType>) {
+    static_assert(ViewType::rank() <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+  } else if constexpr (Kokkos::is_dyn_rank_view_v<ViewType>) {
+    if (v.rank() > 2) {
+      throw std::runtime_error("KokkosBatched: ViewType must have rank 0, 1 or 2.");
+    }
+  }
+  
+  const std::size_t V_rank = v.rank();
 
   if (r == 0) {
     int V_extent_0 = V_rank < 1 ? 1 : v.extent_int(0);
@@ -694,9 +702,16 @@ KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
 
 template <typename ViewType>
 KOKKOS_INLINE_FUNCTION std::size_t get_stride(const ViewType &v, const int r) {
-  static_assert(Kokkos::is_view_v<ViewType>, "KokkosBatched: ViewType is not a Kokkos::View.");
-  constexpr std::size_t V_rank = ViewType::rank();
-  static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+  // Check for view and dynrankview
+  if constexpr (Kokkos::is_view_v<ViewType>) {
+    static_assert(ViewType::rank() <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+  } else if constexpr (Kokkos::is_dyn_rank_view_v<ViewType>) {
+    if (v.rank() > 2) {
+      throw std::runtime_error("KokkosBatched: ViewType must have rank 0, 1 or 2.");
+    }
+  }
+  
+  const std::size_t V_rank = v.rank();
 
   if (r == 0) {
     std::size_t V_stride_0 = V_rank < 1 ? 1 : v.stride(0);
