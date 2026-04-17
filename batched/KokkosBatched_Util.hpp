@@ -685,7 +685,7 @@ KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
   } else if constexpr (Kokkos::is_dyn_rank_view_v<ViewType>) {
     KOKKOS_EXPECTS((v.rank() <= 2));
   } else {
-    static_assert(false, "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");
+    static_assert(Kokkos::is_view_v<ViewType> || Kokkos::is_dyn_rank_view_v<ViewType>, "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");
   }
 
   const std::size_t V_rank = v.rank();
@@ -709,7 +709,8 @@ KOKKOS_INLINE_FUNCTION std::size_t get_stride(const ViewType &v, const int r) {
   } else if constexpr (Kokkos::is_dyn_rank_view_v<ViewType>) {
     KOKKOS_EXPECTS((v.rank() <= 2));
   } else {
-    static_assert(false, "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");
+    static_assert(Kokkos::is_view_v<ViewType> || Kokkos::is_dyn_rank_view_v<ViewType>,
+		  "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");
   }
 
   const std::size_t V_rank = v.rank();
