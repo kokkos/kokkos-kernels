@@ -681,10 +681,8 @@ KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
   // Check for view and dynrankview
   if constexpr (Kokkos::is_view_v<ViewType>) {
     static_assert(ViewType::rank() <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
-  } else if constexpr (Kokkos::is_dyn_rank_view_v<ViewType>) {
-    if (v.rank() > 2) {
-      throw std::runtime_error("KokkosBatched: ViewType must have rank 0, 1 or 2.");
-    }
+  } else {
+    `static_assert(Kokkos::is_dyn_rank_view_v<ViewType>, "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");`
   }
   
   const std::size_t V_rank = v.rank();
