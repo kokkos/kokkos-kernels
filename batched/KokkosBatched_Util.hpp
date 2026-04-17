@@ -703,7 +703,7 @@ KOKKOS_INLINE_FUNCTION std::size_t get_stride(const ViewType &v, const int r) {
   // Check for view and dynrankview
   if constexpr (Kokkos::is_view_v<ViewType>) {
     static_assert(ViewType::rank() <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
-  } else if constexpr () {
+  } else {
     static_assert(Kokkos::is_dyn_rank_view_v<ViewType>, "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");
   }
   
