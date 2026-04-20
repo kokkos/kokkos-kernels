@@ -11,8 +11,7 @@
 namespace Test {
 namespace Rot {
 
-template <typename DeviceType, typename XViewType, typename YViewType, typename CType, typename SType,
-          typename ArgTrans>
+template <typename DeviceType, typename XViewType, typename YViewType, typename CType, typename SType, bool Conj>
 struct Functor_BatchedSerialRot {
   using execution_space = typename DeviceType::execution_space;
   XViewType m_x;
@@ -28,7 +27,7 @@ struct Functor_BatchedSerialRot {
     auto sub_x = Kokkos::subview(m_x, k, Kokkos::ALL());
     auto sub_y = Kokkos::subview(m_y, k, Kokkos::ALL());
 
-    info += KokkosBatched::SerialRot<ArgTrans>::invoke(sub_x, sub_y, m_c, m_s);
+    info += KokkosBatched::SerialRot<Conj>::invoke(sub_x, sub_y, m_c, m_s);
   }
 
   inline int run() {
@@ -45,8 +44,8 @@ struct Functor_BatchedSerialRot {
   }
 };
 
-template <typename DeviceType, typename XViewType, typename YViewType, typename CType, typename SType,
-          typename ArgTrans, typename ArgMode>
+template <typename DeviceType, typename XViewType, typename YViewType, typename CType, typename SType, bool Conj,
+          typename ArgMode>
 struct Functor_BatchedTeamRot {
   using execution_space = typename DeviceType::execution_space;
   XViewType m_x;
@@ -63,9 +62,9 @@ struct Functor_BatchedTeamRot {
     auto sub_x  = Kokkos::subview(m_x, k, Kokkos::ALL());
     auto sub_y  = Kokkos::subview(m_y, k, Kokkos::ALL());
     if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Team>) {
-      KokkosBatched::TeamRot<MemberType, ArgTrans>::invoke(member, sub_x, sub_y, m_c, m_s);
+      KokkosBatched::TeamRot<MemberType, Conj>::invoke(member, sub_x, sub_y, m_c, m_s);
     } else if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::TeamVector>) {
-      KokkosBatched::TeamVectorRot<MemberType, ArgTrans>::invoke(member, sub_x, sub_y, m_c, m_s);
+      KokkosBatched::TeamVectorRot<MemberType, Conj>::invoke(member, sub_x, sub_y, m_c, m_s);
     }
   }
 
@@ -94,11 +93,11 @@ struct Functor_BatchedTeamRot {
 /// \tparam DeviceType Kokkos device type
 /// \tparam ScalarType Kokkos scalar type
 /// \tparam LayoutType Kokkos layout type for the views
-/// \tparam ArgTrans Type indicating indicating whether the transpose (Trans::Transpose) or conjugate transpose
-/// (Trans::ConjTranspose) of s is used \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
+/// \tparam Conj Boolean indicating whether the conjugate of s is used
+/// \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
 ///
 /// \param[in] Nb Batch size of vectors
-template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgTrans, typename ArgMode>
+template <typename DeviceType, typename ScalarType, typename LayoutType, bool Conj, typename ArgMode>
 void impl_test_batched_rot_analytical(const std::size_t Nb) {
   using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
@@ -132,8 +131,7 @@ void impl_test_batched_rot_analytical(const std::size_t Nb) {
 
     // x_ref(i) = c*x(i) + s*y(i) with c = 0.6, s = 0.8
     // y_ref(i) = c*y(i) - s*x(i)
-    // Note: for real s, both Trans::Transpose and Trans::ConjTranspose
-    //       give the same result since conj(s) = s.
+    // Note: for real s, both Conj = true and Conj = false give the same result since conj(s) = s.
     h_x_ref(ib, 0) = ScalarType(4.6);
     h_x_ref(ib, 1) = ScalarType(6.0);
     h_x_ref(ib, 2) = ScalarType(7.4);
@@ -153,31 +151,30 @@ void impl_test_batched_rot_analytical(const std::size_t Nb) {
   Kokkos::deep_copy(y_s, y);
 
   // S is complex only for {c,z}rot and real for {s,d,cs,zd}rot.
-  using MabyBeComplexType =
-      std::conditional_t<std::is_same_v<ArgTrans, KokkosBatched::Trans::Transpose>, RealType, ScalarType>;
+  using MabyBeComplexType = std::conditional_t<Conj, ScalarType, RealType>;
 
   const RealType c          = 0.6;
   const MabyBeComplexType s = MabyBeComplexType(0.8);
 
   if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
     auto info =
-        Functor_BatchedSerialRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, ArgTrans>(x, y, c, s)
+        Functor_BatchedSerialRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, Conj>(x, y, c, s)
             .run();
     EXPECT_EQ(info, 0);
   } else {
-    Functor_BatchedTeamRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, ArgTrans, ArgMode>(x, y, c,
-                                                                                                               s)
+    Functor_BatchedTeamRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, Conj, ArgMode>(x, y, c, s)
         .run();
   }
 
   // With strided views
   if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
-    auto info = Functor_BatchedSerialRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType,
-                                         ArgTrans>(x_s, y_s, c, s)
-                    .run();
+    auto info =
+        Functor_BatchedSerialRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType, Conj>(
+            x_s, y_s, c, s)
+            .run();
     EXPECT_EQ(info, 0);
   } else {
-    Functor_BatchedTeamRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType, ArgTrans,
+    Functor_BatchedTeamRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType, Conj,
                            ArgMode>(x_s, y_s, c, s)
         .run();
   }
@@ -212,12 +209,12 @@ void impl_test_batched_rot_analytical(const std::size_t Nb) {
 /// \tparam DeviceType Kokkos device type
 /// \tparam ScalarType Kokkos scalar type
 /// \tparam LayoutType Kokkos layout type for the views
-/// \tparam ArgTrans Type indicating indicating whether the transpose (Trans::Transpose) or conjugate transpose
-/// (Trans::ConjTranspose) of s is used \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
+/// \tparam Conj Boolean indicating whether the conjugate of s is used
+/// \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
 ///
 /// \param[in] Nb Batch size of vectors
 /// \param[in] N Length of vectors x and y
-template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgTrans, typename ArgMode>
+template <typename DeviceType, typename ScalarType, typename LayoutType, bool Conj, typename ArgMode>
 void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
   using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
@@ -250,9 +247,8 @@ void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
   Kokkos::deep_copy(y_s, y);
 
   // S is complex only for {c,z}rot and real for {s,d,cs,zd}rot.
-  using MabyBeComplexType =
-      std::conditional_t<std::is_same_v<ArgTrans, KokkosBatched::Trans::Transpose>, RealType, ScalarType>;
-  const RealType c_val = 0.6;
+  using MabyBeComplexType = std::conditional_t<Conj, ScalarType, RealType>;
+  const RealType c_val    = 0.6;
   MabyBeComplexType s_val;
   if constexpr (KokkosKernels::ArithTraits<MabyBeComplexType>::is_complex) {
     s_val = MabyBeComplexType(0.6, 0.8);
@@ -262,24 +258,25 @@ void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
 
   // Run rot on (x, y)
   if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
-    auto info = Functor_BatchedSerialRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, ArgTrans>(
+    auto info = Functor_BatchedSerialRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, Conj>(
                     x, y, c_val, s_val)
                     .run();
     EXPECT_EQ(info, 0);
   } else {
-    Functor_BatchedTeamRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, ArgTrans, ArgMode>(
-        x, y, c_val, s_val)
+    Functor_BatchedTeamRot<DeviceType, View2DType, View2DType, RealType, MabyBeComplexType, Conj, ArgMode>(x, y, c_val,
+                                                                                                           s_val)
         .run();
   }
 
   // With strided views
   if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
-    auto info = Functor_BatchedSerialRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType,
-                                         ArgTrans>(x_s, y_s, c_val, s_val)
-                    .run();
+    auto info =
+        Functor_BatchedSerialRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType, Conj>(
+            x_s, y_s, c_val, s_val)
+            .run();
     EXPECT_EQ(info, 0);
   } else {
-    Functor_BatchedTeamRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType, ArgTrans,
+    Functor_BatchedTeamRot<DeviceType, StridedView2DType, StridedView2DType, RealType, MabyBeComplexType, Conj,
                            ArgMode>(x_s, y_s, c_val, s_val)
         .run();
   }
@@ -289,8 +286,7 @@ void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
   auto h_y_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y_ref);
 
   // Note: ConjTranspose corresponds to zrot where conj(s) is used
-  using Op = std::conditional_t<std::is_same_v<ArgTrans, KokkosBatched::Trans::ConjTranspose>, KokkosBlas::Impl::OpConj,
-                                KokkosBlas::Impl::OpID>;
+  using Op = std::conditional_t<Conj, KokkosBlas::Impl::OpConj, KokkosBlas::Impl::OpID>;
   Op op;
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
@@ -329,27 +325,27 @@ void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
 }  // namespace Rot
 }  // namespace Test
 
-template <typename DeviceType, typename ScalarType, typename ArgTrans, typename ArgMode>
+template <typename DeviceType, typename ScalarType, bool Conj, typename ArgMode>
 int test_batched_rot() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     using LayoutType = Kokkos::LayoutLeft;
-    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ArgTrans, ArgMode>(1);
-    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ArgTrans, ArgMode>(2);
+    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, Conj, ArgMode>(1);
+    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, Conj, ArgMode>(2);
     for (int i = 0; i < 10; i++) {
-      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ArgTrans, ArgMode>(1, i);
-      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ArgTrans, ArgMode>(2, i);
+      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, Conj, ArgMode>(1, i);
+      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, Conj, ArgMode>(2, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     using LayoutType = Kokkos::LayoutRight;
-    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ArgTrans, ArgMode>(1);
-    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, ArgTrans, ArgMode>(2);
+    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, Conj, ArgMode>(1);
+    Test::Rot::impl_test_batched_rot_analytical<DeviceType, ScalarType, LayoutType, Conj, ArgMode>(2);
     for (int i = 0; i < 10; i++) {
-      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ArgTrans, ArgMode>(1, i);
-      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, ArgTrans, ArgMode>(2, i);
+      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, Conj, ArgMode>(1, i);
+      Test::Rot::impl_test_batched_rot<DeviceType, ScalarType, LayoutType, Conj, ArgMode>(2, i);
     }
   }
 #endif
@@ -359,112 +355,104 @@ int test_batched_rot() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 // Serial
-TEST_F(TestCategory, test_batched_serial_rot_t_float) {
-  test_batched_rot<TestDevice, float, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::Serial>();
+TEST_F(TestCategory, test_batched_serial_rot_i_float) {
+  test_batched_rot<TestDevice, float, false, KokkosBatched::Mode::Serial>();
 }
 TEST_F(TestCategory, test_batched_serial_rot_c_float) {
-  test_batched_rot<TestDevice, float, KokkosBatched::Trans::ConjTranspose, KokkosBatched::Mode::Serial>();
+  test_batched_rot<TestDevice, float, true, KokkosBatched::Mode::Serial>();
 }
 
 // Team
-TEST_F(TestCategory, test_batched_team_rot_t_float) {
-  test_batched_rot<TestDevice, float, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::Team>();
+TEST_F(TestCategory, test_batched_team_rot_i_float) {
+  test_batched_rot<TestDevice, float, false, KokkosBatched::Mode::Team>();
 }
 TEST_F(TestCategory, test_batched_team_rot_c_float) {
-  test_batched_rot<TestDevice, float, KokkosBatched::Trans::ConjTranspose, KokkosBatched::Mode::Team>();
+  test_batched_rot<TestDevice, float, true, KokkosBatched::Mode::Team>();
 }
 
 // TeamVector
-TEST_F(TestCategory, test_batched_teamvector_rot_t_float) {
-  test_batched_rot<TestDevice, float, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::TeamVector>();
+TEST_F(TestCategory, test_batched_teamvector_rot_i_float) {
+  test_batched_rot<TestDevice, float, false, KokkosBatched::Mode::TeamVector>();
 }
 TEST_F(TestCategory, test_batched_teamvector_rot_c_float) {
-  test_batched_rot<TestDevice, float, KokkosBatched::Trans::ConjTranspose, KokkosBatched::Mode::TeamVector>();
+  test_batched_rot<TestDevice, float, true, KokkosBatched::Mode::TeamVector>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 // Serial
-TEST_F(TestCategory, test_batched_serial_rot_t_double) {
-  test_batched_rot<TestDevice, double, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::Serial>();
+TEST_F(TestCategory, test_batched_serial_rot_i_double) {
+  test_batched_rot<TestDevice, double, false, KokkosBatched::Mode::Serial>();
 }
 TEST_F(TestCategory, test_batched_serial_rot_c_double) {
-  test_batched_rot<TestDevice, double, KokkosBatched::Trans::ConjTranspose, KokkosBatched::Mode::Serial>();
+  test_batched_rot<TestDevice, double, true, KokkosBatched::Mode::Serial>();
 }
 
 // Team
-TEST_F(TestCategory, test_batched_team_rot_t_double) {
-  test_batched_rot<TestDevice, double, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::Team>();
+TEST_F(TestCategory, test_batched_team_rot_i_double) {
+  test_batched_rot<TestDevice, double, false, KokkosBatched::Mode::Team>();
 }
 TEST_F(TestCategory, test_batched_team_rot_c_double) {
-  test_batched_rot<TestDevice, double, KokkosBatched::Trans::ConjTranspose, KokkosBatched::Mode::Team>();
+  test_batched_rot<TestDevice, double, true, KokkosBatched::Mode::Team>();
 }
 
 // TeamVector
-TEST_F(TestCategory, test_batched_teamvector_rot_t_double) {
-  test_batched_rot<TestDevice, double, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::TeamVector>();
+TEST_F(TestCategory, test_batched_teamvector_rot_i_double) {
+  test_batched_rot<TestDevice, double, false, KokkosBatched::Mode::TeamVector>();
 }
 TEST_F(TestCategory, test_batched_teamvector_rot_c_double) {
-  test_batched_rot<TestDevice, double, KokkosBatched::Trans::ConjTranspose, KokkosBatched::Mode::TeamVector>();
+  test_batched_rot<TestDevice, double, true, KokkosBatched::Mode::TeamVector>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 // Serial
-TEST_F(TestCategory, test_batched_serial_rot_t_fcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<float>, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::Serial>();
+TEST_F(TestCategory, test_batched_serial_rot_i_fcomplex) {
+  test_batched_rot<TestDevice, Kokkos::complex<float>, false, KokkosBatched::Mode::Serial>();
 }
 TEST_F(TestCategory, test_batched_serial_rot_c_fcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<float>, KokkosBatched::Trans::ConjTranspose,
-                   KokkosBatched::Mode::Serial>();
+  test_batched_rot<TestDevice, Kokkos::complex<float>, true, KokkosBatched::Mode::Serial>();
 }
 
 // Team
-TEST_F(TestCategory, test_batched_team_rot_t_fcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<float>, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::Team>();
+TEST_F(TestCategory, test_batched_team_rot_i_fcomplex) {
+  test_batched_rot<TestDevice, Kokkos::complex<float>, false, KokkosBatched::Mode::Team>();
 }
 TEST_F(TestCategory, test_batched_team_rot_c_fcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<float>, KokkosBatched::Trans::ConjTranspose,
-                   KokkosBatched::Mode::Team>();
+  test_batched_rot<TestDevice, Kokkos::complex<float>, true, KokkosBatched::Mode::Team>();
 }
 
 // TeamVector
-TEST_F(TestCategory, test_batched_teamvector_rot_t_fcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<float>, KokkosBatched::Trans::Transpose,
-                   KokkosBatched::Mode::TeamVector>();
+TEST_F(TestCategory, test_batched_teamvector_rot_i_fcomplex) {
+  test_batched_rot<TestDevice, Kokkos::complex<float>, false, KokkosBatched::Mode::TeamVector>();
 }
 TEST_F(TestCategory, test_batched_teamvector_rot_c_fcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<float>, KokkosBatched::Trans::ConjTranspose,
-                   KokkosBatched::Mode::TeamVector>();
+  test_batched_rot<TestDevice, Kokkos::complex<float>, true, KokkosBatched::Mode::TeamVector>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 // Serial
-TEST_F(TestCategory, test_batched_serial_rot_t_dcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<double>, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::Serial>();
+TEST_F(TestCategory, test_batched_serial_rot_i_dcomplex) {
+  test_batched_rot<TestDevice, Kokkos::complex<double>, false, KokkosBatched::Mode::Serial>();
 }
 TEST_F(TestCategory, test_batched_serial_rot_c_dcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<double>, KokkosBatched::Trans::ConjTranspose,
-                   KokkosBatched::Mode::Serial>();
+  test_batched_rot<TestDevice, Kokkos::complex<double>, true, KokkosBatched::Mode::Serial>();
 }
 
 // Team
-TEST_F(TestCategory, test_batched_team_rot_t_dcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<double>, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::Team>();
+TEST_F(TestCategory, test_batched_team_rot_i_dcomplex) {
+  test_batched_rot<TestDevice, Kokkos::complex<double>, false, KokkosBatched::Mode::Team>();
 }
 TEST_F(TestCategory, test_batched_team_rot_c_dcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<double>, KokkosBatched::Trans::ConjTranspose,
-                   KokkosBatched::Mode::Team>();
+  test_batched_rot<TestDevice, Kokkos::complex<double>, true, KokkosBatched::Mode::Team>();
 }
 
 // TeamVector
-TEST_F(TestCategory, test_batched_teamvector_rot_t_dcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<double>, KokkosBatched::Trans::Transpose,
-                   KokkosBatched::Mode::TeamVector>();
+TEST_F(TestCategory, test_batched_teamvector_rot_i_dcomplex) {
+  test_batched_rot<TestDevice, Kokkos::complex<double>, false, KokkosBatched::Mode::TeamVector>();
 }
 TEST_F(TestCategory, test_batched_teamvector_rot_c_dcomplex) {
-  test_batched_rot<TestDevice, Kokkos::complex<double>, KokkosBatched::Trans::ConjTranspose,
-                   KokkosBatched::Mode::TeamVector>();
+  test_batched_rot<TestDevice, Kokkos::complex<double>, true, KokkosBatched::Mode::TeamVector>();
 }
 #endif
