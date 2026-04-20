@@ -23,9 +23,11 @@ namespace KokkosSparse {
 namespace Impl {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#if (CUDA_VERSION >= 11040)
+#if (CUDA_VERSION >= 11040) && (!defined(CUSPARSE_VERSION) || (CUSPARSE_VERSION < 12700))
 
-// 11.4+ supports generic API with reuse (full symbolic/numeric separation)
+// CUDA 11.4+ supports generic API with reuse (full symbolic/numeric
+// separation). Newer cuSPARSE versions deprecate the SpGEMMreuse entry points,
+// so those versions use the non-reuse generic path below instead.
 template <typename KernelHandle, typename lno_t, typename ConstRowMapType, typename ConstEntriesType,
           typename ConstValuesType, typename EntriesType, typename ValuesType>
 void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno_t /*k*/,
@@ -96,7 +98,8 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno
 }
 
 #elif (CUDA_VERSION >= 11000)
-// 11.0-11.3 supports only the generic API, but not reuse.
+// CUDA 11.0-11.3 supports only the generic API, but not reuse.
+// cuSPARSE versions that deprecate SpGEMMreuse also take this path.
 template <typename KernelHandle, typename lno_t, typename ConstRowMapType, typename ConstEntriesType,
           typename ConstValuesType, typename EntriesType, typename ValuesType>
 void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno_t /*k*/,

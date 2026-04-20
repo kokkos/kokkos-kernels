@@ -29,9 +29,11 @@ namespace Impl {
 // offsets and ordinals independently as either 16, 32 or 64-bit integers,
 // cusparse will just fail at runtime if you don't use 32 for both.
 
-#if (CUDA_VERSION >= 11040)
-// 11.4+ supports generic API with reuse (full symbolic/numeric separation)
-// However, its "symbolic" (cusparseSpGEMMreuse_nnz) does not populate C's
+#if (CUDA_VERSION >= 11040) && (!defined(CUSPARSE_VERSION) || (CUSPARSE_VERSION < 12700))
+// CUDA 11.4+ added generic API structure reuse (full symbolic/numeric
+// separation). Newer cuSPARSE versions deprecate the SpGEMMreuse entry points,
+// so those versions take the non-reuse generic path below instead.
+// Also note: its "symbolic" (cusparseSpGEMMreuse_nnz) does not populate C's
 // rowptrs.
 template <typename KernelHandle, typename lno_t, typename ConstRowMapType, typename ConstEntriesType,
           typename RowMapType>
@@ -152,7 +154,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
 }
 
 #elif (CUDA_VERSION >= 11000)
-// 11.0-11.3 supports only the generic API, but not reuse.
+// CUDA 11.0-11.3 supports only the generic API, but not reuse.
+// cuSPARSE versions that deprecate SpGEMMreuse also take this path.
 template <typename KernelHandle, typename lno_t, typename ConstRowMapType, typename ConstEntriesType,
           typename RowMapType>
 void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, const ConstRowMapType &row_mapA,
