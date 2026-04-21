@@ -372,7 +372,7 @@ void test_mqr() {
   Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(3, 3);
 
   Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(100, 70);
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(7, 10);
+  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(70, 100);
   Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(100, 100);
 #endif
 }
