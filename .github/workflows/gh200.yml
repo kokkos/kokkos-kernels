@@ -5,7 +5,7 @@
 # (2) is set by the name of this file
 # (3) is set by the job name
 
-name: Reusable H100 workflow
+name: Reusable GH200 workflow
 
 permissions:
   contents: none
