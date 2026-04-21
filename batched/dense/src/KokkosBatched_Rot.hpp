@@ -23,8 +23,8 @@ namespace KokkosBatched {
 /// \tparam CType: Input type for the cosine c (typically real)
 /// \tparam SType: Input type for the sine s (real or complex)
 ///
-/// \param[inout] x: x is a length n vector, a rank 1 view
-/// \param[inout] y: y is a length n vector, a rank 1 view
+/// \param[in,out] x: x is a length n vector, a rank 1 view
+/// \param[in,out] y: y is a length n vector, a rank 1 view
 /// \param[in] c: cosine of the rotation (real scalar)
 /// \param[in] s: sine of the rotation (real or complex scalar)
 ///
@@ -52,8 +52,8 @@ struct SerialRot {
 /// \tparam SType: Input type for the sine s (real or complex)
 ///
 /// \param[in] member: TeamPolicy member
-/// \param[inout] x: x is a length n vector, a rank 1 view
-/// \param[inout] y: y is a length n vector, a rank 1 view
+/// \param[in,out] x: x is a length n vector, a rank 1 view
+/// \param[in,out] y: y is a length n vector, a rank 1 view
 /// \param[in] c: cosine of the rotation (real scalar)
 /// \param[in] s: sine of the rotation (real or complex scalar)
 ///
@@ -82,8 +82,8 @@ struct TeamRot {
 /// \tparam SType: Input type for the sine s (real or complex)
 ///
 /// \param[in] member: TeamPolicy member
-/// \param[inout] x: x is a length n vector, a rank 1 view
-/// \param[inout] y: y is a length n vector, a rank 1 view
+/// \param[in,out] x: x is a length n vector, a rank 1 view
+/// \param[in,out] y: y is a length n vector, a rank 1 view
 /// \param[in] c: cosine of the rotation (real scalar)
 /// \param[in] s: sine of the rotation (real or complex scalar)
 ///
