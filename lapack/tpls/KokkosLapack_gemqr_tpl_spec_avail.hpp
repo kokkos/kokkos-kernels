@@ -15,9 +15,9 @@ struct gemqr_tpl_spec_avail {
 // Generic Host side LAPACK (could be MKL or whatever)
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
 
-#define KOKKOSLAPACK_GEMQR_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)                                            \
+#define KOKKOSLAPACK_GEMQR_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)                                          \
   template <class ExecSpace>                                                                                        \
-  struct gemqr_tpl_spec_avail<                                                                                        \
+  struct gemqr_tpl_spec_avail<                                                                                      \
       ExecSpace,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
@@ -39,9 +39,9 @@ KOKKOSLAPACK_GEMQR_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>, Kokkos::LayoutL
 namespace KokkosLapack {
 namespace Impl {
 
-#define KOKKOSLAPACK_GEMQR_TPL_SPEC_AVAIL_CUSOLVER(SCALAR, LAYOUT, MEMSPACE)                                             \
+#define KOKKOSLAPACK_GEMQR_TPL_SPEC_AVAIL_CUSOLVER(SCALAR, LAYOUT, MEMSPACE)                                           \
   template <>                                                                                                          \
-  struct gemqr_tpl_spec_avail<                                                                                           \
+  struct gemqr_tpl_spec_avail<                                                                                         \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
@@ -72,9 +72,9 @@ KOKKOSLAPACK_GEMQR_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>, Kokkos::Layou
 namespace KokkosLapack {
 namespace Impl {
 
-#define KOKKOSLAPACK_GEMQR_TPL_SPEC_AVAIL_ROCSOLVER(SCALAR, LAYOUT, MEMSPACE)                                           \
+#define KOKKOSLAPACK_GEMQR_TPL_SPEC_AVAIL_ROCSOLVER(SCALAR, LAYOUT, MEMSPACE)                                         \
   template <>                                                                                                         \
-  struct gemqr_tpl_spec_avail<                                                                                          \
+  struct gemqr_tpl_spec_avail<                                                                                        \
       Kokkos::HIP,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \

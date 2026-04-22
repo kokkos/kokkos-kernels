@@ -30,18 +30,19 @@ struct gemqr_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSLAPACK_GEMQR_ETI_SPEC_AVAIL(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                     \
-  template <>                                                                                                          \
-  struct gemqr_eti_spec_avail<EXEC_SPACE_TYPE,                                                                           \
-                            Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
-                            Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,  \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
-                            Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
-                            Kokkos::View<int *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,          \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                   \
-    enum : bool { value = true };                                                                                      \
+#define KOKKOSLAPACK_GEMQR_ETI_SPEC_AVAIL(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+  template <>                                                                                        \
+  struct gemqr_eti_spec_avail<                                                                       \
+      EXEC_SPACE_TYPE,                                                                               \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                         \
+      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                         \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                         \
+      Kokkos::View<int *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                       \
+    enum : bool { value = true };                                                                    \
   };
 
 // Include the actual specialization declarations
@@ -57,7 +58,7 @@ template <class ExecutionSpace, class AMatrix, class TauArray, class CMatrix, cl
           bool eti_spec_avail = gemqr_eti_spec_avail<ExecutionSpace, AMatrix, TauArray, CMatrix, InfoArray>::value>
 struct GEMQR {
   static void gemqr(const ExecutionSpace &space, const char side[], const char trans[], const AMatrix &A,
-                  const TauArray &Tau, const CMatrix &C, const InfoArray &info);
+                    const TauArray &Tau, const CMatrix &C, const InfoArray &info);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -65,8 +66,8 @@ struct GEMQR {
 template <class ExecutionSpace, class AMatrix, class TauArray, class CMatrix, class InfoArray>
 struct GEMQR<ExecutionSpace, AMatrix, TauArray, CMatrix, InfoArray, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void gemqr(const ExecutionSpace & /* space */, const char[] /*side*/, const char[] /*trans*/,
-                  const AMatrix & /* A */, const TauArray & /* Tau */, const CMatrix & /* C */,
-                  const InfoArray & /* Info */) {
+                    const AMatrix & /* A */, const TauArray & /* Tau */, const CMatrix & /* C */,
+                    const InfoArray & /* Info */) {
     // NOTE: Might add the implementation of KokkosLapack::gemqr later
     throw std::runtime_error(
         "No fallback implementation of GEMQR (apply Q from QR factorization) "
@@ -87,28 +88,28 @@ struct GEMQR<ExecutionSpace, AMatrix, TauArray, CMatrix, InfoArray, false, KOKKO
 //
 #define KOKKOSLAPACK_GEMQR_ETI_SPEC_DECL(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
   extern template struct GEMQR<                                                                     \
-      EXEC_SPACE_TYPE,                                                                            \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-      Kokkos::View<int *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,           \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+      EXEC_SPACE_TYPE,                                                                              \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
+      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
+      Kokkos::View<int *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
       false, true>;
 
 #define KOKKOSLAPACK_GEMQR_ETI_SPEC_INST(SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)                \
   template struct GEMQR<EXEC_SPACE_TYPE,                                                                           \
-                      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
-                      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
-                      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
-                      Kokkos::View<int *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,          \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
-                      false, true>;
+                        Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
+                        Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,  \
+                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
+                        Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
+                        Kokkos::View<int *, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,          \
+                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
+                        false, true>;
 
 #include <KokkosLapack_gemqr_tpl_spec_decl.hpp>
 

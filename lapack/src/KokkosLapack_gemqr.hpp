@@ -44,7 +44,7 @@ namespace KokkosLapack {
 ///
 template <class ExecutionSpace, class AMatrix, class TauArray, class CMatrix, class InfoArray>
 void gemqr(const ExecutionSpace& space, const char side[], const char trans[], const AMatrix& A, const TauArray& Tau,
-         const CMatrix& C, const InfoArray& Info) {
+           const CMatrix& C, const InfoArray& Info) {
   // NOTE: Currently, KokkosLapack::gemqr only supports LAPACK, cuSOLVER and
   // rocSOLVER TPLs.
 
@@ -72,7 +72,8 @@ void gemqr(const ExecutionSpace& space, const char side[], const char trans[], c
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  if (trans == nullptr || (trans[0] != 'N' && trans[0] != 'n' && trans[0] != 'T' && trans[0] != 't' && trans[0] != 'C' && trans[0] != 'c')) {
+  if (trans == nullptr || (trans[0] != 'N' && trans[0] != 'n' && trans[0] != 'T' && trans[0] != 't' &&
+                           trans[0] != 'C' && trans[0] != 'c')) {
     std::ostringstream os;
     os << "KokkosLapack::gemrf: trans must be \"N\", \"n\", \"T\", \"t\", \"C\" or \"c\"";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
@@ -124,7 +125,7 @@ void gemqr(const ExecutionSpace& space, const char side[], const char trans[], c
   InfoArray_Internal Info_i = Info;
 
   KokkosLapack::Impl::GEMQR<ExecutionSpace, AMatrix_Internal, TauArray_Internal, CMatrix_Internal,
-                          InfoArray_Internal>::gemqr(space, side, trans, A_i, Tau_i, C_i, Info_i);
+                            InfoArray_Internal>::gemqr(space, side, trans, A_i, Tau_i, C_i, Info_i);
 }
 
 /// \brief Multiplies matrix C with the Q factor, from a QR decomposition
@@ -150,7 +151,7 @@ void gemqr(const ExecutionSpace& space, const char side[], const char trans[], c
 ///                                illegal value
 template <class AMatrix, class TauArray, class CMatrix, class InfoArray>
 void gemqr(const char side[], const char trans[], const AMatrix& A, const TauArray& Tau, const CMatrix& C,
-         const InfoArray& Info) {
+           const InfoArray& Info) {
   typename AMatrix::execution_space space{};
   gemqr(space, side, trans, A, Tau, C, Info);
 }

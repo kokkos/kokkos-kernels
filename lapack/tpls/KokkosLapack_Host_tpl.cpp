@@ -181,7 +181,7 @@ int HostLapack<float>::potrf(const char uplo, const int n, float* a, const int l
 
 template <>
 void HostLapack<float>::gemqr(const char side, const char trans, const int m, const int n, const int k, float* a,
-                            const int lda, float* tau, float* c, const int ldc, float* work, int lwork, int* info) {
+                              const int lda, float* tau, float* c, const int ldc, float* work, int lwork, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   sormqr_(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
 #else
@@ -243,7 +243,8 @@ int HostLapack<double>::potrf(const char uplo, const int n, double* a, const int
 
 template <>
 void HostLapack<double>::gemqr(const char side, const char trans, const int m, const int n, const int k, double* a,
-                             const int lda, double* tau, double* c, const int ldc, double* work, int lwork, int* info) {
+                               const int lda, double* tau, double* c, const int ldc, double* work, int lwork,
+                               int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   dormqr_(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
 #else
@@ -297,9 +298,9 @@ void HostLapack<std::complex<float>>::geqrf(const int m, const int n, std::compl
 }
 template <>
 void HostLapack<std::complex<float>>::gemqr(const char side, const char trans, const int m, const int n, const int k,
-                                          std::complex<float>* a, const int lda, std::complex<float>* tau,
-                                          std::complex<float>* c, const int ldc, std::complex<float>* work, int lwork,
-                                          int* info) {
+                                            std::complex<float>* a, const int lda, std::complex<float>* tau,
+                                            std::complex<float>* c, const int ldc, std::complex<float>* work, int lwork,
+                                            int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   cunmqr_(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
 #else
@@ -364,9 +365,9 @@ void HostLapack<std::complex<double>>::geqrf(const int m, const int n, std::comp
 }
 template <>
 void HostLapack<std::complex<double>>::gemqr(const char side, const char trans, const int m, const int n, const int k,
-                                           std::complex<double>* a, const int lda, std::complex<double>* tau,
-                                           std::complex<double>* c, const int ldc, std::complex<double>* work,
-                                           int lwork, int* info) {
+                                             std::complex<double>* a, const int lda, std::complex<double>* tau,
+                                             std::complex<double>* c, const int ldc, std::complex<double>* work,
+                                             int lwork, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   zunmqr_(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
 #else

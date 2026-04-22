@@ -35,7 +35,7 @@ namespace Impl {
 
 template <class AViewType, class TauViewType, class CViewType, class InfoViewType>
 void lapackGemqrWrapper(const char side[], const char trans[], const AViewType& A, const TauViewType& Tau,
-                      const CViewType& C, const InfoViewType& Info) {
+                        const CViewType& C, const InfoViewType& Info) {
   using memory_space = typename AViewType::memory_space;
   using Scalar       = typename AViewType::non_const_value_type;
   using ALayout_t    = typename AViewType::array_layout;
@@ -71,7 +71,7 @@ void lapackGemqrWrapper(const char side[], const char trans[], const AViewType& 
         reinterpret_cast<std::complex<MagType>*>(work.data()), lwork, Info.data());
   } else {
     HostLapack<Scalar>::gemqr(side[0], trans[0], m, n, k, A.data(), lda, Tau.data(), C.data(), ldc, work.data(), lwork,
-                            Info.data());
+                              Info.data());
 
     if (Info[0] < 0) return;
 
@@ -80,27 +80,27 @@ void lapackGemqrWrapper(const char side[], const char trans[], const AViewType& 
     work = Kokkos::View<Scalar*, memory_space>("gemqr work buffer", lwork);
 
     HostLapack<Scalar>::gemqr(side[0], trans[0], m, n, k, A.data(), lda, Tau.data(), C.data(), ldc, work.data(), lwork,
-                            Info.data());
+                              Info.data());
   }
 }
 
-#define KOKKOSLAPACK_GEMQR_LAPACK(SCALAR, LAYOUT, EXECSPACE, MEM_SPACE)                                                  \
+#define KOKKOSLAPACK_GEMQR_LAPACK(SCALAR, LAYOUT, EXECSPACE, MEM_SPACE)                                                \
   template <>                                                                                                          \
-  struct GEMQR<                                                                                                          \
+  struct GEMQR<                                                                                                        \
       EXECSPACE,                                                                                                       \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true, \
-      gemqr_eti_spec_avail<EXECSPACE,                                                                                    \
-                         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                          \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
-                         Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                           \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
-                         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                          \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
-                         Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                              \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                              \
+      gemqr_eti_spec_avail<EXECSPACE,                                                                                  \
+                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                        \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+                           Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                         \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                        \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+                           Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                            \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
     using AViewType =                                                                                                  \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     using TauViewType =                                                                                                \
@@ -110,11 +110,11 @@ void lapackGemqrWrapper(const char side[], const char trans[], const AViewType& 
     using InfoViewType =                                                                                               \
         Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
                                                                                                                        \
-    static void gemqr(const EXECSPACE& /* space */, const char side[], const char trans[], const AViewType& A,           \
-                    const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {                            \
-      Kokkos::Profiling::pushRegion("KokkosLapack::gemqr[TPL_LAPACK," #SCALAR "]");                                      \
-      gemqr_print_specialization<AViewType, TauViewType, InfoViewType>();                                                \
-      lapackGemqrWrapper(side, trans, A, Tau, C, Info);                                                                  \
+    static void gemqr(const EXECSPACE& /* space */, const char side[], const char trans[], const AViewType& A,         \
+                      const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {                          \
+      Kokkos::Profiling::pushRegion("KokkosLapack::gemqr[TPL_LAPACK," #SCALAR "]");                                    \
+      gemqr_print_specialization<AViewType, TauViewType, InfoViewType>();                                              \
+      lapackGemqrWrapper(side, trans, A, Tau, C, Info);                                                                \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -153,7 +153,7 @@ namespace Impl {
 
 template <class ExecutionSpace, class AViewType, class TauViewType, class CViewType, class InfoViewType>
 void cusolverGemqrWrapper(const ExecutionSpace& space, const char side[], const char trans[], const AViewType& A,
-                        const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {
+                          const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {
   using memory_space = typename AViewType::memory_space;
   using Scalar       = typename AViewType::non_const_value_type;
 
@@ -215,9 +215,9 @@ void cusolverGemqrWrapper(const ExecutionSpace& space, const char side[], const 
   KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSetStream(s.handle, NULL));
 }
 
-#define KOKKOSLAPACK_GEMQR_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                           \
+#define KOKKOSLAPACK_GEMQR_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                         \
   template <>                                                                                                          \
-  struct GEMQR<                                                                                                          \
+  struct GEMQR<                                                                                                        \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
@@ -226,15 +226,15 @@ void cusolverGemqrWrapper(const ExecutionSpace& space, const char side[], const 
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
       true,                                                                                                            \
-      gemqr_eti_spec_avail<Kokkos::Cuda,                                                                                 \
-                         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                       \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
-                         Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                        \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
-                         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                       \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
-                         Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                           \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                              \
+      gemqr_eti_spec_avail<Kokkos::Cuda,                                                                               \
+                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+                           Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                      \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
     using AViewType   = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                        \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
     using TauViewType = Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
@@ -244,12 +244,12 @@ void cusolverGemqrWrapper(const ExecutionSpace& space, const char side[], const 
     using InfoViewType =                                                                                               \
         Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
                                                                                                                        \
-    static void gemqr(const Kokkos::Cuda& space, const char side[], const char trans[], const AViewType& A,              \
-                    const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {                            \
-      Kokkos::Profiling::pushRegion("KokkosLapack::gemqr[TPL_CUSOLVER," #SCALAR "]");                                    \
-      gemqr_print_specialization<AViewType, TauViewType, InfoViewType>();                                                \
+    static void gemqr(const Kokkos::Cuda& space, const char side[], const char trans[], const AViewType& A,            \
+                      const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {                          \
+      Kokkos::Profiling::pushRegion("KokkosLapack::gemqr[TPL_CUSOLVER," #SCALAR "]");                                  \
+      gemqr_print_specialization<AViewType, TauViewType, InfoViewType>();                                              \
                                                                                                                        \
-      cusolverGemqrWrapper(space, side, trans, A, Tau, C, Info);                                                         \
+      cusolverGemqrWrapper(space, side, trans, A, Tau, C, Info);                                                       \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -280,7 +280,7 @@ namespace Impl {
 
 template <class ExecutionSpace, class AViewType, class TauViewType, class CViewType, class InfoViewType>
 void rocsolverGemqrWrapper(const ExecutionSpace& space, const char side[], const char trans[], const AViewType& A,
-                         const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {
+                           const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {
   using Scalar = typename AViewType::non_const_value_type;
 
   using ALayout_t = typename AViewType::array_layout;
@@ -320,24 +320,24 @@ void rocsolverGemqrWrapper(const ExecutionSpace& space, const char side[], const
   KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));
 }
 
-#define KOKKOSLAPACK_GEMQR_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                          \
+#define KOKKOSLAPACK_GEMQR_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                        \
   template <>                                                                                                          \
-  struct GEMQR<                                                                                                          \
+  struct GEMQR<                                                                                                        \
       Kokkos::HIP,                                                                                                     \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
       true,                                                                                                            \
-      gemqr_eti_spec_avail<Kokkos::HIP,                                                                                  \
-                         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                        \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
-                         Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                         \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
-                         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                        \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                        \
-                         Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                            \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                              \
+      gemqr_eti_spec_avail<Kokkos::HIP,                                                                                \
+                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                      \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+                           Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                       \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                      \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
+                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                          \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
     using AViewType   = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                         \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
     using TauViewType = Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                          \
@@ -347,12 +347,12 @@ void rocsolverGemqrWrapper(const ExecutionSpace& space, const char side[], const
     using InfoViewType =                                                                                               \
         Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
                                                                                                                        \
-    static void gemqr(const Kokkos::HIP& space, const char side[], const char trans[], const AViewType& A,               \
-                    const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {                            \
-      Kokkos::Profiling::pushRegion("KokkosLapack::gemqr[TPL_ROCSOLVER," #SCALAR "]");                                   \
-      gemqr_print_specialization<AViewType, TauViewType, InfoViewType>();                                                \
+    static void gemqr(const Kokkos::HIP& space, const char side[], const char trans[], const AViewType& A,             \
+                      const TauViewType& Tau, const CViewType& C, const InfoViewType& Info) {                          \
+      Kokkos::Profiling::pushRegion("KokkosLapack::gemqr[TPL_ROCSOLVER," #SCALAR "]");                                 \
+      gemqr_print_specialization<AViewType, TauViewType, InfoViewType>();                                              \
                                                                                                                        \
-      rocsolverGemqrWrapper(space, side, trans, A, Tau, C, Info);                                                        \
+      rocsolverGemqrWrapper(space, side, trans, A, Tau, C, Info);                                                      \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
