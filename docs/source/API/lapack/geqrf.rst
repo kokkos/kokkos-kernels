@@ -1,5 +1,5 @@
-KokkosLapack::Experimental::geqrf
-#################################
+KokkosLapack::geqrf
+###################
 
 Defined in header: :code:`KokkosLapack_geqrf.hpp`
 

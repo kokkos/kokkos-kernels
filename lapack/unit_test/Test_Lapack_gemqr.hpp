@@ -15,13 +15,13 @@
 #include <KokkosBlas2_ger.hpp>
 #include <KokkosBlas3_gemm.hpp>
 #include <KokkosLapack_geqrf.hpp>
-#include <KokkosLapack_mqr.hpp>
+#include <KokkosLapack_gemqr.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
 namespace Test {
 
 template <class ViewTypeA, class ViewTypeTau, class Device>
-void impl_test_mqr(int m, int n) {
+void impl_test_gemqr(int m, int n) {
   using ALayout_t       = typename ViewTypeA::array_layout;
   using ViewTypeInfo    = Kokkos::View<int*, ALayout_t, Device>;
   using execution_space = typename Device::execution_space;
@@ -187,7 +187,7 @@ void impl_test_mqr(int m, int n) {
   Kokkos::deep_copy(R, h_R);
 
   // Apply Q stored in A to our Q that is currently set as the identity
-  KokkosLapack::mqr(space, "L", "N", A, Tau, Q, Info);
+  KokkosLapack::gemqr(space, "L", "N", A, Tau, Q, Info);
   Kokkos::deep_copy(h_Q, Q);
 
   // Recompute A from Q and R factors
@@ -266,7 +266,7 @@ void impl_test_mqr(int m, int n) {
     bool test_flag_QR = true;
     for (int i = 0; (i < m) && test_flag_QR; ++i) {
       for (int j = 0; (j < n) && test_flag_QR; ++j) {
-        if ((j < m) && (ats::abs(h_QR(i, j) - h_Aorig(i, j)) > absTol)) {
+        if ((ats::abs(h_QR(i, j) - h_Aorig(i, j)) > absTol)) {
           std::cout << "QR checking"
                     << ", m = " << m << ", n = " << n << ", i = " << i << ", j = " << j
                     << ", h_Aorig(i,j) = " << std::setprecision(16) << h_Aorig(i, j)
@@ -336,9 +336,9 @@ void applyQ_analytic() {
   try {
     execution_space space{};
     KokkosLapack::geqrf(space, A, Tau, Info);
-    KokkosLapack::mqr(space, "L", "N", A, Tau, Q, Info);
+    KokkosLapack::gemqr(space, "L", "N", A, Tau, Q, Info);
   } catch (const std::runtime_error& e) {
-    std::cout << "KokkosLapack::mqr(): caught exception '" << e.what() << "'" << std::endl;
+    std::cout << "KokkosLapack::gemqr(): caught exception '" << e.what() << "'" << std::endl;
     FAIL();
     return;
   }
@@ -356,7 +356,7 @@ void applyQ_analytic() {
 }  // namespace Test
 
 template <class Scalar, class Device>
-void test_mqr() {
+void test_gemqr() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   using view_type_a_ll   = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
@@ -364,51 +364,51 @@ void test_mqr() {
 
   Test::applyQ_analytic<view_type_a_ll, view_type_tau_ll, Device>();
 
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(1, 1);
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(2, 1);
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(2, 2);
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(3, 1);
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(3, 2);
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(3, 3);
+  Test::impl_test_gemqr<view_type_a_ll, view_type_tau_ll, Device>(1, 1);
+  Test::impl_test_gemqr<view_type_a_ll, view_type_tau_ll, Device>(2, 1);
+  Test::impl_test_gemqr<view_type_a_ll, view_type_tau_ll, Device>(2, 2);
+  Test::impl_test_gemqr<view_type_a_ll, view_type_tau_ll, Device>(3, 1);
+  Test::impl_test_gemqr<view_type_a_ll, view_type_tau_ll, Device>(3, 2);
+  Test::impl_test_gemqr<view_type_a_ll, view_type_tau_ll, Device>(3, 3);
 
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(100, 70);
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(70, 100);
-  Test::impl_test_mqr<view_type_a_ll, view_type_tau_ll, Device>(100, 100);
+  Test::impl_test_gemqr<view_type_a_ll, view_type_tau_ll, Device>(100, 70);
+  Test::impl_test_gemqr<view_type_a_ll, view_type_tau_ll, Device>(70, 100);
+  Test::impl_test_gemqr<view_type_a_ll, view_type_tau_ll, Device>(100, 100);
 #endif
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, mqr_float) {
-  Kokkos::Profiling::pushRegion("KokkosLapack::Test::mqr_float");
-  test_mqr<float, TestDevice>();
+TEST_F(TestCategory, gemqr_float) {
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gemqr_float");
+  test_gemqr<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, mqr_double) {
-  Kokkos::Profiling::pushRegion("KokkosLapack::Test::mqr_double");
-  test_mqr<double, TestDevice>();
+TEST_F(TestCategory, gemqr_double) {
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gemqr_double");
+  test_gemqr<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, mqr_complex_float) {
-  Kokkos::Profiling::pushRegion("KokkosLapack::Test::mqr_complex_float");
-  test_mqr<Kokkos::complex<float>, TestDevice>();
+TEST_F(TestCategory, gemqr_complex_float) {
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gemqr_complex_float");
+  test_gemqr<Kokkos::complex<float>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, mqr_complex_double) {
-  Kokkos::Profiling::pushRegion("KokkosLapack::Test::mqr_complex_double");
-  test_mqr<Kokkos::complex<double>, TestDevice>();
+TEST_F(TestCategory, gemqr_complex_double) {
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gemqr_complex_double");
+  test_gemqr<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif

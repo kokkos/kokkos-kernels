@@ -1,18 +1,18 @@
-KokkosLapack::Experimental::mqr
-###############################
+KokkosLapack::gemqr
+###################
 
-Defined in header: :code:`KokkosLapack_mqr.hpp`
+Defined in header: :code:`KokkosLapack_gemqr.hpp`
 
 .. code:: c++
 
   template <class ExecutionSpace, class AMatrix, class TauArray, class CMatrix, class InfoArray>
-  void mqr(const ExecutionSpace& space, const char side[], const char trans[], const AMatrix& A, const TauArray& Tau,
-           const CMatrix& C, const InfoArray& Info);
+  void gemqr(const ExecutionSpace& space, const char side[], const char trans[], const AMatrix& A, const TauArray& Tau,
+             const CMatrix& C, const InfoArray& Info);
 
 
   template <class AMatrix, class TauArray, class CMatrix, class InfoArray>
-  void mqr(const char side[], const char trans[], const AMatrix& A, const TauArray& Tau, const CMatrix& C,
-           const InfoArray& Info);
+  void gemqr(const char side[], const char trans[], const AMatrix& A, const TauArray& Tau, const CMatrix& C,
+             const InfoArray& Info);
 
 Applies the `Q` factor from the QR factorization of matrix :math:`A` to matrix :math:`C` using the prescribed side and operation
 
@@ -34,9 +34,7 @@ Parameters
 
 :side: control parameter specifying on which side the solver is applied, supported values are ``L, l`` for left side and ``R, r`` for right side.
 
-:trans: control parameter specifying what operation on the entires of :math:`Q` should be performed. Supported values are ``N, n`` for nothing, ``T, t`` for transpose mode and ``C, c`` for conjugate transpose mode.
-
-:trans: The operation applied to :math:`Q` while multiplying it to `C`.
+:trans: control parameter specifying what operation on the entries of :math:`Q` should be performed. Supported values are ``N, n`` for nothing, ``T, t`` for transpose mode and ``C, c`` for conjugate transpose mode.
 
 :A: The input matrix that contains the :math:`QR` factors from a previous call to ``geqrf``.
 
@@ -61,7 +59,7 @@ Type Requirements
 
 - `CMatrix` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 2 that satisfies
 
-  - ``Kokkos::SpaceAccessibility<ExecutionSpace, typename AMatrix::memory_space>::accessible``
+  - ``Kokkos::SpaceAccessibility<ExecutionSpace, typename CMatrix::memory_space>::accessible``
 
 - `Info` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 that satisfies
 
