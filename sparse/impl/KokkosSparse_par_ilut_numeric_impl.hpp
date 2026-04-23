@@ -462,11 +462,6 @@ struct IlutWrap {
     }
   }
 
-  struct AbsComparator {
-    KOKKOS_INLINE_FUNCTION
-    bool operator()(const scalar_t& a, const scalar_t& b) const { return karith::abs(a) < karith::abs(b); }
-  };
-
   /**
    * Select threshold based on filter rank. Do all this on host
    */
@@ -493,10 +488,17 @@ struct IlutWrap {
       Kokkos::realloc(Kokkos::WithoutInitializing, values_copy_d, size);
       Kokkos::deep_copy(values_copy_d, values);
 
+      // Fill values_copy_d with abs values so that we don't need a custom
+      // comparator for Kokkos::sort (custom compares can caust thrust problems for
+      // large views).
+      Kokkos::parallel_for(range_policy(0, size), KOKKOS_LAMBDA(const int i) {
+        values_copy_d(i) = karith::abs(values_copy_d(i));
+      });
+
       float_t result;
-      Kokkos::sort(values_copy_d, AbsComparator{});
+      Kokkos::sort(values_copy_d);
       Kokkos::parallel_reduce(
-          range_policy(0, 1), KOKKOS_LAMBDA(const int, float_t& lsum) { lsum = karith::abs(values_copy_d(rank)); },
+          range_policy(0, 1), KOKKOS_LAMBDA(const int, float_t& lsum) { lsum = values_copy_d(rank); },
           result);
 
       return result;
@@ -863,6 +865,10 @@ struct IlutWrap {
           prev_residual = curr_residual;
         }
       } else {
+        if (verbose) {
+          std::cout << "Completed itr " << itr << ", residual is unknown." << std::endl;
+        }
+
         curr_residual = 0;
         prev_residual = 0;
       }
