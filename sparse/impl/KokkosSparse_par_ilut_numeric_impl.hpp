@@ -497,7 +497,8 @@ struct IlutWrap {
       float_t result;
       Kokkos::sort(values_copy_d);
       Kokkos::parallel_reduce(
-          range_policy(0, 1), KOKKOS_LAMBDA(const int, float_t& lsum) { lsum = values_copy_d(rank); }, result);
+          range_policy(0, 1), KOKKOS_LAMBDA(const int, float_t& lsum) { lsum = karith::abs(values_copy_d(rank)); },
+          result);
 
       return result;
     }
