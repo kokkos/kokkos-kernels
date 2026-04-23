@@ -542,7 +542,7 @@ template <class Scalar, class Device>
 int test_svd_wrapper() {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
   if constexpr (std::is_same_v<typename Device::memory_space, Kokkos::HostSpace>) {
-    // Using a device side space with LAPACK/MKL
+    // Using a host side space with LAPACK/MKL
     return test_svd<Scalar, Device>();
   }
 #endif

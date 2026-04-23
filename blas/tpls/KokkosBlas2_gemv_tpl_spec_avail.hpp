@@ -91,8 +91,8 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutRig
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
 #define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT)                                                  \
-  template <class ExecSpace>                                                                                     \
-  struct gemv_tpl_spec_avail<ExecSpace,                                                                          \
+  template <>                                                                                                    \
+  struct gemv_tpl_spec_avail<Kokkos::HIP,                                                                        \
                              Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
                                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                             \
                              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,  \
