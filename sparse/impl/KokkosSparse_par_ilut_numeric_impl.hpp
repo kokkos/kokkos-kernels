@@ -478,12 +478,10 @@ struct IlutWrap {
     Kokkos::parallel_for(
         range_policy(0, size), KOKKOS_LAMBDA(const size_type i) { values_f(i) = karith::abs(values(i)); });
 
-    // Legacy views do not support sort, so we have to do it on host
-#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
-    if constexpr (true) {
-#else
     if constexpr (std::is_same_v<Kokkos::HostSpace, typename ValuesType::memory_space>) {
-#endif
+      // On host, the nth_element approach performs much better than Kokkos::sort. At
+      // least, this was true before the recent refactor that eliminated the need for
+      // a custom comparator.
       auto begin  = values_f.data();
       auto target = begin + rank;
       auto end    = begin + size;
