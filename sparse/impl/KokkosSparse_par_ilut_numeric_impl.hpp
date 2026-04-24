@@ -464,7 +464,7 @@ struct IlutWrap {
   }
 
   /**
-   * Select threshold based on filter rank. Do all this on host
+   * Select threshold based on filter rank.
    */
   template <class ValuesType, class ValuesFloatType>
   static float_t threshold_select(const ValuesType& values, const typename IlutHandle::nnz_lno_t rank,
