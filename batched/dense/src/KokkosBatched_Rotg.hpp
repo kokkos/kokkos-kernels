@@ -10,13 +10,15 @@ namespace KokkosBatched {
 /// \brief Device callable Rotg:
 /// constructs a plane rotation such that
 /// [[c,         s],  * [[a],  = [[r],
-///  [-conjg(s), c]]     [b],]    [0]]
+///  [-conjg(s), c]]     [b]]     [0]]
 ///
 /// \tparam SViewType 0-D View type containing a nonconst real or complex scalar
 /// \tparam MViewType 0-D View type containing a nonconst real/magnitude-typed scalar
 ///
 /// \param[in,out] a: On entry, the scalar a. On exit, it is overwritten by r, the nonzero element of the rotated
-/// vector. \param[in,out] b: The scalar b (real or complex). \param[out] c: cosine of the rotation (real scalar)
+/// vector.
+/// \param[in,out] b: The scalar b (real or complex).
+/// \param[out] c: cosine of the rotation (real scalar)
 /// \param[out] s: sine of the rotation (real or complex scalar)
 ///
 struct Rotg {
