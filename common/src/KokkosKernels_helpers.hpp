@@ -28,6 +28,9 @@ struct GetUnifiedLayout {
   using array_layout = typename GetUnifiedLayoutPreferring<ViewType, default_layout>::array_layout;
 };
 
+// Unify a type T for the ETI layer, where T can either be a View or some scalar type.
+// If it is a View, use an unmanaged View preferring the layout of TX.
+// If it is a scalar, use the value type of TX.
 template <class T, class TX, bool do_const, bool isView = Kokkos::is_view<T>::value>
 struct GetUnifiedScalarViewType {
   typedef typename TX::non_const_value_type type;
