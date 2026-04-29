@@ -117,7 +117,7 @@ auto try_lu_prec(kkhandle_t& kh, const sp_matrix_t& A, const result_t& results, 
     num_iters_plain      = gmres_handle->get_num_iters();
 
     KK_REQUIRE(num_iters_plain > 0);
-    if (conv_flag == GMRESHandle::Flag::Conv || endRes < gmres_handle->get_tol()) {
+    if (conv_flag != GMRESHandle::Flag::Conv || endRes > gmres_handle->get_tol()) {
       std::cout << "WARNING: baseline did not converge" << std::endl;
     }
     auto end                                       = std::chrono::steady_clock::now();
@@ -136,7 +136,8 @@ auto try_lu_prec(kkhandle_t& kh, const sp_matrix_t& A, const result_t& results, 
     // Make precond
     KokkosSparse::Experimental::LUPrec<sp_matrix_t, kkhandle_t> myPrec(L, U);
 
-    // reset X for next gmres call
+    // reset B, X for next gmres call
+    Kokkos::deep_copy(B, 1.0);
     Kokkos::deep_copy(X, 0.0);
 
     gmres(&kh, A, B, X, &myPrec);
@@ -547,7 +548,7 @@ int run_ilu_perf_tests(const std::string& matrix_file, int rows, int nnz_per_row
     auto glambda = [&](benchmark::State& state) {
       run_par_ilut_test_ginkgo(state, kh, A, num_iters, validate, gmres_max_subspace, verbosity);
     };
-    KokkosKernelsBenchmark::register_benchmark_real_time((name + "_gingko").c_str(), glambda, arg_names, args, loop);
+    KokkosKernelsBenchmark::register_benchmark_real_time((name + "_ginkgo").c_str(), glambda, arg_names, args, loop);
 #else
     KK_REQUIRE_MSG(false, "Requested ginkgo perf test but it is not enabled");
 #endif
