@@ -288,7 +288,8 @@ int main(int argc, char** argv) {
 #endif
   }
 
-  if (!params.use_cuda && !params.use_hip && !params.use_sycl && !params.use_openmp && !params.use_threads && !params.use_serial) {
+  if (!params.use_cuda && !params.use_hip && !params.use_sycl && !params.use_openmp && !params.use_threads &&
+      !params.use_serial) {
     run<Kokkos::DefaultExecutionSpace>(params);
   }
 
