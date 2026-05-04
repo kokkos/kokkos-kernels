@@ -199,6 +199,10 @@ struct MagnitudeScalarType<double> {
   typedef double type;
 };
 template <>
+struct MagnitudeScalarType<long double> {
+  typedef long double type;
+};
+template <>
 struct MagnitudeScalarType<Kokkos::complex<float>> {
   typedef float type;
 };
