@@ -106,7 +106,8 @@ struct SerialTrsv<Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsv::Unblocke
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride(0), A.stride(1), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpID(), A.extent(0), alpha, A.data(), A.stride(0), A.stride(1),
+        b.data(), b.stride(0));
   }
 };
 
@@ -120,7 +121,8 @@ struct SerialTrsv<Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsv::Blocked>
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride(0), A.stride(1), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpID(), A.extent(0), alpha, A.data(), A.stride(0), A.stride(1),
+        b.data(), b.stride(0));
   }
 };
 
@@ -177,7 +179,8 @@ struct SerialTrsv<Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsv::Unblocked>
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpID(), A.extent(1), alpha, A.data(), A.stride(1), A.stride(0),
+        b.data(), b.stride(0));
   }
 };
 
@@ -191,7 +194,8 @@ struct SerialTrsv<Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsv::Blocked> {
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpID(), A.extent(1), alpha, A.data(), A.stride(1), A.stride(0),
+        b.data(), b.stride(0));
   }
 };
 
@@ -248,7 +252,8 @@ struct SerialTrsv<Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Unbloc
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpConj(), A.extent(1), alpha, A.data(), A.stride(1), A.stride(0),
+        b.data(), b.stride(0));
   }
 };
 
@@ -262,7 +267,8 @@ struct SerialTrsv<Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Blocke
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpConj(), A.extent(1), alpha, A.data(), A.stride(1), A.stride(0),
+        b.data(), b.stride(0));
   }
 };
 
@@ -319,7 +325,8 @@ struct SerialTrsv<Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsv::Unblocke
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride(0), A.stride(1), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpID(), A.extent(0), alpha, A.data(), A.stride(0), A.stride(1),
+        b.data(), b.stride(0));
   }
 };
 
@@ -333,7 +340,8 @@ struct SerialTrsv<Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsv::Blocked>
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride(0), A.stride(1), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpID(), A.extent(0), alpha, A.data(), A.stride(0), A.stride(1),
+        b.data(), b.stride(0));
   }
 };
 
@@ -390,7 +398,8 @@ struct SerialTrsv<Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsv::Unblocked>
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpID(), A.extent(1), alpha, A.data(), A.stride(1), A.stride(0),
+        b.data(), b.stride(0));
   }
 };
 
@@ -404,7 +413,8 @@ struct SerialTrsv<Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsv::Blocked> {
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpID(), A.extent(1), alpha, A.data(), A.stride(1), A.stride(0),
+        b.data(), b.stride(0));
   }
 };
 
@@ -461,7 +471,8 @@ struct SerialTrsv<Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Unbloc
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpConj(), A.extent(1), alpha, A.data(), A.stride(1), A.stride(0),
+        b.data(), b.stride(0));
   }
 };
 
@@ -475,7 +486,8 @@ struct SerialTrsv<Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Blocke
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
+        ArgDiag::use_unit_diag, KokkosBlas::Impl::OpConj(), A.extent(1), alpha, A.data(), A.stride(1), A.stride(0),
+        b.data(), b.stride(0));
   }
 };
 
