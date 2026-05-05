@@ -225,43 +225,32 @@ void rocsolverPotrsWrapper(const Kokkos::HIP& space, const char uplo[], const in
   const rocblas_int nrhs_ = static_cast<rocblas_int>(nrhs);
   const rocblas_int lda_  = static_cast<rocblas_int>(lda);
   const rocblas_int ldb_  = static_cast<rocblas_int>(ldb);
-  Kokkos::View<rocblas_int, typename BViewType::memory_space> info("potrs info");
 
   KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();
   KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));
 
   if constexpr (std::is_same_v<Scalar, float>) {
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
-        rocsolver_spotrs(s.handle, uplo_t, n_, nrhs_, const_cast<float*>(A.data()), lda_, B.data(), ldb_, info.data()));
+        rocsolver_spotrs(s.handle, uplo_t, n_, nrhs_, const_cast<float*>(A.data()), lda_, B.data(), ldb_));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_dpotrs(s.handle, uplo_t, n_, nrhs_, const_cast<double*>(A.data()), lda_,
-                                                       B.data(), ldb_, info.data()));
+                                                       B.data(), ldb_));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
         rocsolver_cpotrs(s.handle, uplo_t, n_, nrhs_,
                          const_cast<rocblas_float_complex*>(reinterpret_cast<const rocblas_float_complex*>(A.data())),
-                         lda_, reinterpret_cast<rocblas_float_complex*>(B.data()), ldb_, info.data()));
+                         lda_, reinterpret_cast<rocblas_float_complex*>(B.data()), ldb_));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
         rocsolver_zpotrs(s.handle, uplo_t, n_, nrhs_,
                          const_cast<rocblas_double_complex*>(reinterpret_cast<const rocblas_double_complex*>(A.data())),
-                         lda_, reinterpret_cast<rocblas_double_complex*>(B.data()), ldb_, info.data()));
+                         lda_, reinterpret_cast<rocblas_double_complex*>(B.data()), ldb_));
   }
   KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));
   space.fence();
-  auto h_info = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, info);
-  if (h_info() != 0) {
-    std::ostringstream os;
-    if (h_info() < 0)
-      os << "KokkosLapack::potrs: rocSOLVER potrs: argument " << -h_info() << " had an illegal value";
-    else
-      os << "KokkosLapack::potrs: rocSOLVER potrs: the leading minor of order " << h_info()
-         << " is not positive definite";
-    Kokkos::abort(os.str().c_str());
-  }
 }
 
 #define KOKKOSLAPACK_POTRS_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                        \
