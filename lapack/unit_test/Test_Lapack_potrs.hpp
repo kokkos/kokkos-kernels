@@ -215,16 +215,6 @@ void test_potrs() {
   Test::impl_test_potrs<AViewType, BViewType, Device>(100, 5, 'L');
   Test::impl_test_potrs<AViewType, BViewType, Device>(100, 5, 'U');
 #endif
-
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  {
-    using AViewTypeR = Kokkos::View<const Scalar**, Kokkos::LayoutRight, Device>;
-    using BViewTypeR = Kokkos::View<Scalar**, Kokkos::LayoutRight, Device>;
-    // impl_test_potrs returns early for non-LayoutLeft (no TPL support)
-    Test::impl_test_potrs<AViewTypeR, BViewTypeR, Device>(10, 1, 'L');
-  }
-#endif
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \

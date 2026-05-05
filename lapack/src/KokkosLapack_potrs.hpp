@@ -23,7 +23,7 @@ namespace KokkosLapack {
 /// potrs solves for `X` by two triangular solves, overwriting `B`
 /// with the solution `X`.
 ///
-/// \tparam execution_space The space where the kernel will run.
+/// \tparam ExecutionSpace The space where the kernel will run.
 /// \tparam AViewType [in] Type of matrix A, as a 2-D Kokkos::View (LayoutLeft!)
 /// \tparam BViewType [in] Type of matrix B, as a 2-D Kokkos::View (LayoutLeft!)
 ///
@@ -33,16 +33,24 @@ namespace KokkosLapack {
 /// \param A     [in] Square 2-D Kokkos::View of dimension N x N. Comes from potrf
 /// \param B     [in,out] On entry, the right hand side matrix B. On exit, the solution matrix X.
 ///
-template <class execution_space, class AViewType, class BViewType>
-void potrs(const execution_space& space, const char uplo[], const AViewType& A, BViewType& B) {
-  static_assert(Kokkos::is_execution_space<execution_space>::value,
-                "KokkosLapack::potrs: execution_space must be a valid Kokkos execution space");
-  static_assert(Kokkos::is_view<AViewType>::value, "KokkosLapack::potrs: AViewType must be a Kokkos::View");
-  static_assert(Kokkos::is_view<BViewType>::value, "KokkosLapack::potrs: BViewType must be a Kokkos::View");
+template <class ExecutionSpace, class AViewType, class BViewType>
+void potrs(const ExecutionSpace& space, const char uplo[], const AViewType& A, BViewType& B) {
+  static_assert(Kokkos::is_execution_space_v<ExecutionSpace>,
+                "KokkosLapack::potrs: ExecutionSpace must be a valid Kokkos execution space");
+  static_assert(Kokkos::is_view_v<AViewType>, "KokkosLapack::potrs: AViewType must be a Kokkos::View");
+  static_assert(Kokkos::is_view_v<BViewType>, "KokkosLapack::potrs: BViewType must be a Kokkos::View");
   static_assert(static_cast<int>(AViewType::rank) == 2, "KokkosLapack::potrs: A must have rank 2.");
   static_assert(static_cast<int>(BViewType::rank) == 2, "KokkosLapack::potrs: B must have rank 2.");
   static_assert(!std::is_const_v<typename BViewType::value_type>,
                 "KokkosLapack::potrs: B should not have const value type");
+  static_assert(std::is_same_v<typename AViewType::array_layout, Kokkos::LayoutLeft>,
+                "KokkosLapack::potrs: A must have Kokkos::LayoutLeft (column-major) layout, "
+                "as required by LAPACK/cuSOLVER/rocSOLVER.");
+  static_assert(std::is_same_v<typename BViewType::array_layout, Kokkos::LayoutLeft>,
+                "KokkosLapack::potrs: A must have Kokkos::LayoutLeft (column-major) layout, "
+                "as required by LAPACK/cuSOLVER/rocSOLVER.");
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AViewType::memory_space>::accessible);
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename BViewType::memory_space>::accessible);
 
   if (A.extent(0) != A.extent(1)) {
     std::ostringstream os;
