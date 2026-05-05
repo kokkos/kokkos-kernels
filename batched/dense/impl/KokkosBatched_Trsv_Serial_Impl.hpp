@@ -15,10 +15,24 @@ namespace Impl {
 template <typename AViewType, typename bViewType>
 KOKKOS_INLINE_FUNCTION static int checkTrsvInput([[maybe_unused]] const AViewType &A,
                                                  [[maybe_unused]] const bViewType &b) {
-  static_assert(Kokkos::is_view_v<AViewType> || Kokkos::is_dyn_rank_view_v<AViewType>,
-                "KokkosBatched::trsv: AViewType must be either a Kokkos::View or a Kokkos::DynRankView.");
-  static_assert(Kokkos::is_view_v<bViewType> || Kokkos::is_dyn_rank_view_v<bViewType>,
-                "KokkosBatched::trsv: bViewType must be either a Kokkos::View or a Kokkos::DynRankView.");
+  if constexpr (Kokkos::is_view_v<AViewType>) {
+    static_assert(AViewType::rank() == 2, "KokkosBatched::trsv: A must be a rank 2 View.");
+  } else if constexpr (Kokkos::is_dyn_rank_view_v<AViewType>) {
+    KOKKOS_EXPECTS((A.rank() == 2));
+  } else {
+    static_assert(Kokkos::is_view_v<AViewType> || Kokkos::is_dyn_rank_view_v<AViewType>,
+                  "KokkosBatched::trsv: AViewType must be either a Kokkos::View or a Kokkos::DynRankView.");
+  }
+
+  if constexpr (Kokkos::is_view_v<bViewType>) {
+    static_assert(bViewType::rank() == 1, "KokkosBatched::trsv: b must be a rank 1 View.");
+  } else if constexpr (Kokkos::is_dyn_rank_view_v<bViewType>) {
+    KOKKOS_EXPECTS((b.rank() == 1));
+  } else {
+    static_assert(Kokkos::is_view_v<bViewType> || Kokkos::is_dyn_rank_view_v<bViewType>,
+                  "KokkosBatched::trsv: bViewType must be either a Kokkos::View or a Kokkos::DynRankView.");
+  }
+
 #ifndef NDEBUG
   if (A.rank() != 2) {
     Kokkos::printf(
