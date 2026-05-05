@@ -23,7 +23,7 @@ namespace KokkosLapack {
 ///    A = L  * L**H,  if UPLO = 'L',
 /// where U is an upper triangular matrix and L is lower triangular.
 ///
-/// \tparam execution_space The space where the kernel will run.
+/// \tparam ExecutionSpace The space where the kernel will run.
 /// \tparam AViewType [in] Type of matrix A, as a 2-D Kokkos::View (LayoutLeft!)
 ///
 /// \param space [in] Execution space instance used to specify how to execute

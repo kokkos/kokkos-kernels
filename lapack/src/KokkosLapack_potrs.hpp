@@ -72,7 +72,7 @@ void potrs(const ExecutionSpace& space, const char uplo[], const AViewType& A, B
   AViewInternalType uA(A);
   BViewInternalType uB(B);
 
-  Impl::Potrs<execution_space, AViewInternalType, BViewInternalType>::potrs(space, uplo, n, nrhs, uA, lda, uB, ldb);
+  Impl::Potrs<ExecutionSpace, AViewInternalType, BViewInternalType>::potrs(space, uplo, n, nrhs, uA, lda, uB, ldb);
 }
 
 // Overload without execution space (uses default)
