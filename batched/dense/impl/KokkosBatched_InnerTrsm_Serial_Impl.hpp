@@ -208,7 +208,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<2>::serial_invoke(Op op, c
 
 template <>
 template <typename Op, typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<1>::serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT /* A */,
+KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<1>::serial_invoke(Op /* op */,
+                                                                        const ValueType *KOKKOS_RESTRICT /* A */,
                                                                         const int /* n */,
                                                                         /**/ ValueType *KOKKOS_RESTRICT /* B */) {
   return 0;
@@ -993,7 +994,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<2>::serial_invoke(Op op, c
 
 template <>
 template <typename Op, typename ValueType>
-KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<1>::serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT /* A */,
+KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<1>::serial_invoke(Op /*op*/,
+                                                                        const ValueType *KOKKOS_RESTRICT /* A */,
                                                                         const int /* n */,
                                                                         /**/ ValueType *KOKKOS_RESTRICT /* B */) {
   return 0;
