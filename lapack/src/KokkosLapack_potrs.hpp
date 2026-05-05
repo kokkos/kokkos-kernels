@@ -41,7 +41,8 @@ void potrs(const execution_space& space, const char uplo[], const AViewType& A, 
   static_assert(Kokkos::is_view<BViewType>::value, "KokkosLapack::potrs: BViewType must be a Kokkos::View");
   static_assert(static_cast<int>(AViewType::rank) == 2, "KokkosLapack::potrs: A must have rank 2.");
   static_assert(static_cast<int>(BViewType::rank) == 2, "KokkosLapack::potrs: B must have rank 2.");
-  static_assert(!std::is_const_v<typename BViewType::value_type>, "KokkosLapack::potrs: B should not have const value type");
+  static_assert(!std::is_const_v<typename BViewType::value_type>,
+                "KokkosLapack::potrs: B should not have const value type");
 
   if (A.extent(0) != A.extent(1)) {
     std::ostringstream os;

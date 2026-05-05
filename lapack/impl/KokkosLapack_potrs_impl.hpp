@@ -18,7 +18,7 @@ struct PotrsImpl {
                     const int& ldb) {
     // TODO: Implement in the future?
     KokkosKernels::Impl::throw_runtime_exception(
-      "KokkosLapack::potrs: Not yet implemented. Enable LAPACK or CUSOLVER|ROCSOLVER");
+        "KokkosLapack::potrs: Not yet implemented. Enable LAPACK or CUSOLVER|ROCSOLVER");
   }
 };
 
