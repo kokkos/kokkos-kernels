@@ -6,8 +6,8 @@ Defined in header: :code:`KokkosLapack_potrs.hpp`
 .. code:: c++
 
   // Overload 1: with explicit execution space
-  template <class execution_space, class AViewType, class BViewType>
-  void potrs(const execution_space& space, const char uplo[], const int& n,
+  template <class ExecutionSpace, class AViewType, class BViewType>
+  void potrs(const ExecutionSpace& space, const char uplo[], const int& n,
              const int& nrhs, const AViewType& A, const int& lda,
              BViewType& B, const int& ldb);
 
@@ -53,21 +53,21 @@ Parameters
 Type Requirements
 =================
 
-- ``execution_space`` must be a Kokkos `execution space <https://kokkos.org/kokkos-core-wiki/API/core/execution_spaces.html>`_
+- ``ExecutionSpace`` must be a Kokkos `execution space <https://kokkos.org/kokkos-core-wiki/API/core/execution_spaces.html>`_
 
 - ``AViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ satisfying:
 
   - ``AViewType::rank == 2``,
   - ``AViewType::value_type`` is ``const Scalar`` for a supported scalar type (``float``, ``double``, ``Kokkos::complex<float>``, ``Kokkos::complex<double>``),
   - ``AViewType::array_layout`` is ``Kokkos::LayoutLeft``,
-  - the memory space of ``AViewType`` is accessible from ``execution_space``.
+  - the memory space of ``AViewType`` is accessible from ``ExecutionSpace``.
 
 - ``BViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ satisfying:
 
   - ``BViewType::rank == 2``,
   - ``BViewType::value_type`` is a (non-const) scalar type matching that of ``AViewType``,
   - ``BViewType::array_layout`` is ``Kokkos::LayoutLeft``,
-  - the memory space of ``BViewType`` is accessible from ``execution_space``.
+  - the memory space of ``BViewType`` is accessible from ``ExecutionSpace``.
 
 Example
 =======
