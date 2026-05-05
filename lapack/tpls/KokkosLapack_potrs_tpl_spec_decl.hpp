@@ -234,8 +234,8 @@ void rocsolverPotrsWrapper(const Kokkos::HIP& space, const char uplo[], const in
         rocsolver_spotrs(s.handle, uplo_t, n_, nrhs_, const_cast<float*>(A.data()), lda_, B.data(), ldb_));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
-    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_dpotrs(s.handle, uplo_t, n_, nrhs_, const_cast<double*>(A.data()), lda_,
-                                                       B.data(), ldb_));
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
+        rocsolver_dpotrs(s.handle, uplo_t, n_, nrhs_, const_cast<double*>(A.data()), lda_, B.data(), ldb_));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
