@@ -10,20 +10,49 @@
 
 namespace KokkosLapack {
 
-/// \brief TODO: Add brief description
+/// \brief solves a system of linear equations with a Hermitian
+///        positive definite matrix A using the Cholesky factorization
 ///
-/// TODO: Add detailed description of the function
+/// Solves a system of linear equations :math:`A X = B` where :math:`A` is a
+/// symmetric (or Hermitian) positive definite matrix whose Cholesky factorization
+/// has already been computed by :code:`KokkosLapack::potrf`.
 ///
-/// \tparam AViewType TODO: describe this parameter
-/// \tparam BViewType TODO: describe this parameter
+/// Given the factorization produced by ``potrf``:
+///    A = U^H U    if uplo = 'U'
+///    A = L L^H    if uplo = 'L'
+/// potrs solves for `X` by two triangular solves, overwriting `B`
+/// with the solution `X`.
+///
+/// \tparam execution_space The space where the kernel will run.
+/// \tparam AViewType [in] Type of matrix A, as a 2-D Kokkos::View (LayoutLeft!)
+/// \tparam BViewType [in] Type of matrix B, as a 2-D Kokkos::View (LayoutLeft!)
+///
+/// \param space [in] Execution space instance used to specify how to execute
+///                   the potrf kernels.
+/// \param uplo  [in] 'U': upper triangle of A is stored; 'L': lower triangle.
+/// \param A     [in] Square 2-D Kokkos::View of dimension N x N. Comes from potrf
+/// \param B     [in,out] On entry, the right hand side matrix B. On exit, the solution matrix X.
 ///
 template <class execution_space, class AViewType, class BViewType>
-void potrs(const execution_space& space, const char uplo[], const int& n, const int& nrhs, const AViewType& A,
-           const int& lda, BViewType& B, const int& ldb) {
+void potrs(const execution_space& space, const char uplo[], const AViewType& A, BViewType& B) {
   static_assert(Kokkos::is_execution_space<execution_space>::value,
                 "KokkosLapack::potrs: execution_space must be a valid Kokkos execution space");
   static_assert(Kokkos::is_view<AViewType>::value, "KokkosLapack::potrs: AViewType must be a Kokkos::View");
   static_assert(Kokkos::is_view<BViewType>::value, "KokkosLapack::potrs: BViewType must be a Kokkos::View");
+  static_assert(static_cast<int>(AViewType::rank) == 2, "KokkosLapack::potrs: A must have rank 2.");
+  static_assert(static_cast<int>(BViewType::rank) == 2, "KokkosLapack::potrs: B must have rank 2.");
+  static_assert(!std::is_const_v<typename BViewType::value_type>, "KokkosLapack::potrs: B should not have const value type");
+
+  if (A.extent(0) != A.extent(1)) {
+    std::ostringstream os;
+    os << "KokkosLapack::potrf: A must be square, got " << A.extent(0) << " x " << A.extent(1);
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
+  const int n    = static_cast<int>(A.extent(0));
+  const int nrhs = static_cast<int>(B.extent(1));
+  const int lda  = static_cast<int>(A.stride(1));
+  const int ldb  = static_cast<int>(B.stride(1));
 
   // Convert views to unmanaged
   using AViewInternalType = Kokkos::View<typename AViewType::const_data_type, typename AViewType::array_layout,
@@ -39,9 +68,8 @@ void potrs(const execution_space& space, const char uplo[], const int& n, const 
 
 // Overload without execution space (uses default)
 template <class AViewType, class BViewType>
-void potrs(const char uplo[], const int& n, const int& nrhs, const AViewType& A, const int& lda, BViewType& B,
-           const int& ldb) {
-  potrs(typename AViewType::execution_space{}, uplo, n, nrhs, A, lda, B, ldb);
+void potrs(const char uplo[], const AViewType& A, BViewType& B) {
+  potrs(typename AViewType::execution_space{}, uplo, A, B);
 }
 
 }  // namespace KokkosLapack

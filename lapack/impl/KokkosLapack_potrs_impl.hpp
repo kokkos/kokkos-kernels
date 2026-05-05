@@ -6,6 +6,7 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosLapack {
 namespace Impl {
@@ -13,11 +14,11 @@ namespace Impl {
 // Implementation struct for potrs
 template <class AViewType, class BViewType>
 struct PotrsImpl {
-  // TODO: Add your implementation here
   static void potrs(const char uplo[], const int& n, const int& nrhs, const AViewType& A, const int& lda, BViewType& B,
                     const int& ldb) {
-    // TODO: Implement your kernel here
-    Kokkos::abort("KokkosLapack::potrs: Not yet implemented");
+    // TODO: Implement in the future?
+    KokkosKernels::Impl::throw_runtime_exception(
+      "KokkosLapack::potrs: Not yet implemented. Enable LAPACK or CUSOLVER|ROCSOLVER");
   }
 };
 

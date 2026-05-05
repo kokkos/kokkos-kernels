@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Random.hpp>
 
 #include <KokkosBlas3_gemm.hpp>
 #include <KokkosLapack_potrf.hpp>
@@ -94,10 +95,8 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
     KokkosLapack::potrf(uplo_arr, A);
 
     // Solve: B -> X_solve  (Aconst is a const view of the same factored data)
-    const int lda = static_cast<int>(A.stride(1));
-    const int ldb = static_cast<int>(B.stride(1));
     AViewType Aconst(A);
-    KokkosLapack::potrs(uplo_arr, 3, 2, Aconst, lda, B, ldb);
+    KokkosLapack::potrs(uplo_arr, Aconst, B);
 
     Kokkos::fence();
     Kokkos::deep_copy(h_B, B);
@@ -171,10 +170,8 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
   KokkosLapack::potrf(uplo_arr, Atmp);
 
   // Solve: RHS -> X_solve
-  const int lda = static_cast<int>(Atmp.stride(1));
-  const int ldb = static_cast<int>(RHS.stride(1));
   AViewType Aconst(Atmp);
-  KokkosLapack::potrs(uplo_arr, N, nrhs, Aconst, lda, RHS, ldb);
+  KokkosLapack::potrs(uplo_arr, Aconst, RHS);
 
   Kokkos::fence();
   Kokkos::deep_copy(h_RHS, RHS);
