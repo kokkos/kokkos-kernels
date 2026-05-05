@@ -14,9 +14,6 @@
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
-#include <gtest/gtest.h>
-#include <Kokkos_Core.hpp>
-
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_IOUtils.hpp>
 
@@ -231,11 +228,26 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
   if (callMode == spgemm_noreuse) {
     // No-reuse interface always uses the default algorithm
     algorithms = {SPGEMM_KK};
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    // Also test available cuSPARSE algorithms for non-reuse interface
+#if (CUSPARSE_VERSION >= 12001)
+    algorithms.push_back(SPGEMM_CUSPARSE_ALG1);
+    algorithms.push_back(SPGEMM_CUSPARSE_ALG2);
+    algorithms.push_back(SPGEMM_CUSPARSE_ALG3);
+#endif
+#endif
   } else {
     algorithms = {
         SPGEMM_KK, SPGEMM_KK_LP, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
         SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
     };
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    // Also test available cuSPARSE algorithms for reuse interface
+#if (CUSPARSE_VERSION < 12710)
+    algorithms.push_back(SPGEMM_CUSPARSE_DETERMINISTIC);
+    algorithms.push_back(SPGEMM_CUSPARSE_NONDETERMINISTIC);
+#endif
+#endif
   }
 
   for (auto spgemm_algorithm : algorithms) {
@@ -248,6 +260,11 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
       case SPGEMM_KK_MEMSPEED: algo = "SPGEMM_KK_MEMSPEED"; break;
       case SPGEMM_KK_SPEED: algo = "SPGEMM_KK_SPEED"; break;
       case SPGEMM_KK_MEMORY: algo = "SPGEMM_KK_MEMORY"; break;
+      case SPGEMM_CUSPARSE_DETERMINISTIC: algo = "SPGEMM_CUSPARSE_DETERMINISTIC"; break;
+      case SPGEMM_CUSPARSE_NONDETERMINISTIC: algo = "SPGEMM_CUSPARSE_NONDETERMINISTIC"; break;
+      case SPGEMM_CUSPARSE_ALG1: algo = "SPGEMM_CUSPARSE_ALG1"; break;
+      case SPGEMM_CUSPARSE_ALG2: algo = "SPGEMM_CUSPARSE_ALG2"; break;
+      case SPGEMM_CUSPARSE_ALG3: algo = "SPGEMM_CUSPARSE_ALG3"; break;
       default: algo = "!!! UNKNOWN ALGO !!!";
     }
 

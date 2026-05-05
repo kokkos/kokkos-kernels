@@ -4,6 +4,8 @@
 #ifndef KOKKOSPARSE_SPGEMM_NOREUSE_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPGEMM_NOREUSE_TPL_SPEC_DECL_HPP_
 
+#include "KokkosSparse_spgemm_handle.hpp"
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
 #include "KokkosSparse_Utils_cusparse.hpp"
@@ -17,11 +19,12 @@
 namespace KokkosSparse {
 namespace Impl {
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUDA_VERSION >= 11000)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
 
 template <typename Matrix, typename MatrixConst>
-Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
-  using Scalar                = typename Matrix::value_type;
+Matrix spgemm_noreuse_cusparse(KokkosSparse::SPGEMMAlgorithm algo, const MatrixConst &A, const MatrixConst &B) {
+  using Scalar = typename Matrix::value_type;
+  using Handle = KokkosSparse::SPGEMMHandle<int, int, Scalar, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace>;
   cudaDataType cudaScalarType = Impl::cuda_data_type_from<Scalar>();
   KokkosKernels::Experimental::Controls kkControls;
   cusparseHandle_t cusparseHandle = kkControls.getCusparseHandle();
@@ -29,6 +32,8 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
   cusparseSpMatDescr_t descr_A, descr_B, descr_C;
   cusparseSpGEMMDescr_t spgemmDescr;
   cusparseSpGEMMAlg_t alg = CUSPARSE_SPGEMM_DEFAULT;
+  // Validate algo for the current version of cuSPARSE, and convert to the correct cusparse algo.
+  Handle::cuSparseSpgemmHandleType::checkAlgorithm(algo, &alg);
   size_t bufferSize1 = 0, bufferSize2 = 0;
   void *buffer1 = nullptr, *buffer2 = nullptr;
   // A is m*n, B is n*k, C is m*k
@@ -107,11 +112,11 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;               \
     static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int> spgemm_noreuse( \
-        const ConstMatrix &A, bool, const ConstMatrix &B, bool) {                                                  \
+        KokkosSparse::SPGEMMAlgorithm algo, const ConstMatrix &A, bool, const ConstMatrix &B, bool) {              \
       std::string label =                                                                                          \
           "KokkosSparse::spgemm_noreuse[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";         \
       Kokkos::Profiling::pushRegion(label);                                                                        \
-      Matrix C = spgemm_noreuse_cusparse<Matrix>(A, B);                                                            \
+      Matrix C = spgemm_noreuse_cusparse<Matrix>(algo, A, B);                                                      \
       Kokkos::Profiling::popRegion();                                                                              \
       return C;                                                                                                    \
     }                                                                                                              \
@@ -198,7 +203,7 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>;              \
     static KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>           \
-    spgemm_noreuse(const ConstMatrix &A, bool, const ConstMatrix &B, bool) {                                          \
+    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool) {           \
       std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                           \
       Matrix C = spgemm_noreuse_mkl<Matrix>(A, B);                                                                    \
