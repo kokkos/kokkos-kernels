@@ -89,6 +89,19 @@ void F77_BLAS_MANGLE(spotrf, SPOTRF)(const char*, const int*, float*, const int*
 void F77_BLAS_MANGLE(dpotrf, DPOTRF)(const char*, const int*, double*, const int*, int*);
 void F77_BLAS_MANGLE(cpotrf, CPOTRF)(const char*, const int*, std::complex<float>*, const int*, int*);
 void F77_BLAS_MANGLE(zpotrf, ZPOTRF)(const char*, const int*, std::complex<double>*, const int*, int*);
+
+///
+/// Potrs
+///
+
+void F77_BLAS_MANGLE(spotrs, SPOTRS)(const char*, const int*, const int*, const float*, const int*, float*, const int*,
+                                     int*);
+void F77_BLAS_MANGLE(dpotrs, DPOTRS)(const char*, const int*, const int*, const double*, const int*, double*,
+                                     const int*, int*);
+void F77_BLAS_MANGLE(cpotrs, CPOTRS)(const char*, const int*, const int*, const std::complex<float>*, const int*,
+                                     std::complex<float>*, const int*, int*);
+void F77_BLAS_MANGLE(zpotrs, ZPOTRS)(const char*, const int*, const int*, const std::complex<double>*, const int*,
+                                     std::complex<double>*, const int*, int*);
 }
 
 #define F77_FUNC_SGESV F77_BLAS_MANGLE(sgesv, SGESV)
@@ -120,6 +133,11 @@ void F77_BLAS_MANGLE(zpotrf, ZPOTRF)(const char*, const int*, std::complex<doubl
 #define F77_FUNC_DPOTRF F77_BLAS_MANGLE(dpotrf, DPOTRF)
 #define F77_FUNC_CPOTRF F77_BLAS_MANGLE(cpotrf, CPOTRF)
 #define F77_FUNC_ZPOTRF F77_BLAS_MANGLE(zpotrf, ZPOTRF)
+
+#define F77_FUNC_SPOTRS F77_BLAS_MANGLE(spotrs, SPOTRS)
+#define F77_FUNC_DPOTRS F77_BLAS_MANGLE(dpotrs, DPOTRS)
+#define F77_FUNC_CPOTRS F77_BLAS_MANGLE(cpotrs, CPOTRS)
+#define F77_FUNC_ZPOTRS F77_BLAS_MANGLE(zpotrs, ZPOTRS)
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
@@ -175,6 +193,17 @@ int HostLapack<float>::potrf(const char uplo, const int n, float* a, const int l
   spotrf_(&uplo, &n, a, &lda, &info);
 #else
   F77_FUNC_SPOTRF(&uplo, &n, a, &lda, &info);
+#endif
+  return info;
+}
+template <>
+int HostLapack<float>::potrs(const char uplo, const int n, const int nrhs, const float* a, const int lda, float* b,
+                              const int ldb) {
+  int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  spotrs_(&uplo, &n, &nrhs, const_cast<float*>(a), &lda, b, &ldb, &info);
+#else
+  F77_FUNC_SPOTRS(&uplo, &n, &nrhs, a, &lda, b, &ldb, &info);
 #endif
   return info;
 }
@@ -237,6 +266,17 @@ int HostLapack<double>::potrf(const char uplo, const int n, double* a, const int
   dpotrf_(&uplo, &n, a, &lda, &info);
 #else
   F77_FUNC_DPOTRF(&uplo, &n, a, &lda, &info);
+#endif
+  return info;
+}
+template <>
+int HostLapack<double>::potrs(const char uplo, const int n, const int nrhs, const double* a, const int lda, double* b,
+                               const int ldb) {
+  int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  dpotrs_(&uplo, &n, &nrhs, const_cast<double*>(a), &lda, b, &ldb, &info);
+#else
+  F77_FUNC_DPOTRS(&uplo, &n, &nrhs, a, &lda, b, &ldb, &info);
 #endif
   return info;
 }
@@ -317,6 +357,18 @@ int HostLapack<std::complex<float>>::potrf(const char uplo, const int n, std::co
 #endif
   return info;
 }
+template <>
+int HostLapack<std::complex<float>>::potrs(const char uplo, const int n, const int nrhs,
+                                            const std::complex<float>* a, const int lda, std::complex<float>* b,
+                                            const int ldb) {
+  int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  cpotrs_(&uplo, &n, &nrhs, const_cast<std::complex<float>*>(a), &lda, b, &ldb, &info);
+#else
+  F77_FUNC_CPOTRS(&uplo, &n, &nrhs, a, &lda, b, &ldb, &info);
+#endif
+  return info;
+}
 
 ///
 /// std::complex<double>
@@ -381,6 +433,18 @@ int HostLapack<std::complex<double>>::potrf(const char uplo, const int n, std::c
   zpotrf_(&uplo, &n, a, &lda, &info);
 #else
   F77_FUNC_ZPOTRF(&uplo, &n, a, &lda, &info);
+#endif
+  return info;
+}
+template <>
+int HostLapack<std::complex<double>>::potrs(const char uplo, const int n, const int nrhs,
+                                             const std::complex<double>* a, const int lda, std::complex<double>* b,
+                                             const int ldb) {
+  int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  zpotrs_(&uplo, &n, &nrhs, const_cast<std::complex<double>*>(a), &lda, b, &ldb, &info);
+#else
+  F77_FUNC_ZPOTRS(&uplo, &n, &nrhs, a, &lda, b, &ldb, &info);
 #endif
   return info;
 }

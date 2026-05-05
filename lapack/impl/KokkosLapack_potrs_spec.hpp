@@ -14,7 +14,7 @@
 namespace KokkosLapack {
 namespace Impl {
 // Specialization struct which defines whether an ETI specialization exists
-template <class AViewType, class BViewType>
+template <class ExecutionSpace, class AViewType, class BViewType>
 struct potrs_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -26,13 +26,14 @@ struct potrs_eti_spec_avail {
 // KokkosLapack::Impl::Potrs.  This is NOT for users!!!
 //
 #define KOKKOSLAPACK_POTRS_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template <> \
-  struct potrs_eti_spec_avail< \
+  template <>                                                                     \
+  struct potrs_eti_spec_avail<                                                    \
+      EXEC_SPACE,                                                                 \
       Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
-    enum : bool { value = true }; \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                      \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                    \
+    enum : bool { value = true };                                                 \
   };
 
 // Include the actual specialization declarations
@@ -47,24 +48,25 @@ namespace Impl {
 //
 
 // Unification layer
-template <class AViewType, class BViewType,
-          bool tpl_spec_avail = potrs_tpl_spec_avail<AViewType, BViewType>::value,
-          bool eti_spec_avail = potrs_eti_spec_avail<AViewType, BViewType>::value>
+template <class ExecutionSpace, class AViewType, class BViewType,
+          bool tpl_spec_avail = potrs_tpl_spec_avail<ExecutionSpace, AViewType, BViewType>::value,
+          bool eti_spec_avail = potrs_eti_spec_avail<ExecutionSpace, AViewType, BViewType>::value>
 struct Potrs {
-  static void potrs(const char uplo[], const int& n, const int& nrhs, const AViewType& A, const int& lda, BViewType& B, const int& ldb);
+  static void potrs(const ExecutionSpace& space, const char uplo[], const int& n, const int& nrhs,
+                    const AViewType& A, const int& lda, BViewType& B, const int& ldb);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 // Default implementation when no TPL is available
-template <class AViewType, class BViewType>
-struct Potrs<AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void potrs(const char uplo[], const int& n, const int& nrhs, const AViewType& A, const int& lda, BViewType& B, const int& ldb) {
+template <class ExecutionSpace, class AViewType, class BViewType>
+struct Potrs<ExecutionSpace, AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void potrs(const ExecutionSpace& /* space */, const char uplo[], const int& n, const int& nrhs,
+                    const AViewType& A, const int& lda, BViewType& B, const int& ldb) {
     static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<BViewType>::value, "BViewType must be a Kokkos::View.");
 
-    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                    ? "KokkosLapack::potrs[ETI]"
-                                    : "KokkosLapack::potrs[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosLapack::potrs[ETI]"
+                                                                     : "KokkosLapack::potrs[noETI]");
 
     PotrsImpl<AViewType, BViewType>::potrs(uplo, n, nrhs, A, lda, B, ldb);
 
@@ -80,24 +82,26 @@ struct Potrs<AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 // Macro for declaration of full specialization of
 // KokkosLapack::Impl::Potrs.  This is NOT for users!!!
 //
-#define KOKKOSLAPACK_POTRS_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  extern template struct Potrs< \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+#define KOKKOSLAPACK_POTRS_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                \
+  extern template struct Potrs<                                                                 \
+      EXEC_SPACE,                                                                               \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                   \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                   \
       false, true>;
 
 //
 // Macro for definition of full specialization of
 // KokkosLapack::Impl::Potrs.  This is NOT for users!!!
 //
-#define KOKKOSLAPACK_POTRS_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template struct Potrs< \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+#define KOKKOSLAPACK_POTRS_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                \
+  template struct Potrs<                                                                        \
+      EXEC_SPACE,                                                                               \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                   \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                   \
       false, true>;
 
 #include <KokkosLapack_potrs_tpl_spec_decl.hpp>

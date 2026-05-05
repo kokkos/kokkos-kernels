@@ -31,6 +31,8 @@ struct HostLapack {
                     T *tau, T *c, const int ldc, T *work, int lwork, int *info);
 
   static int potrf(const char uplo, const int n, T *a, const int lda);
+
+  static int potrs(const char uplo, const int n, const int nrhs, const T *a, const int lda, T *b, const int ldb);
 };
 }  // namespace Impl
 }  // namespace KokkosLapack
