@@ -77,7 +77,6 @@ template <bool CONJ, typename Matrix>
 Result bench_spmv(const Matrix &crs, int nWarmup, int nIters) {
   using exec_space = typename Matrix::execution_space;
   typedef typename Matrix::memory_space mem_space;
-  typedef int Ordinal;
   using Scalar = typename Matrix::non_const_value_type;
 
   typedef Kokkos::View<Scalar *, mem_space> view_t;
@@ -402,7 +401,7 @@ MatrixResult read_and_bench(const std::string &path, int nWarmup, int nIters) {
 
 void usage(char **argv) { std::cerr << argv[0] << " matrix.mtx [... matrix.mtx]" << std::endl; }
 
-std::string header(const MatrixResult &mr) {
+std::string header() {
   std::string s("path,rows,nnz,nnz/row,stddev nnz/row");
 
   for (bool conj : {true, false}) {
@@ -443,7 +442,7 @@ int main(int argc, char **argv) {
   {                                                                       \
     for (int i = 1; i < argc; ++i) {                                      \
       MatrixResult mr = read_and_bench<TYPE, DEVICE>(argv[i], 10, 500);   \
-      if (1 == i) std::cout << header(mr) << std::endl;                   \
+      if (1 == i) std::cout << header() << std::endl;                     \
       std::cout << argv[i];                                               \
       std::cout << "," << mr.stats.numRows;                               \
       std::cout << "," << mr.stats.nnz;                                   \
