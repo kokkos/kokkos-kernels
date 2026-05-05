@@ -14,7 +14,8 @@ namespace Impl {
 // Implementation struct for potrs
 template <class AViewType, class BViewType>
 struct PotrsImpl {
-  static void potrs([[maybe_unused]] const char uplo[], [[maybe_unused]] const int& n, [[maybe_unused]] const int& nrhs, [[maybe_unused]] const AViewType& A, [[maybe_unused]] const int& lda, [[maybe_unused]] BViewType& B,
+  static void potrs([[maybe_unused]] const char uplo[], [[maybe_unused]] const int& n, [[maybe_unused]] const int& nrhs,
+                    [[maybe_unused]] const AViewType& A, [[maybe_unused]] const int& lda, [[maybe_unused]] BViewType& B,
                     [[maybe_unused]] const int& ldb) {
     // TODO: Implement in the future?
     KokkosKernels::Impl::throw_runtime_exception(
