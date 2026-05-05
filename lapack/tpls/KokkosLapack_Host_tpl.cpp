@@ -198,7 +198,7 @@ int HostLapack<float>::potrf(const char uplo, const int n, float* a, const int l
 }
 template <>
 int HostLapack<float>::potrs(const char uplo, const int n, const int nrhs, const float* a, const int lda, float* b,
-                              const int ldb) {
+                             const int ldb) {
   int info = 0;
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   spotrs_(&uplo, &n, &nrhs, const_cast<float*>(a), &lda, b, &ldb, &info);
@@ -271,7 +271,7 @@ int HostLapack<double>::potrf(const char uplo, const int n, double* a, const int
 }
 template <>
 int HostLapack<double>::potrs(const char uplo, const int n, const int nrhs, const double* a, const int lda, double* b,
-                               const int ldb) {
+                              const int ldb) {
   int info = 0;
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   dpotrs_(&uplo, &n, &nrhs, const_cast<double*>(a), &lda, b, &ldb, &info);
@@ -358,9 +358,8 @@ int HostLapack<std::complex<float>>::potrf(const char uplo, const int n, std::co
   return info;
 }
 template <>
-int HostLapack<std::complex<float>>::potrs(const char uplo, const int n, const int nrhs,
-                                            const std::complex<float>* a, const int lda, std::complex<float>* b,
-                                            const int ldb) {
+int HostLapack<std::complex<float>>::potrs(const char uplo, const int n, const int nrhs, const std::complex<float>* a,
+                                           const int lda, std::complex<float>* b, const int ldb) {
   int info = 0;
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   cpotrs_(&uplo, &n, &nrhs, const_cast<std::complex<float>*>(a), &lda, b, &ldb, &info);
@@ -437,9 +436,8 @@ int HostLapack<std::complex<double>>::potrf(const char uplo, const int n, std::c
   return info;
 }
 template <>
-int HostLapack<std::complex<double>>::potrs(const char uplo, const int n, const int nrhs,
-                                             const std::complex<double>* a, const int lda, std::complex<double>* b,
-                                             const int ldb) {
+int HostLapack<std::complex<double>>::potrs(const char uplo, const int n, const int nrhs, const std::complex<double>* a,
+                                            const int lda, std::complex<double>* b, const int ldb) {
   int info = 0;
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   zpotrs_(&uplo, &n, &nrhs, const_cast<std::complex<double>*>(a), &lda, b, &ldb, &info);

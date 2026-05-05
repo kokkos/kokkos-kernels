@@ -33,12 +33,12 @@ namespace Test {
 /// For N>3, a random B is used to build A = B^H*B + N*I.
 template <class AViewType, class BViewType, class Device>
 void impl_test_potrs(int N, int nrhs, const char uplo) {
-  using ScalarA       = typename AViewType::non_const_value_type;
-  using ScalarB       = typename BViewType::value_type;
-  using ats           = KokkosKernels::ArithTraits<ScalarA>;
-  using MagnitudeType = typename ats::mag_type;
+  using ScalarA         = typename AViewType::non_const_value_type;
+  using ScalarB         = typename BViewType::value_type;
+  using ats             = KokkosKernels::ArithTraits<ScalarA>;
+  using MagnitudeType   = typename ats::mag_type;
   using execution_space = typename Device::execution_space;
-  using ALayout_t     = typename AViewType::array_layout;
+  using ALayout_t       = typename AViewType::array_layout;
 
   static_assert(std::is_same_v<ScalarA, ScalarB>, "A and B must have the same scalar type");
 
@@ -69,14 +69,23 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
     typename AViewType::non_const_type::host_mirror_type h_A = Kokkos::create_mirror_view(A);
     typename BViewType::host_mirror_type h_B                 = Kokkos::create_mirror_view(B);
 
-    h_A(0, 0) = ScalarA(4); h_A(0, 1) = ScalarA(2); h_A(0, 2) = ScalarA(2);
-    h_A(1, 0) = ScalarA(2); h_A(1, 1) = ScalarA(5); h_A(1, 2) = ScalarA(3);
-    h_A(2, 0) = ScalarA(2); h_A(2, 1) = ScalarA(3); h_A(2, 2) = ScalarA(6);
+    h_A(0, 0) = ScalarA(4);
+    h_A(0, 1) = ScalarA(2);
+    h_A(0, 2) = ScalarA(2);
+    h_A(1, 0) = ScalarA(2);
+    h_A(1, 1) = ScalarA(5);
+    h_A(1, 2) = ScalarA(3);
+    h_A(2, 0) = ScalarA(2);
+    h_A(2, 1) = ScalarA(3);
+    h_A(2, 2) = ScalarA(6);
 
     // B = A * X_exact (column-major)
-    h_B(0, 0) = ScalarB(8);  h_B(0, 1) = ScalarB(2);
-    h_B(1, 0) = ScalarB(10); h_B(1, 1) = ScalarB(-1);
-    h_B(2, 0) = ScalarB(11); h_B(2, 1) = ScalarB(-4);
+    h_B(0, 0) = ScalarB(8);
+    h_B(0, 1) = ScalarB(2);
+    h_B(1, 0) = ScalarB(10);
+    h_B(1, 1) = ScalarB(-1);
+    h_B(2, 0) = ScalarB(11);
+    h_B(2, 1) = ScalarB(-4);
 
     Kokkos::deep_copy(A, h_A);
     Kokkos::deep_copy(B, h_B);
@@ -94,18 +103,14 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
     Kokkos::deep_copy(h_B, B);
 
     // Expected: X_exact
-    const ScalarB ref[3][2] = {{ScalarB(1), ScalarB(1)},
-                                {ScalarB(1), ScalarB(0)},
-                                {ScalarB(1), ScalarB(-1)}};
-    bool test_flag = true;
+    const ScalarB ref[3][2] = {{ScalarB(1), ScalarB(1)}, {ScalarB(1), ScalarB(0)}, {ScalarB(1), ScalarB(-1)}};
+    bool test_flag          = true;
     for (int i = 0; (i < 3) && test_flag; ++i) {
       for (int j = 0; (j < 2) && test_flag; ++j) {
         if (ats::abs(h_B(i, j) - ref[i][j]) > absTol) {
           std::cout << "potrs('" << uplo << "') N=3 solve check FAILED"
-                    << " i=" << i << " j=" << j
-                    << " got=" << h_B(i, j) << " expected=" << ref[i][j]
-                    << " |diff|=" << ats::abs(h_B(i, j) - ref[i][j])
-                    << " absTol=" << absTol << std::endl;
+                    << " i=" << i << " j=" << j << " got=" << h_B(i, j) << " expected=" << ref[i][j]
+                    << " |diff|=" << ats::abs(h_B(i, j) - ref[i][j]) << " absTol=" << absTol << std::endl;
           test_flag = false;
         }
       }
@@ -143,8 +148,7 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
   auto h_X_exact = Kokkos::create_mirror_view(X_exact);
 
   // Random Btmp for constructing A
-  Kokkos::fill_random(Btmp, rand_pool,
-                      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
+  Kokkos::fill_random(Btmp, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
   Kokkos::deep_copy(h_Btmp, Btmp);
 
   // h_Atmp = Btmp^H * Btmp
@@ -155,8 +159,7 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
   Kokkos::deep_copy(Atmp, h_Atmp);
 
   // Random X_exact
-  Kokkos::fill_random(X_exact, rand_pool,
-                      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarB>::max());
+  Kokkos::fill_random(X_exact, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarB>::max());
   Kokkos::deep_copy(h_X_exact, X_exact);
 
   // RHS = A * X_exact  (on host, then copy to device)
@@ -184,10 +187,9 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
       MagnitudeType scale = std::max(ats::abs(h_X_exact(i, j)), MagnitudeType(1));
       if (diff > relTol * scale) {
         std::cout << "potrs('" << uplo << "') solve check FAILED"
-                  << " N=" << N << " nrhs=" << nrhs
-                  << " i=" << i << " j=" << j
-                  << " X_solve=" << h_RHS(i, j) << " X_exact=" << h_X_exact(i, j)
-                  << " |diff|=" << diff << " relTol*scale=" << relTol * scale << std::endl;
+                  << " N=" << N << " nrhs=" << nrhs << " i=" << i << " j=" << j << " X_solve=" << h_RHS(i, j)
+                  << " X_exact=" << h_X_exact(i, j) << " |diff|=" << diff << " relTol*scale=" << relTol * scale
+                  << std::endl;
         test_flag = false;
       }
     }

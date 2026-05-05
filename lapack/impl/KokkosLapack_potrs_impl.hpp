@@ -14,7 +14,8 @@ namespace Impl {
 template <class AViewType, class BViewType>
 struct PotrsImpl {
   // TODO: Add your implementation here
-  static void potrs(const char uplo[], const int& n, const int& nrhs, const AViewType& A, const int& lda, BViewType& B, const int& ldb) {
+  static void potrs(const char uplo[], const int& n, const int& nrhs, const AViewType& A, const int& lda, BViewType& B,
+                    const int& ldb) {
     // TODO: Implement your kernel here
     Kokkos::abort("KokkosLapack::potrs: Not yet implemented");
   }
