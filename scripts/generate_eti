@@ -962,7 +962,7 @@ Examples: '0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y' (axpby), 'ci_trans,0dsi_alpha,2d
     )
 
     parsed_args = parser.parse_args(args[1:])
-    parsed_args.directory = Path(args.directory).resolve()
+    parsed_args.directory = Path(parsed_args.directory).resolve()
 
     return parsed_args
 
