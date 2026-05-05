@@ -220,6 +220,10 @@ struct MagnitudeScalarType<Vector<SIMD<double>, l>> {
   typedef double type;
 };
 template <int l>
+struct MagnitudeScalarType<Vector<SIMD<long double>, l>> {
+  typedef long double type;
+};
+template <int l>
 struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<float>>, l>> {
   typedef float type;
 };
