@@ -24,9 +24,7 @@ jobs:
       - name: check API changes
         run: |
           cd kokkos-kernels
-          git fetch &> /dev/null
-          git diff --name-only origin/develop > modified_files.txt
-          python scripts/check_api_updates.py
+          git diff --name-only $(git merge-base origin/develop HEAD) | scripts/check_api_updates.py -v
 
   build:
     runs-on: [macos-latest]
