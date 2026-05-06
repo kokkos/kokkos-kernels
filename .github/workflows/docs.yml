@@ -24,11 +24,8 @@ jobs:
       - name: check API changes
         run: |
           cd kokkos-kernels
-          git fetch
-          echo "HEAD is: " $(git rev-parse HEAD)
-          echo "origin/develop is: " $(git rev-parse origin/develop)
-          echo "The merge-base is: " $(git merge-base origin/develop HEAD)
-          git diff --name-only $(git merge-base origin/develop HEAD) | scripts/check_api_updates.py -v
+          git fetch &> /dev/null
+          git diff --name-only origin/$GITHUB_BASE_REF | scripts/check_api_updates.py -v
 
   build:
     runs-on: [macos-latest]

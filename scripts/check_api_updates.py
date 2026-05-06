@@ -249,6 +249,9 @@ def parse_command_line(args, description):
 \033[1mEXAMPLES:\033[0m
    \033[1;32m# Check for documentation for changes against origin/develop \033[0m
   > git diff --name-only $(git merge-base origin/develop HEAD) | ./scripts/%(prog)s
+
+   \033[1;32m# Check for documentation in a github action \033[0m
+  > git diff --name-only origin/$GITHUB_BASE_REF | ./scripts/%(prog)s
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
