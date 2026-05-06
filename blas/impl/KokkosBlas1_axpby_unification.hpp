@@ -10,12 +10,14 @@ namespace KokkosBlas {
 namespace Impl {
 
 template <class T>
-constexpr KOKKOS_INLINE_FUNCTION std::enable_if<Kokkos::is_view_v<T>, bool>::type isRank1View() {
+  requires(Kokkos::is_view_v<T>)
+constexpr KOKKOS_INLINE_FUNCTION bool isRank1View() {
   return (int)T::rank == 1;
 }
 
 template <class T>
-constexpr KOKKOS_INLINE_FUNCTION typename std::enable_if<!Kokkos::is_view_v<T>, bool>::type isRank1View() {
+  requires(!Kokkos::is_view_v<T>)
+constexpr KOKKOS_INLINE_FUNCTION bool isRank1View() {
   return false;
 }
 
