@@ -25,8 +25,9 @@ jobs:
         run: |
           cd kokkos-kernels
           git fetch
-          git rev-parse HEAD
-          git rev-parse origin/develop
+          echo "HEAD is: " $(git rev-parse HEAD)
+          echo "origin/develop is: " $(git rev-parse origin/develop)
+          echo "The merge-base is: " $(git merge-base origin/develop HEAD)
           git diff --name-only $(git merge-base origin/develop HEAD) | scripts/check_api_updates.py -v
 
   build:
