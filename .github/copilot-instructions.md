@@ -56,6 +56,46 @@ cmake --build kokkos-kernels/build --parallel $(nproc)
 | `KokkosKernels_ENABLE_TPL_ROCSPARSE` | OFF | Enable rocSPARSE TPL support |
 | `KokkosKernels_ENABLE_TPL_ROCSOLVER` | OFF | Enable rocSOLVER TPL support |
 
+## Dependencies
+
+| Dependency | Source | Required? |
+|-----------|--------|-----------|
+| Kokkos 4.7.02+ | External clone/install (CI pins `5.1.0`) | Yes |
+| Google Test | Vendored in `tpls/gtest` | For tests only |
+| BLAS | System install | Optional — CPU dense linear algebra |
+| LAPACK | System install | Optional — auto-enabled when BLAS is enabled |
+| MKL | Intel oneAPI | Optional — Intel-optimized CPU math library |
+| MAGMA | System install | Optional — GPU-accelerated dense linear algebra |
+| cuBLAS | CUDA Toolkit | Optional — auto-enabled with CUDA-enabled Kokkos |
+| cuSPARSE | CUDA Toolkit | Optional — auto-enabled with CUDA-enabled Kokkos |
+| cuSOLVER | CUDA Toolkit | Optional — auto-enabled with CUDA-enabled Kokkos |
+| rocBLAS | ROCm | Optional — AMD GPU (default OFF even with HIP Kokkos) |
+| rocSPARSE | ROCm | Optional — AMD GPU (default OFF even with HIP Kokkos) |
+| rocSOLVER | ROCm | Optional — AMD GPU (default OFF even with HIP Kokkos) |
+| ARMPL | Arm Performance Libraries | Optional — Arm CPU |
+| SuperLU | System install | Optional — sparse direct solver |
+| CHOLMOD | SuiteSparse | Optional — sparse Cholesky solver |
+| METIS | System install | Optional — graph partitioning |
+
+## Common Pitfalls
+
+- **Kokkos must be pre-installed**: KokkosKernels does **not** bundle Kokkos. Build will fail at CMake configure time without a valid `-DKokkos_ROOT=<path>` pointing to an installed Kokkos.
+- **Include ordering**: Do NOT sort includes — `SortIncludes: false` is intentional in `.clang-format`. Never run a formatter or editor pass that reorders `#include` directives.
+- **Formatter version**: CI enforces `clang-format-16`. The `.clang-format` header comments reference version 8, but always use version 16 when formatting locally to avoid diff noise.
+- **Component dependencies**: Enabling `KokkosKernels_ENABLE_COMPONENT_SPARSE` or `GRAPH` automatically forces all other components (BATCHED, BLAS, LAPACK, etc.) on. Set components individually only when you need a minimal build.
+- **`develop` is the integration branch**: Never compare against or target `main` for PRs or CI checks; use `develop`.
+- **ETI type coverage**: Without explicitly enabling the right `KokkosKernels_INST_*` options, only the default ETI types (double, LayoutLeft, HostSpace, etc.) are pre-instantiated. Missing combos lead to linker errors in downstream code.
+- **GPU TPL auto-enable**: cuBLAS/cuSPARSE/cuSOLVER are automatically `ON` when Kokkos is CUDA-enabled. Use `KokkosKernels_NO_DEFAULT_CUDA_TPLS=ON` to suppress this behavior.
+- **Docs/API check**: Modifying any public header requires running `scripts/check_api_updates.py` (see the docs workflow). Skipping this will fail the `docs` CI job.
+
+## Security
+
+- **No secrets in code**: Never commit credentials, API keys, tokens, or passwords into source code or configuration files.
+- **No sensitive data exposure**: Never share sensitive repository data (code, credentials, internal configurations) with third-party systems.
+- **No new vulnerabilities**: Validate that changes do not introduce security vulnerabilities (e.g., buffer overflows, unvalidated inputs, unsafe memory access). The `codeql.yml` and `scorecards.yml` CI workflows enforce automated scanning.
+- **Dependency vigilance**: Review new dependencies for known vulnerabilities before adding them. The `dependency-review.yml` workflow blocks PRs that introduce vulnerable dependencies.
+- **Respect copyright**: All contributions must comply with the project's Apache-2.0 WITH LLVM-exception license. Do not generate or commit copyrighted content from external sources without explicit permission.
+
 ## Naming Style Guidelines for Kokkos Kernels Development
 - Public CMake options follow `KokkosKernels_<OPTION>` (camel-case prefix + uppercase option name), for example `KokkosKernels_ENABLE_TESTS`.
 - Internal CMake regular variables are typically uppercase `KOKKOSKERNELS_*`.
