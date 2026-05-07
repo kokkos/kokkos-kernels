@@ -143,20 +143,46 @@ kokkos-kernels/
 
 **Key files:** `CMakeLists.txt`, `cmake/kokkoskernels_tribits.cmake`, `.github/workflows/linux.yml`, `.github/workflows/docs.yml`, `BUILD.md`, `DEVELOPER.md`
 
-## CI/CD workflows
-Main workflows under `.github/workflows/`:
-- `linux.yml`: Linux PR sanitizer/testing workflow
-- `osx.yml`: macOS PR build/test workflow
-- `at2.yml`: orchestrates reusable GPU/host workflow set (`h100_lychee.yml`, `v100_kumquat.yml`, `mi210.yml`, `host.yml`, `pv.yml`)
-- `format.yml`: clang-format-16 check on changed C/C++ files
-- `docs.yml`: API-documentation consistency check + docs build/deploy
-- `codeql.yml`: CodeQL analysis workflow
-- `dependency-review.yml`, `scorecards.yml`: dependency and security posture checks
-- `release.yml`: release artifact packaging and publication on tags
+## CI/CD Workflows
+
+**Main workflows** (`.github/workflows/`):
+1. **linux.yml** - Linux sanitizer CI (`ubuntu-asan-ubsan-ci`) with Kokkos `5.1.0`, ASan/UBSan flags, build, and `ctest`.
+2. **osx.yml** - macOS CI matrix (SERIAL/THREADS, Debug/Release/RelWithDebInfo) plus Accelerate-based coverage.
+3. **at2.yml** - Orchestrates reusable GPU/host workflows (`h100_lychee.yml`, `v100_kumquat.yml`, `mi210.yml`, `host.yml`, `pv.yml`).
+4. **format.yml** - `clang-format-16` check on changed C/C++ files against the PR base branch.
+5. **docs.yml** - API-change guard (`scripts/check_api_updates.py`) and Sphinx docs build/deploy.
+6. **codeql.yml** - CodeQL static analysis.
+7. **dependency-review.yml** and **scorecards.yml** - Dependency and security posture checks.
+8. **release.yml** - Release packaging/publication on tag workflows.
+
+**Replicate CI locally:**
+```bash
+# Build and install Kokkos first
+cmake -S kokkos -B kokkos/build \
+  -DCMAKE_CXX_STANDARD=20 \
+  -DKokkos_ENABLE_SERIAL=ON \
+  -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
+  -DKokkos_ENABLE_TESTS=OFF \
+  -DKokkos_ENABLE_DEPRECATED_CODE_5=OFF \
+  -DCMAKE_INSTALL_PREFIX=$PWD/kokkos/install
+cmake --build kokkos/build --target install --parallel $(nproc)
+
+# Configure/build/test Kokkos Kernels in a CI-like host setup
+cmake -S kokkos-kernels -B kokkos-kernels/build \
+  -DKokkos_ROOT=$PWD/kokkos/install \
+  -DKokkosKernels_ENABLE_TESTS=ON \
+  -DKokkosKernels_ENABLE_EXAMPLES=ON \
+  -DKokkosKernels_ENABLE_COMPILER_WARNINGS=ON
+cmake --build kokkos-kernels/build --parallel $(nproc)
+ctest --test-dir kokkos-kernels/build --output-on-failure --timeout 7200
+
+# Match formatting checks used by CI
+clang-format-16 -i <changed_file>.{cpp,hpp,h}
+```
 
 Practical CI behavior to remember:
-- Linux/OSX PR workflows ignore docs-only changes (`**/*.md`, `docs/**`, etc.).
-- Many build workflows pin Kokkos to `5.1.0` and treat warnings strictly.
+- Linux/OSX/AT2 PR workflows ignore docs-only changes (`**/*.md`, `docs/**`, etc.).
+- Linux/OSX/AT2 workflows pin Kokkos to `5.1.0`.
 
 ## Testing
 ### Test structure
