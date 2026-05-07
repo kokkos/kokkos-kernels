@@ -278,7 +278,7 @@ void rocsolverPotrsWrapper(const Kokkos::HIP& space, const char uplo[], const AV
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
     using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                           \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    static void potrs(const Kokkos::HIP& space, const char uplo[] const AViewType& A, BViewType& B) {                  \
+    static void potrs(const Kokkos::HIP& space, const char uplo[], const AViewType& A, BViewType& B) {                 \
       Kokkos::Profiling::pushRegion("KokkosLapack::potrs[TPL_ROCSOLVER," #SCALAR "]");                                 \
       potrs_print_specialization<AViewType, BViewType>();                                                              \
       rocsolverPotrsWrapper(space, uplo, A, B);                                                                        \
