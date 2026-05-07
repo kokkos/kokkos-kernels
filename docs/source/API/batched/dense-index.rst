@@ -5,6 +5,8 @@ API: Batched Dense (DLA)
    :maxdepth: 2
    :hidden:
    
+   dense/batched_rotg
+   dense/batched_rot
    dense/batched_axpy
    dense/batched_copy
    dense/batched_iamax
@@ -103,7 +105,7 @@ BLAS 1
      - Team
      - TeamVector
    * - ROTG
-     - --
+     - :doc:`Rotg <dense/batched_rotg>`
      - --
      - --
    * - ROTMG
@@ -111,9 +113,9 @@ BLAS 1
      - --
      - --
    * - ROT
-     - --
-     - --
-     - --
+     - :doc:`SerialRot <dense/batched_rot>`
+     - :doc:`TeamRot <dense/batched_rot>`
+     - :doc:`TeamVectorRot <dense/batched_rot>`
    * - ROTM
      - --
      - --
