@@ -51,23 +51,22 @@ template <class ExecutionSpace, class AViewType, class BViewType,
           bool tpl_spec_avail = potrs_tpl_spec_avail<ExecutionSpace, AViewType, BViewType>::value,
           bool eti_spec_avail = potrs_eti_spec_avail<ExecutionSpace, AViewType, BViewType>::value>
 struct Potrs {
-  static void potrs(const ExecutionSpace& space, const char uplo[], const int& n, const int& nrhs, const AViewType& A,
-                    const int& lda, BViewType& B, const int& ldb);
+  static void potrs(const ExecutionSpace& space, const char uplo[], const AViewType& A, BViewType& B);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 // Default implementation when no TPL is available
 template <class ExecutionSpace, class AViewType, class BViewType>
 struct Potrs<ExecutionSpace, AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void potrs(const ExecutionSpace& /* space */, const char uplo[], const int& n, const int& nrhs,
-                    const AViewType& A, const int& lda, BViewType& B, const int& ldb) {
+  static void potrs(const ExecutionSpace& /* space */, const char uplo[],
+                    const AViewType& A, BViewType& B) {
     static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<BViewType>::value, "BViewType must be a Kokkos::View.");
 
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosLapack::potrs[ETI]"
                                                                      : "KokkosLapack::potrs[noETI]");
 
-    PotrsImpl<AViewType, BViewType>::potrs(uplo, n, nrhs, A, lda, B, ldb);
+    PotrsImpl<AViewType, BViewType>::potrs(uplo, A, B);
 
     Kokkos::Profiling::popRegion();
   }

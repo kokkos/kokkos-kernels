@@ -58,11 +58,6 @@ void potrs(const ExecutionSpace& space, const char uplo[], const AViewType& A, B
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  const int n    = static_cast<int>(A.extent(0));
-  const int nrhs = static_cast<int>(B.extent(1));
-  const int lda  = static_cast<int>(A.stride(1));
-  const int ldb  = static_cast<int>(B.stride(1));
-
   // Convert views to unmanaged
   using AViewInternalType = Kokkos::View<typename AViewType::const_data_type, typename AViewType::array_layout,
                                          typename AViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
@@ -72,7 +67,7 @@ void potrs(const ExecutionSpace& space, const char uplo[], const AViewType& A, B
   AViewInternalType uA(A);
   BViewInternalType uB(B);
 
-  Impl::Potrs<ExecutionSpace, AViewInternalType, BViewInternalType>::potrs(space, uplo, n, nrhs, uA, lda, uB, ldb);
+  Impl::Potrs<ExecutionSpace, AViewInternalType, BViewInternalType>::potrs(space, uplo, uA, uB);
 }
 
 // Overload without execution space (uses default)

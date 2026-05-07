@@ -35,13 +35,17 @@ namespace KokkosLapack {
 namespace Impl {
 
 template <class ExecutionSpace, class AViewType, class BViewType>
-void lapackPotrsWrapper(const ExecutionSpace& /* space */, const char uplo[], const int& n, const int& nrhs,
-                        const AViewType& A, const int& lda, BViewType& B, const int& ldb) {
+void lapackPotrsWrapper(const ExecutionSpace& /* space */, const char uplo[],
+                        const AViewType& A, BViewType& B) {
   using Scalar   = typename AViewType::non_const_value_type;
   using Layout_t = typename AViewType::array_layout;
   static_assert(std::is_same_v<Layout_t, Kokkos::LayoutLeft>,
                 "KokkosLapack - potrs: A needs to have a Kokkos::LayoutLeft");
 
+  const int n    = static_cast<int>(A.extent(0));
+  const int nrhs = static_cast<int>(B.extent(1));
+  const int lda  = static_cast<int>(A.stride(1));
+  const int ldb  = static_cast<int>(B.stride(1));
   int info = 0;
   if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
     using MagType = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
@@ -79,11 +83,10 @@ void lapackPotrsWrapper(const ExecutionSpace& /* space */, const char uplo[], co
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
     using BViewType =                                                                                                  \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
-    static void potrs(const EXECSPACE& space, const char uplo[], const int& n, const int& nrhs, const AViewType& A,    \
-                      const int& lda, BViewType& B, const int& ldb) {                                                  \
+    static void potrs(const EXECSPACE& space, const char uplo[], const AViewType& A, BViewType& B) {                   \
       Kokkos::Profiling::pushRegion("KokkosLapack::potrs[TPL_LAPACK," #SCALAR "]");                                    \
       potrs_print_specialization<AViewType, BViewType>();                                                              \
-      lapackPotrsWrapper(space, uplo, n, nrhs, A, lda, B, ldb);                                                        \
+      lapackPotrsWrapper(space, uplo, A, B);                                                                           \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -121,12 +124,16 @@ namespace KokkosLapack {
 namespace Impl {
 
 template <class AViewType, class BViewType>
-void cusolverPotrsWrapper(const Kokkos::Cuda& space, const char uplo[], const int& n, const int& nrhs,
-                          const AViewType& A, const int& lda, BViewType& B, const int& ldb) {
+void cusolverPotrsWrapper(const Kokkos::Cuda& space, const char uplo[],
+                          const AViewType& A, BViewType& B) {
   using memory_space = typename BViewType::memory_space;
   using Scalar       = typename AViewType::non_const_value_type;
 
   cublasFillMode_t uplo_t = (uplo[0] == 'U' || uplo[0] == 'u') ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER;
+  const int n    = static_cast<int>(A.extent(0));
+  const int nrhs = static_cast<int>(B.extent(1));
+  const int lda  = static_cast<int>(A.stride(1));
+  const int ldb  = static_cast<int>(B.stride(1));
 
   Kokkos::View<int, memory_space> info("potrs info");
   CudaLapackSingleton& s = CudaLapackSingleton::singleton();
@@ -181,11 +188,10 @@ void cusolverPotrsWrapper(const Kokkos::Cuda& space, const char uplo[], const in
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
     using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                          \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    static void potrs(const Kokkos::Cuda& space, const char uplo[], const int& n, const int& nrhs, const AViewType& A, \
-                      const int& lda, BViewType& B, const int& ldb) {                                                  \
+    static void potrs(const Kokkos::Cuda& space, const char uplo[], const AViewType& A, BViewType& B) {                \
       Kokkos::Profiling::pushRegion("KokkosLapack::potrs[TPL_CUSOLVER," #SCALAR "]");                                  \
       potrs_print_specialization<AViewType, BViewType>();                                                              \
-      cusolverPotrsWrapper(space, uplo, n, nrhs, A, lda, B, ldb);                                                      \
+      cusolverPotrsWrapper(space, uplo, A, B);                                                                         \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
@@ -215,11 +221,15 @@ namespace KokkosLapack {
 namespace Impl {
 
 template <class AViewType, class BViewType>
-void rocsolverPotrsWrapper(const Kokkos::HIP& space, const char uplo[], const int& n, const int& nrhs,
-                           const AViewType& A, const int& lda, BViewType& B, const int& ldb) {
+void rocsolverPotrsWrapper(const Kokkos::HIP& space, const char uplo[], const AViewType& A, BViewType& B) {
   using Scalar = typename AViewType::non_const_value_type;
 
   rocblas_fill uplo_t = (uplo[0] == 'U' || uplo[0] == 'u') ? rocblas_fill_upper : rocblas_fill_lower;
+
+  const int n    = static_cast<int>(A.extent(0));
+  const int nrhs = static_cast<int>(B.extent(1));
+  const int lda  = static_cast<int>(A.stride(1));
+  const int ldb  = static_cast<int>(B.stride(1));
 
   const rocblas_int n_    = static_cast<rocblas_int>(n);
   const rocblas_int nrhs_ = static_cast<rocblas_int>(nrhs);
@@ -270,11 +280,10 @@ void rocsolverPotrsWrapper(const Kokkos::HIP& space, const char uplo[], const in
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
     using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                           \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    static void potrs(const Kokkos::HIP& space, const char uplo[], const int& n, const int& nrhs, const AViewType& A,  \
-                      const int& lda, BViewType& B, const int& ldb) {                                                  \
+    static void potrs(const Kokkos::HIP& space, const char uplo[] const AViewType& A, BViewType& B) {                  \
       Kokkos::Profiling::pushRegion("KokkosLapack::potrs[TPL_ROCSOLVER," #SCALAR "]");                                 \
       potrs_print_specialization<AViewType, BViewType>();                                                              \
-      rocsolverPotrsWrapper(space, uplo, n, nrhs, A, lda, B, ldb);                                                     \
+      rocsolverPotrsWrapper(space, uplo, A, B);                                                                        \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };

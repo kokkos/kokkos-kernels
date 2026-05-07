@@ -4,6 +4,10 @@
 This script generates stub files for new kernel functions with all necessary
 ETI (Explicit Template Instantiation) infrastructure. It is meant for
 developers adding new kernels to KokkosKernels.
+
+NOTE: be sure to consider which arguments can be inferred from View dimensions.
+Lapack expects all these dims/sizes to be passed in, but the Kokkos interface
+does not need to pass these since they can be inferred from the view objects.
 """
 import sys, argparse, re
 from pathlib import Path

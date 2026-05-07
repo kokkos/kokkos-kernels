@@ -54,16 +54,13 @@ void potrf(const ExecutionSpace& space, const char uplo[], AViewType& A) {
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  const int n   = static_cast<int>(A.extent(0));
-  const int lda = static_cast<int>(A.stride(1));
-
   // Convert views to unmanaged
   using AViewInternalType = Kokkos::View<typename AViewType::data_type, typename AViewType::array_layout,
                                          typename AViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   AViewInternalType uA(A);
 
-  Impl::Potrf<ExecutionSpace, AViewInternalType>::potrf(space, uplo, n, uA, lda);
+  Impl::Potrf<ExecutionSpace, AViewInternalType>::potrf(space, uplo, uA);
 }
 
 // Overload without execution space (uses default)

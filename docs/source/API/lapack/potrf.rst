@@ -6,7 +6,7 @@ Defined in header: :code:`KokkosLapack_potrf.hpp`
 .. code:: c++
 
   template <class execution_space, class AViewType>
-  void potrf([[maybe_unused]] const execution_space& space, const char uplo[], const int& n, AViewType& A, const int& lda) {
+  void potrf([[maybe_unused]] const execution_space& space, const char uplo[], AViewType& A) {
 
 Computes the Cholesky factorization of a complex Hermitian positive definite matrix A :math:`A`
 
@@ -26,12 +26,7 @@ Parameters
 
 :uplo: 'U':  Upper triangle of A is stored, else lower triangle
 
-:n: The order of the matrix A.  n >= 0.
-
 :A: The input matrix (lda,n) on entry and the Cholesky factorization on return.
-
-:lda: The leading dimension of matrix A.  lda >= max(1,n).
-
 
 Type Requirements
 =================

@@ -7,14 +7,11 @@ Defined in header: :code:`KokkosLapack_potrs.hpp`
 
   // Overload 1: with explicit execution space
   template <class ExecutionSpace, class AViewType, class BViewType>
-  void potrs(const ExecutionSpace& space, const char uplo[], const int& n,
-             const int& nrhs, const AViewType& A, const int& lda,
-             BViewType& B, const int& ldb);
+  void potrs(const ExecutionSpace& space, const char uplo[], const AViewType& A, BViewType& B);
 
   // Overload 2: uses AViewType::execution_space
   template <class AViewType, class BViewType>
-  void potrs(const char uplo[], const int& n, const int& nrhs,
-             const AViewType& A, const int& lda, BViewType& B, const int& ldb);
+  void potrs(const char uplo[], const AViewType& A, BViewType& B);
 
 Solves a system of linear equations :math:`A X = B` where :math:`A` is a
 symmetric (or Hermitian) positive definite matrix whose Cholesky factorization
@@ -37,18 +34,9 @@ Parameters
 
 :uplo: ``'U'`` if the upper triangular factor is stored in ``A``; ``'L'`` if the lower triangular factor is stored.
 
-:n: The order of the matrix :math:`A`.  ``n >= 0``.
-
-:nrhs: The number of right-hand sides (columns of :math:`B`).  ``nrhs >= 0``.
-
 :A: On entry, the triangular Cholesky factor of :math:`A` as returned by ``potrf`` — upper triangle if ``uplo = 'U'``, lower triangle if ``uplo = 'L'``.  Not modified.  Dimensions: ``(lda, n)``.
 
-:lda: The leading dimension of ``A``.  ``lda >= max(1, n)``.
-
 :B: On entry, the right-hand side matrix of dimensions ``(ldb, nrhs)``.  On exit, overwritten with the solution matrix :math:`X`.
-
-:ldb: The leading dimension of ``B``.  ``ldb >= max(1, n)``.
-
 
 Type Requirements
 =================

@@ -26,7 +26,7 @@ namespace Test {
 ///  2. Choose an exact solution X_exact (known or random).
 ///  3. Compute B = A * X_exact.
 ///  4. Factor A with potrf(uplo, A).
-///  5. Solve with potrs(uplo, N, nrhs, A, lda, B, ldb)  -> B becomes X_solve.
+///  5. Solve with potrs(uplo, A, B)  -> B becomes X_solve.
 ///  6. Verify X_solve ≈ X_exact.
 ///
 /// For N==3, a fixed SPD matrix with known values is used so that rounding
