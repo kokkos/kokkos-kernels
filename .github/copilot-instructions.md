@@ -38,14 +38,43 @@ cmake --build kokkos-kernels/build --parallel $(nproc)
 - Preserve existing component naming (`blas`, `lapack`, `graph`, `sparse`, `batched`, `common`, `ode`) in paths and docs updates.
 
 ## Repository structure
-- `batched/`, `blas/`, `common/`, `graph/`, `lapack/`, `ode/`, `sparse/`: core components
-  - Public interfaces: `*/src`
-  - Unit tests: `*/unit_test`
-- `perf_test/`: performance-oriented tests/drivers
-- `example/`: sample usage and build examples
-- `docs/source/`: Sphinx documentation sources
-- `.github/workflows/`: CI/CD workflow definitions
-- `scripts/`: helper scripts (including docs/API consistency checks)
+
+```text
+kokkos-kernels/
+├── sparse/        # Sparse kernels (4.7M, ~209 headers, ~15 src) - PRIMARY
+│   ├── src/       # Public interfaces + implementations
+│   └── unit_test/ # Sparse unit tests
+├── batched/       # Batched kernels (3.3M, ~334 headers, ~22 src)
+│   └── src/       # Batched APIs and implementations
+├── blas/          # BLAS kernels (3.6M, ~229 headers, ~10 src)
+│   ├── src/       # Public interfaces + implementations
+│   └── unit_test/ # BLAS unit tests
+├── common/        # Shared utilities (612K, ~47 headers, ~11 src)
+│   ├── src/       # Common utilities and helpers
+│   └── unit_test/ # Common unit tests
+├── graph/         # Graph kernels (788K, ~37 headers, ~7 src)
+│   ├── src/       # Graph interfaces + implementations
+│   └── unit_test/ # Graph unit tests
+├── lapack/        # LAPACK kernels (652K, ~42 headers, ~10 src)
+│   ├── src/       # LAPACK interfaces + implementations
+│   └── unit_test/ # LAPACK unit tests
+├── ode/           # ODE kernels (252K, ~15 headers, ~7 src)
+│   ├── src/       # ODE interfaces + implementations
+│   └── unit_test/ # ODE unit tests
+├── perf_test/     # Performance tests/drivers (4.8M)
+├── benchmarks/    # Benchmark drivers and scripts
+├── test_common/   # Shared unit-test infrastructure
+├── example/       # Usage examples and integration-style samples
+├── docs/source/   # Sphinx docs sources
+├── cmake/         # Build system modules and options
+├── tpls/          # Third-party content and vendored support code
+├── .github/workflows/ # CI: linux.yml, osx.yml, at2.yml, format.yml, docs.yml, codeql.yml
+├── CMakeLists.txt # Root configuration (version/options/components)
+├── BUILD.md       # Build/setup guide
+└── DEVELOPER.md   # Developer conventions and CMake option patterns
+```
+
+**Key files:** `CMakeLists.txt`, `cmake/kokkoskernels_tribits.cmake`, `.github/workflows/linux.yml`, `.github/workflows/docs.yml`, `BUILD.md`, `DEVELOPER.md`
 
 ## CI/CD workflows
 Main workflows under `.github/workflows/`:
