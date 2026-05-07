@@ -22,7 +22,7 @@ on:
 jobs:
   PR_GH200_CUDA_131_ARMPL_2601:
     name: PR_GH200_CUDA_131_ARMPL_2601
-    runs-on: [ARM64,autotester_configs-cuda-13.1.0_armpl-26.01_aarch64-latest]
+    runs-on: [autotester_configs-cuda-13.1.0_armpl-26.01_aarch64-latest]
     
     steps:
       - name: nvidia-smi
