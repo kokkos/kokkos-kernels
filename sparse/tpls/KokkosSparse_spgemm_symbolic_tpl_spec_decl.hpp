@@ -29,8 +29,8 @@ namespace Impl {
 // offsets and ordinals independently as either 16, 32 or 64-bit integers,
 // cusparse will just fail at runtime if you don't use 32 for both.
 
-#if (CUDA_VERSION >= 11040) && (!defined(CUSPARSE_VERSION) || (CUSPARSE_VERSION < 12700))
-// CUDA 11.4+ added generic API structure reuse (full symbolic/numeric
+#if (CUSPARSE_VERSION < 12710)
+// CUDA 11.x and 12.x have spgemm generic API with structure reuse (full symbolic/numeric
 // separation). Newer cuSPARSE versions deprecate the SpGEMMreuse entry points,
 // so those versions take the non-reuse generic path below instead.
 // Also note: its "symbolic" (cusparseSpGEMMreuse_nnz) does not populate C's
@@ -153,9 +153,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
   }
 }
 
-#elif (CUDA_VERSION >= 11000)
-// CUDA 11.0-11.3 supports only the generic API, but not reuse.
-// cuSPARSE versions that deprecate SpGEMMreuse also take this path.
+#else
+// cuSPARSE versions that deprecate SpGEMMreuse use this SpGEMM interface instead.
 template <typename KernelHandle, typename lno_t, typename ConstRowMapType, typename ConstEntriesType,
           typename RowMapType>
 void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, const ConstRowMapType &row_mapA,
@@ -256,49 +255,6 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
   }
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyValues_AB));
 }
-
-#else
-// 10.x supports the pre-generic interface (cusparseXcsrgemmNnz). It always
-// populates C rowptrs.
-template <typename KernelHandle, typename lno_t, typename ConstRowMapType, typename ConstEntriesType,
-          typename RowMapType>
-void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, const ConstRowMapType &row_mapA,
-                              const ConstEntriesType &entriesA, const ConstRowMapType &row_mapB,
-                              const ConstEntriesType &entriesB, const RowMapType &row_mapC, bool /* computeRowptrs */) {
-  // using scalar_type = typename KernelHandle::nnz_scalar_t;
-  using size_type = typename KernelHandle::size_type;
-  if (handle->are_rowptrs_computed()) return;
-  handle->create_cusparse_spgemm_handle(false, false);
-  auto h   = handle->get_cusparse_spgemm_handle();
-  int nnzA = entriesA.extent(0);
-  int nnzB = entriesB.extent(0);
-
-  int baseC, nnzC;
-  int *nnzTotalDevHostPtr = &nnzC;
-
-  // In empty (zero entries) matrix case, cusparse does not populate rowptrs to
-  // zeros
-  if (m == 0 || n == 0 || k == 0 || entriesA.extent(0) == size_type(0) || entriesB.extent(0) == size_type(0)) {
-    Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC, size_type(0));
-    nnzC = 0;
-  } else {
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
-        cusparseXcsrgemmNnz(h->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, m, k,
-                            n, h->generalDescr, nnzA, row_mapA.data(), entriesA.data(), h->generalDescr, nnzB,
-                            row_mapB.data(), entriesB.data(), h->generalDescr, row_mapC.data(), nnzTotalDevHostPtr));
-    if (nullptr != nnzTotalDevHostPtr) {
-      nnzC = *nnzTotalDevHostPtr;
-    } else {
-      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(&nnzC, row_mapC.data() + m, sizeof(int), cudaMemcpyDeviceToHost));
-      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(&baseC, row_mapC.data(), sizeof(int), cudaMemcpyDeviceToHost));
-      nnzC -= baseC;
-    }
-  }
-  handle->set_c_nnz(nnzC);
-  handle->set_call_symbolic();
-  handle->set_computed_rowptrs();
-}
-
 #endif
 
 #define SPGEMM_SYMBOLIC_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)                                                     \
