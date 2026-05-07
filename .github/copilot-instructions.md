@@ -48,7 +48,7 @@ cmake --build kokkos-kernels/build --parallel $(nproc)
 - `scripts/`: helper scripts (including docs/API consistency checks)
 
 ## CI/CD workflows
-Main workflows under `/home/runner/work/kokkos-kernels/kokkos-kernels/.github/workflows/`:
+Main workflows under `.github/workflows/`:
 - `linux.yml`: Linux PR sanitizer/testing workflow
 - `osx.yml`: macOS PR build/test workflow
 - `at2.yml`: orchestrates reusable GPU/host workflow set (`h100_lychee.yml`, `v100_kumquat.yml`, `mi210.yml`, `host.yml`, `pv.yml`)
