@@ -31,6 +31,31 @@ cmake -S kokkos-kernels -B kokkos-kernels/build \
 cmake --build kokkos-kernels/build --parallel $(nproc)
 ```
 
+
+### Key CMake Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `KokkosKernels_ENABLE_TESTS` | OFF | Build unit and integration tests |
+| `KokkosKernels_ENABLE_EXAMPLES` | OFF | Build example programs |
+| `KokkosKernels_ENABLE_PERFTESTS` | OFF | Build `perf_test` targets |
+| `KokkosKernels_ENABLE_BENCHMARKS` | OFF | Build benchmark targets |
+| `KokkosKernels_RUN_BENCHMARKS` | OFF | Run benchmarks from CTest/benchmark wiring |
+| `KokkosKernels_ENABLE_DOCS` | OFF | Enable docs build targets |
+| `KokkosKernels_ENABLE_COMPILER_WARNINGS` | OFF | Enable stricter compiler warning flags |
+| `KokkosKernels_ENABLE_WARNINGS_AS_ERRORS` | OFF | Treat warnings as errors |
+| `KokkosKernels_ENABLE_ALL_COMPONENTS` | ON | Enable all kernel components |
+| `KokkosKernels_ENABLE_COMPONENT_BATCHED` | OFF | Enable the batched component |
+| `KokkosKernels_ENABLE_COMPONENT_SPARSE` | OFF | Enable the sparse component (pulls dependent components) |
+| `KokkosKernels_ENABLE_TPL_BLAS` | OFF | Enable BLAS TPL support |
+| `KokkosKernels_ENABLE_TPL_LAPACK` | ON if BLAS is enabled, otherwise OFF | Enable LAPACK TPL support |
+| `KokkosKernels_ENABLE_TPL_CUBLAS` | ON if CUDA-enabled Kokkos, otherwise OFF | Enable cuBLAS TPL support |
+| `KokkosKernels_ENABLE_TPL_CUSPARSE` | ON if CUDA-enabled Kokkos, otherwise OFF | Enable cuSPARSE TPL support |
+| `KokkosKernels_ENABLE_TPL_CUSOLVER` | ON if CUDA-enabled Kokkos, otherwise OFF | Enable cuSOLVER TPL support |
+| `KokkosKernels_ENABLE_TPL_ROCBLAS` | OFF | Enable rocBLAS TPL support |
+| `KokkosKernels_ENABLE_TPL_ROCSPARSE` | OFF | Enable rocSPARSE TPL support |
+| `KokkosKernels_ENABLE_TPL_ROCSOLVER` | OFF | Enable rocSOLVER TPL support |
+
 ## Naming Style Guidelines for Kokkos Kernels Development
 - Public CMake options follow `KokkosKernels_<OPTION>` (camel-case prefix + uppercase option name), for example `KokkosKernels_ENABLE_TESTS`.
 - Internal CMake regular variables are typically uppercase `KOKKOSKERNELS_*`.
