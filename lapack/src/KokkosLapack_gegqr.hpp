@@ -58,7 +58,7 @@ void gegqr(const ExecutionSpace& space, const int k, const AMatrix& A, const Tau
   static_assert(std::is_same_v<typename InfoArray::non_const_value_type, int>,
                 "KokkosLapack::gegqr: Info must be an array of integers.");
 
-  static_assert(std::is_same_v<typename AMatrix::value_type, typename AMatrix::non_const_value_type>::value,
+  static_assert(std::is_same_v<typename AMatrix::value_type, typename AMatrix::non_const_value_type>,
 		"KokkosLapack::gegqr: AMatrix must store non const values.");
 
   const int64_t m     = A.extent(0);
@@ -68,7 +68,7 @@ void gegqr(const ExecutionSpace& space, const int k, const AMatrix& A, const Tau
 
   if (n < k || k < 0) {
     std::ostringstream os;
-    os << "KokkosLapack::gegrf: k= " << k << ", must be positive and less or equal to n=" << n;
+    os << "KokkosLapack::gegqr: k= " << k << ", must be positive and less or equal to n=" << n;
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 

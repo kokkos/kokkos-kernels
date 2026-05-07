@@ -162,7 +162,7 @@ void cusolverGegqrWrapper(const ExecutionSpace& space, const int k, const AViewT
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSorgqr_bufferSize(s.handle, m, n, k, A.data(), lda, Tau.data(), &lwork));
     Kokkos::View<float*, memory_space> Workspace("cusolver sorgqr workspace", lwork);
 
-    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnDorgqr(s.handle, m, n, k, A.data(), lda, Tau.data(), Workspace.data(), lwork, Info.data()));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSorgqr(s.handle, m, n, k, A.data(), lda, Tau.data(), Workspace.data(), lwork, Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnDorgqr_bufferSize(s.handle, m, n, k, A.data(), lda, Tau.data(), &lwork));
@@ -177,7 +177,7 @@ void cusolverGegqrWrapper(const ExecutionSpace& space, const int k, const AViewT
 
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(
        	cusolverDnCungqr(s.handle, m, n, k, reinterpret_cast<cuComplex*>(A.data()), lda, reinterpret_cast<cuComplex*>(Tau.data()),
-			 reinterpret_cast<cuComplex*>(Workspace.data()), &lwork, Info.data()));
+			 reinterpret_cast<cuComplex*>(Workspace.data()), lwork, Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnZungqr_bufferSize(s.handle, m, n, k, reinterpret_cast<cuDoubleComplex*>(A.data()), lda,
@@ -187,7 +187,7 @@ void cusolverGegqrWrapper(const ExecutionSpace& space, const int k, const AViewT
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(
         cusolverDnZungqr(s.handle, m, n, k, reinterpret_cast<cuDoubleComplex*>(A.data()), lda,
 			 reinterpret_cast<cuDoubleComplex*>(Tau.data()), reinterpret_cast<cuDoubleComplex*>(Workspace.data()),
-			 &lwork, Info.data()));
+			 lwork, Info.data()));
   }
   KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSetStream(s.handle, NULL));
 }

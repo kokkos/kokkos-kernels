@@ -128,10 +128,10 @@ void F77_BLAS_MANGLE(zpotrf, ZPOTRF)(const char*, const int*, std::complex<doubl
 #define F77_FUNC_CUNMQR F77_BLAS_MANGLE(cunmqr, CUNMQR)
 #define F77_FUNC_ZUNMQR F77_BLAS_MANGLE(zunmqr, ZUNMQR)
 
-#define F77_FUNC_SORMQR F77_BLAS_MANGLE(sorgqr, SORGQR)
-#define F77_FUNC_DORMQR F77_BLAS_MANGLE(dorgqr, DORGQR)
-#define F77_FUNC_CUNMQR F77_BLAS_MANGLE(cungqr, CUNGQR)
-#define F77_FUNC_ZUNMQR F77_BLAS_MANGLE(zungqr, ZUNGQR)
+#define F77_FUNC_SORGQR F77_BLAS_MANGLE(sorgqr, SORGQR)
+#define F77_FUNC_DORGQR F77_BLAS_MANGLE(dorgqr, DORGQR)
+#define F77_FUNC_CUNGQR F77_BLAS_MANGLE(cungqr, CUNGQR)
+#define F77_FUNC_ZUNGQR F77_BLAS_MANGLE(zungqr, ZUNGQR)
 
 #define F77_FUNC_SPOTRF F77_BLAS_MANGLE(spotrf, SPOTRF)
 #define F77_FUNC_DPOTRF F77_BLAS_MANGLE(dpotrf, DPOTRF)
@@ -203,7 +203,7 @@ void HostLapack<float>::gegqr(const int m, const int n, const int k, float* a, c
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   sorgqr_(&m, &n, &k, a, &lda, tau, work, &lwork, info);
 #else
-  F77_FUNC_SORMQR(&m, &n, &k, a, &lda, tau, work, &lwork, info);
+  F77_FUNC_SORGQR(&m, &n, &k, a, &lda, tau, work, &lwork, info);
 #endif
 }
 
