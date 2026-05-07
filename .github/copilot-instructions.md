@@ -45,7 +45,9 @@ kokkos-kernels/
 │   ├── src/       # Public interfaces + implementations
 │   └── unit_test/ # Sparse unit tests
 ├── batched/       # Batched kernels (3.3M, ~334 headers, ~22 src)
-│   └── src/       # Batched APIs and implementations
+│   ├── dense/     # Dense batched kernels
+│   ├── eti/       # Explicit template instantiation sources
+│   └── sparse/    # Sparse batched kernels
 ├── blas/          # BLAS kernels (3.6M, ~229 headers, ~10 src)
 │   ├── src/       # Public interfaces + implementations
 │   └── unit_test/ # BLAS unit tests
