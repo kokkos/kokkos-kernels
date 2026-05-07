@@ -35,8 +35,7 @@ namespace KokkosLapack {
 namespace Impl {
 
 template <class ExecutionSpace, class AViewType, class BViewType>
-void lapackPotrsWrapper(const ExecutionSpace& /* space */, const char uplo[],
-                        const AViewType& A, BViewType& B) {
+void lapackPotrsWrapper(const ExecutionSpace& /* space */, const char uplo[], const AViewType& A, BViewType& B) {
   using Scalar   = typename AViewType::non_const_value_type;
   using Layout_t = typename AViewType::array_layout;
   static_assert(std::is_same_v<Layout_t, Kokkos::LayoutLeft>,
@@ -46,7 +45,7 @@ void lapackPotrsWrapper(const ExecutionSpace& /* space */, const char uplo[],
   const int nrhs = static_cast<int>(B.extent(1));
   const int lda  = static_cast<int>(A.stride(1));
   const int ldb  = static_cast<int>(B.stride(1));
-  int info = 0;
+  int info       = 0;
   if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
     using MagType = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
     info          = HostLapack<std::complex<MagType>>::potrs(uplo[0], n, nrhs,
@@ -124,16 +123,15 @@ namespace KokkosLapack {
 namespace Impl {
 
 template <class AViewType, class BViewType>
-void cusolverPotrsWrapper(const Kokkos::Cuda& space, const char uplo[],
-                          const AViewType& A, BViewType& B) {
+void cusolverPotrsWrapper(const Kokkos::Cuda& space, const char uplo[], const AViewType& A, BViewType& B) {
   using memory_space = typename BViewType::memory_space;
   using Scalar       = typename AViewType::non_const_value_type;
 
   cublasFillMode_t uplo_t = (uplo[0] == 'U' || uplo[0] == 'u') ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER;
-  const int n    = static_cast<int>(A.extent(0));
-  const int nrhs = static_cast<int>(B.extent(1));
-  const int lda  = static_cast<int>(A.stride(1));
-  const int ldb  = static_cast<int>(B.stride(1));
+  const int n             = static_cast<int>(A.extent(0));
+  const int nrhs          = static_cast<int>(B.extent(1));
+  const int lda           = static_cast<int>(A.stride(1));
+  const int ldb           = static_cast<int>(B.stride(1));
 
   Kokkos::View<int, memory_space> info("potrs info");
   CudaLapackSingleton& s = CudaLapackSingleton::singleton();
@@ -171,29 +169,29 @@ void cusolverPotrsWrapper(const Kokkos::Cuda& space, const char uplo[],
   }
 }
 
-#define KOKKOSLAPACK_POTRS_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                         \
-  template <>                                                                                                          \
-  struct Potrs<Kokkos::Cuda,                                                                                           \
-               Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                           \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
-               Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                 \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
-               true,                                                                                                   \
-               potrs_eti_spec_avail<Kokkos::Cuda,                                                                      \
-                                    Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,      \
-                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                             \
-                                    Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,            \
-                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                   \
-    using AViewType = Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                    \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                          \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    static void potrs(const Kokkos::Cuda& space, const char uplo[], const AViewType& A, BViewType& B) {                \
-      Kokkos::Profiling::pushRegion("KokkosLapack::potrs[TPL_CUSOLVER," #SCALAR "]");                                  \
-      potrs_print_specialization<AViewType, BViewType>();                                                              \
-      cusolverPotrsWrapper(space, uplo, A, B);                                                                         \
-      Kokkos::Profiling::popRegion();                                                                                  \
-    }                                                                                                                  \
+#define KOKKOSLAPACK_POTRS_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                    \
+  template <>                                                                                                     \
+  struct Potrs<Kokkos::Cuda,                                                                                      \
+               Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                      \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                             \
+               Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                            \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                             \
+               true,                                                                                              \
+               potrs_eti_spec_avail<Kokkos::Cuda,                                                                 \
+                                    Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
+                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                        \
+                                    Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,       \
+                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {              \
+    using AViewType = Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,               \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                      \
+    using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                      \
+    static void potrs(const Kokkos::Cuda& space, const char uplo[], const AViewType& A, BViewType& B) {           \
+      Kokkos::Profiling::pushRegion("KokkosLapack::potrs[TPL_CUSOLVER," #SCALAR "]");                             \
+      potrs_print_specialization<AViewType, BViewType>();                                                         \
+      cusolverPotrsWrapper(space, uplo, A, B);                                                                    \
+      Kokkos::Profiling::popRegion();                                                                             \
+    }                                                                                                             \
   };
 
 KOKKOSLAPACK_POTRS_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)

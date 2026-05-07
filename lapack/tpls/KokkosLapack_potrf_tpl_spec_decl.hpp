@@ -167,23 +167,23 @@ void cusolverPotrfWrapper(const Kokkos::Cuda& space, const char uplo[], AViewTyp
   }
 }
 
-#define KOKKOSLAPACK_POTRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                    \
-  template <>                                                                                                     \
-  struct Potrf<                                                                                                   \
-      Kokkos::Cuda,                                                                                               \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
-      true,                                                                                                       \
-      potrf_eti_spec_avail<Kokkos::Cuda, Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
-                                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {         \
-    using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                      \
-    static void potrf(const Kokkos::Cuda& space, const char uplo[], AViewType& A) {                               \
-      Kokkos::Profiling::pushRegion("KokkosLapack::potrf[TPL_CUSOLVER," #SCALAR "]");                             \
-      potrf_print_specialization<AViewType>();                                                                    \
-      cusolverPotrfWrapper(space, uplo, A);                                                                       \
-      Kokkos::Profiling::popRegion();                                                                             \
-    }                                                                                                             \
+#define KOKKOSLAPACK_POTRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                   \
+  template <>                                                                                                    \
+  struct Potrf<                                                                                                  \
+      Kokkos::Cuda,                                                                                              \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                     \
+      true,                                                                                                      \
+      potrf_eti_spec_avail<Kokkos::Cuda, Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
+                                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {        \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                    \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                     \
+    static void potrf(const Kokkos::Cuda& space, const char uplo[], AViewType& A) {                              \
+      Kokkos::Profiling::pushRegion("KokkosLapack::potrf[TPL_CUSOLVER," #SCALAR "]");                            \
+      potrf_print_specialization<AViewType>();                                                                   \
+      cusolverPotrfWrapper(space, uplo, A);                                                                      \
+      Kokkos::Profiling::popRegion();                                                                            \
+    }                                                                                                            \
   };
 
 KOKKOSLAPACK_POTRF_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)

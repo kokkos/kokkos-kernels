@@ -58,8 +58,7 @@ struct Potrs {
 // Default implementation when no TPL is available
 template <class ExecutionSpace, class AViewType, class BViewType>
 struct Potrs<ExecutionSpace, AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void potrs(const ExecutionSpace& /* space */, const char uplo[],
-                    const AViewType& A, BViewType& B) {
+  static void potrs(const ExecutionSpace& /* space */, const char uplo[], const AViewType& A, BViewType& B) {
     static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<BViewType>::value, "BViewType must be a Kokkos::View.");
 
