@@ -117,12 +117,12 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno
       cusparseCsrSetPointers(h->descr_C, (void *)row_mapC.data(), (void *)entriesC.data(), (void *)valuesC.data()));
   const auto alpha = KokkosKernels::ArithTraits<scalar_type>::one();
   const auto beta  = KokkosKernels::ArithTraits<scalar_type>::zero();
-  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
-      cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta, h->descr_C,
-                             h->scalarType, CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr, &h->bufferSize4, h->buffer4));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
+                                                              h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
+                                                              h->spgemmDescr, &h->bufferSize4, h->buffer4));
   KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_copy(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
-                                                           h->descr_B, &beta, h->descr_C, h->scalarType,
-                                                           CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr));
+                                                           h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
+                                                           h->spgemmDescr));
   handle->set_computed_entries();
   handle->set_call_numeric();
 }

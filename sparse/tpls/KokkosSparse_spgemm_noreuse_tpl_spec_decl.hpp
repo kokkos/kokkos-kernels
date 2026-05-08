@@ -34,8 +34,9 @@ Matrix spgemm_noreuse_cusparse(KokkosSparse::SPGEMMAlgorithm algo, const MatrixC
   cusparseSpGEMMAlg_t alg = CUSPARSE_SPGEMM_DEFAULT;
   // Validate algo for the current version of cuSPARSE, and convert to the correct cusparse algo.
   Handle::cuSparseSpgemmHandleType::checkAlgorithm(algo, &alg);
-  size_t bufferSize1 = 0, bufferSize2 = 0;
-  void *buffer1 = nullptr, *buffer2 = nullptr;
+  bool needEstimateMemory = algo == SPGEMM_CUSPARSE_ALG2 || algo == SPGEMM_CUSPARSE_ALG3;
+  size_t bufferSize1 = 0, bufferSize2 = 0, bufferSize3 = 0;
+  void *buffer1 = nullptr, *buffer2 = nullptr, *buffer3 = nullptr;
   // A is m*n, B is n*k, C is m*k
   int m            = A.numRows();
   int n            = B.numRows();
@@ -68,12 +69,28 @@ Matrix spgemm_noreuse_cusparse(KokkosSparse::SPGEMMAlgorithm algo, const MatrixC
                                                                      &beta, descr_C, cudaScalarType, alg, spgemmDescr,
                                                                      &bufferSize1, buffer1));
 
-  //----------------------------------------------------------------------
-  // query compute buffer size, allocate, then call again with buffer.
+  if (needEstimateMemory) {
+    constexpr float chunk_fraction = 0.25;
+    // First estimateMemory call computes the size for buffer3
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_estimateMemory(cusparseHandle, op, op, &alpha, descr_A, descr_B,
+                                                                       &beta, descr_C, cudaScalarType, alg, spgemmDescr,
+                                                                       chunk_fraction, &bufferSize3, NULL, NULL));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer3, bufferSize3));
 
-  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta,
-                                                              descr_C, cudaScalarType, alg, spgemmDescr, &bufferSize2,
-                                                              nullptr));
+    // Second estimateMemory call computes bufferSize2
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseSpGEMM_estimateMemory(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta, descr_C, cudaScalarType,
+                                      alg, spgemmDescr, chunk_fraction, &bufferSize3, buffer3, &bufferSize2));
+    // buffer3 is not used again
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer3));
+    buffer3 = nullptr;
+  } else {
+    // First compute call computes bufferSize2
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta,
+                                                                descr_C, cudaScalarType, alg, spgemmDescr, &bufferSize2,
+                                                                nullptr));
+  }
+
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer2, bufferSize2));
   KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta,
                                                               descr_C, cudaScalarType, alg, spgemmDescr, &bufferSize2,

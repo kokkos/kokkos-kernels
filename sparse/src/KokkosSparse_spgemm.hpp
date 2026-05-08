@@ -202,9 +202,15 @@ CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool 
     typename CMatrix::values_type valuesC;
     return CMatrix("C", Crows, Ccols, 0, valuesC, row_mapC, entriesC);
   }
-  return CMatrix(
-      KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal>::spgemm_noreuse(
-          algo, A_internal, Amode, B_internal, Bmode));
+  if (Impl::is_spgemm_algorithm_native(algo)) {
+    return CMatrix(
+        KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal, false>::spgemm_noreuse(
+            algo, A_internal, Amode, B_internal, Bmode));
+  } else {
+    return CMatrix(
+        KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal>::spgemm_noreuse(
+            algo, A_internal, Amode, B_internal, Bmode));
+  }
 }
 
 ///

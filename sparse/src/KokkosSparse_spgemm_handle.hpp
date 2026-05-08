@@ -72,7 +72,7 @@ enum SPGEMMAlgorithm {
 
 namespace Impl {
 // Helpers to categorize algorithm choices
-inline bool isCuSparseSpgemmAlgorithm(SPGEMMAlgorithm alg) {
+inline bool is_cusparse_spgemm_algorithm(SPGEMMAlgorithm alg) {
   switch (alg) {
     case SPGEMM_CUSPARSE_DETERMINISTIC:
     case SPGEMM_CUSPARSE_NONDETERMINISTIC:
@@ -82,6 +82,13 @@ inline bool isCuSparseSpgemmAlgorithm(SPGEMMAlgorithm alg) {
     default:;
   }
   return false;
+}
+
+/// Return true if the given algorithm is always a native (KokkosKernels)
+/// implementation, and false if it may be implemented by a TPL.
+inline bool is_spgemm_algorithm_native(SPGEMMAlgorithm a) {
+  if (a == SPGEMM_DEFAULT || is_cusparse_spgemm_algorithm(a)) return false;
+  return true;
 }
 }  // namespace Impl
 
@@ -518,7 +525,7 @@ class SPGEMMHandle {
         mkl_spgemm_handle(nullptr)
 #endif
   {
-    if (Impl::isCuSparseSpgemmAlgorithm(alg)) {
+    if (Impl::is_cusparse_spgemm_algorithm(alg)) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       // Check that the algorithm is supported by this version of cuSPARSE
       cuSparseSpgemmHandleType::checkAlgorithm(alg);
