@@ -9,7 +9,7 @@
 ## Build instructions
 This repository does **not** configure standalone unless Kokkos is already built and discoverable.
 
-1. Clone `kokkos/kokkos` beside this repository (CI commonly uses `5.1.0`).
+1. Clone `kokkos/kokkos` beside this repository (CI commonly uses the latest release of Kokkos).
 2. Configure/build/install Kokkos.
 3. Configure Kokkos Kernels with `-DKokkos_ROOT=<kokkos-install-prefix>`.
 
