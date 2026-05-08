@@ -76,6 +76,7 @@ cmake --build kokkos-kernels/build --parallel $(nproc)
 | SuperLU | System install | Optional — sparse direct solver |
 | CHOLMOD | SuiteSparse | Optional — sparse Cholesky solver |
 | METIS | System install | Optional — graph partitioning |
+| ACCELERATE | System install | Optional - Apple-optimized math library |
 
 ## Common Pitfalls
 
