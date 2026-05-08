@@ -108,7 +108,10 @@ cmake --build kokkos-kernels/build --parallel $(nproc)
 ```text
 kokkos-kernels/
 ├── sparse/        # Sparse kernels (4.7M, ~209 headers, ~15 src) - PRIMARY
-│   ├── src/       # Public interfaces + implementations
+|   ├── eti/       # Private details of the explicit instantiation layer
+|   ├── impl/      # Private implementation details for the corresponding public interfaces
+│   ├── src/       # Public interfaces
+|   ├── tpls/      # Private details for Third Party Libraries integration
 │   └── unit_test/ # Sparse unit tests
 ├── batched/       # Batched kernels (3.3M, ~334 headers, ~22 src)
 │   ├── dense/     # Dense batched kernels
