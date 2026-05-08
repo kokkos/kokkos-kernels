@@ -214,7 +214,7 @@ make -C docs html
 ## Critical Rules
 ### NEVER
 - Never assume Kokkos Kernels can build without first installing/configuring Kokkos.
-- Never treat `*/src/impl` or `*::Impl` symbols as stable public API contracts.
+- Never treat `*/impl` or `*::Impl` symbols as stable public API contracts.
 - Never skip formatting for touched C/C++ source/header files when relevant (`clang-format-16` is the CI formatter).
 - Never assume `main` is the primary integration branch; use `develop` for comparisons and most CI-aligned checks.
 
