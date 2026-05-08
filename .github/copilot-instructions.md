@@ -232,4 +232,4 @@ make -C docs html
    - Error: `Could not find a package configuration file provided by "Kokkos"`.
    - Workaround: clone/build/install `kokkos/kokkos` first and pass `-DKokkos_ROOT=<install-prefix>` when configuring Kokkos Kernels.
 2. **No `CONTRIBUTING.md` found at repository root**
-   - Workaround: use `README.md`, `BUILD.md`, `DEVELOPER.md`, and `.github/workflows/*.yml` as authoritative contributor/build/test references.
+   - Workaround: use `docs/source/Contributing.rst` references.
