@@ -620,7 +620,7 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
   using const_lno_t     = const lno_t;
   using const_scalar_t  = const scalar_t;
   using KernelHandle    = KokkosKernelsHandle<const_size_type, const_lno_t, const_scalar_t, execution_space,
-                                              typename device::memory_space, typename device::memory_space>;
+                                           typename device::memory_space, typename device::memory_space>;
   srand(245);
   lno_t numCols                         = numRows;
   typename crsMat_t::value_type m_omega = omega;
