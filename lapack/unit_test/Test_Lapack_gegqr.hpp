@@ -52,24 +52,8 @@ void impl_test_gegqr(int m, int n) {
   // ********************************************************************
   // Initialize data
   // ********************************************************************
-  if ((m == 3) && (n == 3)) {
-    h_A(0, 0) = ScalarA(12.);
-    h_A(0, 1) = ScalarA(-51.);
-    h_A(0, 2) = ScalarA(4.);
-
-    h_A(1, 0) = ScalarA(6.);
-    h_A(1, 1) = ScalarA(167.);
-    h_A(1, 2) = ScalarA(-68.);
-
-    h_A(2, 0) = ScalarA(-4.);
-    h_A(2, 1) = ScalarA(24.);
-    h_A(2, 2) = ScalarA(-41.);
-
-    Kokkos::deep_copy(A, h_A);
-  } else {
-    Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
-    Kokkos::deep_copy(h_A, A);
-  }
+  Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
+  Kokkos::deep_copy(h_A, A);
 
   Kokkos::deep_copy(Aorig, A);
   Kokkos::deep_copy(h_Aorig, h_A);
@@ -105,161 +89,29 @@ void impl_test_gegqr(int m, int n) {
   }
 
   // ********************************************************************
-  // Check outputs h_A and h_tau
-  // ********************************************************************
-  if ((m == 3) && (n == 3)) {
-    Kokkos::View<ScalarA**, Kokkos::HostSpace> refMatrix("ref matrix", m, n);
-    Kokkos::View<ScalarA*, Kokkos::HostSpace> refTau("ref tau", m);
-
-    refMatrix(0, 0) = ScalarA(-14.);
-    refMatrix(0, 1) = ScalarA(-21.);
-    refMatrix(0, 2) = ScalarA(14.);
-
-    refMatrix(1, 0) = ScalarA(0.2307692307692308);
-    refMatrix(1, 1) = ScalarA(-175.);
-    refMatrix(1, 2) = ScalarA(70.);
-
-    refMatrix(2, 0) = ScalarA(-0.1538461538461539);
-    refMatrix(2, 1) = ScalarA(1. / 18.);
-    refMatrix(2, 2) = ScalarA(-35.);
-
-    refTau(0) = ScalarA(1.857142857142857);
-    refTau(1) = ScalarA(1.993846153846154);
-    refTau(2) = ScalarA(0.);
-
-    {
-      bool test_flag_A = true;
-      for (int i = 0; (i < m) && test_flag_A; ++i) {
-        for (int j = 0; (j < n) && test_flag_A; ++j) {
-          if (ats::abs(h_A(i, j) - refMatrix(i, j)) > absTol) {
-            std::cout << "h_Aoutput checking"
-                      << ", m = " << m << ", n = " << n << ", i = " << i << ", j = " << j
-                      << ", h_Aoutput(i,j) = " << std::setprecision(16) << h_A(i, j)
-                      << ", refMatrix(i,j) = " << std::setprecision(16) << refMatrix(i, j)
-                      << ", |diff| = " << std::setprecision(16) << ats::abs(h_A(i, j) - refMatrix(i, j))
-                      << ", absTol = " << std::setprecision(16) << absTol << std::endl;
-            test_flag_A = false;
-          }
-        }
-      }
-      ASSERT_EQ(test_flag_A, true);
-    }
-
-    {
-      bool test_flag_tau = true;
-      for (int i = 0; (i < m) && test_flag_tau; ++i) {
-        if (ats::abs(h_tau(i) - refTau(i)) > absTol) {
-          std::cout << "tau checking"
-                    << ", m = " << m << ", n = " << n << ", i = " << i << ", h_tau(i,j) = " << std::setprecision(16)
-                    << h_tau(i) << ", refTau(i,j) = " << std::setprecision(16) << refTau(i)
-                    << ", |diff| = " << std::setprecision(16) << ats::abs(h_tau(i) - refTau(i))
-                    << ", absTol = " << std::setprecision(16) << absTol << std::endl;
-          test_flag_tau = false;
-        }
-      }
-      ASSERT_EQ(test_flag_tau, true);
-    }
-  }
-
-  // ********************************************************************
   // Compute Q, R, and QR
   // ********************************************************************
-  ViewTypeA Q("Q", m, m);
-  ViewTypeA R("R", m, n);
+  ViewTypeA Qref("Qref", m, m);
   ViewTypeA QR("QR", m, n);
 
-  typename ViewTypeA::host_mirror_type h_Q  = Kokkos::create_mirror_view(Q);
-  typename ViewTypeA::host_mirror_type h_R  = Kokkos::create_mirror_view(R);
-  typename ViewTypeA::host_mirror_type h_QR = Kokkos::create_mirror_view(QR);
+  typename ViewTypeA::host_mirror_type h_Qref = Kokkos::create_mirror_view(Qref);
+  typename ViewTypeA::host_mirror_type h_QR   = Kokkos::create_mirror_view(QR);
 
-  // Load identity matrix in Q
+  // Load identity matrix in Qref
   for (int idx = 0; idx < m; ++idx) {
-    h_Q(idx, idx) = 1.0;
+    h_Qref(idx, idx) = 1.0;
   }
-  Kokkos::deep_copy(Q, h_Q);
+  Kokkos::deep_copy(Qref, h_Qref);
 
-  // Load R from A
-  for (int rowIdx = 0; rowIdx < minMN; ++rowIdx) {
-    for (int colIdx = 0; colIdx < n; ++colIdx) {
-      if (rowIdx <= colIdx) {
-        h_R(rowIdx, colIdx) = h_A(rowIdx, colIdx);
-      }
-    }
-  }
-  Kokkos::deep_copy(R, h_R);
+  // Apply Q stored in A to our Qref that is currently set as the identity
+  KokkosLapack::gemqr(space, "L", "N", A, Tau, Qref, Info);
+  Kokkos::fence();
 
-  // Apply Q stored in A to our Q that is currently set as the identity
-  KokkosLapack::gemqr(space, "L", "N", A, Tau, Q, Info);
-  Kokkos::deep_copy(h_Q, Q);
+  Kokkos::deep_copy(h_Qref, Qref);
 
-  // Recompute A from Q and R factors
-  KokkosBlas::gemm("N", "N", 1., Q, R, 0., QR);
-  Kokkos::deep_copy(h_QR, QR);
-
-  // ********************************************************************
-  // Check Q, R, and QR
-  // ********************************************************************
-  if ((m == 3) && (n == 3)) {
-    Kokkos::View<ScalarA**, typename Kokkos::DefaultHostExecutionSpace::memory_space> refQ("ref Q", m, n);
-    Kokkos::View<ScalarA**, typename Kokkos::DefaultHostExecutionSpace::memory_space> refR("ref R", m, n);
-
-    refQ(0, 0) = ScalarA(-6. / 7.);
-    refQ(0, 1) = ScalarA(69. / 175.);
-    refQ(0, 2) = ScalarA(58. / 175.);
-
-    refQ(1, 0) = ScalarA(-3. / 7.);
-    refQ(1, 1) = ScalarA(-158. / 175.);
-    refQ(1, 2) = ScalarA(-6. / 175.);
-
-    refQ(2, 0) = ScalarA(2. / 7.);
-    refQ(2, 1) = ScalarA(-6. / 35.);
-    refQ(2, 2) = ScalarA(33. / 35.);
-
-    refR(0, 0) = ScalarA(-14.);
-    refR(0, 1) = ScalarA(-21.);
-    refR(0, 2) = ScalarA(14.);
-
-    refR(1, 1) = ScalarA(-175.);
-    refR(1, 2) = ScalarA(70.);
-
-    refR(2, 2) = ScalarA(-35.);
-
-    {
-      bool test_flag_Q = true;
-      for (int i = 0; (i < m) && test_flag_Q; ++i) {
-        for (int j = 0; (j < m) && test_flag_Q; ++j) {
-          if (ats::abs(h_Q(i, j) - refQ(i, j)) > absTol) {
-            std::cout << "Q checking"
-                      << ", m = " << m << ", n = " << n << ", i = " << i << ", j = " << j
-                      << ", h_Q(i,j) = " << std::setprecision(16) << h_Q(i, j)
-                      << ", refQ(i,j) = " << std::setprecision(16) << refQ(i, j)
-                      << ", |diff| = " << std::setprecision(16) << ats::abs(h_Q(i, j) - refQ(i, j))
-                      << ", absTol = " << std::setprecision(16) << absTol << std::endl;
-            test_flag_Q = false;
-          }
-        }
-      }
-      ASSERT_EQ(test_flag_Q, true);
-    }
-
-    {
-      bool test_flag_R = true;
-      for (int i = 0; (i < m) && test_flag_R; ++i) {
-        for (int j = 0; (j < n) && test_flag_R; ++j) {
-          if (ats::abs(h_R(i, j) - refR(i, j)) > absTol) {
-            std::cout << "R checking"
-                      << ", m = " << m << ", n = " << n << ", i = " << i << ", j = " << j
-                      << ", h_R(i,j) = " << std::setprecision(16) << h_R(i, j)
-                      << ", refR(i,j) = " << std::setprecision(16) << refR(i, j)
-                      << ", |diff| = " << std::setprecision(16) << ats::abs(h_R(i, j) - refR(i, j))
-                      << ", absTol = " << std::setprecision(16) << absTol << std::endl;
-            test_flag_R = false;
-          }
-        }
-      }
-      ASSERT_EQ(test_flag_R, true);
-    }
-  }
+  // Finally, compute Q using gegqr
+  KokkosLapack::gegqr(space, minMN, A, Tau, Info);
+  Kokkos::deep_copy(h_A, A);
 
   // ********************************************************************
   // Check that A = QR
@@ -268,12 +120,12 @@ void impl_test_gegqr(int m, int n) {
     bool test_flag_QR = true;
     for (int i = 0; (i < m) && test_flag_QR; ++i) {
       for (int j = 0; (j < n) && test_flag_QR; ++j) {
-        if ((ats::abs(h_QR(i, j) - h_Aorig(i, j)) > absTol)) {
-          std::cout << "QR checking"
+        if ((ats::abs(h_Qref(i, j) - h_A(i, j)) > absTol)) {
+          std::cout << "Q checking"
                     << ", m = " << m << ", n = " << n << ", i = " << i << ", j = " << j
-                    << ", h_Aorig(i,j) = " << std::setprecision(16) << h_Aorig(i, j)
-                    << ", h_QR(i,j) = " << std::setprecision(16) << h_QR(i, j) << ", |diff| = " << std::setprecision(16)
-                    << ats::abs(h_QR(i, j) - h_Aorig(i, j)) << ", absTol = " << std::setprecision(16) << absTol
+                    << ", h_A(i,j) = " << std::setprecision(16) << h_A(i, j)
+                    << ", h_Qref(i,j) = " << std::setprecision(16) << h_Qref(i, j) << ", |diff| = " << std::setprecision(16)
+                    << ats::abs(h_Qref(i, j) - h_A(i, j)) << ", absTol = " << std::setprecision(16) << absTol
                     << std::endl;
           test_flag_QR = false;
         }
@@ -284,7 +136,7 @@ void impl_test_gegqr(int m, int n) {
 }
 
 template <class ViewTypeA, class ViewTypeTau, class Device>
-void applyQ_analytic() {
+void computeQ_analytic() {
   using ALayout_t       = typename ViewTypeA::array_layout;
   using ViewTypeInfo    = Kokkos::View<int*, ALayout_t, Device>;
   using execution_space = typename Device::execution_space;
@@ -293,11 +145,9 @@ void applyQ_analytic() {
   ViewTypeA A("A", 3, 3);
   ViewTypeTau Tau("tau", 3);
   ViewTypeInfo Info("Info", 1);
-  ViewTypeA Q("Q", 3, 3);
   ViewTypeA Qref("Q ref", 3, 3);
 
   typename ViewTypeA::host_mirror_type h_A    = Kokkos::create_mirror_view(A);
-  typename ViewTypeA::host_mirror_type h_Q    = Kokkos::create_mirror_view(Q);
   typename ViewTypeA::host_mirror_type h_Qref = Kokkos::create_mirror_view(Qref);
 
   h_A(0, 0) = 12;
@@ -310,19 +160,6 @@ void applyQ_analytic() {
   h_A(2, 1) = 24;
   h_A(2, 2) = -41;
   Kokkos::deep_copy(A, h_A);
-
-  // Store the identity so once Q is applied to
-  // this matrix we will recover the entries of Q
-  h_Q(0, 0) = 1;
-  h_Q(0, 1) = 0;
-  h_Q(0, 2) = 0;
-  h_Q(1, 0) = 0;
-  h_Q(1, 1) = 1;
-  h_Q(1, 2) = 0;
-  h_Q(2, 0) = 0;
-  h_Q(2, 1) = 0;
-  h_Q(2, 2) = 1;
-  Kokkos::deep_copy(Q, h_Q);
 
   h_Qref(0, 0) = -6. / 7.;
   h_Qref(0, 1) = 69. / 175.;
@@ -338,18 +175,18 @@ void applyQ_analytic() {
   try {
     execution_space space{};
     KokkosLapack::geqrf(space, A, Tau, Info);
-    KokkosLapack::gemqr(space, "L", "N", A, Tau, Q, Info);
+    KokkosLapack::gegqr(space, 3, A, Tau, Info);
   } catch (const std::runtime_error& e) {
-    std::cout << "KokkosLapack::gemqr(): caught exception '" << e.what() << "'" << std::endl;
+    std::cout << "KokkosLapack::gegqr(): caught exception '" << e.what() << "'" << std::endl;
     FAIL();
     return;
   }
   Kokkos::fence();
 
-  Kokkos::deep_copy(h_Q, Q);
+  Kokkos::deep_copy(h_A, A);
   for (int rowIdx = 0; rowIdx < 3; ++rowIdx) {
     for (int colIdx = 0; colIdx < 3; ++colIdx) {
-      Test::EXPECT_NEAR_KK_REL(h_Qref(rowIdx, colIdx), h_Q(rowIdx, colIdx),
+      Test::EXPECT_NEAR_KK_REL(h_Qref(rowIdx, colIdx), h_A(rowIdx, colIdx),
                                10 * KokkosKernels::ArithTraits<Scalar>::eps());
     }
   }
@@ -364,7 +201,7 @@ void test_gegqr() {
   using view_type_a_ll   = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
   using view_type_tau_ll = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;
 
-  Test::applyQ_analytic<view_type_a_ll, view_type_tau_ll, Device>();
+  Test::computeQ_analytic<view_type_a_ll, view_type_tau_ll, Device>();
 
   Test::impl_test_gegqr<view_type_a_ll, view_type_tau_ll, Device>(1, 1);
   Test::impl_test_gegqr<view_type_a_ll, view_type_tau_ll, Device>(2, 1);
@@ -373,8 +210,10 @@ void test_gegqr() {
   Test::impl_test_gegqr<view_type_a_ll, view_type_tau_ll, Device>(3, 2);
   Test::impl_test_gegqr<view_type_a_ll, view_type_tau_ll, Device>(3, 3);
 
+  // Note that {un,or}gqr require M >= N >= 0
+  // see https://www.netlib.org/lapack/double/dorgqr.f
+  // so not testing 70x100 with this rountine!
   Test::impl_test_gegqr<view_type_a_ll, view_type_tau_ll, Device>(100, 70);
-  Test::impl_test_gegqr<view_type_a_ll, view_type_tau_ll, Device>(70, 100);
   Test::impl_test_gegqr<view_type_a_ll, view_type_tau_ll, Device>(100, 100);
 #endif
 }

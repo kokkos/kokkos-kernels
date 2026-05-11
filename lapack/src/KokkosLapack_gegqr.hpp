@@ -66,6 +66,12 @@ void gegqr(const ExecutionSpace& space, const int k, const AMatrix& A, const Tau
   const int64_t tau0  = Tau.extent(0);
   const int64_t info0 = Info.extent(0);
 
+  if (m < n) {
+    std::ostringstream os;
+    os << "KokkosLapack::gegqr: m must be larger or equal to n, m=" << m << ", n=" << n;
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
   if (n < k || k < 0) {
     std::ostringstream os;
     os << "KokkosLapack::gegqr: k= " << k << ", must be positive and less or equal to n=" << n;
