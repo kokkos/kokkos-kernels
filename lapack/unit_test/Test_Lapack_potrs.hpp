@@ -101,7 +101,7 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
         {1.,  0.},
         {1., -1.}};
     // clang-format on
-    bool test_flag          = true;
+    bool test_flag = true;
     for (int i = 0; (i < 3) && test_flag; ++i) {
       for (int j = 0; (j < 2) && test_flag; ++j) {
         if (ats::abs(h_B(i, j) - ref[i][j]) > absTol) {

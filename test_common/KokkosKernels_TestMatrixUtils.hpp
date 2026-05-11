@@ -73,7 +73,6 @@ crsMat_t symmetrize(crsMat_t A) {
   return crsMat_t("SymA", numRows, numRows, accum, new_values, new_rowmap, new_entries);
 }
 
-
 /**
  * Utilities for defining small matrix fixtures as 2D std::vectors, and
  * converting them to and from compressed sparse formats (CRS/CSC) for use in
@@ -290,8 +289,7 @@ void fill_view_from_fixture(ViewType& view,
                             const std::vector<std::vector<typename ViewType::non_const_value_type>>& fixture) {
   auto host_view = Kokkos::create_mirror_view(view);
   for (size_t i = 0; i < fixture.size(); ++i)
-    for (size_t j = 0; j < fixture[i].size(); ++j)
-      host_view(i, j) = fixture[i][j];
+    for (size_t j = 0; j < fixture[i].size(); ++j) host_view(i, j) = fixture[i][j];
   Kokkos::deep_copy(view, host_view);
 }
 
