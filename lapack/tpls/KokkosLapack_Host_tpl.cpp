@@ -84,14 +84,14 @@ void F77_BLAS_MANGLE(zunmqr, ZUNMQR)(const char*, const char*, const int*, const
 ///
 /// {Un,Or}gqr
 ///
-void F77_BLAS_MANGLE(sorgqr, SORGQR)(const int*, const int*, const int*, float*, const int*,
-                                     float*, float*, int*, int*);
-void F77_BLAS_MANGLE(dorgqr, DORGQR)(const int*, const int*, const int*, double*, const int*,
-                                     double*, double*, int*, int*);
+void F77_BLAS_MANGLE(sorgqr, SORGQR)(const int*, const int*, const int*, float*, const int*, float*, float*, int*,
+                                     int*);
+void F77_BLAS_MANGLE(dorgqr, DORGQR)(const int*, const int*, const int*, double*, const int*, double*, double*, int*,
+                                     int*);
 void F77_BLAS_MANGLE(cungqr, CUNGQR)(const int*, const int*, const int*, std::complex<float>*, const int*,
                                      std::complex<float>*, std::complex<float>*, int*, int*);
 void F77_BLAS_MANGLE(zungqr, ZUNGQR)(const int*, const int*, const int*, std::complex<double>*, const int*,
-				     std::complex<double>*, std::complex<double>*, int*, int*);
+                                     std::complex<double>*, std::complex<double>*, int*, int*);
 
 ///
 /// Potrf
@@ -199,7 +199,7 @@ void HostLapack<float>::gemqr(const char side, const char trans, const int m, co
 }
 template <>
 void HostLapack<float>::gegqr(const int m, const int n, const int k, float* a, const int lda, float* tau, float* work,
-			      int lwork, int* info) {
+                              int lwork, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   sorgqr_(&m, &n, &k, a, &lda, tau, work, &lwork, info);
 #else
@@ -273,8 +273,8 @@ void HostLapack<double>::gemqr(const char side, const char trans, const int m, c
 #endif
 }
 template <>
-void HostLapack<double>::gegqr(const int m, const int n, const int k, double* a, const int lda, double* tau, double* work,
-			       int lwork, int* info) {
+void HostLapack<double>::gegqr(const int m, const int n, const int k, double* a, const int lda, double* tau,
+                               double* work, int lwork, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   dorgqr_(&m, &n, &k, a, &lda, tau, work, &lwork, info);
 #else
@@ -292,7 +292,6 @@ int HostLapack<double>::potrf(const char uplo, const int n, double* a, const int
 #endif
   return info;
 }
-
 
 ///
 /// std::complex<float>
@@ -351,8 +350,9 @@ void HostLapack<std::complex<float>>::gemqr(const char side, const char trans, c
 #endif
 }
 template <>
-void HostLapack<std::complex<float>>::gegqr(const int m, const int n, const int k, std::complex<float>* a, const int lda,
-					    std::complex<float>* tau, std::complex<float>* work, int lwork, int* info) {
+void HostLapack<std::complex<float>>::gegqr(const int m, const int n, const int k, std::complex<float>* a,
+                                            const int lda, std::complex<float>* tau, std::complex<float>* work,
+                                            int lwork, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   cungqr_(&m, &n, &k, a, &lda, tau, work, &lwork, info);
 #else
@@ -429,8 +429,9 @@ void HostLapack<std::complex<double>>::gemqr(const char side, const char trans, 
 #endif
 }
 template <>
-void HostLapack<std::complex<double>>::gegqr(const int m, const int n, const int k, std::complex<double>* a, const int lda,
-					     std::complex<double>* tau, std::complex<double>* work, int lwork, int* info) {
+void HostLapack<std::complex<double>>::gegqr(const int m, const int n, const int k, std::complex<double>* a,
+                                             const int lda, std::complex<double>* tau, std::complex<double>* work,
+                                             int lwork, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   zungqr_(&m, &n, &k, a, &lda, tau, work, &lwork, info);
 #else

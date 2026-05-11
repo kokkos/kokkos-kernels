@@ -59,7 +59,7 @@ void gegqr(const ExecutionSpace& space, const int k, const AMatrix& A, const Tau
                 "KokkosLapack::gegqr: Info must be an array of integers.");
 
   static_assert(std::is_same_v<typename AMatrix::value_type, typename AMatrix::non_const_value_type>,
-		"KokkosLapack::gegqr: AMatrix must store non const values.");
+                "KokkosLapack::gegqr: AMatrix must store non const values.");
 
   const int64_t m     = A.extent(0);
   const int64_t n     = A.extent(1);
@@ -103,8 +103,8 @@ void gegqr(const ExecutionSpace& space, const int k, const AMatrix& A, const Tau
   TauArray_Internal Tau_i   = Tau;
   InfoArray_Internal Info_i = Info;
 
-  KokkosLapack::Impl::GEGQR<ExecutionSpace, AMatrix_Internal, TauArray_Internal,
-                            InfoArray_Internal>::gegqr(space, k, A_i, Tau_i, Info_i);
+  KokkosLapack::Impl::GEGQR<ExecutionSpace, AMatrix_Internal, TauArray_Internal, InfoArray_Internal>::gegqr(
+      space, k, A_i, Tau_i, Info_i);
 }
 
 /// \brief Computes the Q factor from a QR decomposition

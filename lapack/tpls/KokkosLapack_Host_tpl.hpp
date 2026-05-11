@@ -30,8 +30,7 @@ struct HostLapack {
   static void gemqr(const char side, const char trans, const int m, const int n, const int k, T *a, const int lda,
                     T *tau, T *c, const int ldc, T *work, int lwork, int *info);
 
-  static void gegqr(const int m, const int n, const int k, T *a, const int lda,
-                    T *tau, T *work, int lwork, int *info);
+  static void gegqr(const int m, const int n, const int k, T *a, const int lda, T *tau, T *work, int lwork, int *info);
 
   static int potrf(const char uplo, const int n, T *a, const int lda);
 };

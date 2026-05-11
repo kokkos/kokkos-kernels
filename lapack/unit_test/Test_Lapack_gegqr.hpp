@@ -124,9 +124,9 @@ void impl_test_gegqr(int m, int n) {
           std::cout << "Q checking"
                     << ", m = " << m << ", n = " << n << ", i = " << i << ", j = " << j
                     << ", h_A(i,j) = " << std::setprecision(16) << h_A(i, j)
-                    << ", h_Qref(i,j) = " << std::setprecision(16) << h_Qref(i, j) << ", |diff| = " << std::setprecision(16)
-                    << ats::abs(h_Qref(i, j) - h_A(i, j)) << ", absTol = " << std::setprecision(16) << absTol
-                    << std::endl;
+                    << ", h_Qref(i,j) = " << std::setprecision(16) << h_Qref(i, j)
+                    << ", |diff| = " << std::setprecision(16) << ats::abs(h_Qref(i, j) - h_A(i, j))
+                    << ", absTol = " << std::setprecision(16) << absTol << std::endl;
           test_flag_QR = false;
         }
       }

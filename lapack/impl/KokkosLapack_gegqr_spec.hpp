@@ -55,17 +55,16 @@ template <class ExecutionSpace, class AMatrix, class TauArray, class InfoArray,
           bool tpl_spec_avail = gegqr_tpl_spec_avail<ExecutionSpace, AMatrix, TauArray, InfoArray>::value,
           bool eti_spec_avail = gegqr_eti_spec_avail<ExecutionSpace, AMatrix, TauArray, InfoArray>::value>
 struct GEGQR {
-  static void gegqr(const ExecutionSpace &space, const int k, const AMatrix &A,
-                    const TauArray &Tau, const InfoArray &info);
+  static void gegqr(const ExecutionSpace &space, const int k, const AMatrix &A, const TauArray &Tau,
+                    const InfoArray &info);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 // Unification layer
 template <class ExecutionSpace, class AMatrix, class TauArray, class InfoArray>
 struct GEGQR<ExecutionSpace, AMatrix, TauArray, InfoArray, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void gegqr(const ExecutionSpace & /* space */, const int /*k*/,
-                    const AMatrix & /* A */, const TauArray & /* Tau */,
-                    const InfoArray & /* Info */) {
+  static void gegqr(const ExecutionSpace & /* space */, const int /*k*/, const AMatrix & /* A */,
+                    const TauArray & /* Tau */, const InfoArray & /* Info */) {
     // NOTE: Might add the implementation of KokkosLapack::gegqr later
     throw std::runtime_error(
         "No fallback implementation of GEGQR (compute Q from QR factorization) "
