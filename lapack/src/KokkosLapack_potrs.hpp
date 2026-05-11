@@ -7,6 +7,7 @@
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "KokkosLapack_potrs_spec.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosLapack {
 
@@ -52,11 +53,10 @@ void potrs(const ExecutionSpace& space, const char uplo[], const AViewType& A, B
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AViewType::memory_space>::accessible);
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename BViewType::memory_space>::accessible);
 
-  if (A.extent(0) != A.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosLapack::potrf: A must be square, got " << A.extent(0) << " x " << A.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
-  }
+  KK_REQUIRE_MSG(A.extent(0) == A.extent(1),
+                 "KokkosLapack::potrs: A must be square, got " << A.extent(0) << " x " << A.extent(1));
+  KK_REQUIRE_MSG(A.extent(1) == B.extent(0),
+                 "KokkosLapack::potrs: A dim 1 must be compatible with B dim 0, got A1 " << A.extent(1) << " vs B0" << B.extent(0));
 
   // Convert views to unmanaged
   using AViewInternalType = Kokkos::View<typename AViewType::const_data_type, typename AViewType::array_layout,

@@ -42,4 +42,5 @@ Type Requirements
 Example
 =======
 
-TBD
+.. literalinclude:: ../../../../example/wiki/lapack/KokkosLapack_wiki_potr.cpp
+  :language: c++

@@ -16,6 +16,7 @@
 #include <KokkosLapack_potrf.hpp>
 #include <KokkosLapack_potrs.hpp>
 #include <KokkosKernels_TestUtils.hpp>
+#include <KokkosKernels_TestMatrixUtils.hpp>
 
 namespace Test {
 
@@ -67,29 +68,20 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
   if (N == 3) {
     typename AViewType::non_const_type A("A", 3, 3);
     BViewType B("B", 3, 2);
-    typename AViewType::non_const_type::host_mirror_type h_A = Kokkos::create_mirror_view(A);
-    typename BViewType::host_mirror_type h_B                 = Kokkos::create_mirror_view(B);
 
-    h_A(0, 0) = ScalarA(4);
-    h_A(0, 1) = ScalarA(2);
-    h_A(0, 2) = ScalarA(2);
-    h_A(1, 0) = ScalarA(2);
-    h_A(1, 1) = ScalarA(5);
-    h_A(1, 2) = ScalarA(3);
-    h_A(2, 0) = ScalarA(2);
-    h_A(2, 1) = ScalarA(3);
-    h_A(2, 2) = ScalarA(6);
-
-    // B = A * X_exact (column-major)
-    h_B(0, 0) = ScalarB(8);
-    h_B(0, 1) = ScalarB(2);
-    h_B(1, 0) = ScalarB(10);
-    h_B(1, 1) = ScalarB(-1);
-    h_B(2, 0) = ScalarB(11);
-    h_B(2, 1) = ScalarB(-4);
-
-    Kokkos::deep_copy(A, h_A);
-    Kokkos::deep_copy(B, h_B);
+    // clang-format off
+    std::vector<std::vector<ScalarA>> A_data = {
+        {4., 2., 2.},
+        {2., 5., 3.},
+        {2., 3., 6.}};
+    // B = A * X_exact (column-major), X_exact = [[1,1],[1,0],[1,-1]]
+    std::vector<std::vector<ScalarB>> B_data = {
+        { 8.,  2.},
+        {10., -1.},
+        {11., -4.}};
+    // clang-format on
+    Test::fill_view_from_fixture(A, A_data);
+    Test::fill_view_from_fixture(B, B_data);
 
     // Factor (A is non-const, suitable for potrf)
     KokkosLapack::potrf(uplo_arr, A);
@@ -99,10 +91,16 @@ void impl_test_potrs(int N, int nrhs, const char uplo) {
     KokkosLapack::potrs(uplo_arr, Aconst, B);
 
     Kokkos::fence();
+    typename BViewType::host_mirror_type h_B = Kokkos::create_mirror_view(B);
     Kokkos::deep_copy(h_B, B);
 
     // Expected: X_exact
-    const ScalarB ref[3][2] = {{ScalarB(1), ScalarB(1)}, {ScalarB(1), ScalarB(0)}, {ScalarB(1), ScalarB(-1)}};
+    // clang-format off
+    const std::vector<std::vector<ScalarB>> ref = {
+        {1.,  1.},
+        {1.,  0.},
+        {1., -1.}};
+    // clang-format on
     bool test_flag          = true;
     for (int i = 0; (i < 3) && test_flag; ++i) {
       for (int j = 0; (j < 2) && test_flag; ++j) {

@@ -60,21 +60,5 @@ Type Requirements
 Example
 =======
 
-.. code:: c++
-
-  #include <KokkosLapack_potrf.hpp>
-  #include <KokkosLapack_potrs.hpp>
-
-  // Solve A*X = B for a 4x4 SPD matrix A and two right-hand sides.
-  const int N = 4, nrhs = 2;
-  Kokkos::View<double**, Kokkos::LayoutLeft> A("A", N, N);
-  Kokkos::View<double**, Kokkos::LayoutLeft> B("B", N, nrhs);
-
-  // ... fill A (symmetric positive definite) and B ...
-
-  // Factor A in place (lower triangular)
-  KokkosLapack::potrf("L", A);
-
-  // Solve: B is overwritten with the solution X
-  Kokkos::View<const double**, Kokkos::LayoutLeft> Aconst(A);
-  KokkosLapack::potrs("L", N, nrhs, Aconst, N, B, N);
+.. literalinclude:: ../../../../example/wiki/lapack/KokkosLapack_wiki_potr.cpp
+  :language: c++
