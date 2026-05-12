@@ -10,7 +10,7 @@
 #include <regex>
 #include <random>
 
-namespace KokkosSparse {
+namespace KokkosSparse { // hi
 namespace Impl {
 
 // MD: Bases on Christian's sparseMatrix_generate function in test_crsmatrix.cpp
