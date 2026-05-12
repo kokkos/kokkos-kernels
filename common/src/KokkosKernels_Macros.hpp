@@ -11,6 +11,33 @@
 #include <KokkosKernels_config.h>
 /****** END macros populated by CMake ******/
 
+// Aliases for Kokkos complex types (derived from KOKKOSKERNELS_INST_COMPLEX_*)
+#if defined KOKKOSKERNELS_INST_COMPLEX_DOUBLE
+#define KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_
+#endif
+#if defined KOKKOSKERNELS_INST_COMPLEX_FLOAT
+#define KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_
+#endif
+
+// If MKL, ARMPL, or ACCELERATE is enabled, BLAS is implicitly available too.
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) || defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+#define KOKKOSKERNELS_ENABLE_TPL_BLAS
+#endif
+#endif
+
+// KOKKOSKERNELS_ENABLE_HOST_ONLY is deprecated and will be removed in a future
+// release. There is no replacement.
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL) && \
+    !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#define KOKKOSKERNELS_ENABLE_HOST_ONLY
+#endif
+
+#ifndef KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY false
+#endif
+
 // If KOKKOSKERNELS_ENABLE_OMP_SIMD is defined, it's legal to place
 // "#pragma omp simd" before a for loop. It's never defined if a GPU-type device
 // is enabled, since in that case, Kokkos::ThreadVectorRange should be used
@@ -74,7 +101,6 @@
 #else
 #define KOKKOSKERNELS_GNU_COMPILER_FENCE
 #endif  // KOKKOS_COMPILER_GNU
-/******* END other helper macros *******/
 
 // define KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS if we are targeting a CUDA
 // architecture with "independent thread scheduling" (Volta70 and up). This

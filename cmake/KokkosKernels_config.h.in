@@ -82,13 +82,6 @@
 #cmakedefine KOKKOSKERNELS_INST_COMPLEX_DOUBLE
 /* Whether to build kernels for scalar type complex<float> */
 #cmakedefine KOKKOSKERNELS_INST_COMPLEX_FLOAT
-#if defined KOKKOSKERNELS_INST_COMPLEX_DOUBLE
-#define KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_
-#endif
-#if defined KOKKOSKERNELS_INST_COMPLEX_FLOAT
-#define KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_
-#endif
-
 /* Whether to build kernels for multivectors of LayoutLeft */
 #cmakedefine KOKKOSKERNELS_INST_LAYOUTLEFT
 /* Whether to build kernels for multivectors of LayoutRight */
@@ -147,25 +140,8 @@
 
 #cmakedefine KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 
-/* if MKL or ARMPL, BLAS is also defined */
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-#if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
-#define KOKKOSKERNELS_ENABLE_TPL_BLAS
-#endif
-#endif
-
 /* Whether MKL is providing the BLAS and LAPACK implementation */
 #cmakedefine MKL_PROVIDES_BLAS_LAPACK
-
-/* KOKKOSKERNELS_ENABLE_HOST_ONLY is deprecated and will be removed in a future
- * release. There is no replacement.
- */
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
-    !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
-#define KOKKOSKERNELS_ENABLE_HOST_ONLY
-#endif
 
 /*
  * "Optimization level" for computational kernels in this subpackage.
@@ -174,11 +150,7 @@
  * mean both better performance overall, and more uniform performance
  * for corner cases.
  */
-#define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level @
-
-#ifndef KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY false
-#endif
+#define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level@
 
 /* Enabled components */
 #cmakedefine KOKKOSKERNELS_ENABLE_COMPONENT_BATCHED
