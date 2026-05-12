@@ -82,7 +82,7 @@ Aurora:
             -DKokkos_ARCH_NATIVE=ON
             -DKokkos_ENABLE_SYCL=ON
             -DKokkos_ARCH_INTEL_PVC=ON
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=ON
+            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
     - cmake --build kokkos/build --parallel
     - cmake --install kokkos/build --prefix kokkos-install
     - cmake -B kokkos-kernels_build

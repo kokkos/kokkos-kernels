@@ -8,6 +8,7 @@
 #include "Test_Lapack_svd.hpp"
 #include "Test_Lapack_geqrf.hpp"
 #include "Test_Lapack_gemqr.hpp"
+#include "Test_Lapack_gegqr.hpp"
 #include "Test_Lapack_potrf.hpp"
 #include "Test_Lapack_potrs.hpp"
 

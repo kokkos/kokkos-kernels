@@ -87,7 +87,7 @@ void gemqr(const ExecutionSpace& space, const char side[], const char trans[], c
   // Check validity of dimensions
   if (tau0 != std::min(m, n)) {
     std::ostringstream os;
-    os << "KokkosLapack::geqrf: length of Tau must be equal to min(m,n): "
+    os << "KokkosLapack::gemqr: length of Tau must be equal to min(m,n): "
        << " A: " << m << " x " << n << ", Tau length = " << tau0;
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }

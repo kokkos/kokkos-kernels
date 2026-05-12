@@ -82,6 +82,18 @@ void F77_BLAS_MANGLE(zunmqr, ZUNMQR)(const char*, const char*, const int*, const
                                      const int*, std::complex<double>*, int*, int*);
 
 ///
+/// {Un,Or}gqr
+///
+void F77_BLAS_MANGLE(sorgqr, SORGQR)(const int*, const int*, const int*, float*, const int*, float*, float*, int*,
+                                     int*);
+void F77_BLAS_MANGLE(dorgqr, DORGQR)(const int*, const int*, const int*, double*, const int*, double*, double*, int*,
+                                     int*);
+void F77_BLAS_MANGLE(cungqr, CUNGQR)(const int*, const int*, const int*, std::complex<float>*, const int*,
+                                     std::complex<float>*, std::complex<float>*, int*, int*);
+void F77_BLAS_MANGLE(zungqr, ZUNGQR)(const int*, const int*, const int*, std::complex<double>*, const int*,
+                                     std::complex<double>*, std::complex<double>*, int*, int*);
+
+///
 /// Potrf
 ///
 
@@ -129,6 +141,11 @@ void F77_BLAS_MANGLE(zpotrs, ZPOTRS)(const char*, const int*, const int*, const 
 #define F77_FUNC_CUNMQR F77_BLAS_MANGLE(cunmqr, CUNMQR)
 #define F77_FUNC_ZUNMQR F77_BLAS_MANGLE(zunmqr, ZUNMQR)
 
+#define F77_FUNC_SORGQR F77_BLAS_MANGLE(sorgqr, SORGQR)
+#define F77_FUNC_DORGQR F77_BLAS_MANGLE(dorgqr, DORGQR)
+#define F77_FUNC_CUNGQR F77_BLAS_MANGLE(cungqr, CUNGQR)
+#define F77_FUNC_ZUNGQR F77_BLAS_MANGLE(zungqr, ZUNGQR)
+
 #define F77_FUNC_SPOTRF F77_BLAS_MANGLE(spotrf, SPOTRF)
 #define F77_FUNC_DPOTRF F77_BLAS_MANGLE(dpotrf, DPOTRF)
 #define F77_FUNC_CPOTRF F77_BLAS_MANGLE(cpotrf, CPOTRF)
@@ -157,6 +174,7 @@ void HostLapack<float>::gesv(int n, int rhs, float* a, int lda, int* ipiv, float
   F77_FUNC_SGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
 #endif
 }
+
 template <>
 void HostLapack<float>::gesvd(const char jobu, const char jobvt, const int m, const int n, float* a, const int lda,
                               float* s, float* u, const int ldu, float* vt, const int ldvt, float* work, int lwork,
@@ -167,6 +185,7 @@ void HostLapack<float>::gesvd(const char jobu, const char jobvt, const int m, co
   F77_FUNC_SGESVD(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
 #endif
 }
+
 template <>
 int HostLapack<float>::trtri(const char uplo, const char diag, int n, const float* a, int lda) {
   int info = 0;
@@ -177,6 +196,7 @@ int HostLapack<float>::trtri(const char uplo, const char diag, int n, const floa
 #endif
   return info;
 }
+
 template <>
 void HostLapack<float>::geqrf(const int m, const int n, float* a, const int lda, float* tau, float* work, int lwork,
                               int* info) {
@@ -186,6 +206,25 @@ void HostLapack<float>::geqrf(const int m, const int n, float* a, const int lda,
   F77_FUNC_SGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 #endif
 }
+template <>
+void HostLapack<float>::gemqr(const char side, const char trans, const int m, const int n, const int k, float* a,
+                              const int lda, float* tau, float* c, const int ldc, float* work, int lwork, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  sormqr_(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
+#else
+  F77_FUNC_SORMQR(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
+#endif
+}
+template <>
+void HostLapack<float>::gegqr(const int m, const int n, const int k, float* a, const int lda, float* tau, float* work,
+                              int lwork, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  sorgqr_(&m, &n, &k, a, &lda, tau, work, &lwork, info);
+#else
+  F77_FUNC_SORGQR(&m, &n, &k, a, &lda, tau, work, &lwork, info);
+#endif
+}
+
 template <>
 int HostLapack<float>::potrf(const char uplo, const int n, float* a, const int lda) {
   int info = 0;
@@ -208,16 +247,6 @@ int HostLapack<float>::potrs(const char uplo, const int n, const int nrhs, const
   return info;
 }
 
-template <>
-void HostLapack<float>::gemqr(const char side, const char trans, const int m, const int n, const int k, float* a,
-                              const int lda, float* tau, float* c, const int ldc, float* work, int lwork, int* info) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-  sormqr_(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
-#else
-  F77_FUNC_SORMQR(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
-#endif
-}
-
 ///
 /// double
 ///
@@ -230,6 +259,7 @@ void HostLapack<double>::gesv(int n, int rhs, double* a, int lda, int* ipiv, dou
   F77_FUNC_DGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
 #endif
 }
+
 template <>
 void HostLapack<double>::gesvd(const char jobu, const char jobvt, const int m, const int n, double* a, const int lda,
                                double* s, double* u, const int ldu, double* vt, const int ldvt, double* work, int lwork,
@@ -240,6 +270,7 @@ void HostLapack<double>::gesvd(const char jobu, const char jobvt, const int m, c
   F77_FUNC_DGESVD(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
 #endif
 }
+
 template <>
 int HostLapack<double>::trtri(const char uplo, const char diag, int n, const double* a, int lda) {
   int info = 0;
@@ -250,6 +281,7 @@ int HostLapack<double>::trtri(const char uplo, const char diag, int n, const dou
 #endif
   return info;
 }
+
 template <>
 void HostLapack<double>::geqrf(const int m, const int n, double* a, const int lda, double* tau, double* work, int lwork,
                                int* info) {
@@ -259,6 +291,7 @@ void HostLapack<double>::geqrf(const int m, const int n, double* a, const int ld
   F77_FUNC_DGEQRF(&m, &n, a, &lda, tau, work, &lwork, info);
 #endif
 }
+
 template <>
 int HostLapack<double>::potrf(const char uplo, const int n, double* a, const int lda) {
   int info = 0;
@@ -269,6 +302,7 @@ int HostLapack<double>::potrf(const char uplo, const int n, double* a, const int
 #endif
   return info;
 }
+
 template <>
 int HostLapack<double>::potrs(const char uplo, const int n, const int nrhs, const double* a, const int lda, double* b,
                               const int ldb) {
@@ -290,6 +324,26 @@ void HostLapack<double>::gemqr(const char side, const char trans, const int m, c
 #else
   F77_FUNC_DORMQR(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
 #endif
+}
+template <>
+void HostLapack<double>::gegqr(const int m, const int n, const int k, double* a, const int lda, double* tau,
+                               double* work, int lwork, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  dorgqr_(&m, &n, &k, a, &lda, tau, work, &lwork, info);
+#else
+  F77_FUNC_DORGQR(&m, &n, &k, a, &lda, tau, work, &lwork, info);
+#endif
+}
+
+template <>
+int HostLapack<double>::potrf(const char uplo, const int n, double* a, const int lda) {
+  int info = 0;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  dpotrf_(&uplo, &n, a, &lda, &info);
+#else
+  F77_FUNC_DPOTRF(&uplo, &n, a, &lda, &info);
+#endif
+  return info;
 }
 
 ///
@@ -327,6 +381,7 @@ int HostLapack<std::complex<float>>::trtri(const char uplo, const char diag, int
 #endif
   return info;
 }
+
 template <>
 void HostLapack<std::complex<float>>::geqrf(const int m, const int n, std::complex<float>* a, const int lda,
                                             std::complex<float>* tau, std::complex<float>* work, int lwork, int* info) {
@@ -347,6 +402,17 @@ void HostLapack<std::complex<float>>::gemqr(const char side, const char trans, c
   F77_FUNC_CUNMQR(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
 #endif
 }
+template <>
+void HostLapack<std::complex<float>>::gegqr(const int m, const int n, const int k, std::complex<float>* a,
+                                            const int lda, std::complex<float>* tau, std::complex<float>* work,
+                                            int lwork, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  cungqr_(&m, &n, &k, a, &lda, tau, work, &lwork, info);
+#else
+  F77_FUNC_CUNGQR(&m, &n, &k, a, &lda, tau, work, &lwork, info);
+#endif
+}
+
 template <>
 int HostLapack<std::complex<float>>::potrf(const char uplo, const int n, std::complex<float>* a, const int lda) {
   int info = 0;
@@ -404,6 +470,7 @@ int HostLapack<std::complex<double>>::trtri(const char uplo, const char diag, in
 #endif
   return info;
 }
+
 template <>
 void HostLapack<std::complex<double>>::geqrf(const int m, const int n, std::complex<double>* a, const int lda,
                                              std::complex<double>* tau, std::complex<double>* work, int lwork,
@@ -425,6 +492,17 @@ void HostLapack<std::complex<double>>::gemqr(const char side, const char trans, 
   F77_FUNC_ZUNMQR(&side, &trans, &m, &n, &k, a, &lda, tau, c, &ldc, work, &lwork, info);
 #endif
 }
+template <>
+void HostLapack<std::complex<double>>::gegqr(const int m, const int n, const int k, std::complex<double>* a,
+                                             const int lda, std::complex<double>* tau, std::complex<double>* work,
+                                             int lwork, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  zungqr_(&m, &n, &k, a, &lda, tau, work, &lwork, info);
+#else
+  F77_FUNC_ZUNGQR(&m, &n, &k, a, &lda, tau, work, &lwork, info);
+#endif
+}
+
 template <>
 int HostLapack<std::complex<double>>::potrf(const char uplo, const int n, std::complex<double>* a, const int lda) {
   int info = 0;
