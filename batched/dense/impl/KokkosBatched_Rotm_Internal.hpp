@@ -57,7 +57,7 @@ KOKKOS_INLINE_FUNCTION int SerialRotmInternal<Flag>::invoke(const int n, ValueTy
   }
   // Checks for flag == -2.0 (identity) are done in the checkRotmInput function, so we don't need to handle it here.
   return 0;
-};
+}
 
 ///
 /// Team Internal Impl
