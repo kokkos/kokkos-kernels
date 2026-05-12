@@ -5,7 +5,7 @@
 #define KOKKOSBLAS3_GEMM_IMPL_HPP_
 
 #include <Kokkos_Core.hpp>
-#include "KokkosKernels_Macros.hpp"
+#include "KokkosKernels_config.h"
 
 #ifdef KOKKOS_ENABLE_CXX14
 #ifdef KOKKOS_COMPILER_GNU

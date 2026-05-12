@@ -160,4 +160,6 @@
 #cmakedefine KOKKOSKERNELS_ENABLE_COMPONENT_GRAPH
 #cmakedefine KOKKOSKERNELS_ENABLE_COMPONENT_ODE
 
+#include "KokkosKernels_Macros.hpp"
+
 #endif  // KOKKOSKERNELS_CONFIG_H

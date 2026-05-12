@@ -3,7 +3,7 @@
 #ifndef KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
 #define KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
 #include <Kokkos_Atomic.hpp>
-#include "KokkosKernels_Macros.hpp"
+#include "KokkosKernels_config.h"
 #include <atomic>
 
 namespace KokkosKernels {

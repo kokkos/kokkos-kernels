@@ -6,7 +6,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Kokkos_Complex.hpp"
-#include "KokkosKernels_Macros.hpp"
+#include "KokkosKernels_config.h"
 
 namespace KokkosBatched {
 

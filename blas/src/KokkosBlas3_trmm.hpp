@@ -5,7 +5,7 @@
 
 /// \file KokkosBlas3_trmm.hpp
 
-#include "KokkosKernels_Macros.hpp"
+#include "KokkosKernels_config.h"
 #include "KokkosBlas3_trmm_spec.hpp"
 #include "KokkosKernels_helpers.hpp"
 #include "KokkosKernels_Error.hpp"

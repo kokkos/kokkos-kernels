@@ -8,7 +8,7 @@
 #define TEST_COMMON_CUDAINDEPENDENTTHREADSCHEDULING
 
 #include <Kokkos_Core.hpp>
-#include <KokkosKernels_Macros.hpp>
+#include <KokkosKernels_config.h>
 
 void test_cuda_independent_threads() {
 #ifdef KOKKOS_ENABLE_CUDA

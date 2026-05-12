@@ -5,7 +5,7 @@
 
 /// \file KokkosLapack_trtri.hpp
 
-#include "KokkosKernels_Macros.hpp"
+#include "KokkosKernels_config.h"
 #include "KokkosLapack_trtri_spec.hpp"
 #include "KokkosKernels_helpers.hpp"
 #include <sstream>
