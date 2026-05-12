@@ -42,5 +42,5 @@ Type Requirements
 Example
 =======
 
-.. literalinclude:: ../../../../example/docs/lapack/KokkosLapack_wiki_potr.cpp
+.. literalinclude:: ../../../../example/docs/lapack/KokkosLapack_docs_potr.cpp
   :language: c++
