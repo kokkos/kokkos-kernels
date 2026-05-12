@@ -32,35 +32,35 @@ SRC_DIRECTORIES = [
 SRC_DOC_MAPPING = dict([
     ('batched/dense/src/KokkosBatched_ApplyHouseholder_Decl.hpp', ['docs/source/API/batched/dense/batched_apply_householder.rst']),
     ('batched/dense/src/KokkosBatched_Householder_Decl.hpp', ['docs/source/API/batched/dense/batched_householder.rst']),
-    ('blas/src/KokkosBlas1_abs.hpp', ['blas1_abs.rst']),
-    ('blas/src/KokkosBlas1_axpby.hpp', ['blas1_axpy.rst']),
-    ('blas/src/KokkosBlas1_dot.hpp', ['blas1_dot.rst']),
+    ('blas/src/KokkosBlas1_abs.hpp', ['docs/source/API/blas/blas1_abs.rst']),
+    ('blas/src/KokkosBlas1_axpby.hpp', ['docs/source/API/blas/blas1_axpy.rst']),
+    ('blas/src/KokkosBlas1_dot.hpp', ['docs/source/API/blas/blas1_dot.rst']),
     # ('blas/src/KokkosBlas1_fill.hpp', ),
-    ('blas/src/KokkosBlas1_iamax.hpp', ['blas1_iamax.rst']),
+    ('blas/src/KokkosBlas1_iamax.hpp', ['docs/source/API/blas/blas1_iamax.rst']),
     # ('blas/src/KokkosBlas1_mult.hpp', ),
-    ('blas/src/KokkosBlas1_nrm1.hpp', ['blas1_nrm1.rst']),
-    ('blas/src/KokkosBlas1_nrm2.hpp', ['blas1_nrm2.rst']),
+    ('blas/src/KokkosBlas1_nrm1.hpp', ['docs/source/API/blas/blas1_nrm1.rst']),
+    ('blas/src/KokkosBlas1_nrm2.hpp', ['docs/source/API/blas/blas1_nrm2.rst']),
     # ('blas/src/KokkosBlas1_nrm2_squared.hpp', ),
     # ('blas/src/KokkosBlas1_nrm2w.hpp', ),
     # ('blas/src/KokkosBlas1_nrm2w_squared.hpp', ),
     # ('blas/src/KokkosBlas1_nrminf.hpp', ['']),
     # ('blas/src/KokkosBlas1_reciprocal.hpp', ['']),
-    ('blas/src/KokkosBlas1_rot.hpp', ['blas1_rot.rst']),
-    ('blas/src/KokkosBlas1_rotg.hpp', ['blas1_rotg.rst']),
-    ('blas/src/KokkosBlas1_rotm.hpp', ['blas1_rotm.rst']),
-    ('blas/src/KokkosBlas1_rotmg.hpp', ['blas1_rotmg.rst']),
-    ('blas/src/KokkosBlas1_scal.hpp', ['blas1_scal.rst']),
-    ('blas/src/KokkosBlas1_set.hpp', ['blas1_set.rst']),
+    ('blas/src/KokkosBlas1_rot.hpp', ['docs/source/API/blas/blas1_rot.rst']),
+    ('blas/src/KokkosBlas1_rotg.hpp', ['docs/source/API/blas/blas1_rotg.rst']),
+    ('blas/src/KokkosBlas1_rotm.hpp', ['docs/source/API/blas/blas1_rotm.rst']),
+    ('blas/src/KokkosBlas1_rotmg.hpp', ['docs/source/API/blas/blas1_rotmg.rst']),
+    ('blas/src/KokkosBlas1_scal.hpp', ['docs/source/API/blas/blas1_scal.rst']),
+    ('blas/src/KokkosBlas1_set.hpp', ['docs/source/API/blas/blas1_set.rst']),
     # ('blas/src/KokkosBlas1_sum.hpp', ['']),
-    ('blas/src/KokkosBlas1_swap.hpp', ['blas1_swap.rst']),
+    ('blas/src/KokkosBlas1_swap.hpp', ['docs/source/API/blas/blas1_swap.rst']),
     # ('blas/src/KokkosBlas1_update.hpp', ['']),
-    ('blas/src/KokkosBlas2_gemv.hpp', ['blas2_gemv.rst']),
-    ('blas/src/KokkosBlas2_ger.hpp', ['blas2_ger.rst']),
-    ('blas/src/KokkosBlas2_syr.hpp', ['blas2_syr.rst']),
-    ('blas/src/KokkosBlas2_syr2.hpp', ['blas2_syr2.rst']),
-    ('blas/src/KokkosBlas3_gemm.hpp', ['blas3_gemm.rst']),
-    ('blas/src/KokkosBlas3_trmm.hpp', ['blas3_trmm.rst']),
-    ('blas/src/KokkosBlas3_trsm.hpp', ['blas3_trsm.rst']),
+    ('blas/src/KokkosBlas2_gemv.hpp', ['docs/source/API/blas/blas2_gemv.rst']),
+    ('blas/src/KokkosBlas2_ger.hpp', ['docs/source/API/blas/blas2_ger.rst']),
+    ('blas/src/KokkosBlas2_syr.hpp', ['docs/source/API/blas/blas2_syr.rst']),
+    ('blas/src/KokkosBlas2_syr2.hpp', ['docs/source/API/blas/blas2_syr2.rst']),
+    ('blas/src/KokkosBlas3_gemm.hpp', ['docs/source/API/blas/blas3_gemm.rst']),
+    ('blas/src/KokkosBlas3_trmm.hpp', ['docs/source/API/blas/blas3_trmm.rst']),
+    ('blas/src/KokkosBlas3_trsm.hpp', ['docs/source/API/blas/blas3_trsm.rst']),
     ('common/src/KokkosKernels_LowerBound.hpp', ['docs/source/API/common/lower_bound.rst']),
     ('common/src/KokkosKernels_UpperBound.hpp', ['docs/source/API/common/upper_bound.rst']),
     ('lapack/src/KokkosLapack_geqrf.hpp', ['docs/source/API/lapack/geqrf.rst']),
@@ -82,7 +82,7 @@ SRC_DOC_MAPPING = dict([
     ('sparse/src/KokkosSparse_BsrMatrix.hpp', [
         'docs/source/API/sparse/bsr_matrix.rst',
         'docs/source/API/sparse/BsrMatrix_constructors.rst',
-        'bsr_row_view.rst']),
+        'docs/source/API/sparse/bsr_row_view.rst']),
     ('sparse/src/KokkosSparse_CrsMatrix.hpp', [
         'docs/source/API/sparse/crs_matrix.rst',
         'docs/source/API/sparse/CrsMatrix_constructors.rst',
@@ -137,7 +137,7 @@ SRC_DOC_MAPPING = dict([
         'docs/source/API/sparse/spgemm_symbolic.rst']),
     # ('sparse/src/KokkosSparse_spgemm_handle.hpp', [])
     # ('sparse/src/KokkosSparse_spgemm_jacobi.hpp', [])
-    ('KokkosSparse_spgemm_numeric.hpp', ['docs/source/API/sparse/spgemm_numeric.rst']),
+    ('sparse/src/KokkosSparse_spgemm_numeric.hpp', ['docs/source/API/sparse/spgemm_numeric.rst']),
     ('sparse/src/KokkosSparse_spgemm_symbolic.hpp', ['docs/source/API/sparse/spgemm_symbolic.rst']),
     ('sparse/src/KokkosSparse_spiluk.hpp', [
         'docs/source/API/sparse/spiluk_numeric.rst',
@@ -268,18 +268,19 @@ _TEST_EXPECTED_OUTPUT = \
     docs/source/API/blas/blas1_dot.rst
 
 All modified documentation files
+    docs/source/API/blas/blas1_dot.rst
 
 Running checks ...
     Checking modified file README.md
         This file does not appear to be a public file, skipping it
     Checking modified file blas/src/KokkosBlas1_abs.hpp
-        FAILED CHECK: This file has potential undocumented changes due to unchanged {'blas1_abs.rst'}!
+        FAILED CHECK: This file has potential undocumented changes due to unchanged {'docs/source/API/blas/blas1_abs.rst'}!
     Checking modified file blas/src/KokkosBlas1_dot.hpp
-        FAILED CHECK: This file has potential undocumented changes due to unchanged {'blas1_dot.rst'}!
+        PASSED CHECK: This file has the expected documentation updates, good job
     Checking modified file blas/src/KokkosBlas_NewUndocumentedAPI.hpp
         FAILED CHECK: This file has no src doc mapping!
     Checking modified file docs/source/API/blas/blas1_dot.rst
-        This file does not appear to be a public file, skipping it
+        This file appears to be a documentation file
 
 Modified public files:
     blas/src/KokkosBlas1_abs.hpp
@@ -292,7 +293,6 @@ FAILED CHECK: New undocumented public files:
 
 FAILED CHECK: Likely undocumented public files:
     blas/src/KokkosBlas1_abs.hpp
-    blas/src/KokkosBlas1_dot.hpp
 
 """
 
