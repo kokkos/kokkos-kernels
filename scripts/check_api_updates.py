@@ -16,7 +16,9 @@ will return with exit core 1. For API files stored in one of the
 is also returned.
 """
 
-import sys, argparse, io, difflib
+import sys, argparse, io, difflib, pathlib
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 SRC_DIRECTORIES = [
     "batched/dense/src",
@@ -66,7 +68,6 @@ SRC_DOC_MAPPING = dict([
     ('lapack/src/KokkosLapack_geqrf.hpp', ['docs/source/API/lapack/geqrf.rst']),
     ('lapack/src/KokkosLapack_gemqr.hpp', ['docs/source/API/lapack/gemqr.rst']),
     ('lapack/src/KokkosLapack_potrf.hpp', ['docs/source/API/lapack/potrf.rst']),
-    ('lapack/src/KokkosLapack_potrs.hpp', ['docs/source/API/lapack/potrs.rst']),
     ('lapack/src/KokkosLapack_gesv.hpp', ['docs/source/API/lapack/gesv.rst']),
     ('lapack/src/KokkosLapack_svd.hpp', ['docs/source/API/lapack/gesvd.rst']),
     ('lapack/src/KokkosLapack_trtri.hpp', ['docs/source/API/lapack/trtri.rst']),
@@ -302,6 +303,18 @@ _TEST_EXPECTED_RESULT = False
 def check_api_updates(verbose=False, test=False):
 ###############################################################################
     if test:
+        passed = True
+
+        # Validate every key and value in SRC_DOC_MAPPING points to a real file
+        for src_file, doc_files in SRC_DOC_MAPPING.items():
+            if not (REPO_ROOT / src_file).is_file():
+                print(f"FAILED: SRC_DOC_MAPPING key does not exist: {src_file}")
+                passed = False
+            for doc_file in doc_files:
+                if not (REPO_ROOT / doc_file).is_file():
+                    print(f"FAILED: SRC_DOC_MAPPING value does not exist: {doc_file} (mapped from {src_file})")
+                    passed = False
+
         buf = io.StringIO()
         old_stdout = sys.stdout
         sys.stdout = buf
@@ -312,7 +325,6 @@ def check_api_updates(verbose=False, test=False):
             sys.stdout = old_stdout
 
         actual_output = buf.getvalue()
-        passed = True
 
         if actual_output.strip() != _TEST_EXPECTED_OUTPUT.strip():
             print("FAILED: Output mismatch")
