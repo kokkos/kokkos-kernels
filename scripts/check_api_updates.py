@@ -16,7 +16,7 @@ will return with exit core 1. For API files stored in one of the
 is also returned.
 """
 
-import sys, argparse, io
+import sys, argparse, io, difflib
 
 SRC_DIRECTORIES = [
     "batched/dense/src",
@@ -173,20 +173,20 @@ def check_api_updates_impl(verbose=False, input_files=None):
 
     if verbose:
         print("All modified files")
-        for modified_file in modified_files:
+        for modified_file in sorted(modified_files):
             print(f"{indent}{modified_file}")
         print()
 
         modified_doc_files = modified_files & all_known_doc_files
         print("All modified documentation files")
-        for modified_doc_file in modified_doc_files:
+        for modified_doc_file in sorted(modified_doc_files):
             print(f"{indent}{modified_doc_file}")
         print()
 
         print("Running checks ...")
 
     # Loop over changed files
-    for modified_file in modified_files:
+    for modified_file in sorted(modified_files):
         if verbose:
             print(f"{indent}Checking modified file {modified_file}")
 
@@ -212,6 +212,10 @@ def check_api_updates_impl(verbose=False, input_files=None):
                 else:
                     if verbose:
                         print(f"{indent*2}{pass_prefix}This file has the expected documentation updates, good job")
+
+        elif modified_file in modified_doc_files:
+            if verbose:
+                print(f"{indent*2}This file appears to be a documentation file")
         else:
             if verbose:
                 print(f"{indent*2}This file does not appear to be a public file, skipping it")
@@ -219,7 +223,7 @@ def check_api_updates_impl(verbose=False, input_files=None):
     if verbose:
         print()
         print("Modified public files:")
-        for modified_file in modified_public_files:
+        for modified_file in sorted(modified_public_files):
             print(f"{indent}{modified_file}")
         print()
 
@@ -256,32 +260,31 @@ _TEST_MODIFIED_FILES = [
 ]
 
 _TEST_EXPECTED_OUTPUT = \
-"""
-All modified files
-    blas/src/KokkosBlas_NewUndocumentedAPI.hpp
-    blas/src/KokkosBlas1_abs.hpp
+"""All modified files
     README.md
+    blas/src/KokkosBlas1_abs.hpp
     blas/src/KokkosBlas1_dot.hpp
+    blas/src/KokkosBlas_NewUndocumentedAPI.hpp
     docs/source/API/blas/blas1_dot.rst
 
 All modified documentation files
 
 Running checks ...
-    Checking modified file blas/src/KokkosBlas_NewUndocumentedAPI.hpp
-        FAILED CHECK: This file has no src doc mapping!
-    Checking modified file blas/src/KokkosBlas1_abs.hpp
-        FAILED CHECK: This file has potential undocumented changes due to unchanged {'blas1_abs.rst'}!
     Checking modified file README.md
         This file does not appear to be a public file, skipping it
+    Checking modified file blas/src/KokkosBlas1_abs.hpp
+        FAILED CHECK: This file has potential undocumented changes due to unchanged {'blas1_abs.rst'}!
     Checking modified file blas/src/KokkosBlas1_dot.hpp
         FAILED CHECK: This file has potential undocumented changes due to unchanged {'blas1_dot.rst'}!
+    Checking modified file blas/src/KokkosBlas_NewUndocumentedAPI.hpp
+        FAILED CHECK: This file has no src doc mapping!
     Checking modified file docs/source/API/blas/blas1_dot.rst
         This file does not appear to be a public file, skipping it
 
 Modified public files:
-    blas/src/KokkosBlas_NewUndocumentedAPI.hpp
     blas/src/KokkosBlas1_abs.hpp
     blas/src/KokkosBlas1_dot.hpp
+    blas/src/KokkosBlas_NewUndocumentedAPI.hpp
 
 FAILED CHECK: New undocumented public files:
     blas/src/KokkosBlas_NewUndocumentedAPI.hpp
@@ -290,6 +293,7 @@ FAILED CHECK: New undocumented public files:
 FAILED CHECK: Likely undocumented public files:
     blas/src/KokkosBlas1_abs.hpp
     blas/src/KokkosBlas1_dot.hpp
+
 """
 
 _TEST_EXPECTED_RESULT = False
@@ -312,8 +316,13 @@ def check_api_updates(verbose=False, test=False):
 
         if actual_output.strip() != _TEST_EXPECTED_OUTPUT.strip():
             print("FAILED: Output mismatch")
-            print(f"  -- Expected --:\n\n{_TEST_EXPECTED_OUTPUT}")
-            print(f"  -- Actual --:\n\n{actual_output}")
+            diff = difflib.unified_diff(
+                _TEST_EXPECTED_OUTPUT.splitlines(keepends=True),
+                actual_output.splitlines(keepends=True),
+                fromfile="expected",
+                tofile="actual",
+            )
+            print("".join(diff))
             passed = False
 
         if result != _TEST_EXPECTED_RESULT:
