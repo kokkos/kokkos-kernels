@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+
 """Check if an API change in Kokkos Kernels might be undocumented
 
 This script is intended to run in a github action when a Pull Request is opened against 
