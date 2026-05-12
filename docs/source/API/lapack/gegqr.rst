@@ -1,35 +1,37 @@
-KokkosLapack::geqrf
+KokkosLapack::gegqr
 ###################
 
-Defined in header: :code:`KokkosLapack_geqrf.hpp`
+Defined in header: :code:`KokkosLapack_gegqr.hpp`
 
 .. code:: c++
 
   template <class ExecutionSpace, class AMatrix, class TauArray, class InfoArray>
-  void geqrf(const ExecutionSpace& space, const AMatrix& A, const TauArray& Tau, const InfoArray& Info);
+  void gegqr(const ExecutionSpace& space, const int k, const AMatrix& A, const TauArray& Tau, const InfoArray& Info);
 
   template <class AMatrix, class TauArray, class InfoArray>
-  void geqrf(const AMatrix& A, const TauArray& Tau, const InfoArray& Info);
+  void gegqr(const int k, const AMatrix& A, const TauArray& Tau, const InfoArray& Info);
 
-Performs the QR factorization of matrix :math:`A`
+Computes the matrix :math:`Q` from the QR factorization of matrix :math:`A` using the first :math:`k` reflectors
 
 .. math::
 
-   A=Q*R
+   Q=H(0)H(1)...H(k-1)
 
-where :math:`A` is the input coefficient matrix on entry and the resulting :math:`R` factor and scaled Householder vectors on exit. :math:`Tau` stores the scaling factors associated with the Householder vectors.
+where :math:`A` is, on input, a matrix previously factored using a call to ``geqrf`` and contains :math:`Q` on output and :math:`Tau` stores the associated scaling factors. 
 
-1. Overwrites :math:`A` with the :math:`QR` factors using the resources of ``space``.
+1. Overwrites :math:`A` with the :math:`Q` using the resources of ``space``.
 2. Same as 1. but uses the resources of the default execution space from ``AMatrix::execution_space``.
 
-The function will throw a runtime exception if ``Tau.extent(0) < Kokkos::min(A.extent(0), A.extent(1))`` or if ``Info.extent(0) < 1``.
+The function will throw a runtime exception if :math:`k < 0` or :math:`n < k` where :math:`n` is the number of columns in :math:`A`.
 
 Parameters
 ==========
 
 :space: execution space instance.
 
-:A: The input matrix on entry and the :math:`QR` factors on return.
+:k: The number of reflectors to use when computing :math:`Q`.
+
+:A: On input, matrix that contains the :math:`QR` factors from a previous call to ``geqrf``, on output, it contains the first :math:`k` columns of :math:`Q`.
 
 :Tau: rank-1 view of size min(M,N) that contains the scaling factors of the elementary reflectors.
 
@@ -55,6 +57,5 @@ Type Requirements
 Example
 =======
 
-.. literalinclude:: ../../../../example/docs/lapack/KokkosLapack_docs_geqrf.cpp
+.. literalinclude:: ../../../../example/docs/lapack/KokkosLapack_docs_gegqr.cpp
   :language: c++
-
