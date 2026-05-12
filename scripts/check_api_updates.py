@@ -16,7 +16,7 @@ will return with exit core 1. For API files stored in one of the
 is also returned.
 """
 
-import sys, argparse
+import sys, argparse, io
 
 SRC_DIRECTORIES = [
     "batched/dense/src",
@@ -159,9 +159,9 @@ SRC_DOC_MAPPING = dict([
 ])
 
 ###############################################################################
-def check_api_updates(verbose=False):
+def check_api_updates_impl(verbose=False, input_files=None):
 ###############################################################################
-    modified_files = set([line.strip() for line in sys.stdin])
+    modified_files = set(input_files)
 
     modified_public_files = []
     new_apis_to_document  = []
@@ -226,7 +226,7 @@ def check_api_updates(verbose=False):
     result = True
     if new_apis_to_document:
         print(f"{fail_prefix}New undocumented public files:")
-        for new_api in new_apis_to_document:
+        for new_api in sorted(new_apis_to_document):
             print(f"{indent}{new_api}")
         print(f"{indent}Note: you will need to update the SRC_DOC_MAPPING dictionary in check_api_updates.py")
         print()
@@ -234,12 +234,97 @@ def check_api_updates(verbose=False):
 
     if undocumented_changes:
         print(f"{fail_prefix}Likely undocumented public files:")
-        for undoc_change in undocumented_changes:
+        for undoc_change in sorted(undocumented_changes):
             print(f"{indent}{undoc_change}")
         print()
         result = False
 
     return result
+
+###############################################################################
+# Test data: covers all three scenarios checked by the script:
+#   1. A file whose associated documentation was also modified    -> PASS
+#   2. A file in the mapping whose documentation was NOT modified -> FAIL undocumented
+#   3. A file in SRC_DIRECTORIES with no mapping entry            -> FAIL new API
+#   4. A file outside SRC_DIRECTORIES                             -> ignored
+_TEST_MODIFIED_FILES = [
+    "blas/src/KokkosBlas1_dot.hpp",               # mapped; doc also present -> pass
+    "docs/source/API/blas/blas1_dot.rst",         # doc for dot
+    "blas/src/KokkosBlas1_abs.hpp",               # mapped; doc NOT present  -> fail undocumented
+    "blas/src/KokkosBlas_NewUndocumentedAPI.hpp", # in SRC_DIRECTORIES, unmapped -> fail new API
+    "README.md",                                  # outside SRC_DIRECTORIES -> ignored
+]
+
+_TEST_EXPECTED_OUTPUT = \
+"""
+All modified files
+    blas/src/KokkosBlas_NewUndocumentedAPI.hpp
+    blas/src/KokkosBlas1_abs.hpp
+    README.md
+    blas/src/KokkosBlas1_dot.hpp
+    docs/source/API/blas/blas1_dot.rst
+
+All modified documentation files
+
+Running checks ...
+    Checking modified file blas/src/KokkosBlas_NewUndocumentedAPI.hpp
+        FAILED CHECK: This file has no src doc mapping!
+    Checking modified file blas/src/KokkosBlas1_abs.hpp
+        FAILED CHECK: This file has potential undocumented changes due to unchanged {'blas1_abs.rst'}!
+    Checking modified file README.md
+        This file does not appear to be a public file, skipping it
+    Checking modified file blas/src/KokkosBlas1_dot.hpp
+        FAILED CHECK: This file has potential undocumented changes due to unchanged {'blas1_dot.rst'}!
+    Checking modified file docs/source/API/blas/blas1_dot.rst
+        This file does not appear to be a public file, skipping it
+
+Modified public files:
+    blas/src/KokkosBlas_NewUndocumentedAPI.hpp
+    blas/src/KokkosBlas1_abs.hpp
+    blas/src/KokkosBlas1_dot.hpp
+
+FAILED CHECK: New undocumented public files:
+    blas/src/KokkosBlas_NewUndocumentedAPI.hpp
+    Note: you will need to update the SRC_DOC_MAPPING dictionary in check_api_updates.py
+
+FAILED CHECK: Likely undocumented public files:
+    blas/src/KokkosBlas1_abs.hpp
+    blas/src/KokkosBlas1_dot.hpp
+"""
+
+_TEST_EXPECTED_RESULT = False
+
+###############################################################################
+def check_api_updates(verbose=False, test=False):
+###############################################################################
+    if test:
+        buf = io.StringIO()
+        old_stdout = sys.stdout
+        sys.stdout = buf
+        try:
+            # We always want to test verbose mode
+            result = check_api_updates_impl(verbose=True, input_files=_TEST_MODIFIED_FILES)
+        finally:
+            sys.stdout = old_stdout
+
+        actual_output = buf.getvalue()
+        passed = True
+
+        if actual_output.strip() != _TEST_EXPECTED_OUTPUT.strip():
+            print("FAILED: Output mismatch")
+            print(f"  -- Expected --:\n\n{_TEST_EXPECTED_OUTPUT}")
+            print(f"  -- Actual --:\n\n{actual_output}")
+            passed = False
+
+        if result != _TEST_EXPECTED_RESULT:
+            print(f"FAILED: Expected return value {_TEST_EXPECTED_RESULT}, got {result}")
+            passed = False
+
+        if passed:
+            print("PASSED: test output matches expected output")
+
+    else:
+        return check_api_updates_impl(verbose=True, input_files=[line.strip() for line in sys.stdin])
 
 ###############################################################################
 def parse_command_line(args, description):
@@ -263,9 +348,15 @@ def parse_command_line(args, description):
         help="Produce additional output"
     )
 
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Run built-in self-test with fake data instead of reading from stdin"
+    )
+
     parsed_args = parser.parse_args(args[1:])
 
-    if sys.stdin.isatty():
+    if not parsed_args.test and sys.stdin.isatty():
         raise SystemExit("check_api_updates requires pipe or input redirect")
 
     return parsed_args
@@ -273,6 +364,7 @@ def parse_command_line(args, description):
 ###############################################################################
 def main(description):
 ###############################################################################
+    parsed_args = parse_command_line(sys.argv, description)
     return check_api_updates(**vars(parse_command_line(sys.argv, description)))
 
 ###############################################################################
