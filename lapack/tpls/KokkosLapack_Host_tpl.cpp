@@ -335,17 +335,6 @@ void HostLapack<double>::gegqr(const int m, const int n, const int k, double* a,
 #endif
 }
 
-template <>
-int HostLapack<double>::potrf(const char uplo, const int n, double* a, const int lda) {
-  int info = 0;
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-  dpotrf_(&uplo, &n, a, &lda, &info);
-#else
-  F77_FUNC_DPOTRF(&uplo, &n, a, &lda, &info);
-#endif
-  return info;
-}
-
 ///
 /// std::complex<float>
 ///
