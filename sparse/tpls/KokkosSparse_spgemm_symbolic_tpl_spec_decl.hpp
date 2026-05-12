@@ -45,7 +45,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
   // computeRowptrs=false, and then again with computeRowptrs=true will not
   // duplicate any work.
   if (!handle->is_symbolic_called()) {
-    handle->create_cusparse_spgemm_handle(false, false);
+    // Note: this uses the algorithm choice in handle.
+    handle->create_cusparse_spgemm_handle(/* transA */ false, /* transB */ false);
     auto h = handle->get_cusparse_spgemm_handle();
 
     // Follow
@@ -160,14 +161,17 @@ template <typename KernelHandle, typename lno_t, typename ConstRowMapType, typen
 void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, const ConstRowMapType &row_mapA,
                               const ConstEntriesType &entriesA, const ConstRowMapType &row_mapB,
                               const ConstEntriesType &entriesB, const RowMapType &row_mapC, bool computeRowptrs) {
-  using scalar_type      = typename KernelHandle::nnz_scalar_t;
-  using ordinal_type     = typename KernelHandle::nnz_lno_t;
-  const auto alpha       = KokkosKernels::ArithTraits<scalar_type>::one();
-  const auto beta        = KokkosKernels::ArithTraits<scalar_type>::zero();
-  void *dummyValues_AB   = nullptr;
-  bool firstSymbolicCall = false;
+  using scalar_type       = typename KernelHandle::nnz_scalar_t;
+  using ordinal_type      = typename KernelHandle::nnz_lno_t;
+  const auto alpha        = KokkosKernels::ArithTraits<scalar_type>::one();
+  const auto beta         = KokkosKernels::ArithTraits<scalar_type>::zero();
+  void *dummyValues_AB    = nullptr;
+  bool firstSymbolicCall  = false;
+  auto algKK              = handle->get_algorithm_type();
+  bool needEstimateMemory = algKK == SPGEMM_CUSPARSE_ALG2 || algKK == SPGEMM_CUSPARSE_ALG3;
   if (!handle->is_symbolic_called()) {
-    handle->create_cusparse_spgemm_handle(false, false);
+    // Note: this uses the algorithm choice in handle.
+    handle->create_cusparse_spgemm_handle(/* transA */ false, /* transB */ false);
     auto h = handle->get_cusparse_spgemm_handle();
 
     // Follow
@@ -205,16 +209,36 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
         cusparseSpGEMM_workEstimation(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
                                       h->descr_C, h->scalarType, h->alg, h->spgemmDescr, &h->bufferSize3, h->buffer3));
 
+    if (needEstimateMemory) {
+      constexpr float chunk_fraction = 0.25;
+      // First estimateMemory call computes the size for tempBuffer
+      size_t tempBufferSize = 0;
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_estimateMemory(
+          h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
+          h->spgemmDescr, chunk_fraction, &tempBufferSize, NULL, NULL));
+
+      void *tempBuffer = nullptr;
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&tempBuffer, tempBufferSize));
+
+      // Second estimateMemory call computes bufferSize4
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_estimateMemory(
+          h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
+          h->spgemmDescr, chunk_fraction, &tempBufferSize, tempBuffer, &h->bufferSize4));
+      // Done with tempBuffer
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(tempBuffer));
+    } else {
+      // First compute call computes bufferSize4
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
+                                                                  h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
+                                                                  h->spgemmDescr, &h->bufferSize4, nullptr));
+    }
     //----------------------------------------------------------------------
     // query compute buffer size, allocate, then call again with buffer.
 
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
-        cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta, h->descr_C,
-                               h->scalarType, CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr, &h->bufferSize4, nullptr));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer4, h->bufferSize4));
-    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
-        cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta, h->descr_C,
-                               h->scalarType, CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr, &h->bufferSize4, h->buffer4));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
+                                                                h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
+                                                                h->spgemmDescr, &h->bufferSize4, h->buffer4));
     int64_t C_nrow, C_ncol, C_nnz;
     KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMatGetSize(h->descr_C, &C_nrow, &C_ncol, &C_nnz));
     if (C_nnz > std::numeric_limits<int>::max()) {
@@ -246,8 +270,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
         cusparseCsrSetPointers(h->descr_C, (void *)row_mapC.data(), dummyEntries_C, dummyValues_C));
 
     KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_copy(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
-                                                             h->descr_B, &beta, h->descr_C, h->scalarType,
-                                                             CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr));
+                                                             h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
+                                                             h->spgemmDescr));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyValues_C));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyEntries_C));
