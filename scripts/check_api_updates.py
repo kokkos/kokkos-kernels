@@ -223,22 +223,23 @@ def check_api_updates(verbose=False):
             print(f"{indent}{modified_file}")
         print()
 
+    result = True
     if new_apis_to_document:
         print(f"{fail_prefix}New undocumented public files:")
         for new_api in new_apis_to_document:
             print(f"{indent}{new_api}")
-        print("Note: you will need to update the SRC_DOC_MAPPING dictionary in check_api_updates.py")
+        print(f"{indent}Note: you will need to update the SRC_DOC_MAPPING dictionary in check_api_updates.py")
         print()
-        return False
+        result = False
 
     if undocumented_changes:
         print(f"{fail_prefix}Likely undocumented public files:")
         for undoc_change in undocumented_changes:
             print(f"{indent}{undoc_change}")
+        print()
+        result = False
 
-        return False
-
-    return True
+    return result
 
 ###############################################################################
 def parse_command_line(args, description):
