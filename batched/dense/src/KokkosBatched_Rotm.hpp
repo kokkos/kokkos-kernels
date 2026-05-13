@@ -20,10 +20,10 @@ namespace KokkosBatched {
 ///  [h21, h22]]   [h21, 1]]     [[-1, h12]]   [[0, 1]]
 ///
 /// param is a length 4 vector containing the parameters of the modified Givens rotation:
-/// param(0) = flag, param(1) = h11, param(2) = h21, param(3) = h12, param(4) = h22
+/// param(0) = h11, param(1) = h21, param(2) = h12, param(3) = h22
 ///
 /// \tparam Flag: A compile-time integer parameter that determines the structure of the rotation matrix H. Valid values
-/// are -1, 0, 1, and -2.
+/// are -1, 0, 1, and -2
 template <int Flag>
 struct SerialRotm {
   static_assert(Flag == -1 || Flag == 0 || Flag == 1 || Flag == -2,
@@ -37,7 +37,7 @@ struct SerialRotm {
   /// \param[in,out] x: x is a length n vector, a rank 1 view
   /// \param[in,out] y: y is a length n vector, a rank 1 view
   /// \param[in] param: param is a length 4 vector, a rank 1 view, containing the parameters of the modified Givens
-  /// rotation:
+  /// rotation
   template <typename XViewType, typename YViewType, typename ParamViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &x, const YViewType &y, const ParamViewType &param);
 };
@@ -53,11 +53,11 @@ struct SerialRotm {
 ///  [h21, h22]]   [h21, 1]]     [[-1, h12]]   [[0, 1]]
 ///
 /// param is a length 4 vector containing the parameters of the modified Givens rotation:
-/// param(0) = flag, param(1) = h11, param(2) = h21, param(3) = h12, param(4) = h22
+/// param(0) = h11, param(1) = h21, param(2) = h12, param(3) = h22
 ///
 /// \tparam MemberType: TeamPolicy member type
 /// \tparam Flag: A compile-time integer parameter that determines the structure of the rotation matrix H. Valid values
-/// are -1, 0, 1, and -2.
+/// are -1, 0, 1, and -2
 template <typename MemberType, int Flag>
 struct TeamRotm {
   static_assert(Flag == -1 || Flag == 0 || Flag == 1 || Flag == -2,
@@ -71,7 +71,7 @@ struct TeamRotm {
   /// \param[in,out] x: x is a length n vector, a rank 1 view
   /// \param[in,out] y: y is a length n vector, a rank 1 view
   /// \param[in] param: param is a length 4 vector, a rank 1 view, containing the parameters of the modified Givens
-  /// rotation:
+  /// rotation
   template <typename XViewType, typename YViewType, typename ParamViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
                                            const ParamViewType &param);
@@ -88,12 +88,11 @@ struct TeamRotm {
 ///  [h21, h22]]   [h21, 1]]     [[-1, h12]]   [[0, 1]]
 ///
 /// param is a length 4 vector containing the parameters of the modified Givens rotation:
-/// param(0) = flag, param(1) = h11, param(2) = h21, param(3) = h12, param(4) = h22
+/// param(0) = h11, param(1) = h21, param(2) = h12, param(3) = h22
 ///
 /// \tparam MemberType: TeamPolicy member type
 /// \tparam Flag: A compile-time integer parameter that determines the structure of the rotation matrix H. Valid values
 /// are -1, 0, 1, and -2.
-///
 template <typename MemberType, int Flag>
 struct TeamVectorRotm {
   static_assert(Flag == -1 || Flag == 0 || Flag == 1 || Flag == -2,
@@ -108,7 +107,7 @@ struct TeamVectorRotm {
   /// \param[in,out] x: x is a length n vector, a rank 1 view
   /// \param[in,out] y: y is a length n vector, a rank 1 view
   /// \param[in] param: param is a length 4 vector, a rank 1 view, containing the parameters of the modified Givens
-  /// rotation:
+  /// rotation
   template <typename XViewType, typename YViewType, typename ParamViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
                                            const ParamViewType &param);
