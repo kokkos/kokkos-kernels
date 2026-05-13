@@ -24,7 +24,7 @@ template <class execution_space, class XVector,
           typename std::enable_if<Kokkos::is_execution_space<execution_space>::value, int>::type = 0>
 typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrminf(
     const execution_space& space, const XVector& x) {
-  static_assert(Kokkos::is_view<XVector>::value, "KokkosBlas::nrminf: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<XVector>, "KokkosBlas::nrminf: XVector must be a Kokkos::View.");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrminf: "
                 "Both Vector inputs must have rank 1.");
@@ -68,19 +68,19 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 /// corresponding entry in X.
 ///
 /// \tparam execution_space, the execution space in which the kernel will run.
-/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
-/// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
+/// \tparam RMV rank-0 or rank-1 Kokkos::View specialization.
+/// \tparam XMV rank-1 or rank-2 Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
 template <class execution_space, class RV, class XMV>
 void nrminf(const execution_space& space, const RV& R, const XMV& X,
-            typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
-  static_assert(Kokkos::is_execution_space<execution_space>::value,
+            typename std::enable_if<Kokkos::is_view_v<RV>, int>::type = 0) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::nrminf: space is not an execution space instance");
-  static_assert(Kokkos::is_view<RV>::value,
+  static_assert(Kokkos::is_view_v<RV>,
                 "KokkosBlas::nrminf: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<XMV>::value,
+  static_assert(Kokkos::is_view_v<XMV>,
                 "KokkosBlas::nrminf: "
                 "X is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
@@ -138,7 +138,7 @@ void nrminf(const execution_space& space, const RV& R, const XMV& X,
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
 template <class RV, class XMV>
-void nrminf(const RV& R, const XMV& X, typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+void nrminf(const RV& R, const XMV& X, typename std::enable_if<Kokkos::is_view_v<RV>, int>::type = 0) {
   nrminf(typename XMV::execution_space{}, R, X);
 }
 
