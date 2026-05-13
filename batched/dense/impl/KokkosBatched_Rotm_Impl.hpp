@@ -14,16 +14,16 @@ template <typename XViewType, typename YViewType, typename ParamViewType>
 KOKKOS_INLINE_FUNCTION static int checkRotmInput([[maybe_unused]] const XViewType &x,
                                                  [[maybe_unused]] const YViewType &y,
                                                  [[maybe_unused]] const ParamViewType &param) {
-  static_assert(Kokkos::is_view_v<XViewType>, "KokkosBatched::rot: XViewType is not a Kokkos::View.");
-  static_assert(Kokkos::is_view_v<YViewType>, "KokkosBatched::rot: YViewType is not a Kokkos::View.");
-  static_assert(Kokkos::is_view_v<ParamViewType>, "KokkosBatched::rot: ParamViewType is not a Kokkos::View.");
-  static_assert(XViewType::rank() == 1, "KokkosBatched::rot: XViewType must have rank 1.");
-  static_assert(YViewType::rank() == 1, "KokkosBatched::rot: YViewType must have rank 1.");
-  static_assert(ParamViewType::rank() == 1, "KokkosBatched::rot: ParamViewType must have rank 1.");
+  static_assert(Kokkos::is_view_v<XViewType>, "KokkosBatched::rotm: XViewType is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<YViewType>, "KokkosBatched::rotm: YViewType is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<ParamViewType>, "KokkosBatched::rotm: ParamViewType is not a Kokkos::View.");
+  static_assert(XViewType::rank() == 1, "KokkosBatched::rotm: XViewType must have rank 1.");
+  static_assert(YViewType::rank() == 1, "KokkosBatched::rotm: YViewType must have rank 1.");
+  static_assert(ParamViewType::rank() == 1, "KokkosBatched::rotm: ParamViewType must have rank 1.");
   static_assert(std::is_same_v<typename XViewType::value_type, typename XViewType::non_const_value_type>,
-                "KokkosBatched::rot: XViewType must have non-const value type.");
+                "KokkosBatched::rotm: XViewType must have non-const value type.");
   static_assert(std::is_same_v<typename YViewType::value_type, typename YViewType::non_const_value_type>,
-                "KokkosBatched::rot: YViewType must have non-const value type.");
+                "KokkosBatched::rotm: YViewType must have non-const value type.");
   using x_value_type     = typename XViewType::non_const_value_type;
   using y_value_type     = typename YViewType::non_const_value_type;
   using param_value_type = typename ParamViewType::non_const_value_type;
