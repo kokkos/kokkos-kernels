@@ -5,6 +5,7 @@
 #define KOKKOSBLAS3_GEMM_IMPL_HPP_
 
 #include <Kokkos_Core.hpp>
+#include <KokkosKernels_Macros.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
