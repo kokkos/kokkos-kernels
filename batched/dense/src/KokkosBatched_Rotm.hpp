@@ -19,24 +19,25 @@ namespace KokkosBatched {
 /// [[h11, h12],  [[1, h12],    [[h11, 1],    [[1, 0],
 ///  [h21, h22]]   [h21, 1]]     [[-1, h12]]   [[0, 1]]
 ///
-/// param is a length 5 vector containing the parameters of the modified Givens rotation:
+/// param is a length 4 vector containing the parameters of the modified Givens rotation:
 /// param(0) = flag, param(1) = h11, param(2) = h21, param(3) = h12, param(4) = h22
 ///
-/// \tparam XViewType: Input/output type for the vector x, needs to be a 1D view
-/// \tparam YViewType: Input/output type for the vector y, needs to be a 1D view
-/// \tparam ParamViewType: Input type for the param vector, needs to be a 1D view of length 5
-///
-/// \param[in,out] x: x is a length n vector, a rank 1 view
-/// \param[in,out] y: y is a length n vector, a rank 1 view
-/// \param[in] param: param is a length 5 vector, a rank 1 view, containing the parameters of the modified Givens
-/// rotation:
-///
-/// No nested parallel_for is used inside of the function.
-///
+/// \tparam Flag: A compile-time integer parameter that determines the structure of the rotation matrix H. Valid values
+/// are -1, 0, 1, and -2.
 template <int Flag>
 struct SerialRotm {
   static_assert(Flag == -1 || Flag == 0 || Flag == 1 || Flag == -2,
                 "KokkosBatched::SerialRotm: Invalid flag value. Flag must be one of -1, 0, 1, or -2.");
+
+  /// \brief Invokes the SerialRotm functor. No nested parallel_for is used inside of the function.
+  /// \tparam XViewType: Input/output type for the vector x, needs to be a 1D view
+  /// \tparam YViewType: Input/output type for the vector y, needs to be a 1D view
+  /// \tparam ParamViewType: Input type for the param vector, needs to be a 1D view of length 4
+  ///
+  /// \param[in,out] x: x is a length n vector, a rank 1 view
+  /// \param[in,out] y: y is a length n vector, a rank 1 view
+  /// \param[in] param: param is a length 4 vector, a rank 1 view, containing the parameters of the modified Givens
+  /// rotation:
   template <typename XViewType, typename YViewType, typename ParamViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &x, const YViewType &y, const ParamViewType &param);
 };
@@ -51,25 +52,26 @@ struct SerialRotm {
 /// [[h11, h12],  [[1, h12],    [[h11, 1],    [[1, 0],
 ///  [h21, h22]]   [h21, 1]]     [[-1, h12]]   [[0, 1]]
 ///
-/// param is a length 5 vector containing the parameters of the modified Givens rotation:
+/// param is a length 4 vector containing the parameters of the modified Givens rotation:
 /// param(0) = flag, param(1) = h11, param(2) = h21, param(3) = h12, param(4) = h22
 ///
 /// \tparam MemberType: TeamPolicy member type
-/// \tparam XViewType: Input/output type for the vector x, needs to be a 1D view
-/// \tparam YViewType: Input/output type for the vector y, needs to be a 1D view
-/// \tparam ParamViewType: Input type for the param vector, needs to be a 1D view of length 5
-///
-/// \param[in,out] x: x is a length n vector, a rank 1 view
-/// \param[in,out] y: y is a length n vector, a rank 1 view
-/// \param[in] param: param is a length 5 vector, a rank 1 view, containing the parameters of the modified Givens
-/// rotation:
-///
-/// A nested parallel_for with TeamThreadRange is used.
-///
+/// \tparam Flag: A compile-time integer parameter that determines the structure of the rotation matrix H. Valid values
+/// are -1, 0, 1, and -2.
 template <typename MemberType, int Flag>
 struct TeamRotm {
   static_assert(Flag == -1 || Flag == 0 || Flag == 1 || Flag == -2,
                 "KokkosBatched::TeamRotm: Invalid flag value. Flag must be one of -1, 0, 1, or -2.");
+
+  /// \brief Invokes the TeamRotm functor. A nested parallel_for with TeamThreadRange is used.
+  /// \tparam XViewType: Input/output type for the vector x, needs to be a 1D view
+  /// \tparam YViewType: Input/output type for the vector y, needs to be a 1D view
+  /// \tparam ParamViewType: Input type for the param vector, needs to be a 1D view of length 4
+  ///
+  /// \param[in,out] x: x is a length n vector, a rank 1 view
+  /// \param[in,out] y: y is a length n vector, a rank 1 view
+  /// \param[in] param: param is a length 4 vector, a rank 1 view, containing the parameters of the modified Givens
+  /// rotation:
   template <typename XViewType, typename YViewType, typename ParamViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
                                            const ParamViewType &param);
@@ -85,25 +87,28 @@ struct TeamRotm {
 /// [[h11, h12],  [[1, h12],    [[h11, 1],    [[1, 0],
 ///  [h21, h22]]   [h21, 1]]     [[-1, h12]]   [[0, 1]]
 ///
-/// param is a length 5 vector containing the parameters of the modified Givens rotation:
+/// param is a length 4 vector containing the parameters of the modified Givens rotation:
 /// param(0) = flag, param(1) = h11, param(2) = h21, param(3) = h12, param(4) = h22
 ///
 /// \tparam MemberType: TeamPolicy member type
-/// \tparam XViewType: Input/output type for the vector x, needs to be a 1D view
-/// \tparam YViewType: Input/output type for the vector y, needs to be a 1D view
-/// \tparam ParamViewType: Input type for the param vector, needs to be a 1D view of length 5
-///
-/// \param[in,out] x: x is a length n vector, a rank 1 view
-/// \param[in,out] y: y is a length n vector, a rank 1 view
-/// \param[in] param: param is a length 5 vector, a rank 1 view, containing the parameters of the modified Givens
-/// rotation:
-///
-/// A nested parallel_for with TeamVectorRange is used.
+/// \tparam Flag: A compile-time integer parameter that determines the structure of the rotation matrix H. Valid values
+/// are -1, 0, 1, and -2.
 ///
 template <typename MemberType, int Flag>
 struct TeamVectorRotm {
   static_assert(Flag == -1 || Flag == 0 || Flag == 1 || Flag == -2,
                 "KokkosBatched::TeamVectorRotm: Invalid flag value. Flag must be one of -1, 0, 1, or -2.");
+
+  /// \brief Invokes the TeamVectorRotm functor. A nested parallel_for with TeamVectorRange is used.
+  /// \tparam MemberType: TeamPolicy member type
+  /// \tparam XViewType: Input/output type for the vector x, needs to be a 1D view
+  /// \tparam YViewType: Input/output type for the vector y, needs to be a 1D view
+  /// \tparam ParamViewType: Input type for the param vector, needs to be a 1D view of length 4
+  ///
+  /// \param[in,out] x: x is a length n vector, a rank 1 view
+  /// \param[in,out] y: y is a length n vector, a rank 1 view
+  /// \param[in] param: param is a length 4 vector, a rank 1 view, containing the parameters of the modified Givens
+  /// rotation:
   template <typename XViewType, typename YViewType, typename ParamViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
                                            const ParamViewType &param);

@@ -71,13 +71,12 @@ KOKKOS_INLINE_FUNCTION int SerialRotm<Flag>::invoke(const XViewType &x, const YV
   auto info = Impl::checkRotmInput(x, y, param);
   if (info) return info;
 
-  if constexpr (Flag == -2) {
+  if constexpr (Flag != -2) {
     // flag == -2.0: identity, no need to do anything
-    return 0;
-  } else {
-    return Impl::SerialRotmInternal<Flag>::invoke(n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
-                                                  param.stride(0));
+    Impl::SerialRotmInternal<Flag>::invoke(n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                           param.stride(0));
   }
+  return 0;
 }
 
 ///
@@ -95,13 +94,12 @@ KOKKOS_INLINE_FUNCTION int TeamRotm<MemberType, Flag>::invoke(const MemberType &
   auto info = Impl::checkRotmInput(x, y, param);
   if (info) return info;
 
-  if constexpr (Flag == -2) {
+  if constexpr (Flag != -2) {
     // flag == -2.0: identity, no need to do anything
-    return 0;
-  } else {
-    return Impl::TeamRotmInternal<Flag>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
-                                                param.stride(0));
+    Impl::TeamRotmInternal<Flag>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                         param.stride(0));
   }
+  return 0;
 }
 
 ///
@@ -119,13 +117,12 @@ KOKKOS_INLINE_FUNCTION int TeamVectorRotm<MemberType, Flag>::invoke(const Member
   auto info = Impl::checkRotmInput(x, y, param);
   if (info) return info;
 
-  if constexpr (Flag == -2) {
+  if constexpr (Flag != -2) {
     // flag == -2.0: identity, no need to do anything
-    return 0;
-  } else {
-    return Impl::TeamVectorRotmInternal<Flag>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0),
-                                                      param.data(), param.stride(0));
+    Impl::TeamVectorRotmInternal<Flag>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                               param.stride(0));
   }
+  return 0;
 }
 
 }  // namespace KokkosBatched

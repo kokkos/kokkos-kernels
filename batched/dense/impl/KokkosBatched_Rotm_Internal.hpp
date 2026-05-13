@@ -15,16 +15,16 @@ namespace Impl {
 template <int Flag>
 struct SerialRotmInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int n, ValueType *KOKKOS_RESTRICT x, const int xs0,
-                                           ValueType *KOKKOS_RESTRICT y, const int ys0,
-                                           const ValueType *KOKKOS_RESTRICT param, const int ps0);
+  KOKKOS_INLINE_FUNCTION static void invoke(const int n, ValueType *KOKKOS_RESTRICT x, const int xs0,
+                                            ValueType *KOKKOS_RESTRICT y, const int ys0,
+                                            const ValueType *KOKKOS_RESTRICT param, const int ps0);
 };
 
 template <int Flag>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int SerialRotmInternal<Flag>::invoke(const int n, ValueType *KOKKOS_RESTRICT x, const int xs0,
-                                                            ValueType *KOKKOS_RESTRICT y, const int ys0,
-                                                            const ValueType *KOKKOS_RESTRICT param, const int ps0) {
+KOKKOS_INLINE_FUNCTION void SerialRotmInternal<Flag>::invoke(const int n, ValueType *KOKKOS_RESTRICT x, const int xs0,
+                                                             ValueType *KOKKOS_RESTRICT y, const int ys0,
+                                                             const ValueType *KOKKOS_RESTRICT param, const int ps0) {
   if constexpr (Flag == -1) {
     // flag == -1.0: [[h11, h12], [h21, h22]]
     auto h11 = param[0 * ps0];
@@ -56,7 +56,6 @@ KOKKOS_INLINE_FUNCTION int SerialRotmInternal<Flag>::invoke(const int n, ValueTy
     }
   }
   // Checks for flag == -2.0 (identity) are done in the checkRotmInput function, so we don't need to handle it here.
-  return 0;
 }
 
 ///
@@ -66,17 +65,17 @@ KOKKOS_INLINE_FUNCTION int SerialRotmInternal<Flag>::invoke(const int n, ValueTy
 template <int Flag>
 struct TeamRotmInternal {
   template <typename MemberType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int n, ValueType *KOKKOS_RESTRICT x,
-                                           const int xs0, ValueType *KOKKOS_RESTRICT y, const int ys0,
-                                           const ValueType *KOKKOS_RESTRICT param, const int ps0);
+  KOKKOS_INLINE_FUNCTION static void invoke(const MemberType &member, const int n, ValueType *KOKKOS_RESTRICT x,
+                                            const int xs0, ValueType *KOKKOS_RESTRICT y, const int ys0,
+                                            const ValueType *KOKKOS_RESTRICT param, const int ps0);
 };
 
 template <int Flag>
 template <typename MemberType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int TeamRotmInternal<Flag>::invoke(const MemberType &member, const int n,
-                                                          ValueType *KOKKOS_RESTRICT x, const int xs0,
-                                                          ValueType *KOKKOS_RESTRICT y, const int ys0,
-                                                          const ValueType *KOKKOS_RESTRICT param, const int ps0) {
+KOKKOS_INLINE_FUNCTION void TeamRotmInternal<Flag>::invoke(const MemberType &member, const int n,
+                                                           ValueType *KOKKOS_RESTRICT x, const int xs0,
+                                                           ValueType *KOKKOS_RESTRICT y, const int ys0,
+                                                           const ValueType *KOKKOS_RESTRICT param, const int ps0) {
   if constexpr (Flag == -1) {
     // flag == -1.0: [[h11, h12], [h21, h22]]
     auto h11 = param[0 * ps0];
@@ -107,8 +106,6 @@ KOKKOS_INLINE_FUNCTION int TeamRotmInternal<Flag>::invoke(const MemberType &memb
       x[i * xs0] = temp;
     });
   }
-
-  return 0;
 }
 
 ///
@@ -117,17 +114,18 @@ KOKKOS_INLINE_FUNCTION int TeamRotmInternal<Flag>::invoke(const MemberType &memb
 template <int Flag>
 struct TeamVectorRotmInternal {
   template <typename MemberType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int n, ValueType *KOKKOS_RESTRICT x,
-                                           const int xs0, ValueType *KOKKOS_RESTRICT y, const int ys0,
-                                           const ValueType *KOKKOS_RESTRICT param, const int ps0);
+  KOKKOS_INLINE_FUNCTION static void invoke(const MemberType &member, const int n, ValueType *KOKKOS_RESTRICT x,
+                                            const int xs0, ValueType *KOKKOS_RESTRICT y, const int ys0,
+                                            const ValueType *KOKKOS_RESTRICT param, const int ps0);
 };
 
 template <int Flag>
 template <typename MemberType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int TeamVectorRotmInternal<Flag>::invoke(const MemberType &member, const int n,
-                                                                ValueType *KOKKOS_RESTRICT x, const int xs0,
-                                                                ValueType *KOKKOS_RESTRICT y, const int ys0,
-                                                                const ValueType *KOKKOS_RESTRICT param, const int ps0) {
+KOKKOS_INLINE_FUNCTION void TeamVectorRotmInternal<Flag>::invoke(const MemberType &member, const int n,
+                                                                 ValueType *KOKKOS_RESTRICT x, const int xs0,
+                                                                 ValueType *KOKKOS_RESTRICT y, const int ys0,
+                                                                 const ValueType *KOKKOS_RESTRICT param,
+                                                                 const int ps0) {
   if constexpr (Flag == -1) {
     // flag == -1.0: [[h11, h12], [h21, h22]]
     auto h11 = param[0 * ps0];
@@ -158,7 +156,6 @@ KOKKOS_INLINE_FUNCTION int TeamVectorRotmInternal<Flag>::invoke(const MemberType
       x[i * xs0] = temp;
     });
   }
-  return 0;
 }
 
 }  // namespace Impl
