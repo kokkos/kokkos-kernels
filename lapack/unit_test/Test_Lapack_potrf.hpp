@@ -15,6 +15,7 @@
 #include <KokkosBlas3_gemm.hpp>
 #include <KokkosLapack_potrf.hpp>
 #include <KokkosKernels_TestUtils.hpp>
+#include <KokkosKernels_TestMatrixUtils.hpp>
 
 namespace Test {
 
@@ -66,16 +67,13 @@ void impl_test_potrf(int N, const char uplo) {
     AViewType A("A", 3, 3);
     typename AViewType::host_mirror_type h_A = Kokkos::create_mirror_view(A);
 
-    h_A(0, 0) = ScalarType(4);
-    h_A(0, 1) = ScalarType(2);
-    h_A(0, 2) = ScalarType(2);
-    h_A(1, 0) = ScalarType(2);
-    h_A(1, 1) = ScalarType(5);
-    h_A(1, 2) = ScalarType(3);
-    h_A(2, 0) = ScalarType(2);
-    h_A(2, 1) = ScalarType(3);
-    h_A(2, 2) = ScalarType(6);
-    Kokkos::deep_copy(A, h_A);
+    // clang-format off
+    std::vector<std::vector<ScalarType>> A_data = {
+        {4., 2., 2.},
+        {2., 5., 3.},
+        {2., 3., 6.}};
+    // clang-format on
+    Test::fill_view_from_fixture(A, A_data);
 
     KokkosLapack::potrf(uplo_arr, A);
     Kokkos::fence();
@@ -84,9 +82,12 @@ void impl_test_potrf(int N, const char uplo) {
     bool test_flag = true;
     if (uplo == 'L' || uplo == 'l') {
       // Expected lower Cholesky factor; check lower triangle only
-      const ScalarType refL[3][3] = {{ScalarType(2), ScalarType(0), ScalarType(0)},
-                                     {ScalarType(1), ScalarType(2), ScalarType(0)},
-                                     {ScalarType(1), ScalarType(1), ScalarType(2)}};
+      // clang-format off
+      const std::vector<std::vector<ScalarType>> refL = {
+          {2., 0., 0.},
+          {1., 2., 0.},
+          {1., 1., 2.}};
+      // clang-format on
       for (int i = 0; (i < 3) && test_flag; ++i) {
         for (int j = 0; (j <= i) && test_flag; ++j) {
           if (ats::abs(h_A(i, j) - refL[i][j]) > absTol) {
@@ -99,9 +100,12 @@ void impl_test_potrf(int N, const char uplo) {
       }
     } else {
       // Expected upper Cholesky factor; check upper triangle only
-      const ScalarType refU[3][3] = {{ScalarType(2), ScalarType(1), ScalarType(1)},
-                                     {ScalarType(0), ScalarType(2), ScalarType(1)},
-                                     {ScalarType(0), ScalarType(0), ScalarType(2)}};
+      // clang-format off
+      const std::vector<std::vector<ScalarType>> refU = {
+          {2., 1., 1.},
+          {0., 2., 1.},
+          {0., 0., 2.}};
+      // clang-format on
       for (int i = 0; (i < 3) && test_flag; ++i) {
         for (int j = i; (j < 3) && test_flag; ++j) {
           if (ats::abs(h_A(i, j) - refU[i][j]) > absTol) {

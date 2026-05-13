@@ -10,4 +10,5 @@ if( (KOKKOS_ENABLE_CUDA AND KOKKOSKERNELS_ENABLE_TPL_CUSOLVER) OR
   kokkoskernels_add_executable_and_test(docs_geqrf SOURCES KokkosLapack_docs_geqrf.cpp)
   kokkoskernels_add_executable_and_test(docs_gemqr SOURCES KokkosLapack_docs_gemqr.cpp)
   kokkoskernels_add_executable_and_test(docs_gegqr SOURCES KokkosLapack_docs_gegqr.cpp)
+  kokkoskernels_add_executable_and_test(docs_potr  SOURCES KokkosLapack_docs_potr.cpp)
 endif()

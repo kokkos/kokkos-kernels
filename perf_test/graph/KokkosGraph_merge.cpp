@@ -65,7 +65,7 @@ Result bench_merge(size_t aSz, size_t bSz, int nWarmup, int nIters) {
   return res;
 }
 
-int main(int argc, char **argv) {
+int main(int, char **) {
   Kokkos::initialize();
 
   std::cout << std::setfill(' ');
