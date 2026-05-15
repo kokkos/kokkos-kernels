@@ -10,13 +10,14 @@
 
 namespace KokkosBatched {
 /// \brief invoke Rotmg
-/// constructs a modified Givens transformation matrix H which zeros the second component of the 2-vector [sqrt(d1)*x1,
-/// sqrt(d2)*y1]**T, where d1, d2, x1, y1 are scalars. The first component of the rotated vector is stored in d1. The
-/// elements of H are stored in the array param. The matrix H is given by flag == -1.0  flag ==  0.0  flag ==  1.0  flag
-/// == -2.0
+/// constructs a modified Givens transformation matrix H which zeros the second component of the 2-vector
+/// [sqrt(d1)*x1, sqrt(d2)*y1]**T, where d1, d2, x1, y1 are scalars. The first component of the rotated vector is stored
+/// in d1. The elements of H are stored in the array param.
+///
+/// The matrix H is given by
+/// flag == -1.0  flag ==  0.0  flag ==  1.0  flag == -2.0
 /// [[h11, h12],  [[1, h12],    [[h11, 1],    [[1, 0],
 ///  [h21, h22]]   [h21, 1]]     [[-1, h12]]   [[0, 1]]
-///
 /// \tparam DXViewType 0-D View type containing a nonconst real scalar
 /// \tparam YViewType 0-D View type containing a real scalar
 /// \tparam PViewType 1-D View type containing a nonconst real scalar
