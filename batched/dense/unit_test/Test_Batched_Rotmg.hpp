@@ -86,7 +86,7 @@ template <typename DeviceType, typename SType, typename LayoutType>
 void impl_test_batched_rotmg(const std::size_t Nb) {
   // Test with analytical values
   SType d1_in, d2_in, x1_in, y1_in;
-  SType ref[5];
+  SType ref[8];  // d1, d2, x1, flag, h11, h21, h12, h22
 
   // flag == -2 case (p2 == 0 branch)
   // where p2 = d2 * y1^2
