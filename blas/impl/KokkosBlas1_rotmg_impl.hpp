@@ -37,7 +37,7 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView d1, DXView d2, DXView x1, const YV
     // Trivial case p2 == 0
     if (p2 == zero) {
       flag     = -(one + one);
-      param[0] = flag;
+      param(0) = flag;
       return;
     }
 
