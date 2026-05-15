@@ -11,10 +11,9 @@
 namespace KokkosBlas {
 namespace Impl {
 
-template <class Scalar, class YType, class PType>
-KOKKOS_INLINE_FUNCTION void rotmg_impl(Scalar* KOKKOS_RESTRICT d1, Scalar* KOKKOS_RESTRICT d2,
-                                       Scalar* KOKKOS_RESTRICT x1, const YType* KOKKOS_RESTRICT y1,
-                                       PType* KOKKOS_RESTRICT param, const int ps) {
+template <class DXView, class YView, class PView>
+KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView d1, DXView d2, DXView x1, const YView y1, PView param) {
+  using Scalar      = typename DXView::non_const_value_type;
   const Scalar one  = KokkosKernels::ArithTraits<Scalar>::one();
   const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
 
@@ -26,14 +25,14 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(Scalar* KOKKOS_RESTRICT d1, Scalar* KOKKO
   Scalar h11 = zero, h12 = zero, h21 = zero, h22 = zero;
 
   // Quick exit if d1 negative
-  if (*d1 < zero) {
+  if (d1() < zero) {
     flag = -one;
 
-    *d1 = zero;
-    *d2 = zero;
-    *x1 = zero;
+    d1() = zero;
+    d2() = zero;
+    x1() = zero;
   } else {
-    Scalar p2 = (*d2) * (*y1);
+    Scalar p2 = d2() * y1();
 
     // Trivial case p2 == 0
     if (p2 == zero) {
@@ -43,18 +42,18 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(Scalar* KOKKOS_RESTRICT d1, Scalar* KOKKO
     }
 
     // General case
-    Scalar p1 = (*d1) * (*x1);
-    Scalar q1 = p1 * (*x1);
-    Scalar q2 = p2 * (*y1);
+    Scalar p1 = d1() * x1();
+    Scalar q1 = p1 * x1();
+    Scalar q2 = p2 * y1();
     if (Kokkos::abs(q1) > Kokkos::abs(q2)) {
-      h21      = -(*y1) / (*x1);
+      h21      = -y1() / x1();
       h12      = p2 / p1;
       Scalar u = one - h12 * h21;
       if (u > zero) {
         flag = zero;
-        *d1  = *d1 / u;
-        *d2  = *d2 / u;
-        *x1  = *x1 * u;
+        d1() = d1() / u;
+        d2() = d2() / u;
+        x1() = x1() * u;
       } else {
         flag = -one;
         h11  = zero;
@@ -62,9 +61,9 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(Scalar* KOKKOS_RESTRICT d1, Scalar* KOKKO
         h21  = zero;
         h22  = zero;
 
-        *d1 = zero;
-        *d2 = zero;
-        *x1 = zero;
+        d1() = zero;
+        d2() = zero;
+        x1() = zero;
       }
     } else {
       if (q2 < 0) {
@@ -74,24 +73,24 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(Scalar* KOKKOS_RESTRICT d1, Scalar* KOKKO
         h21  = zero;
         h22  = zero;
 
-        *d1 = zero;
-        *d2 = zero;
-        *x1 = zero;
+        d1() = zero;
+        d2() = zero;
+        x1() = zero;
       } else {
         flag       = one;
         h11        = p1 / p2;
-        h22        = *x1 / *y1;
+        h22        = x1() / y1();
         Scalar u   = one + h11 * h22;
-        Scalar tmp = *d2 / u;
-        *d2        = *d1 / u;
-        *d1        = tmp;
-        *x1        = *y1 * u;
+        Scalar tmp = d2() / u;
+        d2()       = d1() / u;
+        d1()       = tmp;
+        x1()       = y1() * u;
       }
     }
 
     // Rescale d1, h11 and h12
-    if (*d1 != zero) {
-      while ((*d1 <= gammasqinv) || (*d1 >= gammasq)) {
+    if (d1() != zero) {
+      while ((d1() <= gammasqinv) || (d1() >= gammasq)) {
         if (flag == zero) {
           h11  = one;
           h22  = one;
@@ -102,23 +101,23 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(Scalar* KOKKOS_RESTRICT d1, Scalar* KOKKO
           flag = -one;
         }
 
-        if (*d1 <= gammasqinv) {
-          *d1 = *d1 * gammasq;
-          *x1 = *x1 / gamma;
-          h11 = h11 / gamma;
-          h12 = h12 / gamma;
+        if (d1() <= gammasqinv) {
+          d1() = d1() * gammasq;
+          x1() = x1() / gamma;
+          h11  = h11 / gamma;
+          h12  = h12 / gamma;
         } else {
-          *d1 = *d1 / gammasq;
-          *x1 = *x1 * gamma;
-          h11 = h11 * gamma;
-          h12 = h12 * gamma;
+          d1() = d1() / gammasq;
+          x1() = x1() * gamma;
+          h11  = h11 * gamma;
+          h12  = h12 * gamma;
         }
       }
     }
 
     // Rescale d2, h21 and h22
-    if (*d2 != zero) {
-      while ((Kokkos::abs(*d2) <= gammasqinv) || (Kokkos::abs(*d2) >= gammasq)) {
+    if (d2() != zero) {
+      while ((Kokkos::abs(d2()) <= gammasqinv) || (Kokkos::abs(d2()) >= gammasq)) {
         if (flag == zero) {
           h11  = one;
           h22  = one;
@@ -129,14 +128,14 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(Scalar* KOKKOS_RESTRICT d1, Scalar* KOKKO
           flag = -one;
         }
 
-        if (Kokkos::abs(*d2) <= gammasqinv) {
-          *d2 = *d2 * gammasq;
-          h21 = h21 / gamma;
-          h22 = h22 / gamma;
+        if (Kokkos::abs(d2()) <= gammasqinv) {
+          d2() = d2() * gammasq;
+          h21  = h21 / gamma;
+          h22  = h22 / gamma;
         } else {
-          *d2 = *d2 / gammasq;
-          h21 = h21 * gamma;
-          h22 = h22 * gamma;
+          d2() = d2() / gammasq;
+          h21  = h21 * gamma;
+          h22  = h22 * gamma;
         }
       }
     }
@@ -144,18 +143,18 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(Scalar* KOKKOS_RESTRICT d1, Scalar* KOKKO
 
   // Setup output parameters
   if (flag < zero) {
-    param[1 * ps] = h11;
-    param[2 * ps] = h21;
-    param[3 * ps] = h12;
-    param[4 * ps] = h22;
+    param(1) = h11;
+    param(2) = h21;
+    param(3) = h12;
+    param(4) = h22;
   } else if (flag == zero) {
-    param[2 * ps] = h21;
-    param[3 * ps] = h12;
+    param(2) = h21;
+    param(3) = h12;
   } else {
-    param[1 * ps] = h11;
-    param[4 * ps] = h22;
+    param(1) = h11;
+    param(4) = h22;
   }
-  param[0] = flag;
+  param(0) = flag;
 }
 
 template <class DXView, class YView, class PView>
@@ -170,9 +169,7 @@ struct rotmg_functor {
       : d1(d1_), d2(d2_), x1(x1_), y1(y1_), param(param_) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const int) const {
-    rotmg_impl(d1.data(), d2.data(), x1.data(), y1.data(), param.data(), param.stride(0));
-  }
+  void operator()(const int) const { rotmg_impl(d1, d2, x1, y1, param); }
 };
 
 template <class execution_space, class DXView, class YView, class PView>

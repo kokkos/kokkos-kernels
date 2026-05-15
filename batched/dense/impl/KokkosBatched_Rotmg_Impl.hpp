@@ -57,7 +57,7 @@ KOKKOS_INLINE_FUNCTION int Rotmg::invoke(const DXViewType &d1, const DXViewType 
     return 1;
   }
 #endif
-  KokkosBlas::Impl::rotmg_impl(d1.data(), d2.data(), x1.data(), y1.data(), param.data(), param.stride(0));
+  KokkosBlas::Impl::rotmg_impl(d1, d2, x1, y1, param);
   return 0;
 }
 
