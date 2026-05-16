@@ -27,10 +27,10 @@ KOKKOS_INLINE_FUNCTION void SerialRotmInternal<Flag>::invoke(const int n, ValueT
                                                              const ValueType *KOKKOS_RESTRICT param, const int ps0) {
   if constexpr (Flag == -1) {
     // flag == -1.0: [[h11, h12], [h21, h22]]
-    auto h11 = param[0 * ps0];
-    auto h21 = param[1 * ps0];
-    auto h12 = param[2 * ps0];
-    auto h22 = param[3 * ps0];
+    auto h11 = param[1 * ps0];
+    auto h21 = param[2 * ps0];
+    auto h12 = param[3 * ps0];
+    auto h22 = param[4 * ps0];
     for (int i = 0; i < n; ++i) {
       auto temp  = h11 * x[i * xs0] + h12 * y[i * ys0];
       y[i * ys0] = h21 * x[i * xs0] + h22 * y[i * ys0];
@@ -38,8 +38,8 @@ KOKKOS_INLINE_FUNCTION void SerialRotmInternal<Flag>::invoke(const int n, ValueT
     }
   } else if constexpr (Flag == 0) {
     // flag == 0.0: [[1, h12], [h21, 1]]
-    auto h12 = param[2 * ps0];
-    auto h21 = param[1 * ps0];
+    auto h12 = param[3 * ps0];
+    auto h21 = param[2 * ps0];
     for (int i = 0; i < n; ++i) {
       auto temp  = x[i * xs0] + h12 * y[i * ys0];
       y[i * ys0] = h21 * x[i * xs0] + y[i * ys0];
@@ -47,8 +47,8 @@ KOKKOS_INLINE_FUNCTION void SerialRotmInternal<Flag>::invoke(const int n, ValueT
     }
   } else if constexpr (Flag == 1) {
     // flag == 1.0: [[h11, 1], [-1, h22]]
-    auto h11 = param[0 * ps0];
-    auto h22 = param[3 * ps0];
+    auto h11 = param[1 * ps0];
+    auto h22 = param[4 * ps0];
     for (int i = 0; i < n; ++i) {
       auto temp  = h11 * x[i * xs0] + y[i * ys0];
       y[i * ys0] = -x[i * xs0] + h22 * y[i * ys0];
@@ -78,10 +78,10 @@ KOKKOS_INLINE_FUNCTION void TeamRotmInternal<Flag>::invoke(const MemberType &mem
                                                            const ValueType *KOKKOS_RESTRICT param, const int ps0) {
   if constexpr (Flag == -1) {
     // flag == -1.0: [[h11, h12], [h21, h22]]
-    auto h11 = param[0 * ps0];
-    auto h21 = param[1 * ps0];
-    auto h12 = param[2 * ps0];
-    auto h22 = param[3 * ps0];
+    auto h11 = param[1 * ps0];
+    auto h21 = param[2 * ps0];
+    auto h12 = param[3 * ps0];
+    auto h22 = param[4 * ps0];
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
       auto temp  = h11 * x[i * xs0] + h12 * y[i * ys0];
       y[i * ys0] = h21 * x[i * xs0] + h22 * y[i * ys0];
@@ -89,8 +89,8 @@ KOKKOS_INLINE_FUNCTION void TeamRotmInternal<Flag>::invoke(const MemberType &mem
     });
   } else if constexpr (Flag == 0) {
     // flag == 0.0: [[1, h12], [h21, 1]]
-    auto h12 = param[2 * ps0];
-    auto h21 = param[1 * ps0];
+    auto h12 = param[3 * ps0];
+    auto h21 = param[2 * ps0];
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
       auto temp  = x[i * xs0] + h12 * y[i * ys0];
       y[i * ys0] = h21 * x[i * xs0] + y[i * ys0];
@@ -98,8 +98,8 @@ KOKKOS_INLINE_FUNCTION void TeamRotmInternal<Flag>::invoke(const MemberType &mem
     });
   } else if constexpr (Flag == 1) {
     // flag == 1.0: [[h11, 1], [-1, h22]]
-    auto h11 = param[0 * ps0];
-    auto h22 = param[3 * ps0];
+    auto h11 = param[1 * ps0];
+    auto h22 = param[4 * ps0];
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
       auto temp  = h11 * x[i * xs0] + y[i * ys0];
       y[i * ys0] = -x[i * xs0] + h22 * y[i * ys0];
@@ -128,10 +128,10 @@ KOKKOS_INLINE_FUNCTION void TeamVectorRotmInternal<Flag>::invoke(const MemberTyp
                                                                  const int ps0) {
   if constexpr (Flag == -1) {
     // flag == -1.0: [[h11, h12], [h21, h22]]
-    auto h11 = param[0 * ps0];
-    auto h21 = param[1 * ps0];
-    auto h12 = param[2 * ps0];
-    auto h22 = param[3 * ps0];
+    auto h11 = param[1 * ps0];
+    auto h21 = param[2 * ps0];
+    auto h12 = param[3 * ps0];
+    auto h22 = param[4 * ps0];
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int &i) {
       auto temp  = h11 * x[i * xs0] + h12 * y[i * ys0];
       y[i * ys0] = h21 * x[i * xs0] + h22 * y[i * ys0];
@@ -139,8 +139,8 @@ KOKKOS_INLINE_FUNCTION void TeamVectorRotmInternal<Flag>::invoke(const MemberTyp
     });
   } else if constexpr (Flag == 0) {
     // flag == 0.0: [[1, h12], [h21, 1]]
-    auto h12 = param[2 * ps0];
-    auto h21 = param[1 * ps0];
+    auto h12 = param[3 * ps0];
+    auto h21 = param[2 * ps0];
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int &i) {
       auto temp  = x[i * xs0] + h12 * y[i * ys0];
       y[i * ys0] = h21 * x[i * xs0] + y[i * ys0];
@@ -148,8 +148,8 @@ KOKKOS_INLINE_FUNCTION void TeamVectorRotmInternal<Flag>::invoke(const MemberTyp
     });
   } else if constexpr (Flag == 1) {
     // flag == 1.0: [[h11, 1], [-1, h22]]
-    auto h11 = param[0 * ps0];
-    auto h22 = param[3 * ps0];
+    auto h11 = param[1 * ps0];
+    auto h22 = param[4 * ps0];
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int &i) {
       auto temp  = h11 * x[i * xs0] + y[i * ys0];
       y[i * ys0] = -x[i * xs0] + h22 * y[i * ys0];
