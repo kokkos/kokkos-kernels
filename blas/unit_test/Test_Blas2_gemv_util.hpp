@@ -90,7 +90,17 @@ static void fill_random_view(
 
 template <class GemvFunc, class ScalarA, class ScalarX, class ScalarY, class Device, class ScalarCoef = void>
 struct GEMVTest {
-  static void run(const char *mode) { run_algorithms<0, typename GemvFunc::algorithms>(mode); }
+  static void run(const char *mode) {
+#if defined(KOKKOS_ENABLE_SYCL)
+	  if constexpr (std::is_same_v<typename Device::execution_space, Kokkos::Experimental::SYCL> && KokkosKernels::ArithTraits<ScalarA>::is_complex) {
+                GTEST_SKIP();
+	  } else {
+                run_algorithms<0, typename GemvFunc::algorithms>(mode);
+	  }
+#else
+          run_algorithms<0, typename GemvFunc::algorithms>(mode);
+#endif
+  }
 
  private:
   // ScalarCoef==void default behavior is to derive alpha/beta scalar types
