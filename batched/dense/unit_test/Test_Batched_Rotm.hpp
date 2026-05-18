@@ -11,7 +11,7 @@
 namespace Test {
 namespace Rotm {
 
-template <typename DeviceType, typename XViewType, typename YViewType, typename ParamViewType, int Flag>
+template <typename DeviceType, typename XViewType, typename YViewType, typename ParamViewType>
 struct Functor_BatchedSerialRotm {
   using execution_space = typename DeviceType::execution_space;
   XViewType m_x;
@@ -27,7 +27,7 @@ struct Functor_BatchedSerialRotm {
     auto sub_y     = Kokkos::subview(m_y, k, Kokkos::ALL());
     auto sub_param = Kokkos::subview(m_param, k, Kokkos::ALL());
 
-    info += KokkosBatched::SerialRotm<Flag>::invoke(sub_x, sub_y, sub_param);
+    info += KokkosBatched::SerialRotm::invoke(sub_x, sub_y, sub_param);
   }
 
   inline int run() {
@@ -44,8 +44,7 @@ struct Functor_BatchedSerialRotm {
   }
 };
 
-template <typename DeviceType, typename XViewType, typename YViewType, typename ParamViewType, int Flag,
-          typename ArgMode>
+template <typename DeviceType, typename XViewType, typename YViewType, typename ParamViewType, typename ArgMode>
 struct Functor_BatchedTeamRotm {
   using execution_space = typename DeviceType::execution_space;
   XViewType m_x;
@@ -62,9 +61,9 @@ struct Functor_BatchedTeamRotm {
     auto sub_y     = Kokkos::subview(m_y, k, Kokkos::ALL());
     auto sub_param = Kokkos::subview(m_param, k, Kokkos::ALL());
     if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Team>) {
-      KokkosBatched::TeamRotm<MemberType, Flag>::invoke(member, sub_x, sub_y, sub_param);
+      KokkosBatched::TeamRotm<MemberType>::invoke(member, sub_x, sub_y, sub_param);
     } else if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::TeamVector>) {
-      KokkosBatched::TeamVectorRotm<MemberType, Flag>::invoke(member, sub_x, sub_y, sub_param);
+      KokkosBatched::TeamVectorRotm<MemberType>::invoke(member, sub_x, sub_y, sub_param);
     }
   }
 
@@ -117,7 +116,7 @@ void impl_test_batched_rotm_analytical(const std::size_t Nb) {
 
   const std::size_t N = 3;
   View2DType x("x", Nb, N), y("y", Nb, N);
-  View2DType param("param", Nb, 4);
+  View2DType param("param", Nb, 5);
   View2DType x_ref("x_ref", Nb, N), y_ref("y_ref", Nb, N);
 
   const std::size_t incx = 2;
@@ -132,10 +131,11 @@ void impl_test_batched_rotm_analytical(const std::size_t Nb) {
   auto h_param = Kokkos::create_mirror_view(param);
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    h_param(ib, 0) = static_cast<ScalarType>(2);
-    h_param(ib, 1) = static_cast<ScalarType>(0.5);
-    h_param(ib, 2) = static_cast<ScalarType>(-1);
-    h_param(ib, 3) = static_cast<ScalarType>(3);
+    h_param(ib, 0) = static_cast<ScalarType>(Flag);
+    h_param(ib, 1) = static_cast<ScalarType>(2);
+    h_param(ib, 2) = static_cast<ScalarType>(0.5);
+    h_param(ib, 3) = static_cast<ScalarType>(-1);
+    h_param(ib, 4) = static_cast<ScalarType>(3);
 
     h_x(ib, 0) = ScalarType(1);
     h_x(ib, 1) = ScalarType(2);
@@ -188,21 +188,19 @@ void impl_test_batched_rotm_analytical(const std::size_t Nb) {
   Kokkos::deep_copy(y_s, y);
 
   if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
-    auto info = Functor_BatchedSerialRotm<DeviceType, View2DType, View2DType, View2DType, Flag>(x, y, param).run();
+    auto info = Functor_BatchedSerialRotm<DeviceType, View2DType, View2DType, View2DType>(x, y, param).run();
     EXPECT_EQ(info, 0);
   } else {
-    Functor_BatchedTeamRotm<DeviceType, View2DType, View2DType, View2DType, Flag, ArgMode>(x, y, param).run();
+    Functor_BatchedTeamRotm<DeviceType, View2DType, View2DType, View2DType, ArgMode>(x, y, param).run();
   }
 
   // With strided views
   if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
     auto info =
-        Functor_BatchedSerialRotm<DeviceType, StridedView2DType, StridedView2DType, View2DType, Flag>(x_s, y_s, param)
-            .run();
+        Functor_BatchedSerialRotm<DeviceType, StridedView2DType, StridedView2DType, View2DType>(x_s, y_s, param).run();
     EXPECT_EQ(info, 0);
   } else {
-    Functor_BatchedTeamRotm<DeviceType, StridedView2DType, StridedView2DType, View2DType, Flag, ArgMode>(x_s, y_s,
-                                                                                                         param)
+    Functor_BatchedTeamRotm<DeviceType, StridedView2DType, StridedView2DType, View2DType, ArgMode>(x_s, y_s, param)
         .run();
   }
 
@@ -249,7 +247,7 @@ void impl_test_batched_rotm(const std::size_t Nb, const std::size_t N) {
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
 
-  View2DType x("x", Nb, N), y("y", Nb, N), param("param", Nb, 4);
+  View2DType x("x", Nb, N), y("y", Nb, N), param("param", Nb, 5);
   View2DType x_ref("x_ref", Nb, N), y_ref("y_ref", Nb, N);
 
   const std::size_t incx = 2;
@@ -267,6 +265,10 @@ void impl_test_batched_rotm(const std::size_t Nb, const std::size_t N) {
   Kokkos::fill_random(y, rand_pool, randStart, randEnd);
   Kokkos::fill_random(param, rand_pool, randStart, randEnd);
 
+  // Set the flag value in param
+  auto sub_param = Kokkos::subview(param, Kokkos::ALL(), 0);
+  Kokkos::deep_copy(sub_param, static_cast<ScalarType>(Flag));
+
   // Save copies for reference
   Kokkos::deep_copy(x_ref, x);
   Kokkos::deep_copy(y_ref, y);
@@ -277,21 +279,19 @@ void impl_test_batched_rotm(const std::size_t Nb, const std::size_t N) {
 
   // Run rotm on (x, y)
   if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
-    auto info = Functor_BatchedSerialRotm<DeviceType, View2DType, View2DType, View2DType, Flag>(x, y, param).run();
+    auto info = Functor_BatchedSerialRotm<DeviceType, View2DType, View2DType, View2DType>(x, y, param).run();
     EXPECT_EQ(info, 0);
   } else {
-    Functor_BatchedTeamRotm<DeviceType, View2DType, View2DType, View2DType, Flag, ArgMode>(x, y, param).run();
+    Functor_BatchedTeamRotm<DeviceType, View2DType, View2DType, View2DType, ArgMode>(x, y, param).run();
   }
 
   // With strided views
   if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
     auto info =
-        Functor_BatchedSerialRotm<DeviceType, StridedView2DType, StridedView2DType, View2DType, Flag>(x_s, y_s, param)
-            .run();
+        Functor_BatchedSerialRotm<DeviceType, StridedView2DType, StridedView2DType, View2DType>(x_s, y_s, param).run();
     EXPECT_EQ(info, 0);
   } else {
-    Functor_BatchedTeamRotm<DeviceType, StridedView2DType, StridedView2DType, View2DType, Flag, ArgMode>(x_s, y_s,
-                                                                                                         param)
+    Functor_BatchedTeamRotm<DeviceType, StridedView2DType, StridedView2DType, View2DType, ArgMode>(x_s, y_s, param)
         .run();
   }
 
@@ -304,16 +304,16 @@ void impl_test_batched_rotm(const std::size_t Nb, const std::size_t N) {
     for (std::size_t i = 0; i < N; i++) {
       // No modification is needed for flag == -2, as the reference is the same as the input
       if constexpr (Flag == -1) {
-        auto temp      = h_param(ib, 0) * h_x_ref(ib, i) + h_param(ib, 2) * h_y_ref(ib, i);
-        h_y_ref(ib, i) = h_param(ib, 1) * h_x_ref(ib, i) + h_param(ib, 3) * h_y_ref(ib, i);
+        auto temp      = h_param(ib, 1) * h_x_ref(ib, i) + h_param(ib, 3) * h_y_ref(ib, i);
+        h_y_ref(ib, i) = h_param(ib, 2) * h_x_ref(ib, i) + h_param(ib, 4) * h_y_ref(ib, i);
         h_x_ref(ib, i) = temp;
       } else if constexpr (Flag == 0) {
-        auto temp      = h_x_ref(ib, i) + h_param(ib, 2) * h_y_ref(ib, i);
-        h_y_ref(ib, i) = h_param(ib, 1) * h_x_ref(ib, i) + h_y_ref(ib, i);
+        auto temp      = h_x_ref(ib, i) + h_param(ib, 3) * h_y_ref(ib, i);
+        h_y_ref(ib, i) = h_param(ib, 2) * h_x_ref(ib, i) + h_y_ref(ib, i);
         h_x_ref(ib, i) = temp;
       } else if constexpr (Flag == 1) {
-        auto temp      = h_param(ib, 0) * h_x_ref(ib, i) + h_y_ref(ib, i);
-        h_y_ref(ib, i) = -1.0 * h_x_ref(ib, i) + h_param(ib, 3) * h_y_ref(ib, i);
+        auto temp      = h_param(ib, 1) * h_x_ref(ib, i) + h_y_ref(ib, i);
+        h_y_ref(ib, i) = -1.0 * h_x_ref(ib, i) + h_param(ib, 4) * h_y_ref(ib, i);
         h_x_ref(ib, i) = temp;
       }
     }
