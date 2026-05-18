@@ -37,19 +37,7 @@ Polaris:
             -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF
     - cmake --build kokkos_build --parallel
     - cmake --install kokkos_build --prefix kokkos_install
-    - cmake -B kokkos-kernels_build
-            -DCMAKE_INSTALL_PREFIX=kokkos-kernels_install
-            -DBUILD_SHARED_LIBS=ON
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_VERBOSE_MAKEFILE=OFF
-            -DSITE=ALCF-Polaris
-            -DKokkos_ROOT=kokkos_install
-            -DKokkosKernels_ENABLE_TESTS:BOOL=ON
-            -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON
-            -DKokkosKernels_ENABLE_PERFTESTS:BOOL=OFF
-            -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON
-            -DKokkosKernels_RUN_BENCHMARKS:BOOL=ON
-    - ctest -V --test-dir kokkos-kernels_build -D Nightly --output-junit result_a100.xml
+    - ctest -V -S .gitlab/alcf-ctest.cmake --test-dir kokkos-kernels_build --output-junit result_a100.xml
 
   artifacts:
     when: always
