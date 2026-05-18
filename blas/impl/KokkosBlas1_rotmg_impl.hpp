@@ -12,7 +12,8 @@ namespace KokkosBlas {
 namespace Impl {
 
 template <class DXView, class YView, class PView>
-KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView d1, DXView d2, DXView x1, const YView y1, PView param) {
+KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1,
+                                       PView const& param) {
   using Scalar      = typename DXView::non_const_value_type;
   const Scalar one  = KokkosKernels::ArithTraits<Scalar>::one();
   const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
