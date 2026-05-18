@@ -194,7 +194,7 @@ void impl_test_batched_rotmg(const std::size_t Nb) {
   h21    = -1.0e6;                    // -y1_in / x1_in
   h12    = 1.0 / 3.0 * 1.0e-6;        // (d2_in * y1_in) / (d1_in * x1_in)
   u      = 4.0 / 3.0;                 // 1.0 - h12 * h21
-  ref[0] = 4.5e10 / (gam * gam);      // (d1_in / u) * (gam * gam);
+  ref[0] = 4.5e10 / (gam * gam);      // (d1_in / u) / (gam * gam);
   ref[1] = 1.5e-2;                    // (d2_in / u)
   ref[2] = 4.0 / 3.0 * 1.0e-5 * gam;  // (x1 * u * gam)
   ref[3] = SType(-1.0);               // flag
