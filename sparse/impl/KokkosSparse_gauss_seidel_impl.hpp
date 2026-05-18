@@ -876,8 +876,8 @@ class PointGaussSeidel {
       // handle->get_shmem_size(): this is set to 32128 bytes. If things do not
       // fit into shared memory, we allocate vectors in global memory and run
       // BigBlockTeam in Team_SGS functor.
-      size_t level_1_mem =
-	max_row_size * static_cast<size_t>(block_size) * sizeof(nnz_scalar_t) + static_cast<size_t>((block_size / 8) + 1) * 8 * sizeof(nnz_lno_t);
+      size_t level_1_mem = max_row_size * static_cast<size_t>(block_size) * sizeof(nnz_scalar_t) +
+                           static_cast<size_t>((block_size / 8) + 1) * 8 * sizeof(nnz_lno_t);
       level_1_mem                = suggested_team_size * level_1_mem;
       size_t level_2_mem         = 0;
       nnz_lno_t num_values_in_l1 = max_row_size;
