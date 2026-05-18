@@ -11,9 +11,6 @@ set(CTEST_UPDATE_COMMAND /usr/bin/git)
 set(CTEST_BUILD_COMMAND "cmake --build $ENV{PWD}/kokkos-kernels/build -j 48")
 
 ctest_start(Nightly)
-ctest_update(SOURCE "${CTEST_SOURCE_DIRECTORY}")
-ctest_configure(BUILD "${CTEST_BINARY_DIRECTORY}")
-ctest_build(BUILD "${CTEST_BINARY_DIRECTORY}")
 # ------------------------------------------------------------------------------
 # Update source tree
 # ------------------------------------------------------------------------------
