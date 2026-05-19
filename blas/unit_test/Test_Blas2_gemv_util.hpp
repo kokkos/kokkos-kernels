@@ -92,15 +92,16 @@ template <class GemvFunc, class ScalarA, class ScalarX, class ScalarY, class Dev
 struct GEMVTest {
   static void run(const char *mode) {
 #if defined(KOKKOS_ENABLE_SYCL)
-    if constexpr (std::is_same_v<typename Device::execution_space, Kokkos::Experimental::SYCL> &&
-                  KokkosKernels::ArithTraits<ScalarA>::is_complex) {
-      GTEST_SKIP();
+    constexpr bool skip_complex = std::is_same_v<typename Device::execution_space, Kokkos::Experimental::SYCL> &&
+      KokkosKernels::ArithTraits<ScalarA>::is_complex;
+#else
+    constexpr bool skip_complex = false;
+#endif
+    if constexpr (skip_complex) {
+      GTEST_SKIP() << "gemv fails with complex scalars on the SYCL backend";
     } else {
       run_algorithms<0, typename GemvFunc::algorithms>(mode);
     }
-#else
-    run_algorithms<0, typename GemvFunc::algorithms>(mode);
-#endif
   }
 
  private:
