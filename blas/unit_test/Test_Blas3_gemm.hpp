@@ -382,9 +382,9 @@ TEST_F(TestCategory, gemm_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemm_complex_double) {
 #if defined(KOKKOS_ENABLE_SYCL)
-    constexpr bool skip_complex = std::is_same_v<typename Device::execution_space, Kokkos::Experimental::SYCL>;
+  constexpr bool skip_complex = std::is_same_v<typename Device::execution_space, Kokkos::Experimental::SYCL>;
 #else
-    constexpr bool skip_complex = false;
+  constexpr bool skip_complex = false;
 #endif
   if constexpr (skip_complex) {
     GTEST_SKIP();
@@ -400,9 +400,9 @@ TEST_F(TestCategory, gemm_complex_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemm_complex_float) {
 #if defined(KOKKOS_ENABLE_SYCL)
-    constexpr bool skip_complex = std::is_same_v<typename Device::execution_space, Kokkos::Experimental::SYCL>;
+  constexpr bool skip_complex = std::is_same_v<typename Device::execution_space, Kokkos::Experimental::SYCL>;
 #else
-    constexpr bool skip_complex = false;
+  constexpr bool skip_complex = false;
 #endif
   if constexpr (skip_complex) {
     GTEST_SKIP();

@@ -93,7 +93,7 @@ struct GEMVTest {
   static void run(const char *mode) {
 #if defined(KOKKOS_ENABLE_SYCL)
     constexpr bool skip_complex = std::is_same_v<typename Device::execution_space, Kokkos::Experimental::SYCL> &&
-      KokkosKernels::ArithTraits<ScalarA>::is_complex;
+                                  KokkosKernels::ArithTraits<ScalarA>::is_complex;
 #else
     constexpr bool skip_complex = false;
 #endif
