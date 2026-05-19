@@ -381,9 +381,19 @@ TEST_F(TestCategory, gemm_double) {
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemm_complex_double) {
+#if defined(KOKKOS_ENABLE_SYCL)
+  if constexpr (std::is_same_v<typename TestDevice::execution_space, Kokkos::Experimental::SYCL>) {
+    GTEST_SKIP();
+  } else {
+    Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_complex_double");
+    test_gemm_enabled_layouts<Kokkos::complex<double>>();
+    Kokkos::Profiling::popRegion();
+  }
+#else
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_complex_double");
   test_gemm_enabled_layouts<Kokkos::complex<double>>();
   Kokkos::Profiling::popRegion();
+#endif
 }
 #endif
 

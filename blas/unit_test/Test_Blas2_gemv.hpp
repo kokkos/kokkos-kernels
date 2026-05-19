@@ -225,6 +225,23 @@ TEST_F(TestCategory, gemv_double) {
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemv_complex_double) {
+#if defined(KOKKOS_ENABLE_SYCL)
+  if constexpr (std::is_same_v<typename TestDevice::execution_space, Kokkos::Experimental::SYCL>) {
+    GTEST_SKIP();
+  } else {
+    Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_complex_double");
+    test_gemv<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("N");
+    Kokkos::Profiling::popRegion();
+
+    Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_tran_complex_double");
+    test_gemv<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("T");
+    Kokkos::Profiling::popRegion();
+
+    Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_conj_complex_double");
+    test_gemv<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("C");
+    Kokkos::Profiling::popRegion();
+  }
+#else
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_complex_double");
   test_gemv<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("N");
   Kokkos::Profiling::popRegion();
@@ -236,6 +253,7 @@ TEST_F(TestCategory, gemv_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_conj_complex_double");
   test_gemv<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("C");
   Kokkos::Profiling::popRegion();
+#endif
 }
 #endif
 
