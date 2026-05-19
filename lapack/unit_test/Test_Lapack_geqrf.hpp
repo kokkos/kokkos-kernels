@@ -293,10 +293,10 @@ void impl_test_geqrf(int m, int n) {
 
   using ViewTypeA_alias =
       Kokkos::View<typename ViewTypeA::non_const_value_type**, typename ViewTypeA::array_layout,
-                   Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using ViewTypeTau_alias =
       Kokkos::View<typename ViewTypeTau::non_const_value_type*, typename ViewTypeTau::array_layout,
-                   Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   ViewTypeA_alias ha_A(h_A.data(), h_A.extent(0), h_A.extent(1));
   ViewTypeA_alias ha_Q(h_Q.data(), h_Q.extent(0), h_Q.extent(1));
