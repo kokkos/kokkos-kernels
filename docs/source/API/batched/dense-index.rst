@@ -7,6 +7,8 @@ API: Batched Dense (DLA)
    
    dense/batched_rotg
    dense/batched_rot
+   dense/batched_rotmg
+   dense/batched_rotm
    dense/batched_axpy
    dense/batched_copy
    dense/batched_iamax
@@ -109,7 +111,7 @@ BLAS 1
      - --
      - --
    * - ROTMG
-     - --
+     - :doc:`Rotmg <dense/batched_rotmg>`
      - --
      - --
    * - ROT
@@ -117,9 +119,9 @@ BLAS 1
      - :doc:`TeamRot <dense/batched_rot>`
      - :doc:`TeamVectorRot <dense/batched_rot>`
    * - ROTM
-     - --
-     - --
-     - --
+     - :doc:`SerialRotm <dense/batched_rotm>`
+     - :doc:`TeamRotm <dense/batched_rotm>`
+     - :doc:`TeamVectorRotm <dense/batched_rotm>`
    * - SWAP
      - `kokkos_swap(a, b) <https://kokkos.org/kokkos-core-wiki/API/core/utilities/swap.html>`_
      - --

@@ -45,10 +45,9 @@ KOKKOS_INLINE_FUNCTION static int checkRotmInput([[maybe_unused]] const XViewTyp
     return 1;
   }
 
-  // We handle flag as a template parameter, so we only need to check that the length of param is 4, but not the value
-  // of flag
-  if (param.extent_int(0) != 4) {
-    Kokkos::printf("KokkosBatched::rotm: param must have length 4: param length = %d\n", param.extent_int(0));
+  // param must have length 5: param(0) = flag, param(1) = h11, param(2) = h21, param(3) = h12, param(4) = h22
+  if (param.extent_int(0) != 5) {
+    Kokkos::printf("KokkosBatched::rotm: param must have length 5: param length = %d\n", param.extent_int(0));
     return 1;
   }
 #endif
@@ -60,10 +59,8 @@ KOKKOS_INLINE_FUNCTION static int checkRotmInput([[maybe_unused]] const XViewTyp
 /// Serial Impl
 /// ===========
 
-template <int Flag>
 template <typename XViewType, typename YViewType, typename ParamViewType>
-KOKKOS_INLINE_FUNCTION int SerialRotm<Flag>::invoke(const XViewType &x, const YViewType &y,
-                                                    const ParamViewType &param) {
+KOKKOS_INLINE_FUNCTION int SerialRotm::invoke(const XViewType &x, const YViewType &y, const ParamViewType &param) {
   // Quick return if possible
   const int n = x.extent_int(0);
   if (n == 0) return 0;
@@ -71,10 +68,29 @@ KOKKOS_INLINE_FUNCTION int SerialRotm<Flag>::invoke(const XViewType &x, const YV
   auto info = Impl::checkRotmInput(x, y, param);
   if (info) return info;
 
-  if constexpr (Flag != -2) {
+  using ScalarType      = typename XViewType::non_const_value_type;
+  const ScalarType flag = param(0);
+  const ScalarType zero = KokkosKernels::ArithTraits<ScalarType>::zero();
+  const ScalarType one  = KokkosKernels::ArithTraits<ScalarType>::one();
+  const ScalarType two  = one + one;
+
+  if (flag == -two) {
     // flag == -2.0: identity, no need to do anything
-    Impl::SerialRotmInternal<Flag>::invoke(n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
-                                           param.stride(0));
+  } else if (flag == -one) {
+    Impl::SerialRotmInternal<-1>::invoke(n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                         param.stride(0));
+  } else if (flag == zero) {
+    Impl::SerialRotmInternal<0>::invoke(n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(), param.stride(0));
+  } else if (flag == one) {
+    Impl::SerialRotmInternal<1>::invoke(n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(), param.stride(0));
+  } else {
+#ifndef NDEBUG
+    // Invalid flag value
+    Kokkos::printf(
+        "KokkosBatched::SerialRotm: Invalid flag value. Flag must be one of -1, 0, 1, or -2. Flag value = %f\n",
+        static_cast<double>(flag));
+#endif
+    return 1;
   }
   return 0;
 }
@@ -83,10 +99,10 @@ KOKKOS_INLINE_FUNCTION int SerialRotm<Flag>::invoke(const XViewType &x, const YV
 /// Team Impl
 /// ===========
 
-template <typename MemberType, int Flag>
+template <typename MemberType>
 template <typename XViewType, typename YViewType, typename ParamViewType>
-KOKKOS_INLINE_FUNCTION int TeamRotm<MemberType, Flag>::invoke(const MemberType &member, const XViewType &x,
-                                                              const YViewType &y, const ParamViewType &param) {
+KOKKOS_INLINE_FUNCTION int TeamRotm<MemberType>::invoke(const MemberType &member, const XViewType &x,
+                                                        const YViewType &y, const ParamViewType &param) {
   // Quick return if possible
   const int n = x.extent_int(0);
   if (n == 0) return 0;
@@ -94,10 +110,31 @@ KOKKOS_INLINE_FUNCTION int TeamRotm<MemberType, Flag>::invoke(const MemberType &
   auto info = Impl::checkRotmInput(x, y, param);
   if (info) return info;
 
-  if constexpr (Flag != -2) {
+  using ScalarType      = typename XViewType::non_const_value_type;
+  const ScalarType flag = param(0);
+  const ScalarType zero = KokkosKernels::ArithTraits<ScalarType>::zero();
+  const ScalarType one  = KokkosKernels::ArithTraits<ScalarType>::one();
+  const ScalarType two  = one + one;
+
+  if (flag == -two) {
     // flag == -2.0: identity, no need to do anything
-    Impl::TeamRotmInternal<Flag>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
-                                         param.stride(0));
+  } else if (flag == -one) {
+    Impl::TeamRotmInternal<-1>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                       param.stride(0));
+  } else if (flag == zero) {
+    Impl::TeamRotmInternal<0>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                      param.stride(0));
+  } else if (flag == one) {
+    Impl::TeamRotmInternal<1>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                      param.stride(0));
+  } else {
+#ifndef NDEBUG
+    // Invalid flag value
+    Kokkos::printf(
+        "KokkosBatched::TeamRotm: Invalid flag value. Flag must be one of -1, 0, 1, or -2. Flag value = %f\n",
+        static_cast<double>(flag));
+#endif
+    return 1;
   }
   return 0;
 }
@@ -106,10 +143,10 @@ KOKKOS_INLINE_FUNCTION int TeamRotm<MemberType, Flag>::invoke(const MemberType &
 /// TeamVector Impl
 /// ===============
 
-template <typename MemberType, int Flag>
+template <typename MemberType>
 template <typename XViewType, typename YViewType, typename ParamViewType>
-KOKKOS_INLINE_FUNCTION int TeamVectorRotm<MemberType, Flag>::invoke(const MemberType &member, const XViewType &x,
-                                                                    const YViewType &y, const ParamViewType &param) {
+KOKKOS_INLINE_FUNCTION int TeamVectorRotm<MemberType>::invoke(const MemberType &member, const XViewType &x,
+                                                              const YViewType &y, const ParamViewType &param) {
   // Quick return if possible
   const int n = x.extent_int(0);
   if (n == 0) return 0;
@@ -117,10 +154,31 @@ KOKKOS_INLINE_FUNCTION int TeamVectorRotm<MemberType, Flag>::invoke(const Member
   auto info = Impl::checkRotmInput(x, y, param);
   if (info) return info;
 
-  if constexpr (Flag != -2) {
+  using ScalarType      = typename XViewType::non_const_value_type;
+  const ScalarType flag = param(0);
+  const ScalarType zero = KokkosKernels::ArithTraits<ScalarType>::zero();
+  const ScalarType one  = KokkosKernels::ArithTraits<ScalarType>::one();
+  const ScalarType two  = one + one;
+
+  if (flag == -two) {
     // flag == -2.0: identity, no need to do anything
-    Impl::TeamVectorRotmInternal<Flag>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
-                                               param.stride(0));
+  } else if (flag == -one) {
+    Impl::TeamVectorRotmInternal<-1>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                             param.stride(0));
+  } else if (flag == zero) {
+    Impl::TeamVectorRotmInternal<0>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                            param.stride(0));
+  } else if (flag == one) {
+    Impl::TeamVectorRotmInternal<1>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0), param.data(),
+                                            param.stride(0));
+  } else {
+#ifndef NDEBUG
+    // Invalid flag value
+    Kokkos::printf(
+        "KokkosBatched::TeamVectorRotm: Invalid flag value. Flag must be one of -1, 0, 1, or -2. Flag value = %f\n",
+        static_cast<double>(flag));
+#endif
+    return 1;
   }
   return 0;
 }

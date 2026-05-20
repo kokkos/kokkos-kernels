@@ -32,7 +32,7 @@ Applies a plane rotation to vectors :math:`x` and :math:`y`:
    \begin{align}
    x &= c * x + s * y \\
    y &= -s * x + c * y \: \text{(if Conj is false)} \\
-   y &= -s * conj(x) + c * y \: \text{(if Conj is true)}
+   y &= -s * \mathrm{conj}(x) + c * y \: \text{(if Conj is true)}
    \end{align}
 
 1. For real vectors :math:`X` and :math:`Y`, this operation is equivalent to the BLAS routine ``SROT`` or ``DROT`` for single or double precision.
