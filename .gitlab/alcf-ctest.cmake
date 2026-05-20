@@ -14,7 +14,7 @@ set(CTEST_CONFIGURE_COMMAND "cmake -S $ENV{PWD} \
 			    -DBUILD_SHARED_LIBS=ON \
 			    -DCMAKE_BUILD_TYPE=Release \
 			    -DCMAKE_VERBOSE_MAKEFILE=OFF \
-			    -DKokkos_ROOT=kokkos_install \
+			    -DKokkos_ROOT=$ENV{PWD}/kokkos_install \
 			    -DKokkosKernels_ENABLE_TESTS:BOOL=ON \
 			    -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
 			    -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON \
