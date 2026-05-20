@@ -20,7 +20,7 @@ set(CTEST_CONFIGURE_COMMAND "cmake -S $ENV{PWD} \
 			    -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON \
 			    -DKokkosKernels_RUN_BENCHMARKS:BOOL=ON")
 
-set(CTEST_BUILD_COMMAND "cmake --build $ENV{PWD}/kokkos-kernels/build --parallel")
+set(CTEST_BUILD_COMMAND "cmake --build $ENV{PWD}/kokkos-kernels_build --parallel")
 
 ctest_start(Nightly)
 ctest_update(SOURCE "${CTEST_SOURCE_DIRECTORY}")
