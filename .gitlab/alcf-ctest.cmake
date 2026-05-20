@@ -6,7 +6,7 @@ set(CTEST_BUILD_NAME "Linux-g++")
 
 set(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
 
-set(CTEST_UPDATE_COMMAND /usr/bin/git -v)
+set(CTEST_UPDATE_COMMAND "/usr/bin/git -v")
 
 set(CTEST_CONFIGURE_COMMAND "cmake -S $ENV{PWD} \
 			    -B kokkos-kernels_build \
