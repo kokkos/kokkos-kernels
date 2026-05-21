@@ -235,7 +235,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
     SerialCopy<Trans::NoTranspose>::invoke(B, W);
     A.template apply<Trans::NoTranspose>(X, W, -1, 1);
     P.template apply<Trans::NoTranspose, 1>(W, W);
-    SerialDot<Trans::NoTranspose>::invoke(W, W, tmp);
+    SerialDot<Trans::ConjTranspose, 1>::invoke(W, W, tmp);
 
     for (OrdinalType i = 0; i < numMatrices; ++i) {
       tmp(i) = ATM::sqrt(tmp(i));
