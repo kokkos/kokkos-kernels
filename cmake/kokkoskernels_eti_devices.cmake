@@ -36,11 +36,11 @@ if(KOKKOS_ENABLE_CUDA)
   kokkoskernels_add_option("INST_EXECSPACE_CUDA" ON BOOL
     "Whether to pre instantiate kernels for the execution space Kokkos::Cuda. Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise.")
 
-  kokkoskernels_add_option("INST_MEMSPACE_CUDAUVMSPACE" OFF BOOL
-    "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: OFF.")
-
   kokkoskernels_add_option("INST_MEMSPACE_CUDASPACE" ON BOOL
     "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise.")
+
+  kokkoskernels_add_option("INST_MEMSPACE_CUDAUVMSPACE" OFF BOOL
+    "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: OFF.")
 
   if(KOKKOSKERNELS_INST_EXECSPACE_CUDA AND KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
     list(APPEND DEVICE_LIST "<Cuda,CudaSpace>")
@@ -100,8 +100,19 @@ if(KOKKOS_ENABLE_SYCL)
   endif()
 endif()
 
-kokkoskernels_add_option("INST_MEMSPACE_HOSTSPACE" ${KOKKOSKERNELS_ADD_DEFAULT_ETI} BOOL
-  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times. Default: ON")
+#################
+#               #
+#  Host Spaces  #
+#               #
+#################
+
+if(KOKKOS_ENABLE_SERIAL OR KOKKOS_ENABLE_OPENMP OR KOKKOS_ENABLE_THREADS)
+  kokkoskernels_add_option("INST_MEMSPACE_HOSTSPACE" ON BOOL
+    "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times. Default: ON")
+else
+  kokkoskernels_add_option("INST_MEMSPACE_HOSTSPACE" ${KOKKOSKERNELS_ADD_DEFAULT_ETI} BOOL
+    "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times. Default: ON")
+endif()
 
 kokkoskernels_add_option("INST_EXECSPACE_OPENMP" ${KOKKOSKERNELS_INST_EXECSPACE_OPENMP_DEFAULT} BOOL
   "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  Disabling this when Kokkos_ENABLE_OPENMP is enabled may increase build times. Default: ON if Kokkos is OpenMP-enabled, OFF otherwise.")
@@ -129,6 +140,13 @@ endif()
 kokkoskernels_add_option("INST_EXECSPACE_SERIAL" ${KOKKOSKERNELS_INST_EXECSPACE_SERIAL_DEFAULT} BOOL
   "Whether to build kernels for the execution space Kokkos::Serial.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_SERIAL is enabled may increase build times. Default: ON when Kokkos is Serial-enabled, OFF otherwise.")
 
+if(KOKKOSKERNELS_INST_EXECSPACE_SERIAL AND KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+  list(APPEND DEVICE_LIST "<Serial,HostSpace>")
+  if(NOT KOKKOS_ENABLE_SERIAL)
+    message(FATAL_ERROR "Set ETI on for SERIAL, but Kokkos was not configured with the SERIAL backend")
+  endif()
+endif()
+
 set(EXECSPACE_CUDA_VALID_MEM_SPACES          CUDASPACE CUDAUVMSPACE)
 set(EXECSPACE_HIP_VALID_MEM_SPACES           HIPSPACE HIPMANAGEDSPACE)
 set(EXECSPACE_SYCL_VALID_MEM_SPACES          SYCLSPACE SYCLSHAREDSPACE)
@@ -147,10 +165,3 @@ foreach(EXEC ${EXEC_SPACES})
     endforeach()
   endif()
 endforeach()
-
-if(KOKKOSKERNELS_INST_EXECSPACE_SERIAL AND KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
-  list(APPEND DEVICE_LIST "<Serial,HostSpace>")
-  if(NOT KOKKOS_ENABLE_SERIAL)
-    message(FATAL_ERROR "Set ETI on for SERIAL, but Kokkos was not configured with the SERIAL backend")
-  endif()
-endif()
