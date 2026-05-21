@@ -80,25 +80,15 @@ Aurora:
             -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
     - cmake --build kokkos/build --parallel
     - cmake --install kokkos/build --prefix kokkos-install
-    - cmake -B kokkos-kernels_build
-            -DCMAKE_INSTALL_PREFIX=kokkos-kernels-install
-            -DBUILD_SHARED_LIBS=ON
-            -DCMAKE_CXX_FLAGS="-fsycl-device-code-split=per_kernel -fp-model=precise"
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_VERBOSE_MAKEFILE=OFF
-            -DCMAKE_CXX_COMPILER=icpx
-            -DSITE=ALCF-Aurora
-            -DKokkos_ROOT=kokkos-install
-            -DKokkosKernels_INST_COMPLEX_DOUBLE:BOOL=ON
-            -DKokkosKernels_ENABLE_TESTS:BOOL=ON
-            -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON
-            -DKokkosKernels_ENABLE_PERFTESTS:BOOL=OFF
-            -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON
-            -DKokkosKernels_RUN_BENCHMARKS:BOOL=ON
-            -DKokkosKernels_ENABLE_TPL_MKL=ON
-    - export CMAKE_BUILD_PARALLEL_LEVEL=48
     - export ZES_ENABLE_SYSMAN=1
-    - ctest -V --test-dir kokkos-kernels_build -D Nightly --output-junit result_pvc1550.xml
+    - ctest -V -S .gitlab/aurora-ctest.cmake --test-dir kokkos-kernels_build -D Nightly --output-junit result_pvc1550.xml
+    - git clone https://github.com/kokkos/kokkos-kernels-performance.git
+    - find kokkos-kernels_build/benchmarks -name "*.json" -exec mv {} kokkos-kernels-performance/Aurora \;
+    - cd kokkos-kernels-performance
+    - git add Aurora/*
+    - git commit -m "aurora perofmance run"
+    - git status
+    - git push https://"$kokkos_kernels_perf_pat"@github.com/kokkos/kokkos-kernels-performance.git
 
   artifacts:
     when: always
