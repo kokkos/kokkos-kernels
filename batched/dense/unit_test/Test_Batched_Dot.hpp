@@ -318,24 +318,24 @@ void impl_test_batched_dot(const std::size_t Nb, const std::size_t m, const std:
   auto h_ref_dot1_ax1 = Kokkos::create_mirror_view(ref_dot1_ax1);
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    ScalarType dot0 = 0;
+    ScalarType tmp_dot0 = 0;
     for (std::size_t j = 0; j < n; j++) {
-      dot0 += op(h_x0(ib, j)) * h_y0(ib, j);
+      tmp_dot0 += op(h_x0(ib, j)) * h_y0(ib, j);
     }
-    h_ref_dot0(ib) = dot0;
+    h_ref_dot0(ib) = tmp_dot0;
     for (std::size_t j = 0; j < n; j++) {
-      ScalarType dot1 = 0;
+      ScalarType tmp_dot1 = 0;
       for (std::size_t i = 0; i < m; i++) {
-        dot1 += op(h_x1(ib, i, j)) * h_y1(ib, i, j);
+        tmp_dot1 += op(h_x1(ib, i, j)) * h_y1(ib, i, j);
       }
-      h_ref_dot1_ax0(ib, j) = dot1;
+      h_ref_dot1_ax0(ib, j) = tmp_dot1;
     }
     for (std::size_t j = 0; j < m; j++) {
-      ScalarType dot1 = 0;
+      ScalarType tmp_dot1 = 0;
       for (std::size_t i = 0; i < n; i++) {
-        dot1 += op(h_x1(ib, j, i)) * h_y1(ib, j, i);
+        tmp_dot1 += op(h_x1(ib, j, i)) * h_y1(ib, j, i);
       }
-      h_ref_dot1_ax1(ib, j) = dot1;
+      h_ref_dot1_ax1(ib, j) = tmp_dot1;
     }
   }
 
