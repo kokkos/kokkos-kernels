@@ -38,7 +38,7 @@ Polaris:
     - cmake --build kokkos_build --parallel
     - cmake --install kokkos_build --prefix kokkos_install
     - ctest -V -S .gitlab/alcf-ctest.cmake --test-dir kokkos-kernels_build --output-junit result_a100.xml
-    - git clone https://github.com/lucbv/kokkos-kernels-performance.git
+    - git clone https://github.com/kokkos/kokkos-kernels-performance.git
     - find kokkos-kernels_build/benchmarks -name "*.json" -exec mv {} kokkos-kernels-performance/Polaris \;
     - cd kokkos-kernels-performance
     - git add Polaris/*
