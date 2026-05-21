@@ -8,7 +8,6 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Dot_Internal.hpp"
-// #include "KokkosBlas1_team_dot.hpp"
 
 namespace KokkosBatched {
 namespace Impl {

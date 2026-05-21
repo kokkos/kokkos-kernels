@@ -144,7 +144,7 @@ struct [[deprecated("Use KokkosBatched::SerialDot instead")]] SerialDotInternal 
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const int m, const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
-    return Impl::SerialDotInternal::invoke(KokkosBlas::Impl::OpID(), m, A, as0, B, bs0, C);
+    return Impl::SerialDotInternal::invoke(KokkosBlas::Impl::OpConj(), m, A, as0, B, bs0, C);
   }
 
   template <typename ValueType, typename MagnitudeType>
@@ -152,7 +152,7 @@ struct [[deprecated("Use KokkosBatched::SerialDot instead")]] SerialDotInternal 
                                            const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                            const int bs1,
                                            /* */ MagnitudeType *KOKKOS_RESTRICT C, const int cs) {
-    return Impl::SerialDotInternal::invoke(KokkosBlas::Impl::OpID(), m, n, A, as0, as1, B, bs0, bs1, C, cs);
+    return Impl::SerialDotInternal::invoke(KokkosBlas::Impl::OpConj(), m, n, A, as0, as1, B, bs0, bs1, C, cs);
   }
 };
 
@@ -162,7 +162,7 @@ struct [[deprecated("Use KokkosBatched::TeamDot instead")]] TeamDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
-    return Impl::TeamDotInternal::invoke(member, KokkosBlas::Impl::OpID(), m, A, as0, B, bs0, C);
+    return Impl::TeamDotInternal::invoke(member, KokkosBlas::Impl::OpConj(), m, A, as0, B, bs0, C);
   }
 
   template <typename MemberType, typename ValueType, typename MagnitudeType>
@@ -170,7 +170,7 @@ struct [[deprecated("Use KokkosBatched::TeamDot instead")]] TeamDotInternal {
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C, const int cs) {
-    return Impl::TeamDotInternal::invoke(member, KokkosBlas::Impl::OpID(), m, n, A, as0, as1, B, bs0, bs1, C, cs);
+    return Impl::TeamDotInternal::invoke(member, KokkosBlas::Impl::OpConj(), m, n, A, as0, as1, B, bs0, bs1, C, cs);
   }
 };
 
@@ -180,7 +180,7 @@ struct [[deprecated("Use KokkosBatched::TeamVectorDot instead")]] TeamVectorDotI
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
-    return Impl::TeamVectorDotInternal::invoke(member, KokkosBlas::Impl::OpID(), m, A, as0, B, bs0, C);
+    return Impl::TeamVectorDotInternal::invoke(member, KokkosBlas::Impl::OpConj(), m, A, as0, B, bs0, C);
   }
 
   template <typename MemberType, typename ValueType, typename MagnitudeType>
@@ -188,7 +188,8 @@ struct [[deprecated("Use KokkosBatched::TeamVectorDot instead")]] TeamVectorDotI
                                                 const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                                 const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C, const int cs) {
-    return Impl::TeamVectorDotInternal::invoke(member, KokkosBlas::Impl::OpID(), m, n, A, as0, as1, B, bs0, bs1, C, cs);
+    return Impl::TeamVectorDotInternal::invoke(member, KokkosBlas::Impl::OpConj(), m, n, A, as0, as1, B, bs0, bs1, C,
+                                               cs);
   }
 };
 
