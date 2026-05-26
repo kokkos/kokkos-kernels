@@ -106,13 +106,9 @@ endif()
 #               #
 #################
 
-if(KOKKOS_ENABLE_SERIAL OR KOKKOS_ENABLE_OPENMP OR KOKKOS_ENABLE_THREADS)
-  kokkoskernels_add_option("INST_MEMSPACE_HOSTSPACE" ON BOOL
-    "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times. Default: ON")
-else()
-  kokkoskernels_add_option("INST_MEMSPACE_HOSTSPACE" ${KOKKOSKERNELS_ADD_DEFAULT_ETI} BOOL
-    "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times. Default: ON")
-endif()
+# The HostSpace memory space is always enabled by Kokkos so we always instantiate it by default.
+kokkoskernels_add_option("INST_MEMSPACE_HOSTSPACE" ON BOOL
+  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times. Default: ON")
 
 kokkoskernels_add_option("INST_EXECSPACE_OPENMP" ${KOKKOSKERNELS_INST_EXECSPACE_OPENMP_DEFAULT} BOOL
   "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  Disabling this when Kokkos_ENABLE_OPENMP is enabled may increase build times. Default: ON if Kokkos is OpenMP-enabled, OFF otherwise.")
