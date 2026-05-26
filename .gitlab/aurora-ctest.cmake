@@ -11,7 +11,7 @@ set(CTEST_CONFIGURE_COMMAND "cmake -S ${CTEST_SOURCE_DIRECTORY} \
 			    	   -B ${CTEST_BINARY_DIRECTORY} \
             			   -DCMAKE_INSTALL_PREFIX=${CTEST_SOURCE_DIRECTORY}/kokkos-kernels-install \
             			   -DBUILD_SHARED_LIBS=ON \
-            			   -DCMAKE_CXX_FLAGS=\"-fsycl-device-code-split=per_kernel -fp-model=precise\" \
+            			   -DCMAKE_CXX_FLAGS='-fsycl-device-code-split=per_kernel -fp-model=precise' \
             			   -DCMAKE_BUILD_TYPE=Release \
             			   -DCMAKE_VERBOSE_MAKEFILE=OFF \
             			   -DCMAKE_CXX_COMPILER=icpx \
