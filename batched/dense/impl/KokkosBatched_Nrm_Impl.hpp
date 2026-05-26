@@ -33,6 +33,7 @@ KOKKOS_INLINE_FUNCTION int SerialNrm<NrmType>::invoke(const XViewType &x, const 
   const int n = x.extent_int(0);
   if (n == 0) {
     norm() = KokkosKernels::ArithTraits<typename NormViewType::non_const_value_type>::zero();
+    return 0;
   }
   Impl::SerialNrmInternal<NrmType>::invoke(n, x.data(), x.stride(0), norm.data());
   return 0;
@@ -50,6 +51,7 @@ KOKKOS_INLINE_FUNCTION int TeamNrm<MemberType, NrmType>::invoke(const MemberType
   const int n = x.extent_int(0);
   if (n == 0) {
     norm() = KokkosKernels::ArithTraits<typename NormViewType::non_const_value_type>::zero();
+    return 0;
   }
   Impl::TeamNrmInternal<MemberType, NrmType>::invoke(member, n, x.data(), x.stride(0), norm.data());
   return 0;
@@ -68,6 +70,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorNrm<MemberType, NrmType>::invoke(const Memb
   const int n = x.extent_int(0);
   if (n == 0) {
     norm() = KokkosKernels::ArithTraits<typename NormViewType::non_const_value_type>::zero();
+    return 0;
   }
   Impl::TeamVectorNrmInternal<MemberType, NrmType>::invoke(member, n, x.data(), x.stride(0), norm.data());
   return 0;
