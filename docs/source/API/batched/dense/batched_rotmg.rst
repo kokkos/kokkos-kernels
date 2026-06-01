@@ -50,7 +50,7 @@ Parameters
 
 :d1, d2: 0-D view. On input, the squares of the initial scaling factors for :math:`x` and :math:`y`. On output, they contains squares of the scaling factors to be applied to :math:`x` and :math:`y`, respectively.
 :x1, y1: 0-D view. On input, the components of the 2D vector to rotate. On output, :math:`x1` contains the first component of the rotated vector, while :math:`y1` is unchanged on output.
-:param: 0-D view. On output,  A length 5 vector, a rank 1 view, containing the parameters of the modified Givens rotation. The first element of :math:`param` is a flag that indicates the form of the rotation matrix H, and the remaining four elements are the entries of the rotation matrix H.
+:param: 1-D view. On output,  A length 5 vector, containing the parameters of the modified Givens rotation. The first element of :math:`param` is a flag that indicates the form of the rotation matrix :math:`H`, and the remaining four elements are the entries of the rotation matrix :math:`H`.
 
 Type Requirements
 -----------------
