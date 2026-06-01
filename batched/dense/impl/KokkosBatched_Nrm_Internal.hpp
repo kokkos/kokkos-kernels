@@ -9,13 +9,22 @@
 namespace KokkosBatched {
 namespace Impl {
 
-template <typename ValueType, typename NrmValueType>
-KOKKOS_INLINE_FUNCTION NrmValueType l1_norm(const ValueType &x) {
+template <typename NrmValueType, typename ValueType>
+KOKKOS_INLINE_FUNCTION NrmValueType asum(const ValueType &x) {
   if constexpr (KokkosKernels::ArithTraits<ValueType>::is_complex) {
     return KokkosKernels::ArithTraits<NrmValueType>::abs(KokkosKernels::ArithTraits<ValueType>::real(x)) +
            KokkosKernels::ArithTraits<NrmValueType>::abs(KokkosKernels::ArithTraits<ValueType>::imag(x));
   } else {
     return KokkosKernels::ArithTraits<NrmValueType>::abs(x);
+  }
+}
+
+template <typename NrmValueType, typename ValueType>
+KOKKOS_INLINE_FUNCTION NrmValueType square(const ValueType &x) {
+  if constexpr (KokkosKernels::ArithTraits<ValueType>::is_complex) {
+    return KokkosKernels::ArithTraits<ValueType>::conj(x) * x;
+  } else {
+    return x * x;
   }
 }
 
@@ -37,12 +46,11 @@ KOKKOS_INLINE_FUNCTION void SerialNrmInternal<NrmType>::invoke(const int n, cons
 
   if constexpr (std::is_same_v<NrmType, Norm::L1>) {
     for (int i = 0; i < n; ++i) {
-      nrm += l1_norm<ValueType, NrmValueType>(x[i * xs0]);
+      nrm += asum<NrmValueType>(x[i * xs0]);
     }
   } else if constexpr (std::is_same_v<NrmType, Norm::L2>) {
     for (int i = 0; i < n; ++i) {
-      const NrmValueType abs_val = KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]);
-      nrm += abs_val * abs_val;
+      nrm += square<NrmValueType>(x[i * xs0]);
     }
     nrm = KokkosKernels::ArithTraits<NrmValueType>::sqrt(nrm);
   } else if constexpr (std::is_same_v<NrmType, Norm::LInf>) {
@@ -76,16 +84,11 @@ KOKKOS_INLINE_FUNCTION void TeamNrmInternal<MemberType, NrmType>::invoke(const M
   if constexpr (std::is_same_v<NrmType, Norm::L1>) {
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(member, n),
-        [&](const int i, NrmValueType &thread_nrm) { thread_nrm += l1_norm<ValueType, NrmValueType>(x[i * xs0]); },
-        nrm);
+        [&](const int i, NrmValueType &thread_nrm) { thread_nrm += asum<NrmValueType>(x[i * xs0]); }, nrm);
   } else if constexpr (std::is_same_v<NrmType, Norm::L2>) {
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(member, n),
-        [&](const int i, NrmValueType &thread_nrm) {
-          const NrmValueType abs_val = KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]);
-          thread_nrm += abs_val * abs_val;
-        },
-        nrm);
+        [&](const int i, NrmValueType &thread_nrm) { thread_nrm += square<NrmValueType>(x[i * xs0]); }, nrm);
     nrm = KokkosKernels::ArithTraits<NrmValueType>::sqrt(nrm);
   } else if constexpr (std::is_same_v<NrmType, Norm::LInf>) {
     Kokkos::Max<NrmValueType, typename MemberType::execution_space> max_nrm(nrm);
@@ -122,16 +125,11 @@ KOKKOS_INLINE_FUNCTION void TeamVectorNrmInternal<MemberType, NrmType>::invoke(c
   if constexpr (std::is_same_v<NrmType, Norm::L1>) {
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, n),
-        [&](const int i, NrmValueType &thread_nrm) { thread_nrm += l1_norm<ValueType, NrmValueType>(x[i * xs0]); },
-        nrm);
+        [&](const int i, NrmValueType &thread_nrm) { thread_nrm += asum<NrmValueType>(x[i * xs0]); }, nrm);
   } else if constexpr (std::is_same_v<NrmType, Norm::L2>) {
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, n),
-        [&](const int i, NrmValueType &thread_nrm) {
-          const NrmValueType abs_val = KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]);
-          thread_nrm += abs_val * abs_val;
-        },
-        nrm);
+        [&](const int i, NrmValueType &thread_nrm) { thread_nrm += square<NrmValueType>(x[i * xs0]); }, nrm);
     nrm = KokkosKernels::ArithTraits<NrmValueType>::sqrt(nrm);
   } else if constexpr (std::is_same_v<NrmType, Norm::LInf>) {
     Kokkos::Max<NrmValueType, typename MemberType::execution_space> max_nrm(nrm);
