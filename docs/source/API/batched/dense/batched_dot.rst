@@ -62,6 +62,7 @@ Type Requirements
 - ``XViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 or 2 containing a vector or matrix :math:`X`
 - ``YViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 or 2 containing a vector or matrix :math:`Y`
 - ``NormViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 0 or 1 containing the output :math:`dot`. dot product is accumulated is accumulated in the type of the elements of ``NormViewType``
+
 .. note::
   
   This kernel supports both vector and matrix operations. When the input views :math:`X` and :math:`Y` are of rank 1, the kernel performs a vector operation (BLAS dot). ``Axis`` must be set to 0 for this case.
