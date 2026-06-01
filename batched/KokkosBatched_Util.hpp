@@ -240,6 +240,12 @@ struct Diag {
   };
 };
 
+struct Norm {
+  struct L1 {};
+  struct L2 {};
+  struct LInf {};
+};
+
 /// BatchLayout class used to specify where the batch dimension is
 /// allocated in the input views for host-level Batched BLAS/LAPACK routines.
 struct BatchLayout {
