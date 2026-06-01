@@ -22,7 +22,7 @@ KOKKOS_INLINE_FUNCTION NrmValueType asum(const ValueType &x) {
 template <typename NrmValueType, typename ValueType>
 KOKKOS_INLINE_FUNCTION NrmValueType square(const ValueType &x) {
   if constexpr (KokkosKernels::ArithTraits<ValueType>::is_complex) {
-    return KokkosKernels::ArithTraits<NrmValueType>::real(KokkosKernels::ArithTraits<ValueType>::conj(x) * x);
+    return KokkosKernels::ArithTraits<ValueType>::real(KokkosKernels::ArithTraits<ValueType>::conj(x) * x);
   } else {
     return x * x;
   }
