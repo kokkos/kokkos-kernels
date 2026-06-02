@@ -27,9 +27,12 @@ set(CTEST_CONFIGURE_COMMAND "cmake -S ${CTEST_SOURCE_DIRECTORY} \
 
 set(CTEST_BUILD_COMMAND "cmake --build ${CTEST_BINARY_DIRECTORY} --parallel")
 
+set(build_error 0)
+set(test_error 0)
+
 ctest_start(Nightly)
 ctest_update(SOURCE "${CTEST_SOURCE_DIRECTORY}")
 ctest_configure(BUILD "${CTEST_BINARY_DIRECTORY}")
-ctest_build(BUILD "${CTEST_BINARY_DIRECTORY}")
-ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}")
+ctest_build(BUILD "${CTEST_BINARY_DIRECTORY}" CAPTURE_CMAKE_ERROR ${build_error})
+ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}" CAPTURE_CMAKE_ERROR ${test_error})
 ctest_submit()
