@@ -66,7 +66,6 @@ template <typename XViewType, typename NormViewType>
 KOKKOS_INLINE_FUNCTION int TeamVectorNrm<MemberType, NrmType>::invoke(const MemberType &member, const XViewType &x,
                                                                       const NormViewType &norm) {
   Impl::checkNrmInput(x, norm);
-
   const int n = x.extent_int(0);
   if (n == 0) {
     norm() = KokkosKernels::ArithTraits<typename NormViewType::non_const_value_type>::zero();

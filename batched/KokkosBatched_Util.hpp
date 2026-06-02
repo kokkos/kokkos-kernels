@@ -244,6 +244,7 @@ struct Norm {
   struct L1 {};
   struct L2 {};
   struct LInf {};
+  struct ScaledL2 {};
 };
 
 /// BatchLayout class used to specify where the batch dimension is
