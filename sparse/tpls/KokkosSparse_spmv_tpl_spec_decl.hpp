@@ -502,7 +502,8 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle, oneapi::mkl
     // Even for out-of-order SYCL queue, the inputs here do not depend on
     // kernels being sequenced
     auto ev = oneapi::mkl::sparse::set_csr_data(
-        exec.sycl_queue(), subhandle->mat, A.numRows(), A.numCols(), oneapi::mkl::index_base::zero,
+        exec.sycl_queue(), subhandle->mat, static_cast<std::int64_t>(A.numRows()),
+        static_cast<std::int64_t>(A.numCols()), static_cast<std::int64_t>(A.nnz()), oneapi::mkl::index_base::zero,
         const_cast<ordinal_type*>(A.graph.row_map.data()), const_cast<ordinal_type*>(A.graph.entries.data()),
         reinterpret_cast<onemkl_scalar_type*>(const_cast<scalar_type*>(A.values.data())));
     // for out-of-order queue: the fence before gemv below will make sure
