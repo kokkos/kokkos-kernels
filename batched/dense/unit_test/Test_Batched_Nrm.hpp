@@ -14,7 +14,7 @@ namespace Nrm {
 template <typename DeviceType, typename XViewType, typename NormViewType, typename ArgNorm, typename ArgMode>
 struct Functor_BatchedNrm {
   using execution_space = typename DeviceType::execution_space;
-  using member_type     = Kokkos::TeamPolicy<execution_space>::member_type;
+  using member_type     = typename Kokkos::TeamPolicy<execution_space>::member_type;
   XViewType m_x;
   NormViewType m_norm;
 
