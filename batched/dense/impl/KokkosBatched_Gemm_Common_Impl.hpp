@@ -6,7 +6,6 @@
 #include <Kokkos_DynRankView.hpp>
 #include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Gemm_Serial_Internal.hpp"
 
 namespace KokkosBatched {
 namespace Impl {
@@ -17,7 +16,12 @@ KOKKOS_INLINE_FUNCTION static int checkGemmInput([[maybe_unused]] const AViewTyp
   if constexpr (Kokkos::is_view_v<AViewType>) {
     static_assert(AViewType::rank <= 2, "KokkosBatched::gemm: AViewType must have rank 0, 1 or 2.");
   } else if constexpr (Kokkos::is_dyn_rank_view_v<AViewType>) {
-    KOKKOS_EXPECTS((A.rank() <= 2));
+#ifndef NDEBUG
+    if (A.rank() > 2) {
+      Kokkos::printf("KokkosBatched::gemm: AViewType must have rank 0, 1 or 2. Provided rank: %d\n", A.rank());
+      return 1;
+    }
+#endif
   } else {
     static_assert(Kokkos::is_view_v<AViewType> || Kokkos::is_dyn_rank_view_v<AViewType>,
                   "KokkosBatched::gemm: AViewType must be either a Kokkos::View or a Kokkos::DynRankView.");
@@ -26,7 +30,12 @@ KOKKOS_INLINE_FUNCTION static int checkGemmInput([[maybe_unused]] const AViewTyp
   if constexpr (Kokkos::is_view_v<BViewType>) {
     static_assert(BViewType::rank <= 2, "KokkosBatched::gemm: BViewType must have rank 0, 1 or 2.");
   } else if constexpr (Kokkos::is_dyn_rank_view_v<BViewType>) {
-    KOKKOS_EXPECTS((B.rank() <= 2));
+#ifndef NDEBUG
+    if (B.rank() > 2) {
+      Kokkos::printf("KokkosBatched::gemm: BViewType must have rank 0, 1 or 2. Provided rank: %d\n", B.rank());
+      return 1;
+    }
+#endif
   } else {
     static_assert(Kokkos::is_view_v<BViewType> || Kokkos::is_dyn_rank_view_v<BViewType>,
                   "KokkosBatched::gemm: BViewType must be either a Kokkos::View or a Kokkos::DynRankView.");
@@ -35,7 +44,12 @@ KOKKOS_INLINE_FUNCTION static int checkGemmInput([[maybe_unused]] const AViewTyp
   if constexpr (Kokkos::is_view_v<CViewType>) {
     static_assert(CViewType::rank <= 2, "KokkosBatched::gemm: CViewType must have rank 0, 1 or 2.");
   } else if constexpr (Kokkos::is_dyn_rank_view_v<CViewType>) {
-    KOKKOS_EXPECTS((C.rank() <= 2));
+#ifndef NDEBUG
+    if (C.rank() > 2) {
+      Kokkos::printf("KokkosBatched::gemm: CViewType must have rank 0, 1 or 2. Provided rank: %d\n", C.rank());
+      return 1;
+    }
+#endif
   } else {
     static_assert(Kokkos::is_view_v<CViewType> || Kokkos::is_dyn_rank_view_v<CViewType>,
                   "KokkosBatched::gemm: CViewType must be either a Kokkos::View or a Kokkos::DynRankView.");
