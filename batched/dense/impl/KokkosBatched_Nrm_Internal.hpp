@@ -75,7 +75,7 @@ struct NormAccumulator {
 /// dnrm2: https://www.netlib.org/lapack/lapack-3.1.1/html/dnrm2.f.html,
 /// dznrm2: https://www.netlib.org/lapack/lapack-3.1.1/html/dznrm2.f.html
 /// \tparam NrmValueType: Value type for the norm (e.g., double)
-/// \tparam ValueType: Value type for the input (e.g., std::complex<double>)
+/// \tparam ValueType: Value type for the input (e.g., Kokkos::complex<double>)
 /// \param[in] x Input value for which the scaled square is computed
 /// \param[in,out] scale Current scale value, which is updated if the absolute value of x
 /// is greater than the current scale
