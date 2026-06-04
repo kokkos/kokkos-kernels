@@ -7,8 +7,11 @@ API: Batched Dense (DLA)
    
    dense/batched_rotg
    dense/batched_rot
+   dense/batched_rotmg
+   dense/batched_rotm
    dense/batched_axpy
    dense/batched_copy
+   dense/batched_dot
    dense/batched_iamax
    dense/batched_trsv
    dense/batched_tbsv
@@ -109,7 +112,7 @@ BLAS 1
      - --
      - --
    * - ROTMG
-     - --
+     - :doc:`Rotmg <dense/batched_rotmg>`
      - --
      - --
    * - ROT
@@ -117,9 +120,9 @@ BLAS 1
      - :doc:`TeamRot <dense/batched_rot>`
      - :doc:`TeamVectorRot <dense/batched_rot>`
    * - ROTM
-     - --
-     - --
-     - --
+     - :doc:`SerialRotm <dense/batched_rotm>`
+     - :doc:`TeamRotm <dense/batched_rotm>`
+     - :doc:`TeamVectorRotm <dense/batched_rotm>`
    * - SWAP
      - `kokkos_swap(a, b) <https://kokkos.org/kokkos-core-wiki/API/core/utilities/swap.html>`_
      - --
@@ -136,18 +139,18 @@ BLAS 1
      - :doc:`SerialAxpy <dense/batched_axpy>`
      - :doc:`TeamAxpy <dense/batched_axpy>`
      - :doc:`TeamVectorAxpy <dense/batched_axpy>`
-   * - DOT*
-     - `SerialDot`
-     - `TeamDot`
-     - `TeamVectorDot`
+   * - DOT
+     - :doc:`SerialDot <dense/batched_dot>`
+     - :doc:`TeamDot <dense/batched_dot>`
+     - :doc:`TeamVectorDot <dense/batched_dot>`
    * - DOTU
-     - --
-     - --
-     - --
-   * - DOTC*
-     - --
-     - --
-     - --
+     - :doc:`SerialDot <dense/batched_dot>`
+     - :doc:`TeamDot <dense/batched_dot>`
+     - :doc:`TeamVectorDot <dense/batched_dot>`
+   * - DOTC
+     - :doc:`SerialDot <dense/batched_dot>`
+     - :doc:`TeamDot <dense/batched_dot>`
+     - :doc:`TeamVectorDot <dense/batched_dot>`
    * - NRM2
      - --
      - --

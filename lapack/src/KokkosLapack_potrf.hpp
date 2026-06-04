@@ -8,6 +8,7 @@
 #include "KokkosKernels_Error.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosLapack_potrf_spec.hpp"
+#include "KokkosKernels_Error.hpp"
 
 #include <type_traits>
 
@@ -23,7 +24,7 @@ namespace KokkosLapack {
 ///    A = L  * L**H,  if UPLO = 'L',
 /// where U is an upper triangular matrix and L is lower triangular.
 ///
-/// \tparam execution_space The space where the kernel will run.
+/// \tparam ExecutionSpace The space where the kernel will run.
 /// \tparam AViewType [in] Type of matrix A, as a 2-D Kokkos::View (LayoutLeft!)
 ///
 /// \param space [in] Execution space instance used to specify how to execute
@@ -48,14 +49,8 @@ void potrf(const ExecutionSpace& space, const char uplo[], AViewType& A) {
                 "as required by LAPACK/cuSOLVER/rocSOLVER.");
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AViewType::memory_space>::accessible);
 
-  if (A.extent(0) != A.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosLapack::potrf: A must be square, got " << A.extent(0) << " x " << A.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
-  }
-
-  const int n   = static_cast<int>(A.extent(0));
-  const int lda = static_cast<int>(A.stride(1));
+  KK_REQUIRE_MSG(A.extent(0) == A.extent(1),
+                 "KokkosLapack::potrf: A must be square, got " << A.extent(0) << " x " << A.extent(1));
 
   // Convert views to unmanaged
   using AViewInternalType = Kokkos::View<typename AViewType::data_type, typename AViewType::array_layout,
@@ -63,7 +58,7 @@ void potrf(const ExecutionSpace& space, const char uplo[], AViewType& A) {
 
   AViewInternalType uA(A);
 
-  Impl::Potrf<ExecutionSpace, AViewInternalType>::potrf(space, uplo, n, uA, lda);
+  Impl::Potrf<ExecutionSpace, AViewInternalType>::potrf(space, uplo, uA);
 }
 
 // Overload without execution space (uses default)

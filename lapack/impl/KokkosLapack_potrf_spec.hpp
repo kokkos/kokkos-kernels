@@ -48,20 +48,20 @@ template <class ExecutionSpace, class AViewType,
           bool tpl_spec_avail = potrf_tpl_spec_avail<ExecutionSpace, AViewType>::value,
           bool eti_spec_avail = potrf_eti_spec_avail<ExecutionSpace, AViewType>::value>
 struct Potrf {
-  static void potrf(const ExecutionSpace& space, const char uplo[], const int& n, AViewType& A, const int& lda);
+  static void potrf(const ExecutionSpace& space, const char uplo[], AViewType& A);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 // Default implementation when no TPL is available
 template <class ExecutionSpace, class AViewType>
 struct Potrf<ExecutionSpace, AViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void potrf(const ExecutionSpace& /* space */, const char uplo[], const int& n, AViewType& A, const int& lda) {
+  static void potrf(const ExecutionSpace& /* space */, const char uplo[], AViewType& A) {
     static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
 
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosLapack::potrf[ETI]"
                                                                      : "KokkosLapack::potrf[noETI]");
 
-    PotrfImpl<AViewType>::potrf(uplo, n, A, lda);
+    PotrfImpl<AViewType>::potrf(uplo, A);
 
     Kokkos::Profiling::popRegion();
   }

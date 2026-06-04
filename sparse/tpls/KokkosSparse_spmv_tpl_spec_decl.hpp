@@ -501,10 +501,19 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle, oneapi::mkl
     oneapi::mkl::sparse::init_matrix_handle(&subhandle->mat);
     // Even for out-of-order SYCL queue, the inputs here do not depend on
     // kernels being sequenced
+#if (INTEL_MKL_VERSION < 20250300)
     auto ev = oneapi::mkl::sparse::set_csr_data(
-        exec.sycl_queue(), subhandle->mat, A.numRows(), A.numCols(), oneapi::mkl::index_base::zero,
+        exec.sycl_queue(), subhandle->mat, static_cast<std::int64_t>(A.numRows()),
+        static_cast<std::int64_t>(A.numCols()), oneapi::mkl::index_base::zero,
         const_cast<ordinal_type*>(A.graph.row_map.data()), const_cast<ordinal_type*>(A.graph.entries.data()),
         reinterpret_cast<onemkl_scalar_type*>(const_cast<scalar_type*>(A.values.data())));
+#else
+    auto ev = oneapi::mkl::sparse::set_csr_data(
+        exec.sycl_queue(), subhandle->mat, static_cast<std::int64_t>(A.numRows()),
+        static_cast<std::int64_t>(A.numCols()), static_cast<std::int64_t>(A.nnz()), oneapi::mkl::index_base::zero,
+        const_cast<ordinal_type*>(A.graph.row_map.data()), const_cast<ordinal_type*>(A.graph.entries.data()),
+        reinterpret_cast<onemkl_scalar_type*>(const_cast<scalar_type*>(A.values.data())));
+#endif
     // for out-of-order queue: the fence before gemv below will make sure
     // optimize_gemv has finished
     oneapi::mkl::sparse::optimize_gemv(exec.sycl_queue(), mkl_mode, subhandle->mat, {ev});
