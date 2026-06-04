@@ -191,8 +191,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_AMPERE)
     {
       using kokkos_half_t = Kokkos::Experimental::half_t;
-      using AScalar = typename AMatrix::non_const_value_type;
-      using XScalar = typename XVector::non_const_value_type;
+      using AScalar       = typename AMatrix::non_const_value_type;
+      using XScalar       = typename XVector::non_const_value_type;
 
       /* Ampere has double += double * double and float += half * half
 
@@ -204,8 +204,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
         auto precision = handle->bsr_tc_precision;
         switch (precision) {
           case KokkosSparse::Experimental::Bsr_TC_Precision::Mixed: {
-            BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, kokkos_half_t, XVector, kokkos_half_t, YVector, float, 16, 16,
-                                              16>::dispatch(space, alpha, A, X, beta, Y);
+            BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, kokkos_half_t, XVector, kokkos_half_t, YVector,
+                                              float, 16, 16, 16>::dispatch(space, alpha, A, X, beta, Y);
             Kokkos::Profiling::popRegion();
             return;
           }
@@ -221,8 +221,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
                                                    std::is_same<XScalar, kokkos_half_t>::value &&
                                                    std::is_same<YScalar, float>::value;
             if (operandsHalfHalfFloat) {
-              BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, kokkos_half_t, XVector, kokkos_half_t, YVector, float, 16, 16,
-                                                16>::dispatch(space, alpha, A, X, beta, Y);
+              BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, kokkos_half_t, XVector, kokkos_half_t, YVector,
+                                                float, 16, 16, 16>::dispatch(space, alpha, A, X, beta, Y);
               Kokkos::Profiling::popRegion();
               return;
             } else {
@@ -241,8 +241,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
          use it for all matrices
       */
       if (Method::TensorCores == method) {
-        BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, kokkos_half_t, XVector, kokkos_half_t, YVector, float, 16, 16,
-                                          16>::dispatch(space, alpha, A, X, beta, Y);
+        BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, kokkos_half_t, XVector, kokkos_half_t, YVector,
+                                          float, 16, 16, 16>::dispatch(space, alpha, A, X, beta, Y);
         Kokkos::Profiling::popRegion();
         return;
       }
