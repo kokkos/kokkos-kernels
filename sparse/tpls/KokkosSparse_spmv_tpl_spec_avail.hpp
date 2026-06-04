@@ -158,18 +158,17 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
 #endif
 
 #if defined(KOKKOS_ENABLE_SYCL)
-#define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(SCALAR, ORDINAL, MEMSPACE)                                       \
-  template <>                                                                                                    \
-  struct spmv_tpl_spec_avail<                                                                                    \
-      Kokkos::SYCL,                                                                                \
-      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::SYCL, MEMSPACE, SCALAR, ORDINAL, ORDINAL>,        \
-      KokkosSparse::CrsMatrix<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::SYCL, MEMSPACE>, \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const ORDINAL>,                           \
-      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                              \
-      Kokkos::View<SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                   \
-    enum : bool { value = true };                                                                                \
+#define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(SCALAR, ORDINAL, MEMSPACE)                                \
+  template <>                                                                                             \
+  struct spmv_tpl_spec_avail<                                                                             \
+      Kokkos::SYCL, KokkosSparse::Impl::SPMVHandleImpl<Kokkos::SYCL, MEMSPACE, SCALAR, ORDINAL, ORDINAL>, \
+      KokkosSparse::CrsMatrix<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,        \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const ORDINAL>,                    \
+      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                       \
+      Kokkos::View<SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                            \
+    enum : bool { value = true };                                                                         \
   };
 
 // intel-oneapi-mkl/2023.2.0: spmv with complex data types produce:

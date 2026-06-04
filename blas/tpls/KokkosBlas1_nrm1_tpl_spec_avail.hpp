@@ -97,10 +97,8 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutLe
 
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_MKL_SYCL(double, Kokkos::LayoutLeft, Kokkos::SYCLDeviceUSMSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_MKL_SYCL(float, Kokkos::LayoutLeft, Kokkos::SYCLDeviceUSMSpace)
-KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_MKL_SYCL(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                                         Kokkos::SYCLDeviceUSMSpace)
-KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_MKL_SYCL(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                                         Kokkos::SYCLDeviceUSMSpace)
+KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_MKL_SYCL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::SYCLDeviceUSMSpace)
+KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_MKL_SYCL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::SYCLDeviceUSMSpace)
 
 #endif  // KOKKOS_ENABLE_SYCL
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL

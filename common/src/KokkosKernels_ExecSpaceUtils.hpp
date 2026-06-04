@@ -185,8 +185,7 @@ inline void kk_get_free_total_memory<Kokkos::HIPManagedSpace>(size_t& free_mem, 
 // Note: we are querying memory associated with the default SYCL queue.
 #if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
 template <>
-inline void kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(size_t& free_mem, size_t& total_mem,
-                                                                               int n_streams) {
+inline void kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(size_t& free_mem, size_t& total_mem, int n_streams) {
   sycl::queue queue;
   sycl::device device = queue.get_device();
 
@@ -208,8 +207,7 @@ inline void kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(size_t& free_me
 }
 
 template <>
-inline void kk_get_free_total_memory<Kokkos::SYCLHostUSMSpace>(size_t& free_mem, size_t& total_mem,
-                                                                             int n_streams) {
+inline void kk_get_free_total_memory<Kokkos::SYCLHostUSMSpace>(size_t& free_mem, size_t& total_mem, int n_streams) {
   kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(free_mem, total_mem, n_streams);
 }
 
@@ -219,8 +217,7 @@ inline void kk_get_free_total_memory<Kokkos::SYCLHostUSMSpace>(size_t& free_mem,
 }
 
 template <>
-inline void kk_get_free_total_memory<Kokkos::SYCLSharedUSMSpace>(size_t& free_mem, size_t& total_mem,
-                                                                               int n_streams) {
+inline void kk_get_free_total_memory<Kokkos::SYCLSharedUSMSpace>(size_t& free_mem, size_t& total_mem, int n_streams) {
   kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(free_mem, total_mem, n_streams);
 }
 

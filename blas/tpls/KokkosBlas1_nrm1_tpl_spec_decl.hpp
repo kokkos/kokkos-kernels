@@ -292,38 +292,36 @@ void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTyp
   Kokkos::deep_copy(space, R, res);
 }
 
-#define KOKKOSBLAS1_NRM1_ONEMKL(SCALAR, LAYOUT, MEMSPACE)                                                              \
-  template <>                                                                                                          \
-  struct Nrm1<                                                                                                         \
-      Kokkos::SYCL,                                                                                      \
-      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,                        \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      1, true,                                                                                                         \
-      nrm1_eti_spec_avail<Kokkos::SYCL,                                                                  \
-                          Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT,                  \
-                                       Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                    \
-                          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,    \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                             \
-    using execution_space = Kokkos::SYCL;                                                                \
-    using RV        = Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,   \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    using XV        = Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,        \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    using size_type = typename XV::size_type;                                                                          \
-                                                                                                                       \
-    static void nrm1(const execution_space& space, RV& R, const XV& X) {                                               \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ONEMKL," #SCALAR "]");                                       \
-      const size_type numElems = X.extent(0);                                                                          \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                                \
-        onemklAsumWrapper(space, R, X);                                                                                \
-      } else {                                                                                                         \
-        Nrm1<execution_space, RV, XV, 1, false, nrm1_eti_spec_avail<Kokkos::SYCL, RV, XV>::value>::nrm1( \
-            space, R, X);                                                                                              \
-      }                                                                                                                \
-      Kokkos::Profiling::popRegion();                                                                                  \
-    }                                                                                                                  \
+#define KOKKOSBLAS1_NRM1_ONEMKL(SCALAR, LAYOUT, MEMSPACE)                                                             \
+  template <>                                                                                                         \
+  struct Nrm1<Kokkos::SYCL,                                                                                           \
+              Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,          \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
+              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,                             \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                  \
+              1, true,                                                                                                \
+              nrm1_eti_spec_avail<Kokkos::SYCL,                                                                       \
+                                  Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT,         \
+                                               Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+                                  Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,         \
+                                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                    \
+    using execution_space = Kokkos::SYCL;                                                                             \
+    using RV        = Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace,  \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
+    using XV        = Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,                     \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
+    using size_type = typename XV::size_type;                                                                         \
+                                                                                                                      \
+    static void nrm1(const execution_space& space, RV& R, const XV& X) {                                              \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ONEMKL," #SCALAR "]");                                      \
+      const size_type numElems = X.extent(0);                                                                         \
+      if (numElems < static_cast<size_type>(INT_MAX)) {                                                               \
+        onemklAsumWrapper(space, R, X);                                                                               \
+      } else {                                                                                                        \
+        Nrm1<execution_space, RV, XV, 1, false, nrm1_eti_spec_avail<Kokkos::SYCL, RV, XV>::value>::nrm1(space, R, X); \
+      }                                                                                                               \
+      Kokkos::Profiling::popRegion();                                                                                 \
+    }                                                                                                                 \
   };
 
 KOKKOSBLAS1_NRM1_ONEMKL(float, Kokkos::LayoutLeft, Kokkos::SYCLDeviceUSMSpace)

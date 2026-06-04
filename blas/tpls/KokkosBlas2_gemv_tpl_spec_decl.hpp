@@ -613,11 +613,11 @@ struct kokkos_to_std_type_map<T, true> {
 #define KOKKOSBLAS2_GEMV_ONEMKL(SCALAR, LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                                              \
   template <class ExecSpace>                                                                                            \
   struct GEMV<ExecSpace,                                                                                                \
-              Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEM_SPACE>,               \
+              Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEM_SPACE>,                             \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                   \
-              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEM_SPACE>,                \
+              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEM_SPACE>,                              \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                   \
-              Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEM_SPACE>,                      \
+              Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEM_SPACE>,                                    \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                   \
               true, ETI_SPEC_AVAIL> {                                                                                   \
     using device_type = Kokkos::Device<ExecSpace, MEM_SPACE>;                                                           \
