@@ -123,7 +123,7 @@ void gemv(const ExecutionSpace& space, const char trans[], typename AViewType::c
   // oneMKL supports both row-major and column-major of A
   // but only supports oneapi::mkl::transpose::nontrans op
   useFallback =
-      useFallback || !std::is_same_v<typename AViewType::memory_space, Kokkos::Experimental::SYCLDeviceUSMSpace>;
+      useFallback || !std::is_same_v<typename AViewType::memory_space, Kokkos::SYCLDeviceUSMSpace>;
 #endif
 #endif
 

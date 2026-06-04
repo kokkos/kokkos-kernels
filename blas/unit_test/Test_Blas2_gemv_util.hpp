@@ -92,7 +92,7 @@ template <class GemvFunc, class ScalarA, class ScalarX, class ScalarY, class Dev
 struct GEMVTest {
   static void run(const char *mode) {
 #if defined(KOKKOS_ENABLE_SYCL)
-    constexpr bool skip_complex = std::is_same_v<typename Device::execution_space, Kokkos::Experimental::SYCL> &&
+    constexpr bool skip_complex = std::is_same_v<typename Device::execution_space, Kokkos::SYCL> &&
                                   KokkosKernels::ArithTraits<ScalarA>::is_complex;
 #else
     constexpr bool skip_complex = false;

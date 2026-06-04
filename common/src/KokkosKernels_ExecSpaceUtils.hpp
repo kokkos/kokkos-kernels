@@ -52,7 +52,7 @@ KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type() {
 #endif
 
 #if defined(KOKKOS_ENABLE_SYCL)
-  if (std::is_same<Kokkos::Experimental::SYCL, ExecutionSpace>::value) {
+  if (std::is_same<Kokkos::SYCL, ExecutionSpace>::value) {
     exec_space = Exec_SYCL;
   }
 #endif
@@ -79,7 +79,7 @@ constexpr inline bool is_gpu_exec_space_v<Kokkos::HIP> = true;
 
 #ifdef KOKKOS_ENABLE_SYCL
 template <>
-constexpr inline bool is_gpu_exec_space_v<Kokkos::Experimental::SYCL> = true;
+constexpr inline bool is_gpu_exec_space_v<Kokkos::SYCL> = true;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -185,7 +185,7 @@ inline void kk_get_free_total_memory<Kokkos::HIPManagedSpace>(size_t& free_mem, 
 // Note: we are querying memory associated with the default SYCL queue.
 #if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(size_t& free_mem, size_t& total_mem,
+inline void kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(size_t& free_mem, size_t& total_mem,
                                                                                int n_streams) {
   sycl::queue queue;
   sycl::device device = queue.get_device();
@@ -203,30 +203,30 @@ inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(s
 }
 
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(size_t& free_mem, size_t& total_mem) {
-  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem, total_mem, 1);
+inline void kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(size_t& free_mem, size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(free_mem, total_mem, 1);
 }
 
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLHostUSMSpace>(size_t& free_mem, size_t& total_mem,
+inline void kk_get_free_total_memory<Kokkos::SYCLHostUSMSpace>(size_t& free_mem, size_t& total_mem,
                                                                              int n_streams) {
-  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem, total_mem, n_streams);
+  kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(free_mem, total_mem, n_streams);
 }
 
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLHostUSMSpace>(size_t& free_mem, size_t& total_mem) {
-  kk_get_free_total_memory<Kokkos::Experimental::SYCLHostUSMSpace>(free_mem, total_mem, 1);
+inline void kk_get_free_total_memory<Kokkos::SYCLHostUSMSpace>(size_t& free_mem, size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::SYCLHostUSMSpace>(free_mem, total_mem, 1);
 }
 
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(size_t& free_mem, size_t& total_mem,
+inline void kk_get_free_total_memory<Kokkos::SYCLSharedUSMSpace>(size_t& free_mem, size_t& total_mem,
                                                                                int n_streams) {
-  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem, total_mem, n_streams);
+  kk_get_free_total_memory<Kokkos::SYCLDeviceUSMSpace>(free_mem, total_mem, n_streams);
 }
 
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(size_t& free_mem, size_t& total_mem) {
-  kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(free_mem, total_mem, 1);
+inline void kk_get_free_total_memory<Kokkos::SYCLSharedUSMSpace>(size_t& free_mem, size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::SYCLSharedUSMSpace>(free_mem, total_mem, 1);
 }
 #endif
 
@@ -237,7 +237,7 @@ inline int kk_get_max_vector_size() {
 
 #ifdef KOKKOS_ENABLE_SYCL
 template <>
-inline int kk_get_max_vector_size<Kokkos::Experimental::SYCL>() {
+inline int kk_get_max_vector_size<Kokkos::SYCL>() {
   // FIXME SYCL: hardcoding to 8 is a workaround that seems to work for all
   // kernels. Wait for max subgroup size query to be fixed in SYCL and/or
   // Kokkos. Then TeamPolicy::vector_length_max() can be used for all

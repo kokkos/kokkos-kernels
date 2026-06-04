@@ -123,13 +123,13 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutRi
   struct gemv_tpl_spec_avail<                                                                            \
       ExecSpace,                                                                                         \
       Kokkos::View<const SCALAR**, LAYOUT,                                                               \
-                   Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                            \
       Kokkos::View<const SCALAR*, LAYOUT,                                                                \
-                   Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                            \
       Kokkos::View<SCALAR*, LAYOUT,                                                                      \
-                   Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                                         \
     enum : bool { value = true };                                                                        \
   };

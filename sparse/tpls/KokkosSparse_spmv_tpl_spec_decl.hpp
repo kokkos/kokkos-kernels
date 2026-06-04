@@ -522,18 +522,18 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle, oneapi::mkl
 #define KOKKOSSPARSE_SPMV_ONEMKL(SCALAR, ORDINAL, MEMSPACE)                                                            \
   template <>                                                                                                          \
   struct SPMV<                                                                                                         \
-      Kokkos::Experimental::SYCL,                                                                                      \
-      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Experimental::SYCL, MEMSPACE, SCALAR, ORDINAL, ORDINAL>,              \
-      KokkosSparse::CrsMatrix<SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,       \
+      Kokkos::SYCL,                                                                                      \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::SYCL, MEMSPACE, SCALAR, ORDINAL, ORDINAL>,              \
+      KokkosSparse::CrsMatrix<SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,       \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>, ORDINAL const>,                                 \
-      Kokkos::View<SCALAR const*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,            \
+      Kokkos::View<SCALAR const*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,            \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                                    \
-      Kokkos::View<SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,                  \
+      Kokkos::View<SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,                  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       true> {                                                                                                          \
-    using execution_space = Kokkos::Experimental::SYCL;                                                                \
+    using execution_space = Kokkos::SYCL;                                                                \
     using device_type     = Kokkos::Device<execution_space, MEMSPACE>;                                                 \
-    using Handle = KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Experimental::SYCL, MEMSPACE, SCALAR, ORDINAL, ORDINAL>; \
+    using Handle = KokkosSparse::Impl::SPMVHandleImpl<Kokkos::SYCL, MEMSPACE, SCALAR, ORDINAL, ORDINAL>; \
     using AMatrix =                                                                                                    \
         CrsMatrix<SCALAR const, ORDINAL const, device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>, ORDINAL const>;   \
     using XVector = Kokkos::View<SCALAR const*, Kokkos::LayoutLeft, device_type,                                       \
@@ -551,23 +551,23 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle, oneapi::mkl
     }                                                                                                                  \
   };
 
-KOKKOSSPARSE_SPMV_ONEMKL(float, std::int32_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
-KOKKOSSPARSE_SPMV_ONEMKL(double, std::int32_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_ONEMKL(float, std::int32_t, Kokkos::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_ONEMKL(double, std::int32_t, Kokkos::SYCLDeviceUSMSpace)
 /*
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<float>, std::int32_t,
-                       Kokkos::Experimental::SYCLDeviceUSMSpace)
+                       Kokkos::SYCLDeviceUSMSpace)
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<double>, std::int32_t,
-                       Kokkos::Experimental::SYCLDeviceUSMSpace)
+                       Kokkos::SYCLDeviceUSMSpace)
 */
 
-KOKKOSSPARSE_SPMV_ONEMKL(float, std::int64_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
-KOKKOSSPARSE_SPMV_ONEMKL(double, std::int64_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_ONEMKL(float, std::int64_t, Kokkos::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_ONEMKL(double, std::int64_t, Kokkos::SYCLDeviceUSMSpace)
 /*
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<float>, std::int64_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace
+                         Kokkos::SYCLDeviceUSMSpace
                          )
 KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<double>, std::int64_t,
-                         Kokkos::Experimental::SYCLDeviceUSMSpace
+                         Kokkos::SYCLDeviceUSMSpace
                          )
 */
 #endif
