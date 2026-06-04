@@ -15,8 +15,7 @@ namespace KokkosBatched {
 /// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2
 template <typename NrmType>
 struct SerialNrm {
-  static_assert(std::is_same_v<NrmType, Norm::L1> || std::is_same_v<NrmType, Norm::L2> ||
-                    std::is_same_v<NrmType, Norm::LInf> || std::is_same_v<NrmType, Norm::ScaledL2>,
+  static_assert(is_norm_v<NrmType>,
                 "KokkosBatched::SerialNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2");
   /// \tparam XViewType: Type for input X, needs to be a 1D view
   /// \tparam NormViewType: Type for output norm, needs to be a 0D view
@@ -36,8 +35,7 @@ struct SerialNrm {
 /// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf
 template <typename MemberType, typename NrmType>
 struct TeamNrm {
-  static_assert(std::is_same_v<NrmType, Norm::L1> || std::is_same_v<NrmType, Norm::L2> ||
-                    std::is_same_v<NrmType, Norm::LInf> || std::is_same_v<NrmType, Norm::ScaledL2>,
+  static_assert(is_norm_v<NrmType>,
                 "KokkosBatched::TeamNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2");
   /// \tparam XViewType: Type for input X, needs to be a 1D view
   /// \tparam NormViewType: Type for output norm, needs to be a 0D view
@@ -58,8 +56,7 @@ struct TeamNrm {
 /// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2
 template <typename MemberType, typename NrmType>
 struct TeamVectorNrm {
-  static_assert(std::is_same_v<NrmType, Norm::L1> || std::is_same_v<NrmType, Norm::L2> ||
-                    std::is_same_v<NrmType, Norm::LInf> || std::is_same_v<NrmType, Norm::ScaledL2>,
+  static_assert(is_norm_v<NrmType>,
                 "KokkosBatched::TeamVectorNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2");
   /// \tparam XViewType: Type for input X, needs to be a 1D view
   /// \tparam NormViewType: Type for output norm, needs to be a 0D view

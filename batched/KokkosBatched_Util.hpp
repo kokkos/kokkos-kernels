@@ -247,6 +247,24 @@ struct Norm {
   struct ScaledL2 {};
 };
 
+template <class T>
+struct is_norm : std::false_type {};
+
+template <>
+struct is_norm<Norm::L1> : std::true_type {};
+
+template <>
+struct is_norm<Norm::L2> : std::true_type {};
+
+template <>
+struct is_norm<Norm::LInf> : std::true_type {};
+
+template <>
+struct is_norm<Norm::ScaledL2> : std::true_type {};
+
+template <class T>
+constexpr bool is_norm_v = is_norm<T>::value;
+
 /// BatchLayout class used to specify where the batch dimension is
 /// allocated in the input views for host-level Batched BLAS/LAPACK routines.
 struct BatchLayout {
