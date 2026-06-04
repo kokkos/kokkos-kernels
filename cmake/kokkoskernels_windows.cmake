@@ -1,7 +1,7 @@
 # Detect MSVC ABI once; result persists for the second include (below /bigobj).
 # cl.exe, clang-cl, Intel icl/icx on Windows all use the MSVC C++ ABI.
 # MinGW and Cygwin use the GCC/POSIX model – excluded intentionally.
-if(WIN32 AND NOT CYGWIN AND NOT DEFINED _KK_WINDOWS_MSVC_ABI_CXX)
+if(WIN32 AND NOT CYGWIN AND NOT DEFINED KK_WINDOWS_MSVC_ABI_CXX)
   set(_KK_WINDOWS_MSVC_ABI_CXX FALSE)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(_KK_WINDOWS_MSVC_ABI_CXX TRUE)
