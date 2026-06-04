@@ -2,16 +2,16 @@
 # cl.exe, clang-cl, Intel icl/icx on Windows all use the MSVC C++ ABI.
 # MinGW and Cygwin use the GCC/POSIX model – excluded intentionally.
 if(WIN32 AND NOT CYGWIN AND NOT DEFINED KK_WINDOWS_MSVC_ABI_CXX)
-  set(_KK_WINDOWS_MSVC_ABI_CXX FALSE)
+  set(KK_WINDOWS_MSVC_ABI_CXX FALSE)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(_KK_WINDOWS_MSVC_ABI_CXX TRUE)
+    set(KK_WINDOWS_MSVC_ABI_CXX TRUE)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
          "x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
-    set(_KK_WINDOWS_MSVC_ABI_CXX TRUE)
+    set(KK_WINDOWS_MSVC_ABI_CXX TRUE)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-    set(_KK_WINDOWS_MSVC_ABI_CXX TRUE)
+    set(KK_WINDOWS_MSVC_ABI_CXX TRUE)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-    set(_KK_WINDOWS_MSVC_ABI_CXX TRUE)
+    set(KK_WINDOWS_MSVC_ABI_CXX TRUE)
   endif()
 endif()
 
@@ -19,7 +19,7 @@ endif()
 # 16-byte host atomics need CMPXCHG16B / _InterlockedCompareExchange128 (x64 only).
 # clang-cl: -mcx16 below.  MSVC: Compare_Exchange_MSVC.hpp (no -mcx16).
 # Do not key off -A x64 alone: Ninja + Hostx64/x64/cl.exe is valid without it.
-if(_KK_WINDOWS_MSVC_ABI_CXX AND NOT DEFINED _KK_WINDOWS_X64_CHECK_DONE)
+if(KK_WINDOWS_MSVC_ABI_CXX AND NOT DEFINED KK_WINDOWS_X64_CHECK_DONE)
   if(DEFINED CMAKE_SIZEOF_VOID_P AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     if(CMAKE_GENERATOR MATCHES "Visual Studio")
       message(FATAL_ERROR
@@ -34,7 +34,7 @@ if(_KK_WINDOWS_MSVC_ABI_CXX AND NOT DEFINED _KK_WINDOWS_X64_CHECK_DONE)
         "e.g. .../VC/Tools/MSVC/<ver>/bin/Hostx64/x64/cl.exe")
     endif()
   endif()
-  set(_KK_WINDOWS_X64_CHECK_DONE TRUE)
+  set(KK_WINDOWS_X64_CHECK_DONE TRUE)
 endif()
 
 # /EHsc -----------------------------------------------------------------------
@@ -43,7 +43,7 @@ endif()
 # emit C4530; behaviour on actual throws is undefined.
 # https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model
 # https://learn.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-3-c4530
-if(_KK_WINDOWS_MSVC_ABI_CXX AND NOT DEFINED _KK_WINDOWS_EHSC_DONE)
+if(KK_WINDOWS_MSVC_ABI_CXX AND NOT DEFINED KK_WINDOWS_EHSC_DONE)
   if(CMAKE_CXX_FLAGS MATCHES "(^| )/EHa( |$)")
     message(WARNING
       "CMAKE_CXX_FLAGS contains /EHa; KokkosKernels will not add /EHsc "
@@ -64,7 +64,7 @@ if(_KK_WINDOWS_MSVC_ABI_CXX AND NOT DEFINED _KK_WINDOWS_EHSC_DONE)
     # cannot silently drop unwind semantics for targets in this tree.
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
   endif()
-  set(_KK_WINDOWS_EHSC_DONE TRUE)
+  set(KK_WINDOWS_EHSC_DONE TRUE)
 endif()
 
 # /bigobj (CUDA only) ---------------------------------------------------------
@@ -73,13 +73,13 @@ endif()
 # sources compile as CUDA; cl.exe needs /bigobj via -Xcompiler=/bigobj.
 # https://learn.microsoft.com/en-us/cpp/error-messages/compiler-errors-1/fatal-error-c1128
 # Included a second time (after kokkos_backends.cmake) so KOKKOS_ENABLE_CUDA is set.
-if(_KK_WINDOWS_MSVC_ABI_CXX AND KOKKOS_ENABLE_CUDA AND
-   NOT DEFINED _KK_WINDOWS_BIGOBJ_DONE)
+if(KK_WINDOWS_MSVC_ABI_CXX AND KOKKOS_ENABLE_CUDA AND
+   NOT DEFINED KK_WINDOWS_BIGOBJ_DONE)
   message(STATUS
     "Adding '-Xcompiler=/bigobj' for CUDA language on Windows "
     "(${CMAKE_CXX_COMPILER_ID})")
   add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/bigobj>)
-  set(_KK_WINDOWS_BIGOBJ_DONE TRUE)
+  set(KK_WINDOWS_BIGOBJ_DONE TRUE)
 endif()
 
 # -mcx16 -----------------------------------------------------------------------
@@ -89,11 +89,11 @@ endif()
 # which is not linked in the MSVC link environment.
 # MSVC (cl.exe) uses _InterlockedCompareExchange128 instead; -mcx16 is clang-only.
 # Kokkos adds the same flag in cmake/kokkos_arch.cmake for Clang+WIN32.
-if(_KK_WINDOWS_MSVC_ABI_CXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
-   NOT DEFINED _KK_WINDOWS_MCX16_DONE)
+if(KK_WINDOWS_MSVC_ABI_CXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
+   NOT DEFINED KK_WINDOWS_MCX16_DONE)
   message(STATUS
     "Adding '-mcx16' for 16-byte atomics on Windows "
     "(${CMAKE_CXX_COMPILER_ID})")
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-mcx16>)
-  set(_KK_WINDOWS_MCX16_DONE TRUE)
+  set(KK_WINDOWS_MCX16_DONE TRUE)
 endif()
