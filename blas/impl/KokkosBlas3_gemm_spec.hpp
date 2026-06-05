@@ -149,7 +149,7 @@ struct GEMM {
       if (std::is_same<execution_space, Kokkos::ROCm>::value) team_size = blockA0;
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-      if (std::is_same<execution_space, Kokkos::Experimental::SYCL>::value) team_size = blockA0;
+      if (std::is_same<execution_space, Kokkos::SYCL>::value) team_size = blockA0;
 #endif
 
       // Call the correct kernel

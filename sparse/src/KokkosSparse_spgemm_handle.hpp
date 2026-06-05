@@ -644,7 +644,7 @@ class SPGEMMHandle {
 #endif
 
 #if defined(KOKKOS_ENABLE_SYCL)
-    if (std::is_same<Kokkos::Experimental::SYCL, ExecutionSpace>::value) {
+    if (std::is_same<Kokkos::SYCL, ExecutionSpace>::value) {
       this->algorithm_type = SPGEMM_KK;
 #ifdef VERBOSE
       std::cout << "SYCL Execution Space, Default Algorithm: SPGEMM_KK" << std::endl;

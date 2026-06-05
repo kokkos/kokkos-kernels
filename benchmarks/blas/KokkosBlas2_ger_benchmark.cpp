@@ -281,7 +281,7 @@ int main(int argc, char** argv) {
 
   if (params.use_sycl) {
 #if defined(KOKKOS_ENABLE_SYCL)
-    run<Kokkos::Experimental::SYCL>(params);
+    run<Kokkos::SYCL>(params);
 #else
     std::cout << "ERROR: SYCL requested, but not available.\n";
     return 1;

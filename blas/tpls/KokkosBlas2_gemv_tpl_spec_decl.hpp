@@ -613,11 +613,11 @@ struct kokkos_to_std_type_map<T, true> {
 #define KOKKOSBLAS2_GEMV_ONEMKL(SCALAR, LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                                              \
   template <class ExecSpace>                                                                                            \
   struct GEMV<ExecSpace,                                                                                                \
-              Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Experimental::SYCL, MEM_SPACE>,               \
+              Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEM_SPACE>,                             \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                   \
-              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Experimental::SYCL, MEM_SPACE>,                \
+              Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEM_SPACE>,                              \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                   \
-              Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Experimental::SYCL, MEM_SPACE>,                      \
+              Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::SYCL, MEM_SPACE>,                                    \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                   \
               true, ETI_SPEC_AVAIL> {                                                                                   \
     using device_type = Kokkos::Device<ExecSpace, MEM_SPACE>;                                                           \
@@ -654,14 +654,14 @@ struct kokkos_to_std_type_map<T, true> {
     }                                                                                                                   \
   };
 
-KOKKOSBLAS2_GEMV_ONEMKL(float, Kokkos::LayoutLeft, Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS2_GEMV_ONEMKL(float, Kokkos::LayoutRight, Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS2_GEMV_ONEMKL(double, Kokkos::LayoutLeft, Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS2_GEMV_ONEMKL(double, Kokkos::LayoutRight, Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Experimental::SYCLDeviceUSMSpace, true)
+KOKKOSBLAS2_GEMV_ONEMKL(float, Kokkos::LayoutLeft, Kokkos::SYCLDeviceUSMSpace, true)
+KOKKOSBLAS2_GEMV_ONEMKL(float, Kokkos::LayoutRight, Kokkos::SYCLDeviceUSMSpace, true)
+KOKKOSBLAS2_GEMV_ONEMKL(double, Kokkos::LayoutLeft, Kokkos::SYCLDeviceUSMSpace, true)
+KOKKOSBLAS2_GEMV_ONEMKL(double, Kokkos::LayoutRight, Kokkos::SYCLDeviceUSMSpace, true)
+KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::SYCLDeviceUSMSpace, true)
+KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::SYCLDeviceUSMSpace, true)
+KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::SYCLDeviceUSMSpace, true)
+KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::SYCLDeviceUSMSpace, true)
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif

@@ -11,7 +11,7 @@ set(EXEC_SPACES
     EXECSPACE_SERIAL)
 set(EXECSPACE_CUDA_CPP_TYPE          Kokkos::Cuda)
 set(EXECSPACE_HIP_CPP_TYPE           Kokkos::HIP)
-set(EXECSPACE_SYCL_CPP_TYPE          Kokkos::Experimental::SYCL)
+set(EXECSPACE_SYCL_CPP_TYPE          Kokkos::SYCL)
 set(EXECSPACE_OPENMP_CPP_TYPE        Kokkos::OpenMP)
 set(EXECSPACE_THREADS_CPP_TYPE       Kokkos::Threads)
 set(EXECSPACE_SERIAL_CPP_TYPE        Kokkos::Serial)
@@ -28,8 +28,8 @@ set(MEMSPACE_CUDASPACE_CPP_TYPE          Kokkos::CudaSpace)
 set(MEMSPACE_CUDAUVMSPACE_CPP_TYPE       Kokkos::CudaUVMSpace)
 set(MEMSPACE_HIPSPACE_CPP_TYPE           Kokkos::HIPSpace)
 set(MEMSPACE_HIPMANAGEDSPACE_CPP_TYPE    Kokkos::HIPManagedSpace)
-set(MEMSPACE_SYCLSPACE_CPP_TYPE          Kokkos::Experimental::SYCLDeviceUSMSpace)
-set(MEMSPACE_SYCLSHAREDSPACE_CPP_TYPE    Kokkos::Experimental::SYCLSharedUSMSpace)
+set(MEMSPACE_SYCLSPACE_CPP_TYPE          Kokkos::SYCLDeviceUSMSpace)
+set(MEMSPACE_SYCLSHAREDSPACE_CPP_TYPE    Kokkos::SYCLSharedUSMSpace)
 set(MEMSPACE_HOSTSPACE_CPP_TYPE          Kokkos::HostSpace)
 
 if(KOKKOS_ENABLE_CUDA)
@@ -82,10 +82,10 @@ endif()
 
 if(KOKKOS_ENABLE_SYCL)
   kokkoskernels_add_option("INST_EXECSPACE_SYCL" ${KOKKOSKERNELS_INST_EXECSPACE_SYCL_DEFAULT} BOOL
-    "Whether to pre instantiate kernels for the execution space Kokkos::Experimental::SYCL. Disabling this when Kokkos_ENABLE_SYCL is enabled may increase build times. Default: ON if Kokkos is SYCL-enabled, OFF otherwise.")
+    "Whether to pre instantiate kernels for the execution space Kokkos::SYCL. Disabling this when Kokkos_ENABLE_SYCL is enabled may increase build times. Default: ON if Kokkos is SYCL-enabled, OFF otherwise.")
 
   kokkoskernels_add_option("INST_MEMSPACE_SYCLSPACE" ${KOKKOSKERNELS_INST_EXECSPACE_SYCL_DEFAULT} BOOL
-    "Whether to pre instantiate kernels for the memory space Kokkos::Experimental::SYCLSpace.  Disabling this when Kokkos_ENABLE_SYCL is enabled may increase build times. Default: ON if Kokkos is SYCL-enabled, OFF otherwise.")
+    "Whether to pre instantiate kernels for the memory space Kokkos::SYCLSpace.  Disabling this when Kokkos_ENABLE_SYCL is enabled may increase build times. Default: ON if Kokkos is SYCL-enabled, OFF otherwise.")
 
   if(KOKKOSKERNELS_INST_EXECSPACE_SYCL AND KOKKOSKERNELS_INST_MEMSPACE_SYCLSPACE)
     list(APPEND DEVICE_LIST "<SYCL,SYCLDeviceUSMSpace>")
