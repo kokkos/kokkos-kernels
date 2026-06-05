@@ -237,6 +237,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
     }
 #elif defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_VOLTA)
     {
+      using kokkos_half_t = Kokkos::Experimental::half_t;
       /* Volta has float += half * half
          use it for all matrices
       */
