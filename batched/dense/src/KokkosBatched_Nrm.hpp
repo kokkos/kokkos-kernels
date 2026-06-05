@@ -10,13 +10,13 @@ namespace KokkosBatched {
 /// If NrmType == Norm::L1, compute L1 norm of each vector in the batch
 /// If NrmType == Norm::L2, compute L2 norm of each vector in the batch
 /// If NrmType == Norm::LInf, compute Linf norm of each vector in the batch
+/// If NrmType == Norm::ScaledL2, compute ScaledL2 norm of each vector in the batch
 /// No nested parallel_for is used inside of the function.
-/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf
+/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2
 template <typename NrmType>
 struct SerialNrm {
-  static_assert(std::is_same_v<NrmType, Norm::L1> || std::is_same_v<NrmType, Norm::L2> ||
-                    std::is_same_v<NrmType, Norm::LInf>,
-                "KokkosBatched::SerialNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf");
+  static_assert(is_norm_v<NrmType>,
+                "KokkosBatched::SerialNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2");
   /// \tparam XViewType: Type for input X, needs to be a 1D view
   /// \tparam NormViewType: Type for output norm, needs to be a 0D view
   ///
@@ -35,9 +35,8 @@ struct SerialNrm {
 /// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf
 template <typename MemberType, typename NrmType>
 struct TeamNrm {
-  static_assert(std::is_same_v<NrmType, Norm::L1> || std::is_same_v<NrmType, Norm::L2> ||
-                    std::is_same_v<NrmType, Norm::LInf>,
-                "KokkosBatched::TeamNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf");
+  static_assert(is_norm_v<NrmType>,
+                "KokkosBatched::TeamNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2");
   /// \tparam XViewType: Type for input X, needs to be a 1D view
   /// \tparam NormViewType: Type for output norm, needs to be a 0D view
   ///
@@ -54,12 +53,11 @@ struct TeamNrm {
 /// If NrmType == Norm::LInf, compute Linf norm of each vector in the batch
 /// A nested parallel_for with TeamVectorRange is used.
 /// \tparam MemberType: Kokkos TeamPolicy member type
-/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf
+/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2
 template <typename MemberType, typename NrmType>
 struct TeamVectorNrm {
-  static_assert(std::is_same_v<NrmType, Norm::L1> || std::is_same_v<NrmType, Norm::L2> ||
-                    std::is_same_v<NrmType, Norm::LInf>,
-                "KokkosBatched::TeamVectorNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf");
+  static_assert(is_norm_v<NrmType>,
+                "KokkosBatched::TeamVectorNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2");
   /// \tparam XViewType: Type for input X, needs to be a 1D view
   /// \tparam NormViewType: Type for output norm, needs to be a 0D view
   ///
