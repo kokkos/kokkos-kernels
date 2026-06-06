@@ -3,6 +3,8 @@
 #ifndef KOKKOSBATCHED_NRM_HPP_
 #define KOKKOSBATCHED_NRM_HPP_
 
+#include "KokkosBatched_Util.hpp"
+
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 namespace KokkosBatched {
@@ -30,6 +32,7 @@ struct SerialNrm {
 /// If NrmType == Norm::L1, compute L1 norm of each vector in the batch
 /// If NrmType == Norm::L2, compute L2 norm of each vector in the batch
 /// If NrmType == Norm::LInf, compute Linf norm of each vector in the batch
+/// If NrmType == Norm::ScaledL2, compute ScaledL2 norm of each vector in the batch
 /// A nested parallel_for with TeamThreadRange is used.
 /// \tparam MemberType: Kokkos TeamPolicy member type
 /// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf
@@ -51,6 +54,7 @@ struct TeamNrm {
 /// If NrmType == Norm::L1, compute L1 norm of each vector in the batch
 /// If NrmType == Norm::L2, compute L2 norm of each vector in the batch
 /// If NrmType == Norm::LInf, compute Linf norm of each vector in the batch
+/// If NrmType == Norm::ScaledL2, compute ScaledL2 norm of each vector in the batch
 /// A nested parallel_for with TeamVectorRange is used.
 /// \tparam MemberType: Kokkos TeamPolicy member type
 /// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2
