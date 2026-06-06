@@ -50,7 +50,7 @@ int main(int /*argc*/, char** /*argv*/) {
     bool correct = true;
     double eps   = 1.0e-12;
     for (int ib = 0; ib < Nb; ib++) {
-      if (Kokkos::abs(h_norm(ib) - std::sqrt(35)) > eps) correct = false;
+      if (Kokkos::abs(h_norm(ib) - Kokkos::sqrt(35)) > eps) correct = false;
     }
 
     if (correct) {
