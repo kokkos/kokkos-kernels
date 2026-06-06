@@ -40,3 +40,5 @@ kokkoskernels_add_executable(serial_rot SOURCES serial_rot.cpp)
 kokkoskernels_add_executable(serial_rotm SOURCES serial_rotm.cpp)
 
 kokkoskernels_add_executable(serial_dot SOURCES serial_dot.cpp)
+
+kokkoskernels_add_executable(serial_nrm SOURCES serial_nrm.cpp)
