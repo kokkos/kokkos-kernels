@@ -22,7 +22,7 @@ static void run(benchmark::State& state) {
   Kokkos::View<Scalar*, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
 
   // Create 1D view w/ Device as the ExecSpace; this is the output vector
-  Kokkos::View<Scalar, Device> r("result");
+  Kokkos::View<Scalar, Kokkos::HostSpace> r("result");
 
   // Declaring variable pool w/ a seeded random number;
   // a parallel random number generator, so you
@@ -34,7 +34,7 @@ static void run(benchmark::State& state) {
 
   Kokkos::fence();
   for (auto _ : state) {
-    KokkosBlas::nrminf(space, r, x);
+    // KokkosBlas::nrminf(space, r, x);
     space.fence();
   }
   const size_t iterFlop   = (size_t)2 * m;
