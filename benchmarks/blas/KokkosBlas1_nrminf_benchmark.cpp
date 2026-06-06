@@ -34,7 +34,7 @@ static void run(benchmark::State& state) {
 
   Kokkos::fence();
   for (auto _ : state) {
-    // KokkosBlas::nrminf(space, r, x);
+    KokkosBlas::nrminf(space, r, x);
     space.fence();
   }
   const size_t iterFlop   = (size_t)2 * m;
