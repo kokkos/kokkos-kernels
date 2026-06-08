@@ -5,6 +5,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_InnerLU_Serial_Impl.hpp"
@@ -124,8 +125,9 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
         member.team_barrier();
 
         // gemm update
-        TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
-                                                      Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
+        Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+            member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0,
+            as1, Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
       }
     };
     KOKKOS_IF_ON_HOST((host_or_device(Algo::LU::Blocked::Impl::Host{});))

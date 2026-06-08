@@ -5,6 +5,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
@@ -120,8 +121,9 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invok
           member.team_barrier();
 
           // gemm update
-          TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, ib - p - pb, jb, pb, minus_one, Ap + pb * as0, as0, as1,
-                                                        Bp, bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
+          Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+              member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), ib - p - pb, jb, pb, minus_one, Ap + pb * as0,
+              as0, as1, Bp, bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
         }
       };
       KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
@@ -240,8 +242,9 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invok
           member.team_barrier();
 
           // gemm update
-          TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, p, jb, pb, minus_one, Ap - p * as0, as0, as1, Bp, bs0,
-                                                        bs1, one, BB, bs0, bs1);
+          Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, KokkosBlas::Impl::OpID(),
+                                                              KokkosBlas::Impl::OpID(), p, jb, pb, minus_one,
+                                                              Ap - p * as0, as0, as1, Bp, bs0, bs1, one, BB, bs0, bs1);
         }
       };
       KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
