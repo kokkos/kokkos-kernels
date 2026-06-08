@@ -63,7 +63,7 @@ Type Requirements
 Example
 =======
 
-.. literalinclude:: ../../../../example/wiki/blas/KokkosBlas1_wiki_nrminf.cpp
+.. literalinclude:: ../../../../example/docs/blas/KokkosBlas1_docs_nrminf.cpp
   :language: c++
 
 output:
