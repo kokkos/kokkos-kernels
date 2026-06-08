@@ -70,4 +70,4 @@ output:
 
 .. code::
 
-   X_nrm: 300 Expected: 300
+   X_nrm: 50.011 Expected: 50.011
