@@ -20,7 +20,7 @@ static void run(benchmark::State& state) {
 
   Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m, n);
 
-  Kokkos::View<Scalar*, Device> norms("norms", n);
+  Kokkos::View<Scalar*, Kokkos::HostSpace> norms("norms", n);
 
   // Declaring variable pool w/ a seeded random number;
   // a parallel random number generator, so you

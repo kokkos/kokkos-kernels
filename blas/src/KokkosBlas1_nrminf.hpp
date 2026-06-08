@@ -33,12 +33,11 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 
   using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
                                         typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-                                        typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+                                        typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   using layout_t = typename XVector_Internal::array_layout;
 
-  using RVector_Internal =
-      Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using RVector_Internal = Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   mag_type result;
   RVector_Internal R = RVector_Internal(&result, layout_t());
@@ -68,10 +67,10 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 /// corresponding entry in X.
 ///
 /// \tparam execution_space, the execution space in which the kernel will run.
-/// \tparam RMV rank-0 or rank-1 Kokkos::View specialization.
+/// \tparam RV rank-0 or rank-1 Kokkos::View specialization.
 /// \tparam XMV rank-1 or rank-2 Kokkos::View specialization.  It must have
-///   the same rank as RMV, and its entries must be assignable to
-///   those of RMV.
+///   the same rank as RV's rank + 1, and its entries must be assignable to
+///   those of RV.
 template <class execution_space, class RV, class XMV>
 void nrminf(const execution_space& space, const RV& R, const XMV& X,
             typename std::enable_if<Kokkos::is_view_v<RV>, int>::type = 0) {
@@ -113,14 +112,12 @@ void nrminf(const execution_space& space, const RV& R, const XMV& X,
 
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.
-  typedef Kokkos::View<typename std::conditional<RV::rank == 0, typename RV::non_const_value_type,
-                                                 typename RV::non_const_value_type*>::type,
-                       UnifiedRVLayout, typename RV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RV_Internal;
-  typedef Kokkos::View<typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
-                                                 typename XMV::const_value_type**>::type,
-                       UnifiedXLayout, typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XMV_Internal;
+  using RV_Internal  = Kokkos::View<typename std::conditional<RV::rank == 0, typename RV::non_const_value_type,
+                                                             typename RV::non_const_value_type*>::type,
+                                   UnifiedRVLayout, typename RV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using XMV_Internal = Kokkos::View<typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
+                                                              typename XMV::const_value_type**>::type,
+                                    UnifiedXLayout, typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   RV_Internal R_internal  = R;
   XMV_Internal X_internal = X;
@@ -133,10 +130,10 @@ void nrminf(const execution_space& space, const RV& R, const XMV& X,
 /// Replace each entry in R with the nrminfolute value (magnitude) of the
 /// corresponding entry in X.
 ///
-/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
-/// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
-///   the same rank as RMV, and its entries must be assignable to
-///   those of RMV.
+/// \tparam RV rank-1 or rank-2 Kokkos::View specialization.
+/// \tparam XMV rank-1 or rank-2 Kokkos::View specialization.  It must have
+///   the same rank as RV's rank + 1, and its entries must be assignable to
+///   those of RV.
 template <class RV, class XMV>
 void nrminf(const RV& R, const XMV& X, typename std::enable_if<Kokkos::is_view_v<RV>, int>::type = 0) {
   nrminf(typename XMV::execution_space{}, R, X);
