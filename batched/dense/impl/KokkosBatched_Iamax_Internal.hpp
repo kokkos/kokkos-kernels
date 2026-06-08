@@ -25,6 +25,9 @@ struct SerialIamaxInternal {
 template <typename IndexType, typename ValueType>
 KOKKOS_INLINE_FUNCTION IndexType SerialIamaxInternal::invoke(const IndexType n, const ValueType *KOKKOS_RESTRICT x,
                                                              const IndexType xs0) {
+  // Quick return
+  if (n <= 1) return 0;
+
   using ats      = typename KokkosKernels::ArithTraits<ValueType>;
   using RealType = typename ats::mag_type;
 
@@ -57,10 +60,13 @@ template <typename IndexType, typename ValueType>
 KOKKOS_INLINE_FUNCTION IndexType TeamIamaxInternal<MemberType>::invoke(const MemberType &member, const IndexType n,
                                                                        const ValueType *KOKKOS_RESTRICT x,
                                                                        const IndexType xs0) {
+  // Quick return
+  if (n <= 1) return 0;
+
   using mag_type           = typename KokkosKernels::ArithTraits<ValueType>::mag_type;
   using reducer_type       = Kokkos::MaxFirstLoc<mag_type, IndexType, typename MemberType::execution_space>;
   using reducer_value_type = typename reducer_type::value_type;
-  reducer_value_type init_max_first_loc(KokkosKernels::ArithTraits<mag_type>::zero(), 0);
+  reducer_value_type max_first_loc(KokkosKernels::ArithTraits<mag_type>::zero(), 0);
   Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(member, n),
       [&](const IndexType i, reducer_value_type &update) {
@@ -70,8 +76,8 @@ KOKKOS_INLINE_FUNCTION IndexType TeamIamaxInternal<MemberType>::invoke(const Mem
           update.loc = i;
         }
       },
-      reducer_type(init_max_first_loc));
-  return init_max_first_loc.loc;
+      reducer_type(max_first_loc));
+  return max_first_loc.loc;
 }
 
 ///
@@ -90,10 +96,13 @@ KOKKOS_INLINE_FUNCTION IndexType TeamVectorIamaxInternal<MemberType>::invoke(con
                                                                              const IndexType n,
                                                                              const ValueType *KOKKOS_RESTRICT x,
                                                                              const IndexType xs0) {
+  // Quick return
+  if (n <= 1) return 0;
+
   using mag_type           = typename KokkosKernels::ArithTraits<ValueType>::mag_type;
   using reducer_type       = Kokkos::MaxFirstLoc<mag_type, IndexType, typename MemberType::execution_space>;
   using reducer_value_type = typename reducer_type::value_type;
-  reducer_value_type init_max_first_loc(KokkosKernels::ArithTraits<mag_type>::zero(), 0);
+  reducer_value_type max_first_loc(KokkosKernels::ArithTraits<mag_type>::zero(), 0);
   Kokkos::parallel_reduce(
       Kokkos::TeamVectorRange(member, n),
       [&](const IndexType i, reducer_value_type &update) {
@@ -103,8 +112,8 @@ KOKKOS_INLINE_FUNCTION IndexType TeamVectorIamaxInternal<MemberType>::invoke(con
           update.loc = i;
         }
       },
-      reducer_type(init_max_first_loc));
-  return init_max_first_loc.loc;
+      reducer_type(max_first_loc));
+  return max_first_loc.loc;
 }
 
 }  // namespace Impl

@@ -18,7 +18,6 @@ namespace KokkosBatched {
 template <typename XViewType>
 KOKKOS_INLINE_FUNCTION typename XViewType::size_type SerialIamax::invoke(const XViewType &x) {
   static_assert(Kokkos::is_view_v<XViewType>, "KokkosBatched::iamax: XViewType is not a Kokkos::View.");
-  if (x.extent(0) <= 1) return 0;
   using size_type = typename XViewType::size_type;
   return Impl::SerialIamaxInternal::invoke(static_cast<size_type>(x.extent(0)), x.data(),
                                            static_cast<size_type>(x.stride(0)));
@@ -32,7 +31,6 @@ template <typename XViewType>
 KOKKOS_INLINE_FUNCTION typename XViewType::size_type TeamIamax<MemberType>::invoke(const MemberType &member,
                                                                                    const XViewType &x) {
   static_assert(Kokkos::is_view_v<XViewType>, "KokkosBatched::iamax: XViewType is not a Kokkos::View.");
-  if (x.extent(0) <= 1) return 0;
   using size_type = typename XViewType::size_type;
   return Impl::TeamIamaxInternal<MemberType>::invoke(member, static_cast<size_type>(x.extent(0)), x.data(),
                                                      static_cast<size_type>(x.stride(0)));
@@ -46,7 +44,6 @@ template <typename XViewType>
 KOKKOS_INLINE_FUNCTION typename XViewType::size_type TeamVectorIamax<MemberType>::invoke(const MemberType &member,
                                                                                          const XViewType &x) {
   static_assert(Kokkos::is_view_v<XViewType>, "KokkosBatched::iamax: XViewType is not a Kokkos::View.");
-  if (x.extent(0) <= 1) return 0;
   using size_type = typename XViewType::size_type;
   return Impl::TeamVectorIamaxInternal<MemberType>::invoke(member, static_cast<size_type>(x.extent(0)), x.data(),
                                                            static_cast<size_type>(x.stride(0)));
