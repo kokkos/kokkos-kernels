@@ -9,10 +9,11 @@ int main(void) {
   Kokkos::initialize();
   {
     Kokkos::View<double*> x("X", 101);
-    Kokkos::parallel_for(101, KOKKOS_LAMBDA(const int idx) {
-	const double val = static_cast<double>(idx) / 10;
-	x(idx) = (val - 10) * (val - 5) * val + 1.9;
-      });
+    Kokkos::parallel_for(
+        101, KOKKOS_LAMBDA(const int idx) {
+          const double val = static_cast<double>(idx) / 10;
+          x(idx)           = (val - 10) * (val - 5) * val + 1.9;
+        });
 
     double x_nrm = KokkosBlas::nrminf(x);
 
