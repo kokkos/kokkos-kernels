@@ -12,6 +12,7 @@ API: Batched Dense (DLA)
    dense/batched_axpy
    dense/batched_copy
    dense/batched_dot
+   dense/batched_nrm
    dense/batched_iamax
    dense/batched_trsv
    dense/batched_tbsv
@@ -152,13 +153,13 @@ BLAS 1
      - :doc:`TeamDot <dense/batched_dot>`
      - :doc:`TeamVectorDot <dense/batched_dot>`
    * - NRM2
-     - --
-     - --
-     - --
+     - :doc:`SerialNrm <dense/batched_nrm>`
+     - :doc:`TeamNrm <dense/batched_nrm>`
+     - :doc:`TeamVectorNrm <dense/batched_nrm>`
    * - ASUM
-     - --
-     - --
-     - --
+     - :doc:`SerialNrm <dense/batched_nrm>`
+     - :doc:`TeamNrm <dense/batched_nrm>`
+     - :doc:`TeamVectorNrm <dense/batched_nrm>`
    * - IAMAX
      - :doc:`SerialIamax <dense/batched_iamax>`
      - --

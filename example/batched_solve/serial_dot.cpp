@@ -38,7 +38,7 @@ int main(int /*argc*/, char** /*argv*/) {
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
 
-    // Compute givens rotation coefficients and apply the rotation to x and y
+    // Compute dot = x^T * y
     ExecutionSpace exec;
     using policy_type = Kokkos::RangePolicy<ExecutionSpace, Kokkos::IndexType<int>>;
     policy_type policy{exec, 0, Nb};

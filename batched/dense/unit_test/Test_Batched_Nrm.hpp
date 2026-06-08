@@ -61,7 +61,7 @@ struct Functor_BatchedNrm {
 /// \tparam DeviceType Kokkos device type
 /// \tparam ScalarType Kokkos scalar type
 /// \tparam LayoutType Kokkos layout type for the views
-/// \tparam ArgNorm: one of L1, L2, Linf
+/// \tparam ArgNorm: one of L1, L2, Linf, ScaledL2
 /// \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
 ///
 /// \param[in] Nb Batch size of vectors
@@ -139,8 +139,8 @@ void impl_test_batched_nrm_analytical(const std::size_t Nb) {
 /// 3.4e38 and 1e308 are the largest representable finite values for fp32 and fp64 respectively.
 /// For fp32, where x^2 is expected to overflow
 /// x = [1e20, 1e20, 1e20]
-/// z = [1e200 + 1e200j, 1e200 + 1e200j, 1e200 + 1e200j]
-/// L2 norm: x: sqrt(3) * 1e200, z: sqrt(6) * 1e200
+/// z = [1e20 + 1e20j, 1e20 + 1e20j, 1e20 + 1e20j]
+/// L2 norm: x: sqrt(3) * 1e20, z: sqrt(6) * 1e20
 ///
 /// For fp64, where x^2 is expected to overflow
 /// x = [1e200, 1e200, 1e200]

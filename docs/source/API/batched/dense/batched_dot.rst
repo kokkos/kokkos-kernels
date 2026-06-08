@@ -38,6 +38,7 @@ Performs the dot product of two vectors :math:`X` and :math:`Y`.
 .. note::
   
   This kernel does not support the BLAS routine `SDSDOT <https://www.netlib.org/blas/sdsdot.f>`_ which returns the single precision dot product of two single precision vectors with dot product accumulated in double precision.
+  For `DSDOT <https://www.netlib.org/blas/dsdot.f>`_, provide :math:`X` and :math:`Y` in single precision and provide the output :math:`dot` in double precision.
 
 Parameters
 ==========
