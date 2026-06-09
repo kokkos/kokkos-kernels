@@ -43,3 +43,7 @@ jobs:
     uses: ./.github/workflows/pv.yml
     with:
       kokkos_version: 5.1.0
+  gh200:
+    uses: ./.github/workflows/gh200.yml
+    with:
+      kokkos_version: 5.1.0
