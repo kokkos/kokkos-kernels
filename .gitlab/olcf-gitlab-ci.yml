@@ -18,4 +18,11 @@ hipcc:
     - cmake -B build_hip -DCMAKE_CXX_COMPILER=hipcc -DKokkos_ENABLE_HIP=ON -DCMAKE_INSTALL_PREFIX=${PWD}/install
     - cmake --build build_hip --target install
     - cd ../..
-    - ctest -VV -S ${PWD}/kokkos-kernels/.gitlab/olcf-ctest.cmake
+    - ctest -VV -S ${PWD}/kokkos-kernels/.gitlab/frontier-ctest.cmake
+    - git clone https://github.com/kokkos/kokkos-kernels-performance.git
+    - find kokkos-kernels_build/benchmarks -name "*.json" -exec mv {} kokkos-kernels-performance/Frontier \;
+    - cd kokkos-kernels-performance
+    - git add Frontier/*
+    - git commit -m "frontier performance run"
+    - git status
+    - git push https://"$kokkos_kernels_perf_pat"@github.com/kokkos/kokkos-kernels-performance.git
