@@ -308,7 +308,7 @@ jobs:
             -D KokkosKernels_INST_OFFSET_SIZE_T=ON \
             -D KokkosKernels_ENABLE_TESTS=ON \
             -D KokkosKernels_ENABLE_EXAMPLES=ON \
-            -D KokkosKernels_ENABLE_BENCHMARKS=ON \
+            -D KokkosKernels_ENABLE_BENCHMARKS=OFF \
             -D KokkosKernels_ENABLE_DOCS=OFF
 
       - name: build_kokkos_kernels
