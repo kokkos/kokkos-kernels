@@ -24,8 +24,8 @@ Defined in header: :code:`KokkosBatched_Iamax.hpp`
 
 Finds the index of the first element of :math:`x` having maximum absolute value. As well as Blas, this returns 0 for an empty vector.
 
-1. For a real vector :math:`x`, this operation is equivalent to the BLAS routine `ISAMAX <https://www.netlib.org/blas/isamax.f>`_ or `IDAMAX <https://www.netlib.org/blas/idamax.f>`_ for single or double precision.
-2. For a complex vector :math:`x`, this operation is equivalent to the BLAS routine `ICAMAX <https://www.netlib.org/blas/icamax.f>`_ or `IZAMAX <https://www.netlib.org/blas/izamax.f>`_ for single or double precision.
+- For a real vector :math:`x`, this operation is equivalent to the BLAS routine `ISAMAX <https://www.netlib.org/blas/isamax.f>`_ or `IDAMAX <https://www.netlib.org/blas/idamax.f>`_ for single or double precision.
+- For a complex vector :math:`x`, this operation is equivalent to the BLAS routine `ICAMAX <https://www.netlib.org/blas/icamax.f>`_ or `IZAMAX <https://www.netlib.org/blas/izamax.f>`_ for single or double precision.
 
 Parameters
 ==========
