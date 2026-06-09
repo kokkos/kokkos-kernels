@@ -67,7 +67,7 @@ struct TeamVectorGemm<MemberType, Trans::Transpose, Trans::NoTranspose, ArgAlgo>
 
     // Quick return if possible
     const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
+    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::Transpose, Trans::NoTranspose>(A, B, C);
     if (info) return info;
@@ -98,7 +98,7 @@ struct TeamVectorGemm<MemberType, Trans::ConjTranspose, Trans::NoTranspose, ArgA
 
     // Quick return if possible
     const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
+    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::ConjTranspose, Trans::NoTranspose>(A, B, C);
     if (info) return info;
@@ -129,7 +129,7 @@ struct TeamVectorGemm<MemberType, Trans::NoTranspose, Trans::Transpose, ArgAlgo>
 
     // Quick return if possible
     const int m = C_extent_0, n = C_extent_1, k = A_extent_1;
-    if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
+    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::NoTranspose, Trans::Transpose>(A, B, C);
     if (info) return info;
@@ -160,7 +160,7 @@ struct TeamVectorGemm<MemberType, Trans::Transpose, Trans::Transpose, ArgAlgo> {
 
     // Quick return if possible
     const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
+    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::Transpose, Trans::Transpose>(A, B, C);
     if (info) return info;
@@ -191,7 +191,7 @@ struct TeamVectorGemm<MemberType, Trans::ConjTranspose, Trans::Transpose, ArgAlg
 
     // Quick return if possible
     const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
+    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::ConjTranspose, Trans::Transpose>(A, B, C);
     if (info) return info;
@@ -222,7 +222,7 @@ struct TeamVectorGemm<MemberType, Trans::NoTranspose, Trans::ConjTranspose, ArgA
 
     // Quick return if possible
     const int m = C_extent_0, n = C_extent_1, k = A_extent_1;
-    if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
+    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::NoTranspose, Trans::ConjTranspose>(A, B, C);
     if (info) return info;
@@ -253,7 +253,7 @@ struct TeamVectorGemm<MemberType, Trans::Transpose, Trans::ConjTranspose, ArgAlg
 
     // Quick return if possible
     const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
+    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::Transpose, Trans::ConjTranspose>(A, B, C);
     if (info) return info;
@@ -284,7 +284,7 @@ struct TeamVectorGemm<MemberType, Trans::ConjTranspose, Trans::ConjTranspose, Ar
 
     // Quick return if possible
     const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
-    if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
+    if (m == 0 || n == 0 || k == 0 || (alpha == ScalarType(0) && beta == ScalarType(1))) return 0;
 
     auto info = Impl::checkGemmInput<Trans::ConjTranspose, Trans::ConjTranspose>(A, B, C);
     if (info) return info;
