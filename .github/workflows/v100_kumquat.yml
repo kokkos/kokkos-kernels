@@ -304,9 +304,11 @@ jobs:
             -D BUILD_SHARED_LIBS:BOOL=OFF \
             -D CMAKE_CUDA_FLAGS="-Wno-deprecated-gpu-targets" \
             -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
-            -D KokkosKernels_INST_OFFSET_INT=OFF \
+            -D KokkosKernels_INST_OFFSET_INT=ON \
             -D KokkosKernels_INST_OFFSET_SIZE_T=ON \
             -D KokkosKernels_ENABLE_TESTS=ON \
+            -D KokkosKernels_ENABLE_EXAMPLES=ON \
+            -D KokkosKernels_ENABLE_BENCHMARKS=ON \
             -D KokkosKernels_ENABLE_DOCS=OFF
 
       - name: build_kokkos_kernels
