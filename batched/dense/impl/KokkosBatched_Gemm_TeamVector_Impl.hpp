@@ -42,7 +42,7 @@ struct TeamVectorGemm<MemberType, Trans::NoTranspose, Trans::NoTranspose, ArgAlg
 
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
-    return Impl::TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(
+    return Impl::TeamVectorGemmInternal<ArgAlgo>::invoke(
         member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), C_extent_0, C_extent_1, A_extent_1, alpha, A.data(),
         A_stride_0, A_stride_1, B.data(), B_stride_0, B_stride_1, beta, C.data(), C_stride_0, C_stride_1);
   }

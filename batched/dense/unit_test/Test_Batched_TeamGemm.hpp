@@ -29,16 +29,16 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedTeamGemm {
   using execution_space = typename DeviceType::execution_space;
+  using member_type     = typename Kokkos::TeamPolicy<execution_space>::member_type;
+
   ViewType m_a, m_b, m_c;
   ScalarType m_alpha, m_beta;
 
-  KOKKOS_INLINE_FUNCTION
   Functor_TestBatchedTeamGemm(const ScalarType alpha, const ViewType &a, const ViewType &b, const ScalarType beta,
                               const ViewType &c)
       : m_a(a), m_b(b), m_c(c), m_alpha(alpha), m_beta(beta) {}
 
-  template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &, const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &, const member_type &member) const {
     const int k = member.league_rank();
 
     auto aa = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
@@ -46,10 +46,10 @@ struct Functor_TestBatchedTeamGemm {
     auto cc = Kokkos::subview(m_c, k, Kokkos::ALL(), Kokkos::ALL());
 
     if constexpr (std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::Team>) {
-      KokkosBatched::TeamGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
+      KokkosBatched::TeamGemm<member_type, typename ParamTagType::transA, typename ParamTagType::transB,
                               AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
     } else if constexpr (std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::TeamVector>) {
-      KokkosBatched::TeamVectorGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
+      KokkosBatched::TeamVectorGemm<member_type, typename ParamTagType::transA, typename ParamTagType::transB,
                                     AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
     }
   }
@@ -233,8 +233,6 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
 }  // namespace TeamGemm
 }  // namespace Test
 
-// void (*impl_test)(const int, const int, const int, const int, const int,
-// const int, const int)
 template <typename DeviceType, typename ValueType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 int test_batched_teamgemm() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)

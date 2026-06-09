@@ -3,6 +3,7 @@
 #ifndef KOKKOSBATCHED_GEMM_DECL_HPP
 #define KOKKOSBATCHED_GEMM_DECL_HPP
 
+#include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 
 namespace KokkosBatched {
