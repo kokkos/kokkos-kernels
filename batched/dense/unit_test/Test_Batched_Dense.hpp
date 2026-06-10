@@ -13,6 +13,7 @@
 #include "Test_Batched_Rotg.hpp"
 #include "Test_Batched_Rotm.hpp"
 #include "Test_Batched_Rotmg.hpp"
+#include "Test_Batched_Swap.hpp"
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
 #include "Test_Batched_SerialGesv.hpp"
