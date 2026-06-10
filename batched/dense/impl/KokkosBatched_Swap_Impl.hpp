@@ -41,7 +41,7 @@ KOKKOS_INLINE_FUNCTION static int checkSwapInput([[maybe_unused]] const XViewTyp
         "= "
         "%d, y length = %d\n",
         n, y.extent_int(0));
-    return 1;  // Size mismatch
+    return 1;
   }
 #endif
   return 0;
@@ -53,7 +53,9 @@ KOKKOS_INLINE_FUNCTION static int checkSwapInput([[maybe_unused]] const XViewTyp
 /// ===========
 template <typename XViewType, typename YViewType>
 KOKKOS_INLINE_FUNCTION int SerialSwap::invoke(const XViewType &x, const YViewType &y) {
-  Impl::checkSwapInput(x, y);
+  auto info = Impl::checkSwapInput(x, y);
+  if (info) return info;
+
   const int n = x.extent_int(0);
   if (n == 0) return 0;
   Impl::SerialSwapInternal::invoke(n, x.data(), x.stride(0), y.data(), y.stride(0));
@@ -68,7 +70,9 @@ template <typename MemberType>
 template <typename XViewType, typename YViewType>
 KOKKOS_INLINE_FUNCTION int TeamSwap<MemberType>::invoke(const MemberType &member, const XViewType &x,
                                                         const YViewType &y) {
-  Impl::checkSwapInput(x, y);
+  auto info = Impl::checkSwapInput(x, y);
+  if (info) return info;
+
   const int n = x.extent_int(0);
   if (n == 0) return 0;
   Impl::TeamSwapInternal<MemberType>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0));
@@ -82,7 +86,9 @@ template <typename MemberType>
 template <typename XViewType, typename YViewType>
 KOKKOS_INLINE_FUNCTION int TeamVectorSwap<MemberType>::invoke(const MemberType &member, const XViewType &x,
                                                               const YViewType &y) {
-  Impl::checkSwapInput(x, y);
+  auto info = Impl::checkSwapInput(x, y);
+  if (info) return info;
+
   const int n = x.extent_int(0);
   if (n == 0) return 0;
   Impl::TeamVectorSwapInternal<MemberType>::invoke(member, n, x.data(), x.stride(0), y.data(), y.stride(0));
