@@ -10,17 +10,17 @@ set(CTEST_UPDATE_COMMAND /usr/bin/git)
 set(CTEST_CONFIGURE_COMMAND "cmake -S ${CTEST_SOURCE_DIRECTORY} \
 			    	   -B ${CTEST_BINARY_DIRECTORY} \
 			    	   -DCMAKE_CXX_COMPILER=hipcc \
-			    	   -DCMAKE_INSTALL_PREFIX=$ENV{PWD}/kokkos-kernels/install
-			    	   -DCMAKE_BUILD_TYPE="Release"
-			    	   -DCMAKE_VERBOSE_MAKEFILE=ON
-				   -DKokkos_ROOT=${CTEST_SOURCE_DIRECTORY}/kokkos/install
-			    	   -DKokkosKernels_INST_COMPLEX_DOUBLE=ON
-			    	   -DKokkosKernels_ENABLE_TPL_ROCSOLVER=ON
-			    	   -DKokkosKernels_ENABLE_TPL_ROCSPARSE=ON
-			    	   -DKokkosKernels_ENABLE_TPL_ROCBLAS=ON
-			    	   -DKokkosKernels_ENABLE_TESTS=ON
-			    	   -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON
-			    	   -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON
+			    	   -DCMAKE_INSTALL_PREFIX=$ENV{PWD}/kokkos-kernels/install \
+			    	   -DCMAKE_BUILD_TYPE="Release" \
+			    	   -DCMAKE_VERBOSE_MAKEFILE=ON \
+				   -DKokkos_ROOT=${CTEST_SOURCE_DIRECTORY}/kokkos/install \
+			    	   -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
+			    	   -DKokkosKernels_ENABLE_TPL_ROCSOLVER=ON \
+			    	   -DKokkosKernels_ENABLE_TPL_ROCSPARSE=ON \
+			    	   -DKokkosKernels_ENABLE_TPL_ROCBLAS=ON \
+			    	   -DKokkosKernels_ENABLE_TESTS=ON \
+			    	   -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+			    	   -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=ON \
       			    	   -DKokkosKernels_RUN_BENCHMARKS:BOOL=ON")
 
 set(CTEST_BUILD_COMMAND "cmake --build ${CTEST_BINARY_DIRECTORY} -j 48")
