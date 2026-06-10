@@ -246,3 +246,78 @@ jobs:
         working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
 
+  PR_VOLTA70_CUDA1262_CUDA_CMAKE_LANG_FEATURE:
+    name: PR_VOLTA70_CUDA1262_CUDA_CMAKE_LANG_FEATURE
+    runs-on: [kumquat-cuda-12.6.2-openblas-0.3.28]
+
+    steps:
+      - name: nvidia-smi
+        run: nvidia-smi
+
+      - name: nvcc
+        run: nvcc --version
+
+      - name: cuda-visible-devices
+        run: echo $CUDA_VISIBLE_DEVICES
+
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ inputs.kokkos_version }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cmake -S kokkos -B kokkos/build \
+            -D Kokkos_ENABLE_COMPILE_AS_CMAKE_LANGUAGE=ON \
+            -D CMAKE_CUDA_ARCHITECTURES=70 \
+            -D CMAKE_INSTALL_PREFIX=kokkos/install \
+            -D CMAKE_BUILD_TYPE=RELEASE \
+            -D BUILD_SHARED_LIBS=OFF \
+            -D CMAKE_CUDA_FLAGS="-Wno-deprecated-gpu-targets" \
+            -D Kokkos_ARCH_VOLTA70=ON \
+            -D Kokkos_ENABLE_SERIAL=ON \
+            -D Kokkos_ENABLE_CUDA=ON \
+            -D Kokkos_ENABLE_TESTS=OFF \
+            -D Kokkos_ENABLE_COMPLEX_ALIGN=OFF \
+            -D Kokkos_ENABLE_DEPRECATED_CODE_5=OFF
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        # kumquat has 96 CPUs
+        run: cmake --build . --parallel 24 --target install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -D CMAKE_CUDA_ARCHITECTURES=70 \
+            -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+            -D Kokkos_ROOT=kokkos/install \
+            -D BUILD_SHARED_LIBS:BOOL=OFF \
+            -D CMAKE_CUDA_FLAGS="-Wno-deprecated-gpu-targets" \
+            -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
+            -D KokkosKernels_INST_OFFSET_INT=ON \
+            -D KokkosKernels_INST_OFFSET_SIZE_T=ON \
+            -D KokkosKernels_ENABLE_TESTS=ON \
+            -D KokkosKernels_ENABLE_EXAMPLES=ON \
+            -D KokkosKernels_ENABLE_BENCHMARKS=OFF \
+            -D KokkosKernels_ENABLE_DOCS=OFF
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        # kumquat has 96 CPUs
+        run: cmake --build . --parallel 24 --target all
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest --output-on-failure -V --timeout 3600
+
+
