@@ -129,8 +129,8 @@ void run_test_extract_diagonal_blocks_rcb_deprecated(lno_t n_pts_per_dim, lno_t 
   PermViewType_hm reverse_perm_rcb_ref(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb_ref"),
                                        n_coordinates);
   Kokkos::deep_copy(perm_rcb_ref, perm_rcb);
-  for (lno_t i = 0; i < n_coordinates; i++) { 
-    lno_t new_idx = perm_rcb_ref(i);
+  for (lno_t i = 0; i < n_coordinates; i++) {
+    lno_t new_idx                 = perm_rcb_ref(i);
     reverse_perm_rcb_ref(new_idx) = i;
   }
 

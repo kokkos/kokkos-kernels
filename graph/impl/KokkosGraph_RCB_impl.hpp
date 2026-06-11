@@ -96,16 +96,14 @@ struct UpdatePermAndMeshFunctor {
 template <typename perm_view_type, typename coors_view_type>
 struct UpdateMeshFunctor {
   using ordinal_t = typename perm_view_type::value_type;
-  perm_view_type  reverse_perm;
+  perm_view_type reverse_perm;
   coors_view_type coordinates_orig;
   coors_view_type coordinates;
   ordinal_t dim_notchanged;
   ordinal_t ndim;
 
-  UpdateMeshFunctor(const perm_view_type &reverse_perm_,
-                    const coors_view_type &coordinates_orig_,
-                    coors_view_type &coordinates_,
-                    const ordinal_t &dim_notchanged_)
+  UpdateMeshFunctor(const perm_view_type &reverse_perm_, const coors_view_type &coordinates_orig_,
+                    coors_view_type &coordinates_, const ordinal_t &dim_notchanged_)
       : reverse_perm(reverse_perm_),
         coordinates_orig(coordinates_orig_),
         coordinates(coordinates_),
@@ -125,16 +123,14 @@ struct UpdateMeshFunctor {
 template <typename perm_view_type>
 struct UpdatePermFunctor {
   using ordinal_t = typename perm_view_type::value_type;
-  perm_view_type  reverse_perm;
-  perm_view_type  perm;
+  perm_view_type reverse_perm;
+  perm_view_type perm;
 
-  UpdatePermFunctor(const perm_view_type &reverse_perm_,
-                    perm_view_type &perm_)
-      : reverse_perm(reverse_perm_),
-        perm(perm_) {}
+  UpdatePermFunctor(const perm_view_type &reverse_perm_, perm_view_type &perm_)
+      : reverse_perm(reverse_perm_), perm(perm_) {}
   KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i) const {
     ordinal_t orig_idx = reverse_perm(i);
-    perm(orig_idx) = i;
+    perm(orig_idx)     = i;
   }
 };
 
@@ -203,12 +199,13 @@ inline void bisect(const coors_view_type &coors_1d, const value_type &init_min_v
 }
 
 template <typename coors_view_type, typename index_view_type, typename ordinal_type>
-inline void bisect_median(const coors_view_type &coors_1d, index_view_type &reverse_perm, ordinal_type &p1_size, ordinal_type &p2_size) {
+inline void bisect_median(const coors_view_type &coors_1d, index_view_type &reverse_perm, ordinal_type &p1_size,
+                          ordinal_type &p2_size) {
   using execution_space = typename coors_view_type::device_type::execution_space;
-  const ordinal_type N = static_cast<ordinal_type>(coors_1d.extent(0));
+  const ordinal_type N  = static_cast<ordinal_type>(coors_1d.extent(0));
 
   Kokkos::Experimental::sort_by_key(execution_space(), coors_1d, reverse_perm);
-  
+
   p1_size = ((N % 2) == 0) ? (N / 2) : (N / 2 + 1);
   p2_size = N - p1_size;
 }
@@ -392,8 +389,10 @@ std::vector<typename perm_view_type::value_type> rcb_median(coors_view_type &coo
       ordinal_type N0      = partition_sizes[p];  // partition size (or length)
       ordinal_type p1_size = 0;
       ordinal_type p2_size = 0;
-      auto sub_coordinates  = Kokkos::subview(coordinates, Kokkos::make_pair(coordinates_offset, coordinates_offset + N0), Kokkos::ALL());
-      auto sub_reverse_perm = Kokkos::subview(reverse_perm, Kokkos::make_pair(coordinates_offset, coordinates_offset + N0));
+      auto sub_coordinates =
+          Kokkos::subview(coordinates, Kokkos::make_pair(coordinates_offset, coordinates_offset + N0), Kokkos::ALL());
+      auto sub_reverse_perm =
+          Kokkos::subview(reverse_perm, Kokkos::make_pair(coordinates_offset, coordinates_offset + N0));
 
       // Find min, max, and span of each dimension
       scalar_t x_min, x_max, y_min, y_max, z_min, z_max;
@@ -427,8 +426,9 @@ std::vector<typename perm_view_type::value_type> rcb_median(coors_view_type &coo
         dim_notchanged = 2;
       }
 
-      // Shuffle coordinates using bisecting results			  
-      UpdateMeshFunctor<perm_view_type, decltype(sub_coordinates)> func(sub_reverse_perm, coordinates_orig, sub_coordinates, dim_notchanged);
+      // Shuffle coordinates using bisecting results
+      UpdateMeshFunctor<perm_view_type, decltype(sub_coordinates)> func(sub_reverse_perm, coordinates_orig,
+                                                                        sub_coordinates, dim_notchanged);
       Kokkos::RangePolicy<execution_space, ordinal_type> policy(0, N0);
       Kokkos::parallel_for(policy, func);
 
@@ -460,11 +460,11 @@ std::vector<typename perm_view_type::value_type> rcb_median(coors_view_type &coo
 
 template <typename coors_view_type, typename perm_view_type>
 std::vector<typename perm_view_type::value_type> rcb(coors_view_type &coordinates, perm_view_type &perm,
-                                                     perm_view_type &reverse_perm, const int &n_levels, const bool &bisect_use_median = true) {
+                                                     perm_view_type &reverse_perm, const int &n_levels,
+                                                     const bool &bisect_use_median = true) {
   if (bisect_use_median) {
     return rcb_median(coordinates, perm, reverse_perm, n_levels);
-  }
-  else {
+  } else {
     return rcb_avg(coordinates, perm, reverse_perm, n_levels);
   }
 }

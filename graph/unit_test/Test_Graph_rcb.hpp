@@ -159,7 +159,7 @@ void test_rcb(lno_t ndim, lno_t np) {
 
   bool dif_flag = false;
   for (lno_t i = 0; i < n_coordinates; i++) {
-    auto perm_i = h_perm_rcb(i);
+    auto perm_i      = h_perm_rcb(i);
     auto recovered_i = h_reverse_perm_rcb(perm_i);
     if (i != recovered_i) {
       dif_flag = true;
