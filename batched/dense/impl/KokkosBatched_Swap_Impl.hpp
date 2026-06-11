@@ -4,7 +4,6 @@
 #ifndef KOKKOSBATCHED_SWAP_IMPL_HPP_
 #define KOKKOSBATCHED_SWAP_IMPL_HPP_
 
-#include <concepts>
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas_util.hpp>
 #include <KokkosBatched_Util.hpp>
@@ -12,12 +11,6 @@
 
 namespace KokkosBatched {
 namespace Impl {
-
-// Concept to check if the value types of x and y are swappable
-// (either the same type or both floating-point types)
-template <typename T1, typename T2>
-concept swappable_elements = std::same_as<T1, T2> || (std::is_floating_point_v<T1> && std::is_floating_point_v<T2>) ||
-                             (KokkosKernels::ArithTraits<T1>::is_complex && KokkosKernels::ArithTraits<T2>::is_complex);
 
 template <typename XViewType, typename YViewType>
 KOKKOS_INLINE_FUNCTION static int checkSwapInput([[maybe_unused]] const XViewType &x,
