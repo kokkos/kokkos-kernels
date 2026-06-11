@@ -210,6 +210,14 @@ void impl_test_batched_swap(const std::size_t Nb, const std::size_t N) {
   // Check if swap is correct
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
+      if (Kokkos::abs(h_x(ib, i) - h_x_ref(ib, i)) > eps || Kokkos::abs(h_y(ib, i) - h_y_ref(ib, i)) > eps) {
+        std::string layout1 = std::is_same_v<LayoutType1, Kokkos::LayoutLeft> ? "LayoutLeft" : "LayoutRight";
+        std::string layout2 = std::is_same_v<LayoutType2, Kokkos::LayoutLeft> ? "LayoutLeft" : "LayoutRight";
+        std::cout << "Error at batch " << ib << " / " << Nb << ", index " << i << " / " << N << ": "
+                  << "h_x = " << h_x(ib, i) << ", h_x_ref = " << h_x_ref(ib, i) << ", "
+                  << "h_y = " << h_y(ib, i) << ", h_y_ref = " << h_y_ref(ib, i) << ", "
+                  << "layout1 = " << layout1 << ", layout2 = " << layout2 << std::endl;
+      }
       KK_EXPECT_NEAR(h_x(ib, i), h_x_ref(ib, i), eps);
       KK_EXPECT_NEAR(h_y(ib, i), h_y_ref(ib, i), eps);
     }
@@ -222,6 +230,14 @@ void impl_test_batched_swap(const std::size_t Nb, const std::size_t N) {
   Kokkos::deep_copy(h_y, y);
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
+      if (Kokkos::abs(h_x(ib, i) - h_x_ref(ib, i)) > eps || Kokkos::abs(h_y(ib, i) - h_y_ref(ib, i)) > eps) {
+        std::string layout1 = std::is_same_v<LayoutType1, Kokkos::LayoutLeft> ? "LayoutLeft" : "LayoutRight";
+        std::string layout2 = std::is_same_v<LayoutType2, Kokkos::LayoutLeft> ? "LayoutLeft" : "LayoutRight";
+        std::cout << "Error with strided views at batch " << ib << " / " << Nb << ", index " << i << " / " << N << ": "
+                  << "h_x = " << h_x(ib, i) << ", h_x_ref = " << h_x_ref(ib, i) << ", "
+                  << "h_y = " << h_y(ib, i) << ", h_y_ref = " << h_y_ref(ib, i) << ", "
+                  << "layout1 = " << layout1 << ", layout2 = " << layout2 << std::endl;
+      }
       KK_EXPECT_NEAR(h_x(ib, i), h_x_ref(ib, i), eps);
       KK_EXPECT_NEAR(h_y(ib, i), h_y_ref(ib, i), eps);
     }
@@ -241,11 +257,11 @@ int test_batched_swap() {
     Test::Swap::impl_test_batched_swap_analytical<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(1);
     Test::Swap::impl_test_batched_swap_analytical<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(2);
 
-    for (int i = 0; i < 5; i++) {
-      Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(1, i);
-      Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(2, i);
-      Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(1, i);
-      Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(2, i);
+    for (int ib = 0; ib < 5; ib++) {
+      for (int i = 0; i < 10; i++) {
+        Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(ib, i);
+        Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(ib, i);
+      }
     }
   }
 #endif
@@ -257,11 +273,11 @@ int test_batched_swap() {
     Test::Swap::impl_test_batched_swap_analytical<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(1);
     Test::Swap::impl_test_batched_swap_analytical<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(2);
 
-    for (int i = 0; i < 5; i++) {
-      Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(1, i);
-      Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(2, i);
-      Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(1, i);
-      Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(2, i);
+    for (int ib = 0; ib < 5; ib++) {
+      for (int i = 0; i < 10; i++) {
+        Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(ib, i);
+        Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(ib, i);
+      }
     }
   }
 #endif
