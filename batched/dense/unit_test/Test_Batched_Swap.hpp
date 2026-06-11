@@ -182,6 +182,8 @@ void impl_test_batched_swap(const std::size_t Nb, const std::size_t N) {
   Kokkos::fill_random(x, rand_pool, randStart, randEnd);
   Kokkos::fill_random(y, rand_pool, randStart, randEnd);
 
+  Kokkos::fence();
+
   // Deep copy to strided views
   Kokkos::deep_copy(x_s, x);
   Kokkos::deep_copy(y_s, y);
@@ -197,6 +199,8 @@ void impl_test_batched_swap(const std::size_t Nb, const std::size_t N) {
   info = Functor_BatchedSwap<DeviceType, StridedViewType, StridedViewType, ArgMode>(x_s, y_s).run();
   EXPECT_EQ(info, 0);
 
+  Kokkos::fence();
+
   RealType eps = 1.0e1 * ats::epsilon();
   auto h_x     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x);
   auto h_y     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y);
@@ -204,6 +208,18 @@ void impl_test_batched_swap(const std::size_t Nb, const std::size_t N) {
   auto h_y_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y_ref);
 
   // Check if swap is correct
+  for (std::size_t ib = 0; ib < Nb; ib++) {
+    for (std::size_t i = 0; i < N; i++) {
+      KK_EXPECT_NEAR(h_x(ib, i), h_x_ref(ib, i), eps);
+      KK_EXPECT_NEAR(h_y(ib, i), h_y_ref(ib, i), eps);
+    }
+  }
+
+  // Testing for strided views, reusing x and y
+  Kokkos::deep_copy(x, x_s);
+  Kokkos::deep_copy(y, y_s);
+  Kokkos::deep_copy(h_x, x);
+  Kokkos::deep_copy(h_y, y);
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
       KK_EXPECT_NEAR(h_x(ib, i), h_x_ref(ib, i), eps);
