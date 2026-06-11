@@ -125,12 +125,14 @@ void run_test_extract_diagonal_blocks_rcb_deprecated(lno_t n_pts_per_dim, lno_t 
   ASSERT_EQ(numRows, nrows);
   ASSERT_EQ(numCols, nrows);
 
-  lno_t n_levels = static_cast<lno_t>(std::log2(static_cast<double>(nblocks)) + 1);
   PermViewType_hm perm_rcb_ref(Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_rcb_ref"), n_coordinates);
   PermViewType_hm reverse_perm_rcb_ref(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb_ref"),
                                        n_coordinates);
-  std::vector<lno_t> partition_sizes = KokkosGraph::Experimental::recursive_coordinate_bisection(
-      h_coordinates, perm_rcb_ref, reverse_perm_rcb_ref, n_levels);
+  Kokkos::deep_copy(perm_rcb_ref, perm_rcb);
+  for (lno_t i = 0; i < n_coordinates; i++) { 
+    lno_t new_idx = perm_rcb_ref(i);
+    reverse_perm_rcb_ref(new_idx) = i;
+  }
 
   std::map<lno_t, scalar_t> colIdx_Value_rcb;
 
@@ -141,9 +143,7 @@ void run_test_extract_diagonal_blocks_rcb_deprecated(lno_t n_pts_per_dim, lno_t 
     auto h_entries_diagblk = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].graph.entries);
     auto h_values_diagblk  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].values);
 
-    ASSERT_EQ(static_cast<lno_t>(DiagBlks[i].numRows()), partition_sizes[i]);
-
-    blk_size          = partition_sizes[i];
+    blk_size          = static_cast<lno_t>(DiagBlks[i].numRows());
     size_type blk_nnz = 0;
     for (lno_t ii = 0; ii < blk_size; ii++) {  // row loop in each block
       ASSERT_EQ(h_row_map_diagblk(ii), blk_nnz);

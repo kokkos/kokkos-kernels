@@ -5,6 +5,7 @@
 #define KOKKOSGRAPH_RCB_IMPL_HPP
 
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Sort.hpp"
 #include "KokkosKernels_Utils.hpp"
 #include <vector>
 #include <algorithm>
@@ -92,6 +93,51 @@ struct UpdatePermAndMeshFunctor {
   }
 };
 
+template <typename perm_view_type, typename coors_view_type>
+struct UpdateMeshFunctor {
+  using ordinal_t = typename perm_view_type::value_type;
+  perm_view_type  reverse_perm;
+  coors_view_type coordinates_orig;
+  coors_view_type coordinates;
+  ordinal_t dim_notchanged;
+  ordinal_t ndim;
+
+  UpdateMeshFunctor(const perm_view_type &reverse_perm_,
+                    const coors_view_type &coordinates_orig_,
+                    coors_view_type &coordinates_,
+                    const ordinal_t &dim_notchanged_)
+      : reverse_perm(reverse_perm_),
+        coordinates_orig(coordinates_orig_),
+        coordinates(coordinates_),
+        dim_notchanged(dim_notchanged_) {
+    ndim = static_cast<ordinal_t>(coordinates_orig.extent(1));
+  }
+  KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i) const {
+    ordinal_t gbl_orig_idx = reverse_perm(i);
+    for (ordinal_t j = 0; j < ndim; j++) {
+      if (j != dim_notchanged) {
+        coordinates(i, j) = coordinates_orig(gbl_orig_idx, j);
+      }
+    }
+  }
+};
+
+template <typename perm_view_type>
+struct UpdatePermFunctor {
+  using ordinal_t = typename perm_view_type::value_type;
+  perm_view_type  reverse_perm;
+  perm_view_type  perm;
+
+  UpdatePermFunctor(const perm_view_type &reverse_perm_,
+                    perm_view_type &perm_)
+      : reverse_perm(reverse_perm_),
+        perm(perm_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i) const {
+    ordinal_t orig_idx = reverse_perm(i);
+    perm(orig_idx) = i;
+  }
+};
+
 template <typename view_type, typename value_type>
 void find_min_max(const view_type &A, value_type &min_val, value_type &max_val) {
   using execution_space = typename view_type::device_type::execution_space;
@@ -156,12 +202,23 @@ inline void bisect(const coors_view_type &coors_1d, const value_type &init_min_v
   }
 }
 
+template <typename coors_view_type, typename index_view_type, typename ordinal_type>
+inline void bisect_median(const coors_view_type &coors_1d, index_view_type &reverse_perm, ordinal_type &p1_size, ordinal_type &p2_size) {
+  using execution_space = typename coors_view_type::device_type::execution_space;
+  const ordinal_type N = static_cast<ordinal_type>(coors_1d.extent(0));
+
+  Kokkos::Experimental::sort_by_key(execution_space(), coors_1d, reverse_perm);
+  
+  p1_size = ((N % 2) == 0) ? (N / 2) : (N / 2 + 1);
+  p2_size = N - p1_size;
+}
+
 /**
  * @brief Recursive coordinate bisection on the coordinate list
  */
 template <typename coors_view_type, typename perm_view_type>
-std::vector<typename perm_view_type::value_type> rcb(coors_view_type &coordinates, perm_view_type &perm,
-                                                     perm_view_type &reverse_perm, const int &n_levels) {
+std::vector<typename perm_view_type::value_type> rcb_avg(coors_view_type &coordinates, perm_view_type &perm,
+                                                         perm_view_type &reverse_perm, const int &n_levels) {
   using execution_space = typename coors_view_type::device_type::execution_space;
   using scalar_t        = typename coors_view_type::value_type;
   using ordinal_type    = typename perm_view_type::value_type;
@@ -293,6 +350,123 @@ std::vector<typename perm_view_type::value_type> rcb(coors_view_type &coordinate
   if (n_partitions < max_n_partitions) partition_sizes.resize(n_partitions);
 
   return partition_sizes;
+}
+
+template <typename coors_view_type, typename perm_view_type>
+std::vector<typename perm_view_type::value_type> rcb_median(coors_view_type &coordinates, perm_view_type &perm,
+                                                            perm_view_type &reverse_perm, const int &n_levels) {
+  using execution_space = typename coors_view_type::device_type::execution_space;
+  using scalar_t        = typename coors_view_type::value_type;
+  using ordinal_type    = typename perm_view_type::value_type;
+
+  const ordinal_type N    = static_cast<ordinal_type>(coordinates.extent(0));
+  const ordinal_type ndim = static_cast<ordinal_type>(coordinates.extent(1));
+
+  // Allocate a view to hold the original coordinates on device memory
+  coors_view_type coordinates_orig(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coordinates_orig"), N, ndim);
+  Kokkos::deep_copy(coordinates_orig, coordinates);
+
+  // Initialize reverse_perm
+  Kokkos::parallel_for(Kokkos::RangePolicy<execution_space, ordinal_type>(0, N),
+                       FillOneIncrementFunctor<perm_view_type>(reverse_perm));
+
+  ordinal_type n_partitions =
+      1;  // number of partitions at the previous level (initial value is 1, i.e., starting with the entire mesh points)
+  const ordinal_type max_n_partitions = static_cast<ordinal_type>(std::pow(2, n_levels - 1));
+  std::vector<ordinal_type> partition_sizes(
+      max_n_partitions);   // contain the number of basis functions (or elements) per partition in the previous level
+  partition_sizes[0] = N;  // starting with the entire mesh points
+  std::vector<ordinal_type> partition_sizes_tmp(max_n_partitions);
+
+  // Start RCB
+  for (int lvl = 1; lvl < n_levels; lvl++) {  // skip level 0 and start from level 1
+    ordinal_type coordinates_offset = 0;      // always start from beginning of the mesh points
+    ordinal_type cnt_partitions     = 0;
+
+    for (ordinal_type p = 0; p < n_partitions; p++) {  // go through each partition of previous level and do bisecting
+      if (p > 0) {
+        // Calculate coordinates offset of the current partition based on the previous partition
+        coordinates_offset += partition_sizes[p - 1];
+      }
+
+      ordinal_type N0      = partition_sizes[p];  // partition size (or length)
+      ordinal_type p1_size = 0;
+      ordinal_type p2_size = 0;
+      auto sub_coordinates  = Kokkos::subview(coordinates, Kokkos::make_pair(coordinates_offset, coordinates_offset + N0), Kokkos::ALL());
+      auto sub_reverse_perm = Kokkos::subview(reverse_perm, Kokkos::make_pair(coordinates_offset, coordinates_offset + N0));
+
+      // Find min, max, and span of each dimension
+      scalar_t x_min, x_max, y_min, y_max, z_min, z_max;
+      scalar_t x_span = 0.0;
+      scalar_t y_span = 0.0;
+      scalar_t z_span = 0.0;
+
+      find_min_max(Kokkos::subview(sub_coordinates, Kokkos::ALL(), 0), x_min, x_max);
+      x_span = x_max - x_min;
+
+      if (ndim > 1) {
+        find_min_max(Kokkos::subview(sub_coordinates, Kokkos::ALL(), 1), y_min, y_max);
+        y_span = y_max - y_min;
+      }
+
+      if (ndim > 2) {
+        find_min_max(Kokkos::subview(sub_coordinates, Kokkos::ALL(), 2), z_min, z_max);
+        z_span = z_max - z_min;
+      }
+
+      // Bisect partition on the most elongated dimension
+      ordinal_type dim_notchanged;
+      if ((x_span >= y_span) && (x_span >= z_span)) {
+        bisect_median(Kokkos::subview(sub_coordinates, Kokkos::ALL(), 0), sub_reverse_perm, p1_size, p2_size);
+        dim_notchanged = 0;
+      } else if ((y_span >= x_span) && (y_span >= z_span)) {
+        bisect_median(Kokkos::subview(sub_coordinates, Kokkos::ALL(), 1), sub_reverse_perm, p1_size, p2_size);
+        dim_notchanged = 1;
+      } else {
+        bisect_median(Kokkos::subview(sub_coordinates, Kokkos::ALL(), 2), sub_reverse_perm, p1_size, p2_size);
+        dim_notchanged = 2;
+      }
+
+      // Shuffle coordinates using bisecting results			  
+      UpdateMeshFunctor<perm_view_type, decltype(sub_coordinates)> func(sub_reverse_perm, coordinates_orig, sub_coordinates, dim_notchanged);
+      Kokkos::RangePolicy<execution_space, ordinal_type> policy(0, N0);
+      Kokkos::parallel_for(policy, func);
+
+      if (p1_size != 0) {
+        partition_sizes_tmp[cnt_partitions] = p1_size;
+        cnt_partitions++;
+      }
+      if (p2_size != 0) {
+        partition_sizes_tmp[cnt_partitions] = p2_size;
+        cnt_partitions++;
+      }
+    }  // end Partition loop
+
+    // Update the number of partitions of this level (used for bisections in the next level)
+    n_partitions = cnt_partitions;
+
+    // Update partition sizes of this level (used for bisections in the next level)
+    std::copy(partition_sizes_tmp.begin(), partition_sizes_tmp.end(), partition_sizes.begin());
+  }  // end Level loop
+
+  if (n_partitions < max_n_partitions) partition_sizes.resize(n_partitions);
+
+  // Create perm from reverse_perm
+  Kokkos::parallel_for(Kokkos::RangePolicy<execution_space, ordinal_type>(0, N),
+                       UpdatePermFunctor<perm_view_type>(reverse_perm, perm));
+
+  return partition_sizes;
+}
+
+template <typename coors_view_type, typename perm_view_type>
+std::vector<typename perm_view_type::value_type> rcb(coors_view_type &coordinates, perm_view_type &perm,
+                                                     perm_view_type &reverse_perm, const int &n_levels, const bool &bisect_use_median = true) {
+  if (bisect_use_median) {
+    return rcb_median(coordinates, perm, reverse_perm, n_levels);
+  }
+  else {
+    return rcb_avg(coordinates, perm, reverse_perm, n_levels);
+  }
 }
 
 }  // namespace Impl

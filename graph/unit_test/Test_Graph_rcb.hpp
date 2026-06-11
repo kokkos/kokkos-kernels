@@ -157,12 +157,16 @@ void test_rcb(lno_t ndim, lno_t np) {
   auto h_reverse_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), reverse_perm_rcb);
   auto h_coordinates_perm = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coordinates);
 
-  // Output permutation and reverse permutation should be different
   bool dif_flag = false;
   for (lno_t i = 0; i < n_coordinates; i++) {
-    if (h_perm_rcb(i) != h_reverse_perm_rcb(i)) dif_flag = true;
+    auto perm_i = h_perm_rcb(i);
+    auto recovered_i = h_reverse_perm_rcb(perm_i);
+    if (i != recovered_i) {
+      dif_flag = true;
+      break;
+    }
   }
-  ASSERT_TRUE(dif_flag);
+  ASSERT_FALSE(dif_flag);
 
   for (lno_t i = 0; i < n_coordinates; i++) {
     for (lno_t j = 0; j < ndim; j++) {
