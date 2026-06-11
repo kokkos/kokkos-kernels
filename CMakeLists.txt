@@ -80,6 +80,7 @@ kokkoskernels_add_option("ENABLE_WARNINGS_AS_ERRORS" OFF BOOL
   "Whether warnings should be treated as errors. Default: OFF")
 
 include(cmake/kokkoskernels_warnings.cmake)
+include(cmake/kokkoskernels_windows.cmake)
 
 set(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL "Whether to build tests and examples against installation")
 if(KokkosKernels_INSTALL_TESTING)
@@ -90,6 +91,7 @@ if(KokkosKernels_INSTALL_TESTING)
   find_package(KokkosKernels REQUIRED)
   # Still need to figure out which backends
   include(cmake/kokkos_backends.cmake)
+  include(cmake/kokkoskernels_windows.cmake)  # /bigobj for heavy CUDA object files
   # Only build the tests
   # Assume that all components have been enabled
   kokkoskernels_add_test_directories(common/unit_test)
@@ -132,6 +134,7 @@ else()
   endif()
 
   include(cmake/kokkos_backends.cmake)
+  include(cmake/kokkoskernels_windows.cmake)  # /bigobj for heavy CUDA object files
 
   #This will collect imported TPLs we need to export
   #in our config file

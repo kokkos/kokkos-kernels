@@ -18,19 +18,11 @@ hipcc:
     - cmake -B build_hip -DCMAKE_CXX_COMPILER=hipcc -DKokkos_ENABLE_HIP=ON -DCMAKE_INSTALL_PREFIX=${PWD}/install
     - cmake --build build_hip --target install
     - cd ../..
-    - cmake -S${PWD}/kokkos-kernels -B${PWD}/kokkos-kernels/build 
-      -DCMAKE_CXX_COMPILER=hipcc 
-      -DCMAKE_INSTALL_PREFIX=${PWD}/kokkos-kernels/install 
-      -DCMAKE_BUILD_TYPE="Release" 
-      -DCMAKE_VERBOSE_MAKEFILE=ON 
-      -DSITE=OLCF-Frontier 
-      -DKokkos_ROOT=${PWD}/kokkos-kernels/kokkos/install 
-      -DKokkosKernels_ENABLE_TPL_ROCSOLVER=ON 
-      -DKokkosKernels_ENABLE_TPL_ROCSPARSE=ON
-      -DKokkosKernels_ENABLE_TPL_ROCBLAS=ON 
-      -DKokkosKernels_ENABLE_TESTS=ON 
-      -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON 
-      -DKokkosKernels_ENABLE_PERFTESTS=OFF 
-      -DKokkosKernels_ENABLE_BENCHMARKS:BOOL=OFF 
-      -DKokkosKernels_INST_COMPLEX_DOUBLE=ON
-    - ctest -V --test-dir ${PWD}/kokkos-kernels/build -D Nightly
+    - ctest -VV -S ${PWD}/kokkos-kernels/.gitlab/frontier-ctest.cmake
+    - git clone https://github.com/kokkos/kokkos-kernels-performance.git
+    - find kokkos-kernels_build/benchmarks -name "*.json" -exec mv {} kokkos-kernels-performance/Frontier \;
+    - cd kokkos-kernels-performance
+    - git add Frontier/*
+    - git commit -m "frontier performance run"
+    - git status
+    - git push https://"$kokkos_kernels_perf_pat"@github.com/kokkos/kokkos-kernels-performance.git

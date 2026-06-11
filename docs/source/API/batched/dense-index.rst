@@ -162,8 +162,8 @@ BLAS 1
      - :doc:`TeamVectorNrm <dense/batched_nrm>`
    * - IAMAX
      - :doc:`SerialIamax <dense/batched_iamax>`
-     - --
-     - --
+     - :doc:`TeamIamax <dense/batched_iamax>`
+     - :doc:`TeamVectorIamax <dense/batched_iamax>`
 
 BLAS 2
 ------
