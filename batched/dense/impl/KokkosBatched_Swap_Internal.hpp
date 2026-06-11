@@ -20,9 +20,9 @@ concept swappable_elements = std::same_as<T1, T2> || (std::floating_point<T1> &&
 template <typename T1, typename T2>
   requires swappable_elements<T1, T2>
 KOKKOS_INLINE_FUNCTION void swap_elements(T1 *KOKKOS_RESTRICT a, T2 *KOKKOS_RESTRICT b) {
-  const T2 temp = static_cast<T2>(*a);
-  *a            = static_cast<T1>(*b);
-  *b            = temp;
+  const T1 temp = static_cast<T1>(*b);
+  *b            = static_cast<T2>(*a);
+  *a            = temp;
 }
 
 ///

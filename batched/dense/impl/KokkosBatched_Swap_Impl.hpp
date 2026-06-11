@@ -51,7 +51,21 @@ KOKKOS_INLINE_FUNCTION int SerialSwap::invoke(const XViewType &x, const YViewTyp
 
   const int n = x.extent_int(0);
   if (n == 0) return 0;
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_VOLTA70)
+  using x_value_type = typename XViewType::non_const_value_type;
+  using y_value_type = typename YViewType::non_const_value_type;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+  for (int i = 0; i < n; i++) {
+    const x_value_type temp = static_cast<x_value_type>(y(i));
+    y(i)                    = static_cast<y_value_type>(x(i));
+    x(i)                    = temp;
+  }
+#else
   Impl::SerialSwapInternal::invoke(n, x.data(), x.stride(0), y.data(), y.stride(0));
+#endif
   return 0;
 }
 
