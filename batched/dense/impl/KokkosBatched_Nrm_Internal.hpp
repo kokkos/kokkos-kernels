@@ -224,7 +224,9 @@ KOKKOS_INLINE_FUNCTION void TeamNrmInternal<MemberType, NrmType>::invoke(const M
   } else if constexpr (std::is_same_v<NrmType, Norm::GenuineL1>) {
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(member, n),
-        [&](const int i, NrmValueType &thread_nrm) { thread_nrm += KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]); },
+        [&](const int i, NrmValueType &thread_nrm) {
+          thread_nrm += KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]);
+        },
         nrm);
   }
 
@@ -287,7 +289,9 @@ KOKKOS_INLINE_FUNCTION void TeamVectorNrmInternal<MemberType, NrmType>::invoke(c
   } else if constexpr (std::is_same_v<NrmType, Norm::GenuineL1>) {
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, n),
-        [&](const int i, NrmValueType &thread_nrm) { thread_nrm += KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]); },
+        [&](const int i, NrmValueType &thread_nrm) {
+          thread_nrm += KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]);
+        },
         nrm);
   }
   *norm = nrm;
