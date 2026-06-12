@@ -370,7 +370,7 @@ TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_float) {
 }
 TEST_F(TestCategory, test_batched_serial_nrm_genuinel1_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Serial>();
-};
+}
 
 // Team
 TEST_F(TestCategory, test_batched_team_nrm_l1_float) {
@@ -476,7 +476,7 @@ TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_fcomplex) {
 }
 TEST_F(TestCategory, test_batched_serial_nrm_genuinel1_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Serial>();
-};
+}
 
 // Team
 TEST_F(TestCategory, test_batched_team_nrm_l1_fcomplex) {
