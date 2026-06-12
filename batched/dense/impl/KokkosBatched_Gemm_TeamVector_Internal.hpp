@@ -7,6 +7,7 @@
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosKernels_ExecSpaceUtils.hpp"
 
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
