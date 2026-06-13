@@ -37,12 +37,8 @@ struct SerialSwapInternal {
 template <typename XValueType, typename YValueType>
 KOKKOS_INLINE_FUNCTION void SerialSwapInternal::invoke(const int n, XValueType *KOKKOS_RESTRICT x, const int xs0,
                                                        YValueType *KOKKOS_RESTRICT y, const int ys0) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_VOLTA70)
-#pragma unroll 1
-#else
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
-#endif
 #endif
   for (int i = 0; i < n; ++i) {
     swap_elements(&x[i * xs0], &y[i * ys0]);
