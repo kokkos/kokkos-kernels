@@ -20,17 +20,13 @@ struct Functor_BatchedSwap {
 
   Functor_BatchedSwap(const XViewType &x, const YViewType &y) : m_x(x), m_y(y) {}
 
-  KOKKOS_INLINE_FUNCTION void operator()(const int k, int &info) const {
-    auto sub_x = Kokkos::subview(m_x, k, Kokkos::ALL());
-    auto sub_y = Kokkos::subview(m_y, k, Kokkos::ALL());
-    info += KokkosBatched::SerialSwap::invoke(sub_x, sub_y);
-  }
-
   KOKKOS_INLINE_FUNCTION void operator()(const member_type &member, int &info) const {
     const int k = member.league_rank();
     auto sub_x  = Kokkos::subview(m_x, k, Kokkos::ALL());
     auto sub_y  = Kokkos::subview(m_y, k, Kokkos::ALL());
-    if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Team>) {
+    if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
+      Kokkos::single(Kokkos::PerTeam(member), [&]() { info += KokkosBatched::SerialSwap::invoke(sub_x, sub_y); });
+    } else if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Team>) {
       info += KokkosBatched::TeamSwap<member_type>::invoke(member, sub_x, sub_y);
     } else if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::TeamVector>) {
       info += KokkosBatched::TeamVectorSwap<member_type>::invoke(member, sub_x, sub_y);
@@ -47,15 +43,10 @@ struct Functor_BatchedSwap {
     std::string name                  = name_region + name_value_type;
     int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
-    const int batch_size = m_x.extent_int(0);
+    const int league_size = m_x.extent_int(0);
 
-    if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
-      Kokkos::RangePolicy<execution_space> policy(0, batch_size);
-      Kokkos::parallel_reduce(name.c_str(), policy, *this, info_sum);
-    } else {
-      Kokkos::TeamPolicy<execution_space> policy(batch_size, Kokkos::AUTO);
-      Kokkos::parallel_reduce(name.c_str(), policy, *this, info_sum);
-    }
+    Kokkos::TeamPolicy<execution_space> policy(league_size, Kokkos::AUTO);
+    Kokkos::parallel_reduce(name.c_str(), policy, *this, info_sum);
 
     Kokkos::Profiling::popRegion();
     return info_sum;
