@@ -56,10 +56,11 @@ KOKKOS_INLINE_FUNCTION int TeamVectorTrsmInternalLeftLower<Algo::Trsm::Unblocked
         member.team_barrier();
       }
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, iend), [&](const int &i) {
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, jend), [&](const int &j) {
-          // assume layout right for batched computation
-          B2[i * bs0 + j * bs1] -= a21[i * as0] * b1t[j * bs1];
-        });
+        Kokkos::parallel_for(Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, jend),
+                             [&](const int &j) {
+                               // assume layout right for batched computation
+                               B2[i * bs0 + j * bs1] -= a21[i * as0] * b1t[j * bs1];
+                             });
       });
     }
   }
@@ -108,7 +109,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorTrsmInternalLeftUpper<Algo::Trsm::Unblocked
       }
 
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, iend), [&](const int &i) {
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, jend),
+        Kokkos::parallel_for(Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, jend),
                              [&](const int &j) { B0[i * bs0 + j * bs1] -= a01[i * as0] * b1t[j * bs1]; });
       });
     }

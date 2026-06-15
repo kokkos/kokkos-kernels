@@ -149,7 +149,8 @@ struct TeamVectorAxpyInternal {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const int m, const ScalarType alpha,
                                            const ValueType* KOKKOS_RESTRICT X, const int xs0,
                                            /* */ ValueType* KOKKOS_RESTRICT Y, const int ys0) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int& i) { Y[i * ys0] += alpha * X[i * xs0]; });
+    Kokkos::parallel_for(Kokkos::RangePolicy(member, 0, m),
+                         [&](const int& i) { Y[i * ys0] += alpha * X[i * xs0]; });
     // member.team_barrier();
     return 0;
   }
@@ -159,7 +160,7 @@ struct TeamVectorAxpyInternal {
                                            const ScalarType* KOKKOS_RESTRICT alpha, const int alphas0,
                                            const ValueType* KOKKOS_RESTRICT X, const int xs0,
                                            /* */ ValueType* KOKKOS_RESTRICT Y, const int ys0) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m),
+    Kokkos::parallel_for(Kokkos::RangePolicy(member, 0, m),
                          [&](const int& i) { Y[i * ys0] += alpha[i * alphas0] * X[i * xs0]; });
     // member.team_barrier();
     return 0;
@@ -170,7 +171,7 @@ struct TeamVectorAxpyInternal {
                                            const ScalarType* KOKKOS_RESTRICT alpha, const int alphas0,
                                            const ValueType* KOKKOS_RESTRICT X, const int xs0, const int xs1,
                                            /* */ ValueType* KOKKOS_RESTRICT Y, const int ys0, const int ys1) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, m * n), [&](const int& iTemp) {
+    Kokkos::parallel_for(Kokkos::RangePolicy(member, 0, m * n), [&](const int& iTemp) {
       int i, j;
       getIndices<int, layout>(iTemp, n, m, j, i);
       Y[i * ys0 + j * ys1] += alpha[i * alphas0] * X[i * xs0 + j * xs1];

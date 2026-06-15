@@ -58,7 +58,7 @@ struct TeamVectorSetIdentityInternal {
                                            /* */ ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
     const ValueType one(1), zero(0);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n),
+      Kokkos::parallel_for(Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, n),
                            [&](const int &j) { A[i * as0 + j * as1] = i == j ? one : zero; });
     });
 

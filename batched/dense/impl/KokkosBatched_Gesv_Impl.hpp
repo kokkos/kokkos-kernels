@@ -221,7 +221,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
     reducer_value_type value;
     Kokkos::MaxLoc<value_type, int> reducer_value(value);
     Kokkos::parallel_reduce(
-        Kokkos::ThreadVectorRange(member, n),
+        Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, n),
         [&](const int &j, reducer_value_type &update) {
           if (Kokkos::abs(A(j, i)) > update.val) {
             update.val = Kokkos::abs(A(j, i));
@@ -231,7 +231,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
         reducer_value);
     D2(i) = 1. / value.val;
     Kokkos::parallel_reduce(
-        Kokkos::ThreadVectorRange(member, n),
+        Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, n),
         [&](const int &j, reducer_value_type &update) {
           if (Kokkos::abs(A(i, j)) > update.val) {
             update.val = Kokkos::abs(A(i, j));
@@ -243,7 +243,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
   });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n), [&](const int &j) { A(i, j) *= D2(j); });
+    Kokkos::parallel_for(Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, n), [&](const int &j) { A(i, j) *= D2(j); });
   });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &i) {
@@ -251,7 +251,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
     reducer_value_type value;
     Kokkos::MaxLoc<value_type, int> reducer_value(value);
     Kokkos::parallel_reduce(
-        Kokkos::ThreadVectorRange(member, n),
+        Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, n),
         [&](const int &j, reducer_value_type &update) {
           if (Kokkos::abs(A(i, j)) > update.val) {
             update.val = Kokkos::abs(A(i, j));
@@ -260,7 +260,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
         },
         reducer_value);
     D1_i = 1. / value.val;
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n), [&](const int &j) { A(i, j) *= D1_i; });
+    Kokkos::parallel_for(Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, n), [&](const int &j) { A(i, j) *= D1_i; });
     Y(i) *= D1_i;
   });
 
@@ -269,7 +269,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
     reducer_value_type value{};
     Kokkos::MaxLoc<value_type, int> reducer_value(value);
     Kokkos::parallel_reduce(
-        Kokkos::TeamVectorRange(member, n),
+        Kokkos::RangePolicy(member, 0, n),
         [&](const int &j, reducer_value_type &update) {
           if (tmp_v_1(j) > update.val) {
             update.val = tmp_v_1(j);
@@ -281,7 +281,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
     value.loc = 0;
     value.val = KokkosKernels::ArithTraits<value_type>::zero();
     Kokkos::parallel_reduce(
-        Kokkos::TeamVectorRange(member, n),
+        Kokkos::RangePolicy(member, 0, n),
         [&](const int &j, reducer_value_type &update) {
           if (Kokkos::abs(A(row_index, j) * tmp_v_2(j)) > update.val) {
             update.val = Kokkos::abs(A(row_index, j) * tmp_v_2(j));
@@ -294,7 +294,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(const Me
     tmp_v_1(row_index) = KokkosKernels::ArithTraits<value_type>::zero();
     tmp_v_2(col_index) = KokkosKernels::ArithTraits<value_type>::zero();
 
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
+    Kokkos::parallel_for(Kokkos::RangePolicy(member, 0, n),
                          [&](const int &j) { PDAD(col_index, j) = A(row_index, j); });
     PDY(col_index) = Y(row_index);
   }
@@ -323,7 +323,8 @@ KOKKOS_INLINE_FUNCTION void TeamVectorHadamard1D(const MemberType &member, const
                                                  const VectorType3 DX) {
   const size_t n = X.extent(0);
 
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const size_t &i) { DX(i) = D(i) * X(i); });
+  Kokkos::parallel_for(Kokkos::RangePolicy(member, 0, n),
+                         [&](const size_t &i) { DX(i) = D(i) * X(i); });
 }
 
 ///

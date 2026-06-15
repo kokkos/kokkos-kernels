@@ -36,9 +36,10 @@ struct TeamVectorSetLowerTriangularInternal {
                                            /* */ ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
       const int jdist = j + dist;
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m), [=](const int &i) {
-        if (i >= jdist) A[i * as0 + j * as1] = alpha;
-      });
+      Kokkos::parallel_for(Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, m),
+                           [=](const int &i) {
+                             if (i >= jdist) A[i * as0 + j * as1] = alpha;
+                           });
     });
     return 0;
   }

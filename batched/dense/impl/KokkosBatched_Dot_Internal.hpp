@@ -104,7 +104,7 @@ struct TeamVectorDotInternal {
                                                 /* */ MagnitudeType *KOKKOS_RESTRICT C) {
     ValueType t(0);
     Kokkos::parallel_reduce(
-        Kokkos::TeamVectorRange(member, m),
+        Kokkos::RangePolicy(member, 0, m),
         [&](const int &i, ValueType &update) {
           const int idx_a = i * as0, idx_b = i * bs0;
           update += op(A[idx_a]) * B[idx_b];
@@ -126,7 +126,7 @@ struct TeamVectorDotInternal {
       const ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
       const ValueType *KOKKOS_RESTRICT B_at_j = B + j * bs1;
       Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(member, m),
+          Kokkos::RangePolicy(Kokkos::ThreadHandle<MemberType>(member), 0, m),
           [&](const int &i, ValueType &update) {
             const int idx_a = i * as0, idx_b = i * bs0;
             update += op(A_at_j[idx_a]) * B_at_j[idx_b];
