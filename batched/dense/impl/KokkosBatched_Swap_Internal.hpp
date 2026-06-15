@@ -32,16 +32,30 @@ struct SerialSwapInternal {
   template <typename XValueType, typename YValueType>
   KOKKOS_INLINE_FUNCTION static void invoke(const int n, XValueType *KOKKOS_RESTRICT x, const int xs0,
                                             YValueType *KOKKOS_RESTRICT y, const int ys0);
+  template <typename XValueType, typename YValueType>
+  KOKKOS_INLINE_FUNCTION static void invoke(const int m, const int n, XValueType *KOKKOS_RESTRICT x, const int xs0,
+                                            const int xs1, YValueType *KOKKOS_RESTRICT y, const int ys0, const int ys1);
 };
 
 template <typename XValueType, typename YValueType>
-KOKKOS_INLINE_FUNCTION void SerialSwapInternal::invoke(const int n, XValueType *KOKKOS_RESTRICT x, const int xs0,
+KOKKOS_INLINE_FUNCTION void SerialSwapInternal::invoke(const int m, XValueType *KOKKOS_RESTRICT x, const int xs0,
                                                        YValueType *KOKKOS_RESTRICT y, const int ys0) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-  for (int i = 0; i < n; ++i) {
+  for (int i = 0; i < m; ++i) {
     swap_elements(&x[i * xs0], &y[i * ys0]);
+  }
+}
+
+template <typename XValueType, typename YValueType>
+KOKKOS_INLINE_FUNCTION void SerialSwapInternal::invoke(const int m, const int n, XValueType *KOKKOS_RESTRICT x,
+                                                       const int xs0, const int xs1, YValueType *KOKKOS_RESTRICT y,
+                                                       const int ys0, const int ys1) {
+  if (xs1 < xs0) {
+    for (int i = 0; i < m; ++i) invoke(n, &x[i * xs0], xs1, &y[i * ys0], ys1);
+  } else {
+    for (int j = 0; j < n; ++j) invoke(m, &x[j * xs1], xs0, &y[j * ys1], ys0);
   }
 }
 
@@ -53,15 +67,35 @@ struct TeamSwapInternal {
   template <typename XValueType, typename YValueType>
   KOKKOS_INLINE_FUNCTION static void invoke(const MemberType &member, const int n, XValueType *KOKKOS_RESTRICT x,
                                             const int xs0, YValueType *KOKKOS_RESTRICT y, const int ys0);
+
+  template <typename XValueType, typename YValueType>
+  KOKKOS_INLINE_FUNCTION static void invoke(const MemberType &member, const int m, const int n,
+                                            XValueType *KOKKOS_RESTRICT x, const int xs0, const int xs1,
+                                            YValueType *KOKKOS_RESTRICT y, const int ys0, const int ys1);
 };
 
 template <typename MemberType>
 template <typename XValueType, typename YValueType>
-KOKKOS_INLINE_FUNCTION void TeamSwapInternal<MemberType>::invoke(const MemberType &member, const int n,
+KOKKOS_INLINE_FUNCTION void TeamSwapInternal<MemberType>::invoke(const MemberType &member, const int m,
                                                                  XValueType *KOKKOS_RESTRICT x, const int xs0,
                                                                  YValueType *KOKKOS_RESTRICT y, const int ys0) {
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n),
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m),
                        [&](const int i) { swap_elements(&x[i * xs0], &y[i * ys0]); });
+}
+
+template <typename MemberType>
+template <typename XValueType, typename YValueType>
+KOKKOS_INLINE_FUNCTION void TeamSwapInternal<MemberType>::invoke(const MemberType &member, const int m, const int n,
+                                                                 XValueType *KOKKOS_RESTRICT x, const int xs0,
+                                                                 const int xs1, YValueType *KOKKOS_RESTRICT y,
+                                                                 const int ys0, const int ys1) {
+  if (xs1 < xs0) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m),
+                         [&](const int i) { SerialSwapInternal::invoke(n, &x[i * xs0], xs1, &y[i * ys0], ys1); });
+  } else {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n),
+                         [&](const int j) { SerialSwapInternal::invoke(m, &x[j * xs1], xs0, &y[j * ys1], ys0); });
+  }
 }
 
 ///
@@ -72,15 +106,40 @@ struct TeamVectorSwapInternal {
   template <typename XValueType, typename YValueType>
   KOKKOS_INLINE_FUNCTION static void invoke(const MemberType &member, const int n, XValueType *KOKKOS_RESTRICT x,
                                             const int xs0, YValueType *KOKKOS_RESTRICT y, const int ys0);
+
+  template <typename XValueType, typename YValueType>
+  KOKKOS_INLINE_FUNCTION static void invoke(const MemberType &member, const int m, const int n,
+                                            XValueType *KOKKOS_RESTRICT x, const int xs0, const int xs1,
+                                            YValueType *KOKKOS_RESTRICT y, const int ys0, const int ys1);
 };
 
 template <typename MemberType>
 template <typename XValueType, typename YValueType>
-KOKKOS_INLINE_FUNCTION void TeamVectorSwapInternal<MemberType>::invoke(const MemberType &member, const int n,
+KOKKOS_INLINE_FUNCTION void TeamVectorSwapInternal<MemberType>::invoke(const MemberType &member, const int m,
                                                                        XValueType *KOKKOS_RESTRICT x, const int xs0,
                                                                        YValueType *KOKKOS_RESTRICT y, const int ys0) {
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m),
                        [&](const int i) { swap_elements(&x[i * xs0], &y[i * ys0]); });
+}
+
+template <typename MemberType>
+template <typename XValueType, typename YValueType>
+KOKKOS_INLINE_FUNCTION void TeamVectorSwapInternal<MemberType>::invoke(const MemberType &member, const int m,
+                                                                       const int n, XValueType *KOKKOS_RESTRICT x,
+                                                                       const int xs0, const int xs1,
+                                                                       YValueType *KOKKOS_RESTRICT y, const int ys0,
+                                                                       const int ys1) {
+  if (xs1 < xs0) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int i) {
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n),
+                           [&](const int j) { swap_elements(&x[i * xs0 + j * xs1], &y[i * ys0 + j * ys1]); });
+    });
+  } else {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int j) {
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m),
+                           [&](const int i) { swap_elements(&x[i * xs0 + j * xs1], &y[i * ys0 + j * ys1]); });
+    });
+  }
 }
 
 }  // namespace Impl

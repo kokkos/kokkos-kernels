@@ -20,10 +20,19 @@ struct Functor_BatchedSwap {
 
   Functor_BatchedSwap(const XViewType &x, const YViewType &y) : m_x(x), m_y(y) {}
 
+  template <typename ViewType>
+  KOKKOS_INLINE_FUNCTION auto slice(const ViewType &view, const int k) const {
+    if constexpr (ViewType::rank() == 3) {
+      return Kokkos::subview(view, k, Kokkos::ALL(), Kokkos::ALL());
+    } else {
+      return Kokkos::subview(view, k, Kokkos::ALL());
+    }
+  }
+
   KOKKOS_INLINE_FUNCTION void operator()(const member_type &member, int &info) const {
     const int k = member.league_rank();
-    auto sub_x  = Kokkos::subview(m_x, k, Kokkos::ALL());
-    auto sub_y  = Kokkos::subview(m_y, k, Kokkos::ALL());
+    auto sub_x  = slice(m_x, k);
+    auto sub_y  = slice(m_y, k);
     if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Serial>) {
       Kokkos::single(Kokkos::PerTeam(member), [&]() { info += KokkosBatched::SerialSwap::invoke(sub_x, sub_y); });
     } else if constexpr (std::is_same_v<ArgMode, KokkosBatched::Mode::Team>) {
@@ -54,7 +63,8 @@ struct Functor_BatchedSwap {
 };
 
 /// \brief Implementation details of batched swap analytical test
-/// x = [1, 3, 5], y = [2, 4, 6]
+/// x0 = [1, 3, 5], y0 = [2, 4, 6]
+/// x1 = [[1, 3, 5], [7, 9, 11]], y1 = [[2, 4, 6], [8, 10, 12]]
 ///
 /// \tparam DeviceType Kokkos device type
 /// \tparam ScalarType Kokkos scalar type
@@ -65,86 +75,154 @@ struct Functor_BatchedSwap {
 /// \param[in] Nb Batch size of vectors
 template <typename DeviceType, typename ScalarType, typename LayoutType1, typename LayoutType2, typename ArgMode>
 void impl_test_batched_swap_analytical(const std::size_t Nb) {
-  using ats             = typename KokkosKernels::ArithTraits<ScalarType>;
-  using RealType        = typename ats::mag_type;
-  using XViewType       = Kokkos::View<ScalarType **, LayoutType1, DeviceType>;
-  using YViewType       = Kokkos::View<ScalarType **, LayoutType2, DeviceType>;
-  using StridedViewType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
+  using RealType          = typename ats::mag_type;
+  using XView2DType       = Kokkos::View<ScalarType **, LayoutType1, DeviceType>;
+  using YView2DType       = Kokkos::View<ScalarType **, LayoutType2, DeviceType>;
+  using XView3DType       = Kokkos::View<ScalarType ***, LayoutType1, DeviceType>;
+  using YView3DType       = Kokkos::View<ScalarType ***, LayoutType2, DeviceType>;
+  using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
+  using StridedView3DType = Kokkos::View<ScalarType ***, Kokkos::LayoutStride, DeviceType>;
 
-  const std::size_t N = 3;
-  XViewType x("x", Nb, N), x_ref("x_ref", Nb, N);
-  YViewType y("y", Nb, N), y_ref("y_ref", Nb, N);
+  const std::size_t M = 2, N = 3;
+  XView2DType x0("x0", Nb, N), x0_ref("x0_ref", Nb, N);
+  YView2DType y0("y0", Nb, N), y0_ref("y0_ref", Nb, N);
+  XView3DType x1("x1", Nb, M, N), x1_ref("x1_ref", Nb, M, N);
+  YView3DType y1("y1", Nb, M, N), y1_ref("y1_ref", Nb, M, N);
 
   const std::size_t incx = 2;
   // Testing incx argument with strided views
-  Kokkos::LayoutStride layout{Nb, incx, N, Nb * incx};
-  StridedViewType x_s("x_s", layout), y_s("y_s", layout);
+  Kokkos::LayoutStride layout0{Nb, incx, N, Nb * incx};
+  StridedView2DType x0_s("x0_s", layout0), y0_s("y0_s", layout0);
 
-  auto h_x = Kokkos::create_mirror_view(x);
-  auto h_y = Kokkos::create_mirror_view(y);
+  Kokkos::LayoutStride layout1{Nb, incx, M, Nb * incx, N, Nb * incx * M};
+  StridedView3DType x1_s("x1_s", layout1), y1_s("y1_s", layout1);
+
+  auto h_x0 = Kokkos::create_mirror_view(x0);
+  auto h_y0 = Kokkos::create_mirror_view(y0);
+  auto h_x1 = Kokkos::create_mirror_view(x1);
+  auto h_y1 = Kokkos::create_mirror_view(y1);
 
   constexpr bool is_complex = KokkosKernels::ArithTraits<ScalarType>::is_complex;
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
     if constexpr (is_complex) {
-      h_x(ib, 0) = ScalarType(1, 7);
-      h_x(ib, 1) = ScalarType(3, 9);
-      h_x(ib, 2) = ScalarType(5, 11);
+      h_x0(ib, 0) = ScalarType(1, 7);
+      h_x0(ib, 1) = ScalarType(3, 9);
+      h_x0(ib, 2) = ScalarType(5, 11);
 
-      h_y(ib, 0) = ScalarType(2, 8);
-      h_y(ib, 1) = ScalarType(4, 10);
-      h_y(ib, 2) = ScalarType(6, 12);
+      h_y0(ib, 0) = ScalarType(2, 8);
+      h_y0(ib, 1) = ScalarType(4, 10);
+      h_y0(ib, 2) = ScalarType(6, 12);
+
+      h_x1(ib, 0, 0) = ScalarType(1, 7);
+      h_x1(ib, 0, 1) = ScalarType(3, 9);
+      h_x1(ib, 0, 2) = ScalarType(5, 11);
+      h_x1(ib, 1, 0) = ScalarType(13, 19);
+      h_x1(ib, 1, 1) = ScalarType(15, 21);
+      h_x1(ib, 1, 2) = ScalarType(17, 23);
+
+      h_y1(ib, 0, 0) = ScalarType(2, 8);
+      h_y1(ib, 0, 1) = ScalarType(4, 10);
+      h_y1(ib, 0, 2) = ScalarType(6, 12);
+      h_y1(ib, 1, 0) = ScalarType(14, 20);
+      h_y1(ib, 1, 1) = ScalarType(16, 22);
+      h_y1(ib, 1, 2) = ScalarType(18, 24);
     } else {
-      h_x(ib, 0) = ScalarType(1);
-      h_x(ib, 1) = ScalarType(3);
-      h_x(ib, 2) = ScalarType(5);
+      h_x0(ib, 0) = ScalarType(1);
+      h_x0(ib, 1) = ScalarType(3);
+      h_x0(ib, 2) = ScalarType(5);
 
-      h_y(ib, 0) = ScalarType(2);
-      h_y(ib, 1) = ScalarType(4);
-      h_y(ib, 2) = ScalarType(6);
+      h_y0(ib, 0) = ScalarType(2);
+      h_y0(ib, 1) = ScalarType(4);
+      h_y0(ib, 2) = ScalarType(6);
+
+      h_x1(ib, 0, 0) = ScalarType(1);
+      h_x1(ib, 0, 1) = ScalarType(3);
+      h_x1(ib, 0, 2) = ScalarType(5);
+      h_x1(ib, 1, 0) = ScalarType(13);
+      h_x1(ib, 1, 1) = ScalarType(15);
+      h_x1(ib, 1, 2) = ScalarType(17);
+
+      h_y1(ib, 0, 0) = ScalarType(2);
+      h_y1(ib, 0, 1) = ScalarType(4);
+      h_y1(ib, 0, 2) = ScalarType(6);
+      h_y1(ib, 1, 0) = ScalarType(14);
+      h_y1(ib, 1, 1) = ScalarType(16);
+      h_y1(ib, 1, 2) = ScalarType(18);
     }
   }
 
-  Kokkos::deep_copy(x, h_x);
-  Kokkos::deep_copy(y, h_y);
+  Kokkos::deep_copy(x0, h_x0);
+  Kokkos::deep_copy(y0, h_y0);
+  Kokkos::deep_copy(x1, h_x1);
+  Kokkos::deep_copy(y1, h_y1);
 
   // Deep copy to strided views
-  Kokkos::deep_copy(x_s, x);
-  Kokkos::deep_copy(y_s, y);
+  Kokkos::deep_copy(x0_s, x0);
+  Kokkos::deep_copy(y0_s, y0);
+  Kokkos::deep_copy(x1_s, x1);
+  Kokkos::deep_copy(y1_s, y1);
 
   // Reference results after swap
-  Kokkos::deep_copy(x_ref, y);
-  Kokkos::deep_copy(y_ref, x);
+  Kokkos::deep_copy(x0_ref, y0);
+  Kokkos::deep_copy(y0_ref, x0);
+  Kokkos::deep_copy(x1_ref, y1);
+  Kokkos::deep_copy(y1_ref, x1);
 
-  auto info = Functor_BatchedSwap<DeviceType, XViewType, YViewType, ArgMode>(x, y).run();
-  EXPECT_EQ(info, 0);
+  auto info0 = Functor_BatchedSwap<DeviceType, XView2DType, YView2DType, ArgMode>(x0, y0).run();
+  auto info1 = Functor_BatchedSwap<DeviceType, XView3DType, YView3DType, ArgMode>(x1, y1).run();
+  EXPECT_EQ(info0, 0);
+  EXPECT_EQ(info1, 0);
 
   // With strided views
-  info = Functor_BatchedSwap<DeviceType, StridedViewType, StridedViewType, ArgMode>(x_s, y_s).run();
-  EXPECT_EQ(info, 0);
+  info0 = Functor_BatchedSwap<DeviceType, StridedView2DType, StridedView2DType, ArgMode>(x0_s, y0_s).run();
+  info1 = Functor_BatchedSwap<DeviceType, StridedView3DType, StridedView3DType, ArgMode>(x1_s, y1_s).run();
+  EXPECT_EQ(info0, 0);
+  EXPECT_EQ(info1, 0);
 
   RealType eps = 1.0e1 * ats::epsilon();
-  Kokkos::deep_copy(h_x, x);
-  Kokkos::deep_copy(h_y, y);
-  auto h_x_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x_ref);
-  auto h_y_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y_ref);
+  Kokkos::deep_copy(h_x0, x0);
+  Kokkos::deep_copy(h_y0, y0);
+  Kokkos::deep_copy(h_x1, x1);
+  Kokkos::deep_copy(h_y1, y1);
+  auto h_x0_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x0_ref);
+  auto h_y0_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y0_ref);
+  auto h_x1_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x1_ref);
+  auto h_y1_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y1_ref);
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      KK_EXPECT_NEAR(h_x(ib, i), h_x_ref(ib, i), eps);
-      KK_EXPECT_NEAR(h_y(ib, i), h_y_ref(ib, i), eps);
+      KK_EXPECT_NEAR(h_x0(ib, i), h_x0_ref(ib, i), eps);
+      KK_EXPECT_NEAR(h_y0(ib, i), h_y0_ref(ib, i), eps);
+    }
+    for (std::size_t i = 0; i < M; i++) {
+      for (std::size_t j = 0; j < N; j++) {
+        KK_EXPECT_NEAR(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
+        KK_EXPECT_NEAR(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
+      }
     }
   }
 
   // Testing for strided views, reusing x and y
-  Kokkos::deep_copy(x, x_s);
-  Kokkos::deep_copy(y, y_s);
-  Kokkos::deep_copy(h_x, x);
-  Kokkos::deep_copy(h_y, y);
+  Kokkos::deep_copy(x0, x0_s);
+  Kokkos::deep_copy(y0, y0_s);
+  Kokkos::deep_copy(x1, x1_s);
+  Kokkos::deep_copy(y1, y1_s);
+  Kokkos::deep_copy(h_x0, x0);
+  Kokkos::deep_copy(h_y0, y0);
+  Kokkos::deep_copy(h_x1, x1);
+  Kokkos::deep_copy(h_y1, y1);
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      KK_EXPECT_NEAR(h_x(ib, i), h_x_ref(ib, i), eps);
-      KK_EXPECT_NEAR(h_y(ib, i), h_y_ref(ib, i), eps);
+      KK_EXPECT_NEAR(h_x0(ib, i), h_x0_ref(ib, i), eps);
+      KK_EXPECT_NEAR(h_y0(ib, i), h_y0_ref(ib, i), eps);
+    }
+    for (std::size_t i = 0; i < M; i++) {
+      for (std::size_t j = 0; j < N; j++) {
+        KK_EXPECT_NEAR(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
+        KK_EXPECT_NEAR(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
+      }
     }
   }
 }
@@ -160,20 +238,28 @@ void impl_test_batched_swap_analytical(const std::size_t Nb) {
 /// \param[in] Nb Batch size of vectors
 /// \param[in] N Length of the vector x
 template <typename DeviceType, typename ScalarType, typename LayoutType1, typename LayoutType2, typename ArgMode>
-void impl_test_batched_swap(const std::size_t Nb, const std::size_t N) {
-  using ats             = typename KokkosKernels::ArithTraits<ScalarType>;
-  using RealType        = typename ats::mag_type;
-  using XViewType       = Kokkos::View<ScalarType **, LayoutType1, DeviceType>;
-  using YViewType       = Kokkos::View<ScalarType **, LayoutType2, DeviceType>;
-  using StridedViewType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
+void impl_test_batched_swap(const std::size_t Nb, const std::size_t M, const std::size_t N) {
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
+  using RealType          = typename ats::mag_type;
+  using XView2DType       = Kokkos::View<ScalarType **, LayoutType1, DeviceType>;
+  using YView2DType       = Kokkos::View<ScalarType **, LayoutType2, DeviceType>;
+  using XView3DType       = Kokkos::View<ScalarType ***, LayoutType1, DeviceType>;
+  using YView3DType       = Kokkos::View<ScalarType ***, LayoutType2, DeviceType>;
+  using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
+  using StridedView3DType = Kokkos::View<ScalarType ***, Kokkos::LayoutStride, DeviceType>;
 
-  XViewType x("x", Nb, N), x_ref("x_ref", Nb, N);
-  YViewType y("y", Nb, N), y_ref("y_ref", Nb, N);
+  XView2DType x0("x0", Nb, N), x0_ref("x0_ref", Nb, N);
+  YView2DType y0("y0", Nb, N), y0_ref("y0_ref", Nb, N);
+  XView3DType x1("x1", Nb, M, N), x1_ref("x1_ref", Nb, M, N);
+  YView3DType y1("y1", Nb, M, N), y1_ref("y1_ref", Nb, M, N);
 
   const std::size_t incx = 2;
   // Testing incx argument with strided views
-  Kokkos::LayoutStride layout{Nb, incx, N, Nb * incx};
-  StridedViewType x_s("x_s", layout), y_s("y_s", layout);
+  Kokkos::LayoutStride layout0{Nb, incx, N, Nb * incx};
+  StridedView2DType x0_s("x0_s", layout0), y0_s("y0_s", layout0);
+
+  Kokkos::LayoutStride layout1{Nb, incx, M, Nb * incx, N, Nb * incx * M};
+  StridedView3DType x1_s("x1_s", layout1), y1_s("y1_s", layout1);
 
   // Create random x
   using execution_space = typename DeviceType::execution_space;
@@ -181,67 +267,77 @@ void impl_test_batched_swap(const std::size_t Nb, const std::size_t N) {
   ScalarType randStart, randEnd;
 
   KokkosKernels::Impl::getRandomBounds(1.0, randStart, randEnd);
-  Kokkos::fill_random(x, rand_pool, randStart, randEnd);
-  Kokkos::fill_random(y, rand_pool, randStart, randEnd);
-
-  Kokkos::fence();
+  Kokkos::fill_random(x0, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(y0, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(x1, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(y1, rand_pool, randStart, randEnd);
 
   // Deep copy to strided views
-  Kokkos::deep_copy(x_s, x);
-  Kokkos::deep_copy(y_s, y);
+  Kokkos::deep_copy(x0_s, x0);
+  Kokkos::deep_copy(y0_s, y0);
+  Kokkos::deep_copy(x1_s, x1);
+  Kokkos::deep_copy(y1_s, y1);
 
   // Reference results after swap
-  Kokkos::deep_copy(x_ref, y);
-  Kokkos::deep_copy(y_ref, x);
+  Kokkos::deep_copy(x0_ref, y0);
+  Kokkos::deep_copy(y0_ref, x0);
+  Kokkos::deep_copy(x1_ref, y1);
+  Kokkos::deep_copy(y1_ref, x1);
 
-  auto info = Functor_BatchedSwap<DeviceType, XViewType, YViewType, ArgMode>(x, y).run();
-  EXPECT_EQ(info, 0);
+  auto info0 = Functor_BatchedSwap<DeviceType, XView2DType, YView2DType, ArgMode>(x0, y0).run();
+  auto info1 = Functor_BatchedSwap<DeviceType, XView3DType, YView3DType, ArgMode>(x1, y1).run();
+  EXPECT_EQ(info0, 0);
+  EXPECT_EQ(info1, 0);
 
   // With strided views
-  info = Functor_BatchedSwap<DeviceType, StridedViewType, StridedViewType, ArgMode>(x_s, y_s).run();
-  EXPECT_EQ(info, 0);
+  info0 = Functor_BatchedSwap<DeviceType, StridedView2DType, StridedView2DType, ArgMode>(x0_s, y0_s).run();
+  info1 = Functor_BatchedSwap<DeviceType, StridedView3DType, StridedView3DType, ArgMode>(x1_s, y1_s).run();
+  EXPECT_EQ(info0, 0);
+  EXPECT_EQ(info1, 0);
 
-  Kokkos::fence();
-
-  RealType eps = 1.0e1 * ats::epsilon();
-  auto h_x     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x);
-  auto h_y     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y);
-  auto h_x_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x_ref);
-  auto h_y_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y_ref);
+  RealType eps  = 1.0e1 * ats::epsilon();
+  auto h_x0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x0);
+  auto h_y0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y0);
+  auto h_x1     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x1);
+  auto h_y1     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y1);
+  auto h_x0_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x0_ref);
+  auto h_y0_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y0_ref);
+  auto h_x1_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x1_ref);
+  auto h_y1_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y1_ref);
 
   // Check if swap is correct
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      if (Kokkos::abs(h_x(ib, i) - h_x_ref(ib, i)) > eps || Kokkos::abs(h_y(ib, i) - h_y_ref(ib, i)) > eps) {
-        std::string layout1 = std::is_same_v<LayoutType1, Kokkos::LayoutLeft> ? "LayoutLeft" : "LayoutRight";
-        std::string layout2 = std::is_same_v<LayoutType2, Kokkos::LayoutLeft> ? "LayoutLeft" : "LayoutRight";
-        std::cout << "Error at batch " << ib << " / " << Nb << ", index " << i << " / " << N << ": "
-                  << "h_x = " << h_x(ib, i) << ", h_x_ref = " << h_x_ref(ib, i) << ", "
-                  << "h_y = " << h_y(ib, i) << ", h_y_ref = " << h_y_ref(ib, i) << ", "
-                  << "layout1 = " << layout1 << ", layout2 = " << layout2 << std::endl;
+      KK_EXPECT_NEAR(h_x0(ib, i), h_x0_ref(ib, i), eps);
+      KK_EXPECT_NEAR(h_y0(ib, i), h_y0_ref(ib, i), eps);
+    }
+    for (std::size_t i = 0; i < M; i++) {
+      for (std::size_t j = 0; j < N; j++) {
+        KK_EXPECT_NEAR(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
+        KK_EXPECT_NEAR(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
       }
-      KK_EXPECT_NEAR(h_x(ib, i), h_x_ref(ib, i), eps);
-      KK_EXPECT_NEAR(h_y(ib, i), h_y_ref(ib, i), eps);
     }
   }
 
   // Testing for strided views, reusing x and y
-  Kokkos::deep_copy(x, x_s);
-  Kokkos::deep_copy(y, y_s);
-  Kokkos::deep_copy(h_x, x);
-  Kokkos::deep_copy(h_y, y);
+  Kokkos::deep_copy(x0, x0_s);
+  Kokkos::deep_copy(y0, y0_s);
+  Kokkos::deep_copy(x1, x1_s);
+  Kokkos::deep_copy(y1, y1_s);
+  Kokkos::deep_copy(h_x0, x0);
+  Kokkos::deep_copy(h_y0, y0);
+  Kokkos::deep_copy(h_x1, x1);
+  Kokkos::deep_copy(h_y1, y1);
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      if (Kokkos::abs(h_x(ib, i) - h_x_ref(ib, i)) > eps || Kokkos::abs(h_y(ib, i) - h_y_ref(ib, i)) > eps) {
-        std::string layout1 = std::is_same_v<LayoutType1, Kokkos::LayoutLeft> ? "LayoutLeft" : "LayoutRight";
-        std::string layout2 = std::is_same_v<LayoutType2, Kokkos::LayoutLeft> ? "LayoutLeft" : "LayoutRight";
-        std::cout << "Error with strided views at batch " << ib << " / " << Nb << ", index " << i << " / " << N << ": "
-                  << "h_x = " << h_x(ib, i) << ", h_x_ref = " << h_x_ref(ib, i) << ", "
-                  << "h_y = " << h_y(ib, i) << ", h_y_ref = " << h_y_ref(ib, i) << ", "
-                  << "layout1 = " << layout1 << ", layout2 = " << layout2 << std::endl;
+      KK_EXPECT_NEAR(h_x0(ib, i), h_x0_ref(ib, i), eps);
+      KK_EXPECT_NEAR(h_y0(ib, i), h_y0_ref(ib, i), eps);
+    }
+    for (std::size_t i = 0; i < M; i++) {
+      for (std::size_t j = 0; j < N; j++) {
+        KK_EXPECT_NEAR(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
+        KK_EXPECT_NEAR(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
       }
-      KK_EXPECT_NEAR(h_x(ib, i), h_x_ref(ib, i), eps);
-      KK_EXPECT_NEAR(h_y(ib, i), h_y_ref(ib, i), eps);
     }
   }
 }
@@ -260,9 +356,12 @@ int test_batched_swap() {
     Test::Swap::impl_test_batched_swap_analytical<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(2);
 
     for (int ib = 0; ib < 5; ib++) {
-      for (int i = 0; i < 10; i++) {
-        Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(ib, i);
-        Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(ib, i);
+      for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+          Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(ib, i, j);
+          Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(ib, i,
+                                                                                                               j);
+        }
       }
     }
   }
@@ -276,9 +375,12 @@ int test_batched_swap() {
     Test::Swap::impl_test_batched_swap_analytical<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(2);
 
     for (int ib = 0; ib < 5; ib++) {
-      for (int i = 0; i < 10; i++) {
-        Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(ib, i);
-        Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(ib, i);
+      for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+          Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutLeft, ArgMode>(ib, i, j);
+          Test::Swap::impl_test_batched_swap<DeviceType, ScalarType, LayoutType, Kokkos::LayoutRight, ArgMode>(ib, i,
+                                                                                                               j);
+        }
       }
     }
   }

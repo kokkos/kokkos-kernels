@@ -10,8 +10,8 @@
 namespace KokkosBatched {
 /// \brief Serial Batched swap: swap two vectors x and y of length n.
 struct SerialSwap {
-  /// \tparam XViewType: Type for input X, needs to be a 1D view
-  /// \tparam YViewType: Type for input Y, needs to be a 1D view
+  /// \tparam XViewType: Type for input X, needs to be a 1D or 2D view
+  /// \tparam YViewType: Type for input Y, needs to be a 1D or 2D view
   ///
   /// \param[in,out] x Input/output view of shape (N)
   /// \param[in,out] y Input/output view of shape (N)
@@ -24,8 +24,8 @@ struct SerialSwap {
 /// \tparam MemberType: Kokkos TeamPolicy member type
 template <typename MemberType>
 struct TeamSwap {
-  /// \tparam XViewType: Type for input X, needs to be a 1D view
-  /// \tparam YViewType: Type for input Y, needs to be a 1D view
+  /// \tparam XViewType: Type for input X, needs to be a 1D or 2D view
+  /// \tparam YViewType: Type for input Y, needs to be a 1D or 2D view
   ///
   /// \param[in] member : Kokkos TeamPolicy member type
   /// \param[in,out] x Input/output view of shape (N)
@@ -39,8 +39,8 @@ struct TeamSwap {
 /// \tparam MemberType: Kokkos TeamPolicy member type
 template <typename MemberType>
 struct TeamVectorSwap {
-  /// \tparam XViewType: Type for input X, needs to be a 1D view
-  /// \tparam YViewType: Type for input Y, needs to be a 1D view
+  /// \tparam XViewType: Type for input X, needs to be a 1D or 2D view
+  /// \tparam YViewType: Type for input Y, needs to be a 1D or 2D view
   ///
   /// \param[in] member : Kokkos TeamPolicy member type
   /// \param[in] x Input view of shape (N)
