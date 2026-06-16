@@ -6,10 +6,11 @@
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
-
+#include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
-#include "KokkosBatched_Gemm_Serial_Impl.hpp"
+
 #include "KokkosBatched_Gemm_Team_Impl.hpp"
+#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -18,8 +19,9 @@ using namespace KokkosBatched;
 namespace Test {
 namespace TeamGemm {
 
-template <typename TA, typename TB>
+template <typename Mode, typename TA, typename TB>
 struct ParamTag {
+  using mode   = Mode;
   using transA = TA;
   using transB = TB;
 };
@@ -27,29 +29,36 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedTeamGemm {
   using execution_space = typename DeviceType::execution_space;
+  using member_type     = typename Kokkos::TeamPolicy<execution_space>::member_type;
+
   ViewType m_a, m_b, m_c;
   ScalarType m_alpha, m_beta;
 
-  KOKKOS_INLINE_FUNCTION
   Functor_TestBatchedTeamGemm(const ScalarType alpha, const ViewType &a, const ViewType &b, const ScalarType beta,
                               const ViewType &c)
       : m_a(a), m_b(b), m_c(c), m_alpha(alpha), m_beta(beta) {}
 
-  template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &, const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &, const member_type &member) const {
     const int k = member.league_rank();
 
     auto aa = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto bb = Kokkos::subview(m_b, k, Kokkos::ALL(), Kokkos::ALL());
     auto cc = Kokkos::subview(m_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::TeamGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
-                            AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
+    if constexpr (std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::Team>) {
+      KokkosBatched::TeamGemm<member_type, typename ParamTagType::transA, typename ParamTagType::transB,
+                              AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
+    } else if constexpr (std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::TeamVector>) {
+      KokkosBatched::TeamVectorGemm<member_type, typename ParamTagType::transA, typename ParamTagType::transB,
+                                    AlgoTagType>::invoke(member, m_alpha, aa, bb, m_beta, cc);
+    }
   }
 
   inline void run() {
-    using value_type = typename ViewType::non_const_value_type;
-    std::string name_region("KokkosBatched::Test::TeamGemm");
+    using value_type                  = typename ViewType::non_const_value_type;
+    std::string name_region           = std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::Team>
+                                            ? "KokkosBatched::Test::TeamGemm"
+                                            : "KokkosBatched::Test::TeamVectorGemm";
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
@@ -224,8 +233,6 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1, const int matAd
 }  // namespace TeamGemm
 }  // namespace Test
 
-// void (*impl_test)(const int, const int, const int, const int, const int,
-// const int, const int)
 template <typename DeviceType, typename ValueType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 int test_batched_teamgemm() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
