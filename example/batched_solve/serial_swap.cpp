@@ -17,7 +17,6 @@ using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 int main(int /*argc*/, char** /*argv*/) {
   Kokkos::initialize();
   {
-    using View1DType = Kokkos::View<double*, ExecutionSpace>;
     using View2DType = Kokkos::View<double**, ExecutionSpace>;
     const int Nb = 10, n = 3;
 
