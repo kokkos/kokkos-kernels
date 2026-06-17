@@ -17,6 +17,7 @@ API: Batched Dense (DLA)
    dense/batched_trsv
    dense/batched_tbsv
    dense/batched_ger
+   dense/batched_swap
    dense/batched_syr
    dense/batched_syr2
    dense/batched_getrf
@@ -125,9 +126,9 @@ BLAS 1
      - :doc:`TeamRotm <dense/batched_rotm>`
      - :doc:`TeamVectorRotm <dense/batched_rotm>`
    * - SWAP
-     - `kokkos_swap(a, b) <https://kokkos.org/kokkos-core-wiki/API/core/utilities/swap.html>`_
-     - --
-     - --
+     - :doc:`SerialSwap <dense/batched_swap>`
+     - :doc:`TeamSwap <dense/batched_swap>`
+     - :doc:`TeamVectorSwap <dense/batched_swap>`
    * - SCAL
      - `Blas::SerialScale`
      - `Blas::TeamScale`
