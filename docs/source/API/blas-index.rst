@@ -191,13 +191,6 @@ BLAS 1
      - X
      - X
      - --
-   * - SCAL
-     - :doc:`scal(y,a,x) <blas/blas1_scal>`
-     - X
-     - X
-     - X
-     - X
-     - --
    * - COPY
      - `deep_copy(y,x) <https://kokkos.org/kokkos-core-wiki/API/core/view/deep_copy.html>`_
      - X
