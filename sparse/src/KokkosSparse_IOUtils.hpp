@@ -7,6 +7,8 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_SellMatrix.hpp"
 
+#include <Kokkos_Half.hpp>
+
 #include <regex>
 #include <random>
 
