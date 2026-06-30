@@ -7,7 +7,10 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_SellMatrix.hpp"
 
+#include <Kokkos_Macros.hpp>
+#if KOKKOS_VERSION_GREATER_EQUAL(5, 1, 1)
 #include <Kokkos_Half.hpp>
+#endif
 
 #include <regex>
 #include <random>
