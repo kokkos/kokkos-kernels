@@ -533,9 +533,6 @@ class SPGEMMHandle {
       throw std::invalid_argument("SPGEMMHandle: a cuSPARSE algorithm was selected but cuSPARSE is not enabled");
 #endif
     }
-    if (alg == SPGEMM_DEFAULT) {
-      this->choose_default_algorithm();
-    }
   }
 
   virtual ~SPGEMMHandle() {
@@ -597,60 +594,71 @@ class SPGEMMHandle {
   mklSpgemmHandleType *get_mkl_spgemm_handle() { return this->mkl_spgemm_handle; }
 #endif
 
-  void choose_default_algorithm() {
+  // Return the default native algorithm for this handle's execution space.
+  // this->algorithm_type is not changed.
+  SPGEMMAlgorithm get_default_native_algorithm() {
 #if defined(KOKKOS_ENABLE_SERIAL)
     if (std::is_same<Kokkos::Serial, ExecutionSpace>::value) {
-      this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
       std::cout << "Serial Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
 #endif
+      return SPGEMM_SERIAL;
     }
 #endif
 
 #if defined(KOKKOS_ENABLE_THREADS)
     if (std::is_same<Kokkos::Threads, ExecutionSpace>::value) {
-      this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
       std::cout << "THREADS Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
 #endif
+      return SPGEMM_SERIAL;
     }
 #endif
 
 #if defined(KOKKOS_ENABLE_OPENMP)
     if (std::is_same<Kokkos::OpenMP, ExecutionSpace>::value) {
-      this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
       std::cout << "OpenMP Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
 #endif
+      return SPGEMM_SERIAL;
     }
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<Kokkos::Cuda, ExecutionSpace>::value) {
-      this->algorithm_type = SPGEMM_KK;
 #ifdef VERBOSE
       std::cout << "Cuda Execution Space, Default Algorithm: SPGEMM_KK" << std::endl;
 #endif
+      return SPGEMM_KK;
     }
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
     if (std::is_same<Kokkos::HIP, ExecutionSpace>::value) {
-      this->algorithm_type = SPGEMM_KK;
 #ifdef VERBOSE
       std::cout << "HIP Execution Space, Default Algorithm: SPGEMM_KK" << std::endl;
 #endif
+      return SPGEMM_KK;
     }
 #endif
 
 #if defined(KOKKOS_ENABLE_SYCL)
     if (std::is_same<Kokkos::SYCL, ExecutionSpace>::value) {
-      this->algorithm_type = SPGEMM_KK;
 #ifdef VERBOSE
       std::cout << "SYCL Execution Space, Default Algorithm: SPGEMM_KK" << std::endl;
 #endif
+      return SPGEMM_KK;
     }
 #endif
+#ifdef VERBOSE
+    std::cout << "Execution Space not handled directly: defaulting to SPGEMM_KK" << std::endl;
+#endif
+    return SPGEMM_KK;
+  }
+
+  [[deprecated("Do not use choose_default_algorithm since it can prevent TPLs from being used")]] void
+  choose_default_algorithm() {
+    this->algorithm_type = get_default_native_algorithm();
   }
 
   void set_compression(bool compress_second_matrix_) { this->compress_second_matrix = compress_second_matrix_; }
@@ -784,9 +792,9 @@ class SPGEMMHandle {
   }
 };
 
-inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string &name) {
+inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(const std::string &name) {
   if (name == "SPGEMM_DEFAULT")
-    return SPGEMM_KK;
+    return SPGEMM_DEFAULT;
   else if (name == "SPGEMM_KK")
     return SPGEMM_KK;
   else if (name == "SPGEMM_KK_MEMORY")
@@ -798,9 +806,19 @@ inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string &name) {
   else if (name == "SPGEMM_KK_MEMSPEED")
     return SPGEMM_KK;
   else if (name == "SPGEMM_DEBUG")
-    return SPGEMM_SERIAL;
+    return SPGEMM_DEBUG;
   else if (name == "SPGEMM_SERIAL")
     return SPGEMM_SERIAL;
+  else if (name == "SPGEMM_CUSPARSE_DETERMINISTIC")
+    return SPGEMM_CUSPARSE_DETERMINISTIC;
+  else if (name == "SPGEMM_CUSPARSE_NONDETERMINISTIC")
+    return SPGEMM_CUSPARSE_NONDETERMINISTIC;
+  else if (name == "SPGEMM_CUSPARSE_ALG1")
+    return SPGEMM_CUSPARSE_ALG1;
+  else if (name == "SPGEMM_CUSPARSE_ALG2")
+    return SPGEMM_CUSPARSE_ALG2;
+  else if (name == "SPGEMM_CUSPARSE_ALG3")
+    return SPGEMM_CUSPARSE_ALG3;
   else
     throw std::runtime_error("Invalid SPGEMMAlgorithm name");
 }
