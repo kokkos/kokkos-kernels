@@ -20,22 +20,36 @@ namespace Impl {
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 // double
-#define KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)                               \
-  template <class ExecSpace>                                                                           \
+#define KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(EXEC_SPACE, SCALAR, LAYOUT)                             \
+  template <>                                                                                          \
   struct nrminf_tpl_spec_avail<                                                                        \
-      ExecSpace,                                                                                       \
+      EXEC_SPACE,                                                                                      \
       Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
                    Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                       \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                          \
-      1> {                                                                                             \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1> {  \
     enum : bool { value = true };                                                                      \
   };
 
-KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+#ifdef KOKKOS_ENABLE_SERIAL
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::Serial, double, Kokkos::LayoutLeft)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::Serial, float, Kokkos::LayoutLeft)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::Serial, Kokkos::complex<double>, Kokkos::LayoutLeft)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::Serial, Kokkos::complex<float>, Kokkos::LayoutLeft)
+#endif
+
+#ifdef KOKKOS_ENABLE_OPENMP
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::OpenMP, double, Kokkos::LayoutLeft)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::OpenMP, float, Kokkos::LayoutLeft)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::OpenMP, Kokkos::complex<double>, Kokkos::LayoutLeft)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::OpenMP, Kokkos::complex<float>, Kokkos::LayoutLeft)
+#endif
+
+#ifdef KOKKOS_ENABLE_THREADS
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::Threads, double, Kokkos::LayoutLeft)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::Threads, float, Kokkos::LayoutLeft)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::Threads, Kokkos::complex<double>, Kokkos::LayoutLeft)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::Threads, Kokkos::complex<float>, Kokkos::LayoutLeft)
+#endif
 
 #endif
 

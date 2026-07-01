@@ -121,15 +121,15 @@ void syr2(const ExecutionSpace& space, const char trans[], const char uplo[],
   // on particular View specializations for its template parameters.
   typedef Kokkos::View<typename XViewType::const_value_type*,
                        typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout,
-                       typename XViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       ExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVT;
 
   typedef Kokkos::View<typename YViewType::const_value_type*,
                        typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YViewType, ALayout>::array_layout,
-                       typename YViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       ExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       YVT;
 
-  typedef Kokkos::View<typename AViewType::non_const_value_type**, ALayout, typename AViewType::device_type,
+  typedef Kokkos::View<typename AViewType::non_const_value_type**, ALayout, ExecutionSpace,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       AVT;
 

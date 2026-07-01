@@ -26,22 +26,18 @@ inline void dot_print_specialization() {
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(LAYOUT, KOKKOS_TYPE, TPL_TYPE, MEMSPACE, ETI_SPEC_AVAIL)                 \
-  template <class ExecSpace>                                                                                        \
-  struct Dot<ExecSpace,                                                                                             \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(EXEC_SPACE, LAYOUT, KOKKOS_TYPE, TPL_TYPE, ETI_SPEC_AVAIL)               \
+  template <>                                                                                                       \
+  struct Dot<EXEC_SPACE,                                                                                            \
              Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                          \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                          \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                \
-             1, 1, true, ETI_SPEC_AVAIL> {                                                                          \
+             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, 1,  \
+             true, ETI_SPEC_AVAIL> {                                                                                \
     typedef Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;      \
-    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                           \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                  \
-        XV;                                                                                                         \
+    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;      \
     typedef typename XV::size_type size_type;                                                                       \
                                                                                                                     \
-    static void dot(const ExecSpace& space, RV& R, const XV& X, const XV& Y) {                                      \
+    static void dot(const EXEC_SPACE& space, RV& R, const XV& X, const XV& Y) {                                     \
       Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_BLAS," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + \
                                     "]");                                                                           \
       const size_type numElems = X.extent(0);                                                                       \
@@ -52,22 +48,32 @@ namespace Impl {
         R()     = HostBlas<TPL_TYPE>::dot(N, reinterpret_cast<const TPL_TYPE*>(X.data()), one,                      \
                                           reinterpret_cast<const TPL_TYPE*>(Y.data()), one);                        \
       } else {                                                                                                      \
-        Dot<ExecSpace, RV, XV, XV, 1, 1, false, ETI_SPEC_AVAIL>::dot(space, R, X, Y);                               \
+        Dot<EXEC_SPACE, RV, XV, XV, 1, 1, false, ETI_SPEC_AVAIL>::dot(space, R, X, Y);                              \
       }                                                                                                             \
       Kokkos::Profiling::popRegion();                                                                               \
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(ETI_SPEC_AVAIL)                                              \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, float, float, Kokkos::HostSpace, ETI_SPEC_AVAIL)   \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, double, double, Kokkos::HostSpace, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::complex<float>, std::complex<float>,       \
-                                     Kokkos::HostSpace, ETI_SPEC_AVAIL)                                     \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::complex<double>, std::complex<double>,     \
-                                     Kokkos::HostSpace, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(EXEC_SPACE, ETI_SPEC_AVAIL)                                          \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(EXEC_SPACE, Kokkos::LayoutLeft, float, float, ETI_SPEC_AVAIL)                  \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(EXEC_SPACE, Kokkos::LayoutLeft, double, double, ETI_SPEC_AVAIL)                \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(EXEC_SPACE, Kokkos::LayoutLeft, Kokkos::complex<float>, std::complex<float>,   \
+                                     ETI_SPEC_AVAIL)                                                                \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(EXEC_SPACE, Kokkos::LayoutLeft, Kokkos::complex<double>, std::complex<double>, \
+                                     ETI_SPEC_AVAIL)
 
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(true)
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(false)
+#ifdef KOKKOS_ENABLE_SERIAL
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(Kokkos::Serial, true)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(Kokkos::Serial, false)
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(Kokkos::OpenMP, true)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(Kokkos::OpenMP, false)
+#endif
+#ifdef KOKKOS_ENABLE_THREADS
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(Kokkos::Threads, true)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(Kokkos::Threads, false)
+#endif
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif
@@ -81,20 +87,15 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(false)
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(LAYOUT, KOKKOS_TYPE, TPL_TYPE, EXECSPACE, MEMSPACE, TPL_DOT,             \
-                                             ETI_SPEC_AVAIL)                                                          \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(LAYOUT, KOKKOS_TYPE, TPL_TYPE, EXECSPACE, TPL_DOT, ETI_SPEC_AVAIL)       \
   template <>                                                                                                         \
   struct Dot<EXECSPACE,                                                                                               \
              Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
-             1, 1, true, ETI_SPEC_AVAIL> {                                                                            \
+             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,           \
+             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, 1,     \
+             true, ETI_SPEC_AVAIL> {                                                                                  \
     typedef Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;        \
-    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                             \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                    \
-        XV;                                                                                                           \
+    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;         \
     typedef typename XV::size_type size_type;                                                                         \
                                                                                                                       \
     static void dot(const EXECSPACE& space, RV& R, const XV& X, const XV& Y) {                                        \
@@ -118,15 +119,13 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(ETI_SPEC_AVAIL)                                                      \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, float, float, Kokkos::Cuda, Kokkos::CudaSpace, cublasSdot, \
-                                       ETI_SPEC_AVAIL)                                                                \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, double, double, Kokkos::Cuda, Kokkos::CudaSpace,           \
-                                       cublasDdot, ETI_SPEC_AVAIL)                                                    \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::complex<float>, cuComplex, Kokkos::Cuda,           \
-                                       Kokkos::CudaSpace, cublasCdotc, ETI_SPEC_AVAIL)                                \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::complex<double>, cuDoubleComplex, Kokkos::Cuda,    \
-                                       Kokkos::CudaSpace, cublasZdotc, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(ETI_SPEC_AVAIL)                                                     \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, float, float, Kokkos::Cuda, cublasSdot, ETI_SPEC_AVAIL)   \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, double, double, Kokkos::Cuda, cublasDdot, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::complex<float>, cuComplex, Kokkos::Cuda,          \
+                                       cublasCdotc, ETI_SPEC_AVAIL)                                                  \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::complex<double>, cuDoubleComplex, Kokkos::Cuda,   \
+                                       cublasZdotc, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(true)
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(false)
@@ -141,20 +140,15 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(false)
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(LAYOUT, KOKKOS_TYPE, TPL_TYPE, EXECSPACE, MEMSPACE, TPL_DOT,             \
-                                              ETI_SPEC_AVAIL)                                                          \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(LAYOUT, KOKKOS_TYPE, TPL_TYPE, EXECSPACE, TPL_DOT, ETI_SPEC_AVAIL)       \
   template <>                                                                                                          \
   struct Dot<EXECSPACE,                                                                                                \
              Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,           \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                             \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                   \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                             \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                   \
-             1, 1, true, ETI_SPEC_AVAIL> {                                                                             \
+             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,            \
+             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, 1,      \
+             true, ETI_SPEC_AVAIL> {                                                                                   \
     typedef Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;         \
-    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                              \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                     \
-        XV;                                                                                                            \
+    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;          \
     typedef typename XV::size_type size_type;                                                                          \
                                                                                                                        \
     static void dot(const EXECSPACE& space, RV& R, const XV& X, const XV& Y) {                                         \
@@ -178,14 +172,12 @@ namespace Impl {
   };
 
 #define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(ETI_SPEC_AVAIL)                                                      \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, float, float, Kokkos::HIP, Kokkos::HIPSpace, rocblas_sdot, \
-                                        ETI_SPEC_AVAIL)                                                                \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, double, double, Kokkos::HIP, Kokkos::HIPSpace,             \
-                                        rocblas_ddot, ETI_SPEC_AVAIL)                                                  \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, float, float, Kokkos::HIP, rocblas_sdot, ETI_SPEC_AVAIL)   \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, double, double, Kokkos::HIP, rocblas_ddot, ETI_SPEC_AVAIL) \
   KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::complex<float>, rocblas_float_complex,             \
-                                        Kokkos::HIP, Kokkos::HIPSpace, rocblas_cdotc, ETI_SPEC_AVAIL)                  \
+                                        Kokkos::HIP, rocblas_cdotc, ETI_SPEC_AVAIL)                                    \
   KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::complex<double>, rocblas_double_complex,           \
-                                        Kokkos::HIP, Kokkos::HIPSpace, rocblas_zdotc, ETI_SPEC_AVAIL)
+                                        Kokkos::HIP, rocblas_zdotc, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(true)
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(false)
@@ -201,20 +193,15 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(false)
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(LAYOUT, KOKKOS_TYPE, TPL_TYPE, EXECSPACE, MEMSPACE, TPL_DOT,             \
-                                             ETI_SPEC_AVAIL)                                                          \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(LAYOUT, KOKKOS_TYPE, TPL_TYPE, EXECSPACE, TPL_DOT, ETI_SPEC_AVAIL)       \
   template <>                                                                                                         \
   struct Dot<EXECSPACE,                                                                                               \
              Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
-             1, 1, true, ETI_SPEC_AVAIL> {                                                                            \
+             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,           \
+             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, 1,     \
+             true, ETI_SPEC_AVAIL> {                                                                                  \
     typedef Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;        \
-    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                             \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                    \
-        XV;                                                                                                           \
+    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;         \
     typedef typename XV::size_type size_type;                                                                         \
                                                                                                                       \
     static void dot(const EXECSPACE& exec, RV& R, const XV& X, const XV& Y) {                                         \
@@ -224,7 +211,7 @@ namespace Impl {
       if (numElems <= static_cast<size_type>(std::numeric_limits<std::int64_t>::max())) {                             \
         dot_print_specialization<RV, XV, XV>();                                                                       \
         const std::int64_t N = static_cast<std::int64_t>(numElems);                                                   \
-        Kokkos::View<typename RV::value_type, MEMSPACE> device_result("device_result");                               \
+        Kokkos::View<typename RV::value_type, EXECSPACE> device_result("device_result");                              \
         TPL_DOT(exec.sycl_queue(), N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,                                 \
                 reinterpret_cast<const TPL_TYPE*>(Y.data()), 1, reinterpret_cast<TPL_TYPE*>(device_result.data()));   \
         Kokkos::deep_copy(R, device_result);                                                                          \
@@ -235,16 +222,15 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(ETI_SPEC_AVAIL)                                                       \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, float, float, Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace,     \
-                                       oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL)                              \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, double, double, Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace,   \
-                                       oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL)                              \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<float>, std::complex<float>, Kokkos::SYCL,  \
-                                       Kokkos::SYCLDeviceUSMSpace, oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<double>, std::complex<double>,              \
-                                       Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace, oneapi::mkl::blas::row_major::dotc,   \
-                                       ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(ETI_SPEC_AVAIL)                                                      \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, float, float, Kokkos::SYCL,                                \
+                                       oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL)                             \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, double, double, Kokkos::SYCL,                              \
+                                       oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL)                             \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<float>, std::complex<float>, Kokkos::SYCL, \
+                                       oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL)                            \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<double>, std::complex<double>,             \
+                                       Kokkos::SYCL, oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(true)
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(false)

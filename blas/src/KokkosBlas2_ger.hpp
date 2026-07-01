@@ -74,19 +74,22 @@ void ger(const ExecutionSpace& space, const char trans[], const typename AViewTy
   // on particular View specializations for its template parameters.
   typedef Kokkos::View<typename XViewType::const_value_type*,
                        typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout,
-                       typename XViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       ExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVT;
 
   typedef Kokkos::View<typename YViewType::const_value_type*,
                        typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YViewType, ALayout>::array_layout,
-                       typename YViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       ExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       YVT;
 
-  typedef Kokkos::View<typename AViewType::non_const_value_type**, ALayout, typename AViewType::device_type,
+  typedef Kokkos::View<typename AViewType::non_const_value_type**, ALayout, ExecutionSpace,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       AVT;
 
-  Impl::GER<ExecutionSpace, XVT, YVT, AVT>::ger(space, trans, alpha, x, y, A);
+  XVT x_internal = KokkosKernels::Impl::unificationCast<XVT>(x);
+  YVT y_internal = KokkosKernels::Impl::unificationCast<YVT>(y);
+  AVT A_internal = KokkosKernels::Impl::unificationCast<AVT>(A);
+  Impl::GER<ExecutionSpace, XVT, YVT, AVT>::ger(space, trans, alpha, x_internal, y_internal, A_internal);
 }
 
 /// \brief Rank-1 update of a general matrix: A = A + alpha * x * y^{T,H}.

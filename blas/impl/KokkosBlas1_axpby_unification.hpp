@@ -62,7 +62,7 @@ UnifiedCoeff unifyAxpbyCoeff(const Coeff& coeff) {
     return coeff();
   } else if constexpr (isRank1View<Coeff>()) {
     // Directly convert to unified type
-    return coeff;
+    return KokkosKernels::Impl::unificationCast<UnifiedCoeff>(coeff);
   } else if constexpr (isRank1View<UnifiedCoeff>()) {
     // UnifiedCoeff is a rank-1 View but Coeff is rank-0.
     // Convert rank-0 Coeff to rank-1 UnifiedCoeff
@@ -105,7 +105,7 @@ UnifiedCoeff unifyAxpbyMvCoeff(const Coeff& coeff) {
         "unifyAxpbyCoeff: in this case Coeff needs to be a host accessible View");
     return coeff();
   } else {
-    return coeff;
+    return KokkosKernels::Impl::unificationCast<UnifiedCoeff>(coeff);
   }
 }
 
