@@ -20,9 +20,9 @@ namespace KokkosLapack {
 /// \brief Computes a LU factorization of a matrix A
 ///
 /// \tparam ExecutionSpace The space where the kernel will run.
-/// \tparam AMatrix   Type of matrix A, as a 2-D Kokkos::View.
-/// \tparam TauArray  Type of array Tau, as a 1-D Kokkos::View.
-/// \tparam InfoArray Type of array Info, as a 1-D Kokkos::View.
+/// \tparam AMatrix   Type of matrix A, as a rank-2 Kokkos::View.
+/// \tparam IpivView  Type of array Ipiv, as a rank-1 Kokkos::View.
+/// \tparam InfoView  Type of array Info, as a rank-1 Kokkos::View.
 ///
 /// \param A [in,out] On entry, the M-by-N matrix to be decomposed.
 ///                   On exit, the L and U factors with L diagaonal assumed
@@ -66,7 +66,7 @@ void getrf(const ExecutionSpace& space, const AMatrix& A, const IpivView& Ipiv, 
   if (ipiv0 != std::min(m, n)) {
     std::ostringstream os;
     os << "KokkosLapack::getrf: length of Ipiv must be equal to min(m,n): "
-       << " A: " << m << " x " << n << ", Ipiv length = " << tau0;
+       << " A: " << m << " x " << n << ", Ipiv length = " << ipiv0;
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
@@ -76,11 +76,14 @@ void getrf(const ExecutionSpace& space, const AMatrix& A, const IpivView& Ipiv, 
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  using AMatrix_Internal  = Kokkos::View<typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
-                                        typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using IpivView_Internal = Kokkos::View<typename IpivView::non_const_value_type*, typename IpivView::array_layout,
-                                        typename IpivView::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using InfoView_Internal = Kokkos::View<typename InfoView::non_const_value_type*, typename InfoView::array_layout,
+  using ALayout           = typename AMatrix::array_layout;
+  using AMatrix_Internal  = Kokkos::View<typename AMatrix::non_const_value_type**, ALayout, typename AMatrix::device_type,
+					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using IpivView_Internal = Kokkos::View<typename IpivView::non_const_value_type*,
+					 typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<IpivView, ALayout>::array_layout,
+					 typename IpivView::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using InfoView_Internal = Kokkos::View<typename InfoView::non_const_value_type*,
+					 typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<InfoView, ALayout>::array_layout,
                                          typename InfoView::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   AMatrix_Internal A_i     = A;
