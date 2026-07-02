@@ -644,12 +644,14 @@ void symmetric_block_gauss_seidel_apply(KernelHandle *handle, typename KernelHan
                                         bool init_zero_x_vector, bool update_y_vector,
                                         typename KernelHandle::nnz_scalar_t omega, int numIter) {
   // Check compatibility of dimensions at run time.
-  if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosSparse::symmetric_block_gauss_seidel_apply: Dimensions of X "
-          "and Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (x_scalar_view_t::rank == 2) {
+    if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
+      std::ostringstream os;
+      os << "KokkosSparse::symmetric_block_gauss_seidel_apply: Dimensions of X "
+            "and Y do not match: "
+         << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
   auto gsHandle = handle->get_point_gs_handle();
   if (gsHandle->get_algorithm_type() == GS_CLUSTER) {
