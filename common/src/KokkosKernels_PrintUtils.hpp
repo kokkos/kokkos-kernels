@@ -56,7 +56,6 @@ inline std::enable_if_t<idx_array_type::rank == 0> kk_print_1Dview(std::ostream&
                                                                    bool print_all = false, const char* sep = " ",
                                                                    size_t print_size = 1) {
   typedef typename idx_array_type::host_mirror_type host_type;
-  typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
   if (print_all || print_size > 0) {
