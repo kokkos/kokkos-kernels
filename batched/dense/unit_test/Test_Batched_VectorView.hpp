@@ -23,10 +23,10 @@ using namespace KokkosBatched;
 
 namespace Test {
 
-template <int rank, typename VectorViewType>
+template <int extent_id, typename VectorViewType>
 inline int get_extent(const VectorViewType& v) {
-  if constexpr (VectorViewType::rank == rank + 1) {
-    return v.extent(rank);
+  if constexpr (VectorViewType::rank == extent_id + 1) {
+    return v.extent(extent_id);
   } else
     return 1;
 }
