@@ -31,6 +31,7 @@ template <typename exec_space>
 void testPrintView() {
   using scalar_t   = KokkosKernels::default_scalar;
   using Unmanaged  = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
+  // TODO add 0Dview printer or remove the test
   using rank0_view = Kokkos::View<scalar_t, Kokkos::HostSpace, Unmanaged>;
   using rank1_view = Kokkos::View<scalar_t *, Kokkos::HostSpace, Unmanaged>;
   using rank2_view = Kokkos::View<scalar_t **, Kokkos::HostSpace, Unmanaged>;
