@@ -40,8 +40,6 @@ inline void kk_get_histogram(typename in_lno_view_t::size_type in_elements, in_l
   MyExecSpace().fence();
 }
 
-// TODO add 0Dview printer or remove the test
-
 /**
  * \brief Prints the given 1D view.
  * \param os: Stream to print to. To print to stdout use std::cout, stderr,
@@ -61,12 +59,7 @@ inline std::enable_if_t<idx_array_type::rank == 0> kk_print_1Dview(std::ostream&
   typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
-  // const auto print_range = [&](idx begin, idx end) {
-  //   for (idx i = begin; i < end; ++i) os << host_view.access(i) << sep;
-  // };
-  idx nr = 1;  // rank 0 view is just a scalar
-  if (print_all || nr <= print_size) {
-    // print_range(0, nr);
+  if (print_all || print_size > 0) {
     os << host_view() << sep;
   }
   os << std::endl;
