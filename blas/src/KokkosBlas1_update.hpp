@@ -74,8 +74,7 @@ void update(const execution_space& space, const typename XMV::non_const_value_ty
          << "Z: " << Z.extent(0) << ", X: " << X.extent(0) << ", Y: " << Y.extent(0);
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
-  }
-  else if constexpr (ZMV::rank == 2) {
+  } else if constexpr (ZMV::rank == 2) {
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1) || X.extent(0) != Z.extent(0) ||
         X.extent(1) != Z.extent(1)) {
       std::ostringstream os;

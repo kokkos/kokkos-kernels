@@ -248,16 +248,14 @@ vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
         h_x.access(i, j) = r;
       }
     }
-  }
-  else if constexpr (vec_t::rank == 1) {
+  } else if constexpr (vec_t::rank == 1) {
     for (size_t i = 0; i < h_x.extent(0); ++i) {
-      scalar_t r       = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
+      scalar_t r    = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
       h_x.access(i) = r;
     }
-  }
-  else if constexpr (vec_t::rank == 0) {
-    scalar_t r       = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
-    h_x() = r;
+  } else if constexpr (vec_t::rank == 0) {
+    scalar_t r = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
+    h_x()      = r;
   }
   Kokkos::deep_copy(kok_x, h_x);
   return kok_x;

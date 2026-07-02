@@ -542,10 +542,9 @@ void symmetric_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *han
   size_t x_lhs_output_vec_r2{1}, y_rhs_input_vec_r2{1};
   if constexpr (x_scalar_view_t::rank == 2) {
     x_lhs_output_vec_r2 = x_lhs_output_vec.extent(1);
-    y_rhs_input_vec_r2 = y_rhs_input_vec.extent(1);
+    y_rhs_input_vec_r2  = y_rhs_input_vec.extent(1);
   }
-  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0),
-                                            x_lhs_output_vec_r2);
+  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0), x_lhs_output_vec_r2);
   Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec_r2);
 
   using namespace KokkosSparse::Impl;
@@ -794,11 +793,10 @@ void forward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle 
   size_t x_lhs_output_vec_r2{1}, y_rhs_input_vec_r2{1};
   if constexpr (x_scalar_view_t::rank == 2) {
     x_lhs_output_vec_r2 = x_lhs_output_vec.extent(1);
-    y_rhs_input_vec_r2 = y_rhs_input_vec.extent(1);
+    y_rhs_input_vec_r2  = y_rhs_input_vec.extent(1);
   }
 
-  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0),
-                                            x_lhs_output_vec_r2);
+  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0), x_lhs_output_vec_r2);
   Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec_r2);
 
   using namespace KokkosSparse::Impl;
@@ -1049,11 +1047,10 @@ void backward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle
   size_t x_lhs_output_vec_r2{1}, y_rhs_input_vec_r2{1};
   if constexpr (x_scalar_view_t::rank == 2) {
     x_lhs_output_vec_r2 = x_lhs_output_vec.extent(1);
-    y_rhs_input_vec_r2 = y_rhs_input_vec.extent(1);
+    y_rhs_input_vec_r2  = y_rhs_input_vec.extent(1);
   }
 
-  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0),
-                                            x_lhs_output_vec_r2);
+  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0), x_lhs_output_vec_r2);
   Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec_r2);
 
   using namespace KokkosSparse::Impl;

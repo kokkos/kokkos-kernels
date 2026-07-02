@@ -120,8 +120,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
            << ", A: " << m << " x " << n << ", x: " << x.extent(0) << ", y: " << y.extent(0);
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
-    }
-    else if constexpr (XVector::rank() == 2) {
+    } else if constexpr (XVector::rank() == 2) {
       if ((x.extent(1) != y.extent(1)) || (n != x.extent(0)) || (m != y.extent(0))) {
         std::ostringstream os;
         os << "KokkosSparse::spmv: Dimensions do not match: "
@@ -138,8 +137,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
            << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << ", y: " << y.extent(0);
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
-    }
-    else if constexpr (XVector::rank() == 2) {
+    } else if constexpr (XVector::rank() == 2) {
       if ((x.extent(1) != y.extent(1)) || (m != x.extent(0)) || (n != y.extent(0))) {
         std::ostringstream os;
         os << "KokkosSparse::spmv: Dimensions do not match (transpose): "
@@ -599,8 +597,7 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
 
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
-    }
-    else if constexpr (XVector::rank == 2) {
+    } else if constexpr (XVector::rank == 2) {
       if ((x.extent(1) != y.extent(1)) || (static_cast<size_t>(A.numCols()) > static_cast<size_t>(x.extent(0))) ||
           (static_cast<size_t>(A.numRows()) > static_cast<size_t>(y.extent(0)))) {
         std::ostringstream os;
@@ -621,8 +618,7 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
 
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
-    }
-    else if constexpr (XVector::rank == 2) {
+    } else if constexpr (XVector::rank == 2) {
       if ((x.extent(1) != y.extent(1)) || (static_cast<size_t>(A.numCols()) > static_cast<size_t>(y.extent(0))) ||
           (static_cast<size_t>(A.numRows()) > static_cast<size_t>(x.extent(0)))) {
         std::ostringstream os;

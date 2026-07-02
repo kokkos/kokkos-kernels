@@ -59,8 +59,7 @@ void abs(const execution_space& space, const RMV& R, const XMV& X) {
          << "R: " << R.extent(0) << ", X: " << X.extent(0);
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
-  }
-  else if constexpr (RMV::rank == 2) {
+  } else if constexpr (RMV::rank == 2) {
     if (X.extent(0) != R.extent(0) || X.extent(1) != R.extent(1)) {
       std::ostringstream os;
       os << "KokkosBlas::abs (MV): Dimensions of R and X do not match: "

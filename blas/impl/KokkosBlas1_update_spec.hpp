@@ -230,7 +230,7 @@ struct Update<execution_space, XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_
 #endif
 
     const size_type numRows = X.extent(0);
-    const size_type numCols = 1; //X.extent(1);
+    const size_type numCols = 1;  // X.extent(1);
     int a = 2, b = 2, c = 2;
 
     if (alpha == ATA::zero()) {

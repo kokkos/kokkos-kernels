@@ -25,10 +25,9 @@ namespace Test {
 
 template <int rank, typename VectorViewType>
 inline int get_extent(const VectorViewType& v) {
-  if constexpr (VectorViewType::rank == rank+1) {
+  if constexpr (VectorViewType::rank == rank + 1) {
     return v.extent(rank);
-  }
-  else
+  } else
     return 1;
 }
 
@@ -45,7 +44,7 @@ void impl_init_vector_view(const VectorViewType& a) {
                 for (int i7 = 0, i7end = get_extent<7>(a); i7 < i7end; ++i7)
                   a.access(i0, i1, i2, i3, i4, i5, i6, i7) = cnt++;
 }
-#define TEST_LOOP                                                     \
+#define TEST_LOOP                                                          \
   for (int i0 = 0, i0end = get_extent<0>(b); i0 < i0end; ++i0)             \
     for (int i1 = 0, i1end = get_extent<1>(b); i1 < i1end; ++i1)           \
       for (int i2 = 0, i2end = get_extent<2>(b); i2 < i2end; ++i2)         \

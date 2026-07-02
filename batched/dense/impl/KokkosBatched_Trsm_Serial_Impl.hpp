@@ -20,7 +20,7 @@ KOKKOS_INLINE_FUNCTION static int checkTrsmInput([[maybe_unused]] const AViewTyp
   static_assert(BViewType::rank == 1 || BViewType::rank == 2, "KokkosBatched::trsm: BViewType must have rank 1 or 2.");
 #ifndef NDEBUG
   const int m = B.extent(0);
-  int n = 1;
+  int n       = 1;
   if constexpr (BViewType::rank == 2) {
     n = B.extent(1);
   }
@@ -59,8 +59,8 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Tr
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = 1; //B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = 1; //B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;  // B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = 1;  // B_rank == 1 ? 1 : B.stride(1);
     if constexpr (B_rank == 2) {
       B_extent_1 = B.extent(1);
       B_stride_1 = B.stride(1);

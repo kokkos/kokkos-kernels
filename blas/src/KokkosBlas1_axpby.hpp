@@ -232,8 +232,7 @@ KOKKOS_FUNCTION void serial_axpy(const scalar_type alpha, const XMV X, YMV Y) {
     if (X.extent(0) != Y.extent(0)) {
       Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
     }
-  }
-  else if constexpr (XMV::rank == 2) {
+  } else if constexpr (XMV::rank == 2) {
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
     }

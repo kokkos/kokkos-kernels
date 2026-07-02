@@ -62,12 +62,10 @@ void mult(const execution_space& space, typename YMV::const_value_type& gamma, c
     if (Y.extent(0) != A.extent(0) || Y.extent(0) != X.extent(0)) {
       std::ostringstream os;
       os << "KokkosBlas::mult: Dimensions do not match: "
-         << "Y: " << Y.extent(0) << " x " << Y.extent(1) << ", A: " << A.extent(0)
-         << ", X: " << X.extent(0);
+         << "Y: " << Y.extent(0) << " x " << Y.extent(1) << ", A: " << A.extent(0) << ", X: " << X.extent(0);
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
-  }
-  else if constexpr (XMV::rank == 2 && YMV::rank == 2) {
+  } else if constexpr (XMV::rank == 2 && YMV::rank == 2) {
     if (Y.extent(0) != A.extent(0) || Y.extent(0) != X.extent(0) || Y.extent(1) != X.extent(1)) {
       std::ostringstream os;
       os << "KokkosBlas::mult: Dimensions do not match: "

@@ -61,12 +61,12 @@ inline std::enable_if_t<idx_array_type::rank == 0> kk_print_1Dview(std::ostream&
   typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
-  //const auto print_range = [&](idx begin, idx end) {
-  //  for (idx i = begin; i < end; ++i) os << host_view.access(i) << sep;
-  //};
-  idx nr = 1; // rank 0 view is just a scalar
+  // const auto print_range = [&](idx begin, idx end) {
+  //   for (idx i = begin; i < end; ++i) os << host_view.access(i) << sep;
+  // };
+  idx nr = 1;  // rank 0 view is just a scalar
   if (print_all || nr <= print_size) {
-    //print_range(0, nr);
+    // print_range(0, nr);
     os << host_view() << sep;
   }
   os << std::endl;
