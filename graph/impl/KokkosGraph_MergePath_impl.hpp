@@ -19,7 +19,7 @@ namespace Impl {
  */
 template <typename a_index_type, typename b_index_type>
 struct DiagonalSearchResult {
-  DiagonalSearchResult() : ai(0), bi(0) {}
+  KOKKOS_INLINE_FUNCTION DiagonalSearchResult() : ai(0), bi(0) {}
   a_index_type ai;
   b_index_type bi;
 };
