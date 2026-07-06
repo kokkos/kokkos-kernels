@@ -25,7 +25,7 @@ namespace Test {
 
 template <int extent_id, typename VectorViewType>
 inline int get_extent(const VectorViewType& v) {
-  if constexpr (VectorViewType::rank == extent_id + 1) {
+  if constexpr (extent_id < VectorViewType::rank) {
     return v.extent(extent_id);
   } else
     return 1;
