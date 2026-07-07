@@ -19,7 +19,11 @@ KOKKOS_INLINE_FUNCTION static int checkTrsmInput([[maybe_unused]] const AViewTyp
   static_assert(AViewType::rank == 2, "KokkosBatched::trsm: AViewType must have rank 2.");
   static_assert(BViewType::rank == 1 || BViewType::rank == 2, "KokkosBatched::trsm: BViewType must have rank 1 or 2.");
 #ifndef NDEBUG
-  const int m = B.extent(0), n = B.extent(1);
+  const int m = B.extent(0);
+  int n       = 1;
+  if constexpr (BViewType::rank == 2) {
+    n = B.extent(1);
+  }
   const int nrowa = std::is_same_v<ArgSide, Side::Left> ? m : n;
   const int lda   = A.extent(0);
 
@@ -55,8 +59,12 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Tr
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;  // B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = 1;  // B_rank == 1 ? 1 : B.stride(1);
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
@@ -97,8 +105,12 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Tr
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -120,8 +132,12 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Tr
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -151,8 +167,12 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Tr
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
@@ -194,8 +214,12 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Tr
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -217,8 +241,12 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Tr
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -248,8 +276,12 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
@@ -290,8 +322,12 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -313,8 +349,12 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -343,8 +383,12 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
@@ -385,8 +429,12 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -408,8 +456,12 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -439,8 +491,12 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
@@ -481,8 +537,12 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -504,8 +564,12 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
@@ -534,8 +598,12 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
@@ -576,8 +644,12 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
-    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+    size_t B_extent_1 = 1;
+    size_t B_stride_1 = 1;
+    if constexpr (B_rank == 2) {
+      B_extent_1 = B.extent(1);
+      B_stride_1 = B.stride(1);
+    }
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;

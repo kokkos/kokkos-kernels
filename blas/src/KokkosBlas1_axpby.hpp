@@ -228,8 +228,14 @@ KOKKOS_FUNCTION void serial_axpy(const scalar_type alpha, const XMV X, YMV Y) {
   static_assert(XMV::rank == YMV::rank, "KokkosBlas::serial_axpy: XMV and YMV must have the same rank.");
 
 #ifndef NDEBUG
-  if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-    Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
+  if constexpr (XMV::rank == 1) {
+    if (X.extent(0) != Y.extent(0)) {
+      Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
+    }
+  } else if constexpr (XMV::rank == 2) {
+    if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+      Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
+    }
   }
 #endif  // NDEBUG
   if constexpr (XMV::rank() == 1)
