@@ -132,7 +132,7 @@ struct Abs<execution_space, RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
     if (KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::abs<> ETI specialization for < %s , %s >\n", typeid(RMV).name(), typeid(XMV).name());
     else {
-      printf("KokkosBlas1::asb<> non-ETI specialization for < %s , %s >\n", typeid(RMV).name(), typeid(XMV).name());
+      printf("KokkosBlas1::abs<> non-ETI specialization for < %s , %s >\n", typeid(RMV).name(), typeid(XMV).name());
     }
 #endif
 
