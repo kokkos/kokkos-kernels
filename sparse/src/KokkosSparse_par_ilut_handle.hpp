@@ -232,7 +232,7 @@ class PAR_ILUTHandle {
 
   bool cached_pattern_matches_structure_hash(std::uint64_t rowmap_hash, std::uint64_t entries_hash) const {
     return cached_pattern_valid && cached_rowmap_hash == rowmap_hash && cached_entries_hash == entries_hash &&
-           cached_L_row_map.extent(0) == nrows + 1 && cached_U_row_map.extent(0) == nrows + 1;
+           size_type(cached_L_row_map.extent(0)) == nrows + 1 && size_type(cached_U_row_map.extent(0)) == nrows + 1;
   }
 
   void set_cached_structure_hash(std::uint64_t rowmap_hash, std::uint64_t entries_hash) {
