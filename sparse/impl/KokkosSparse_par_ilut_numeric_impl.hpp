@@ -339,12 +339,11 @@ struct IlutWrap {
     return first;
   }
 
-
   template <class ViewType>
   static std::uint64_t hash_view_on_host(const ViewType& v) {
     auto h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v);
 
-    std::uint64_t hash = 1469598103934665603ULL;
+    std::uint64_t hash            = 1469598103934665603ULL;
     constexpr std::uint64_t prime = 1099511628211ULL;
 
     for (size_t i = 0; i < h.extent(0); ++i) {
@@ -357,7 +356,7 @@ struct IlutWrap {
 
   template <class ARowMapType, class AEntriesType>
   static Kokkos::pair<std::uint64_t, std::uint64_t> compute_structure_signature(const ARowMapType& A_row_map,
-                                                                                 const AEntriesType& A_entries) {
+                                                                                const AEntriesType& A_entries) {
     return Kokkos::make_pair(hash_view_on_host(A_row_map), hash_view_on_host(A_entries));
   }
 
@@ -746,7 +745,6 @@ struct IlutWrap {
         });
   }
 
-
   /**
    * Initialize factor values on an already-existing L/U pattern.
    * Entries found in A get copied. Missing fill entries are set to zero.
@@ -754,11 +752,11 @@ struct IlutWrap {
    */
   template <class ARowMapType, class AEntriesType, class AValuesType, class LRowMapType, class LEntriesType,
             class LValuesType, class URowMapType, class UEntriesType, class UValuesType>
-  static void initialize_LU_values_on_pattern(IlutHandle& ih, const ARowMapType& A_row_map, const AEntriesType& A_entries,
-                                              const AValuesType& A_values, const LRowMapType& L_row_map,
-                                              const LEntriesType& L_entries, LValuesType& L_values,
-                                              const URowMapType& U_row_map, const UEntriesType& U_entries,
-                                              UValuesType& U_values) {
+  static void initialize_LU_values_on_pattern(IlutHandle& ih, const ARowMapType& A_row_map,
+                                              const AEntriesType& A_entries, const AValuesType& A_values,
+                                              const LRowMapType& L_row_map, const LEntriesType& L_entries,
+                                              LValuesType& L_values, const URowMapType& U_row_map,
+                                              const UEntriesType& U_entries, UValuesType& U_values) {
     const size_type nrows = ih.get_nrows();
 
     Kokkos::parallel_for(
@@ -767,7 +765,7 @@ struct IlutWrap {
           const auto a_end   = A_row_map(row_idx + 1);
 
           {
-            auto a_pos = a_begin;
+            auto a_pos         = a_begin;
             const auto l_begin = L_row_map(row_idx);
             const auto l_end   = L_row_map(row_idx + 1);
 
@@ -782,13 +780,12 @@ struct IlutWrap {
                 ++a_pos;
               }
 
-              L_values(l_nnz) =
-                  (a_pos < a_end && A_entries(a_pos) == col_idx) ? A_values(a_pos) : scalar_t(0.0);
+              L_values(l_nnz) = (a_pos < a_end && A_entries(a_pos) == col_idx) ? A_values(a_pos) : scalar_t(0.0);
             }
           }
 
           {
-            auto a_pos = a_begin;
+            auto a_pos         = a_begin;
             const auto u_begin = U_row_map(row_idx);
             const auto u_end   = U_row_map(row_idx + 1);
 
@@ -868,8 +865,8 @@ struct IlutWrap {
     const auto residual_norm_delta_stop = thandle.get_residual_norm_delta_stop();
     const size_type max_iter            = thandle.get_max_iter();
 
-    const auto verbose      = thandle.get_verbose();
-    const auto async_update = false;  // thandle.get_async_update();
+    const auto verbose               = thandle.get_verbose();
+    const auto async_update          = false;  // thandle.get_async_update();
     const auto reuse_numeric_pattern = thandle.get_reuse_numeric_pattern();
 
     if (verbose) {
@@ -882,15 +879,14 @@ struct IlutWrap {
       std::cout << "  reuse_numeric_pattern: " << reuse_numeric_pattern << std::endl;
     }
 
-    bool reuse_cached_pattern = false;
+    bool reuse_cached_pattern  = false;
     std::uint64_t rowmap_hash  = 0;
     std::uint64_t entries_hash = 0;
     if (reuse_numeric_pattern) {
       const auto signature = compute_structure_signature(A_row_map, A_entries);
-      rowmap_hash  = signature.first;
-      entries_hash = signature.second;
-      reuse_cached_pattern =
-          thandle.cached_pattern_matches_structure_hash(rowmap_hash, entries_hash);
+      rowmap_hash          = signature.first;
+      entries_hash         = signature.second;
+      reuse_cached_pattern = thandle.cached_pattern_matches_structure_hash(rowmap_hash, entries_hash);
     }
 
     kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
@@ -919,27 +915,20 @@ struct IlutWrap {
       Kokkos::realloc(Kokkos::WithoutInitializing, L_values, L_entries.extent(0));
       Kokkos::realloc(Kokkos::WithoutInitializing, U_values, U_entries.extent(0));
 
-      initialize_LU_values_on_pattern(thandle, A_row_map, A_entries, A_values,
-                                      L_row_map, L_entries, L_values,
+      initialize_LU_values_on_pattern(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                                       U_row_map, U_entries, U_values);
 
       bool stop = nrows == 0;
       while (!stop && itr < max_iter) {
-        transpose_wrap(thandle, U_row_map, U_entries, U_values,
-                       Ut_new_row_map, Ut_new_entries, Ut_new_values);
+        transpose_wrap(thandle, U_row_map, U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
-        compute_l_u_factors(thandle, A_row_map, A_entries, A_values,
-                            L_row_map, L_entries, L_values,
-                            U_row_map, U_entries, U_values,
-                            Ut_new_row_map, Ut_new_entries, Ut_new_values,
-                            async_update);
+        compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map,
+                            U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values, async_update);
 
         if (do_compute_residual) {
-          curr_residual = compute_residual_norm(kh, thandle, A_row_map, A_entries, A_values,
-                                                L_row_map, L_entries, L_values,
-                                                U_row_map, U_entries, U_values,
-                                                R_row_map, R_entries, R_values,
-                                                LU_row_map, LU_entries, LU_values);
+          curr_residual = compute_residual_norm(kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
+                                                L_values, U_row_map, U_entries, U_values, R_row_map, R_entries,
+                                                R_values, LU_row_map, LU_entries, LU_values);
 
           if (verbose) {
             std::cout << "Completed itr " << itr << ", residual is: " << curr_residual << std::endl;
@@ -965,9 +954,8 @@ struct IlutWrap {
         ++itr;
       }
     } else {
-      initialize_LU(thandle, A_row_map, A_entries, A_values,
-                    L_row_map, L_entries, L_values,
-                    U_row_map, U_entries, U_values);
+      initialize_LU(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
+                    U_values);
 
       bool stop = nrows == 0;  // Don't iterate at all if nrows=0
       while (!stop && itr < max_iter) {
@@ -1006,13 +994,13 @@ struct IlutWrap {
 
         transpose_wrap(thandle, U_row_map, U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
-        compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
-                            U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values, async_update);
+        compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map,
+                            U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values, async_update);
 
         if (do_compute_residual) {
           curr_residual = compute_residual_norm(kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
-                                                L_values, U_row_map, U_entries, U_values, R_row_map, R_entries, R_values,
-                                                LU_row_map, LU_entries, LU_values);
+                                                L_values, U_row_map, U_entries, U_values, R_row_map, R_entries,
+                                                R_values, LU_row_map, LU_entries, LU_values);
 
           if (verbose) {
             std::cout << "Completed itr " << itr << ", residual is: " << curr_residual << std::endl;

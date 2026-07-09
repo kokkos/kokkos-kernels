@@ -42,18 +42,18 @@ class PAR_ILUTHandle {
 
   using float_t = typename KokkosKernels::ArithTraits<nnz_scalar_t>::mag_type;
 
-  using nnz_row_view_t = typename Kokkos::View<size_type *, HandlePersistentMemorySpace>;
+  using nnz_row_view_t = typename Kokkos::View<size_type*, HandlePersistentMemorySpace>;
 
-  using nnz_lno_view_t = typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>;
+  using nnz_lno_view_t = typename Kokkos::View<nnz_lno_t*, HandlePersistentMemorySpace>;
 
-  using nnz_value_view_t = typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
+  using nnz_value_view_t = typename Kokkos::View<nnz_scalar_t*, HandlePersistentMemorySpace>;
 
-  using nnz_float_view_t = typename Kokkos::View<float_t *, HandlePersistentMemorySpace>;
+  using nnz_float_view_t = typename Kokkos::View<float_t*, HandlePersistentMemorySpace>;
 
   using signed_integral_t = typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type;
 
   using signed_nnz_lno_view_t =
-      Kokkos::View<signed_integral_t *, typename nnz_row_view_t::array_layout, typename nnz_row_view_t::device_type,
+      Kokkos::View<signed_integral_t*, typename nnz_row_view_t::array_layout, typename nnz_row_view_t::device_type,
                    typename nnz_row_view_t::memory_traits>;
 
  private:
@@ -81,12 +81,12 @@ class PAR_ILUTHandle {
                                      /// faster but it makes the algorithm non-deterministic.
   bool verbose;                      /// Print information while executing par_ilut
 
-  bool reuse_numeric_pattern;       /// Whether repeated numeric calls with the same matrix
-                                    /// sparsity structure may reuse the previously computed
-                                    /// factor sparsity pattern. This can reduce setup cost
-                                    /// for matrices with unchanged graph and changing values,
-                                    /// but may change results relative to a fresh adaptive
-                                    /// par_ilut numeric phase. Off by default.
+  bool reuse_numeric_pattern;  /// Whether repeated numeric calls with the same matrix
+                               /// sparsity structure may reuse the previously computed
+                               /// factor sparsity pattern. This can reduce setup cost
+                               /// for matrices with unchanged graph and changing values,
+                               /// but may change results relative to a fresh adaptive
+                               /// par_ilut numeric phase. Off by default.
 
   // Stored by parent KokkosKernelsHandle
   int team_size;    /// Kokkos team size. Set by the parent handle. -1 implies
@@ -174,7 +174,10 @@ class PAR_ILUTHandle {
   void set_vector_size(const int vs) { this->vector_size = vs; }
   int get_vector_size() const { return this->vector_size; }
 
-  void set_max_iter(const size_type max_iter_) { this->max_iter = max_iter_; clear_cached_pattern(); }
+  void set_max_iter(const size_type max_iter_) {
+    this->max_iter = max_iter_;
+    clear_cached_pattern();
+  }
   int get_max_iter() const { return this->max_iter; }
 
   void set_residual_norm_delta_stop(const float_t residual_norm_delta_stop_) {
@@ -183,7 +186,10 @@ class PAR_ILUTHandle {
   }
   float_t get_residual_norm_delta_stop() const { return this->residual_norm_delta_stop; }
 
-  void set_fill_in_limit(const float_t fill_in_limit_) { this->fill_in_limit = fill_in_limit_; clear_cached_pattern(); }
+  void set_fill_in_limit(const float_t fill_in_limit_) {
+    this->fill_in_limit = fill_in_limit_;
+    clear_cached_pattern();
+  }
   float_t get_fill_in_limit() const { return this->fill_in_limit; }
 
   bool get_verbose() const { return verbose; }
@@ -192,7 +198,10 @@ class PAR_ILUTHandle {
 
   bool get_async_update() const { return async_update; }
 
-  void set_async_update(const bool async_update_) { this->async_update = async_update_; clear_cached_pattern(); }
+  void set_async_update(const bool async_update_) {
+    this->async_update = async_update_;
+    clear_cached_pattern();
+  }
 
   TeamPolicy get_default_team_policy() const {
     if (team_size == -1) {
