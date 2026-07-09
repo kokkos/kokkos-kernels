@@ -18,6 +18,8 @@
 
 #include <limits>
 
+#include <cstdint>
+
 namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
@@ -335,6 +337,28 @@ struct IlutWrap {
         count = step;
     }
     return first;
+  }
+
+
+  template <class ViewType>
+  static std::uint64_t hash_view_on_host(const ViewType& v) {
+    auto h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v);
+
+    std::uint64_t hash = 1469598103934665603ULL;
+    constexpr std::uint64_t prime = 1099511628211ULL;
+
+    for (size_t i = 0; i < h.extent(0); ++i) {
+      std::uint64_t x = static_cast<std::uint64_t>(h(i));
+      hash ^= x + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
+      hash *= prime;
+    }
+    return hash;
+  }
+
+  template <class ARowMapType, class AEntriesType>
+  static Kokkos::pair<std::uint64_t, std::uint64_t> compute_structure_signature(const ARowMapType& A_row_map,
+                                                                                 const AEntriesType& A_entries) {
+    return Kokkos::make_pair(hash_view_on_host(A_row_map), hash_view_on_host(A_entries));
   }
 
   /**
@@ -722,6 +746,110 @@ struct IlutWrap {
         });
   }
 
+
+  /**
+   * Initialize factor values on an already-existing L/U pattern.
+   * Entries found in A get copied. Missing fill entries are set to zero.
+   * L diagonal is set to 1; U diagonal is set from A if present, else 1.
+   */
+  template <class ARowMapType, class AEntriesType, class AValuesType, class LRowMapType, class LEntriesType,
+            class LValuesType, class URowMapType, class UEntriesType, class UValuesType>
+  static void initialize_LU_values_on_pattern(IlutHandle& ih, const ARowMapType& A_row_map, const AEntriesType& A_entries,
+                                              const AValuesType& A_values, const LRowMapType& L_row_map,
+                                              const LEntriesType& L_entries, LValuesType& L_values,
+                                              const URowMapType& U_row_map, const UEntriesType& U_entries,
+                                              UValuesType& U_values) {
+    const size_type nrows = ih.get_nrows();
+
+    Kokkos::parallel_for(
+        "initialize_LU_values_on_pattern", range_policy(0, nrows), KOKKOS_LAMBDA(const size_type row_idx) {
+          const auto a_begin = A_row_map(row_idx);
+          const auto a_end   = A_row_map(row_idx + 1);
+
+          {
+            auto a_pos = a_begin;
+            const auto l_begin = L_row_map(row_idx);
+            const auto l_end   = L_row_map(row_idx + 1);
+
+            for (size_type l_nnz = l_begin; l_nnz < l_end; ++l_nnz) {
+              const auto col_idx = L_entries(l_nnz);
+              if (static_cast<size_type>(col_idx) == row_idx) {
+                L_values(l_nnz) = scalar_t(1.0);
+                continue;
+              }
+
+              while (a_pos < a_end && A_entries(a_pos) < col_idx) {
+                ++a_pos;
+              }
+
+              L_values(l_nnz) =
+                  (a_pos < a_end && A_entries(a_pos) == col_idx) ? A_values(a_pos) : scalar_t(0.0);
+            }
+          }
+
+          {
+            auto a_pos = a_begin;
+            const auto u_begin = U_row_map(row_idx);
+            const auto u_end   = U_row_map(row_idx + 1);
+
+            for (size_type u_nnz = u_begin; u_nnz < u_end; ++u_nnz) {
+              const auto col_idx = U_entries(u_nnz);
+
+              while (a_pos < a_end && A_entries(a_pos) < col_idx) {
+                ++a_pos;
+              }
+
+              if (a_pos < a_end && A_entries(a_pos) == col_idx) {
+                U_values(u_nnz) = A_values(a_pos);
+              } else {
+                U_values(u_nnz) = (static_cast<size_type>(col_idx) == row_idx) ? scalar_t(1.0) : scalar_t(0.0);
+              }
+            }
+          }
+        });
+  }
+
+  template <class LRowMapType, class LEntriesType, class URowMapType, class UEntriesType>
+  static void cache_pattern(IlutHandle& thandle, const LRowMapType& L_row_map, const LEntriesType& L_entries,
+                            const URowMapType& U_row_map, const UEntriesType& U_entries, std::uint64_t rowmap_hash,
+                            std::uint64_t entries_hash) {
+    auto& cache_L_row_map = thandle.get_cached_L_row_map();
+    auto& cache_L_entries = thandle.get_cached_L_entries();
+    auto& cache_U_row_map = thandle.get_cached_U_row_map();
+    auto& cache_U_entries = thandle.get_cached_U_entries();
+
+    Kokkos::realloc(Kokkos::WithoutInitializing, cache_L_row_map, L_row_map.extent(0));
+    Kokkos::realloc(Kokkos::WithoutInitializing, cache_L_entries, L_entries.extent(0));
+    Kokkos::realloc(Kokkos::WithoutInitializing, cache_U_row_map, U_row_map.extent(0));
+    Kokkos::realloc(Kokkos::WithoutInitializing, cache_U_entries, U_entries.extent(0));
+
+    Kokkos::deep_copy(cache_L_row_map, L_row_map);
+    Kokkos::deep_copy(cache_L_entries, L_entries);
+    Kokkos::deep_copy(cache_U_row_map, U_row_map);
+    Kokkos::deep_copy(cache_U_entries, U_entries);
+
+    thandle.set_cached_structure_hash(rowmap_hash, entries_hash);
+    thandle.mark_cached_pattern_valid();
+  }
+
+  template <class LRowMapType, class LEntriesType, class URowMapType, class UEntriesType>
+  static void load_cached_pattern(IlutHandle& thandle, LRowMapType& L_row_map, LEntriesType& L_entries,
+                                  URowMapType& U_row_map, UEntriesType& U_entries) {
+    const auto& cache_L_row_map = thandle.get_cached_L_row_map();
+    const auto& cache_L_entries = thandle.get_cached_L_entries();
+    const auto& cache_U_row_map = thandle.get_cached_U_row_map();
+    const auto& cache_U_entries = thandle.get_cached_U_entries();
+
+    // Row maps are caller-owned and may be unmanaged. Do not realloc them here.
+    Kokkos::deep_copy(L_row_map, cache_L_row_map);
+    Kokkos::deep_copy(U_row_map, cache_U_row_map);
+
+    Kokkos::realloc(Kokkos::WithoutInitializing, L_entries, cache_L_entries.extent(0));
+    Kokkos::realloc(Kokkos::WithoutInitializing, U_entries, cache_U_entries.extent(0));
+    Kokkos::deep_copy(L_entries, cache_L_entries);
+    Kokkos::deep_copy(U_entries, cache_U_entries);
+  }
+
   /**
    * The main par_ilut numeric function.
    */
@@ -742,6 +870,7 @@ struct IlutWrap {
 
     const auto verbose      = thandle.get_verbose();
     const auto async_update = false;  // thandle.get_async_update();
+    const auto reuse_numeric_pattern = thandle.get_reuse_numeric_pattern();
 
     if (verbose) {
       std::cout << "Starting PARILUT with..." << std::endl;
@@ -750,6 +879,18 @@ struct IlutWrap {
       std::cout << "  max_iter:            " << max_iter << std::endl;
       std::cout << "  res_norm_delta_stop: " << residual_norm_delta_stop << std::endl;
       std::cout << "  async_update:        " << async_update << std::endl;
+      std::cout << "  reuse_numeric_pattern: " << reuse_numeric_pattern << std::endl;
+    }
+
+    bool reuse_cached_pattern = false;
+    std::uint64_t rowmap_hash  = 0;
+    std::uint64_t entries_hash = 0;
+    if (reuse_numeric_pattern) {
+      const auto signature = compute_structure_signature(A_row_map, A_entries);
+      rowmap_hash  = signature.first;
+      entries_hash = signature.second;
+      reuse_cached_pattern =
+          thandle.cached_pattern_matches_structure_hash(rowmap_hash, entries_hash);
     }
 
     kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
@@ -772,102 +913,137 @@ struct IlutWrap {
     scalar_t prev_residual         = std::numeric_limits<scalar_t>::max();
     const bool do_compute_residual = residual_norm_delta_stop > 0;
 
-    // Set the initial L/U values for the initial approximation
-    initialize_LU(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
-                  U_values);
+    if (reuse_cached_pattern) {
+      load_cached_pattern(thandle, L_row_map, L_entries, U_row_map, U_entries);
 
-    //
-    // main loop
-    //
-    bool stop = nrows == 0;  // Don't iterate at all if nrows=0
-    while (!stop && itr < max_iter) {
-      // LU = L*U
-      //
-      // computing residual does this operation, so we don't need to repeat it if we
-      // are computing residuals.
-      if (itr == 0 || !do_compute_residual) {
-        multiply_matrices(kh, thandle, L_row_map, L_entries, L_values, U_row_map, U_entries, U_values, LU_row_map,
-                          LU_entries, LU_values);
-      }
+      Kokkos::realloc(Kokkos::WithoutInitializing, L_values, L_entries.extent(0));
+      Kokkos::realloc(Kokkos::WithoutInitializing, U_values, U_entries.extent(0));
 
-      // Identify candidate locations and add them
-      add_candidates(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
-                     U_values, LU_row_map, LU_entries, LU_values, L_new_row_map, L_new_entries, L_new_values,
-                     U_new_row_map, U_new_entries, U_new_values);
+      initialize_LU_values_on_pattern(thandle, A_row_map, A_entries, A_values,
+                                      L_row_map, L_entries, L_values,
+                                      U_row_map, U_entries, U_values);
 
-      // Get transpose of U_new, needed for compute_l_u_factors
-      transpose_wrap(thandle, U_new_row_map, U_new_entries, U_new_values, Ut_new_row_map, Ut_new_entries,
-                     Ut_new_values);
+      bool stop = nrows == 0;
+      while (!stop && itr < max_iter) {
+        transpose_wrap(thandle, U_row_map, U_entries, U_values,
+                       Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
-      // Do one sweep of the fixed-point ILU algorithm
-      compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_new_row_map, L_new_entries, L_new_values,
-                          U_new_row_map, U_new_entries, U_new_values, Ut_new_row_map, Ut_new_entries, Ut_new_values,
-                          async_update);
+        compute_l_u_factors(thandle, A_row_map, A_entries, A_values,
+                            L_row_map, L_entries, L_values,
+                            U_row_map, U_entries, U_values,
+                            Ut_new_row_map, Ut_new_entries, Ut_new_values,
+                            async_update);
 
-      // Filter smallest elements from L_new and U_new. Store result back
-      // in L and U.
-      {
-        const index_t l_nnz = L_new_values.extent(0);
-        const index_t u_nnz = U_new_values.extent(0);
+        if (do_compute_residual) {
+          curr_residual = compute_residual_norm(kh, thandle, A_row_map, A_entries, A_values,
+                                                L_row_map, L_entries, L_values,
+                                                U_row_map, U_entries, U_values,
+                                                R_row_map, R_entries, R_values,
+                                                LU_row_map, LU_entries, LU_values);
 
-        const auto l_filter_rank = std::max(static_cast<index_t>(0), l_nnz - l_nnz_limit - 1);
-        const auto u_filter_rank = std::max(static_cast<index_t>(0), u_nnz - u_nnz_limit - 1);
-
-        const auto l_threshold = threshold_select(L_new_values, l_filter_rank, V_copy);
-        const auto u_threshold = threshold_select(U_new_values, u_filter_rank, V_copy);
-
-        threshold_filter(thandle, l_threshold, L_new_row_map, L_new_entries, L_new_values, L_row_map, L_entries,
-                         L_values);
-
-        threshold_filter(thandle, u_threshold, U_new_row_map, U_new_entries, U_new_values, U_row_map, U_entries,
-                         U_values);
-      }
-
-      // Get transpose of U, needed for compute_l_u_factors. Store in Ut_new*
-      // since we aren't using those temporaries anymore
-      transpose_wrap(thandle, U_row_map, U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values);
-
-      // Do one sweep of the fixed-point ILU algorithm
-      compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
-                          U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values, async_update);
-
-      //
-      // Compute residual and check stop conditions
-      //
-      // compute_residual_norm can use a lot of memory, especially if fill_in_limit is
-      // large. If user selects residual_norm_delta_stop <= 0, just skip this step and
-      // always run max_iters times.
-      //
-      if (do_compute_residual) {
-        curr_residual = compute_residual_norm(kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
-                                              L_values, U_row_map, U_entries, U_values, R_row_map, R_entries, R_values,
-                                              LU_row_map, LU_entries, LU_values);
-
-        if (verbose) {
-          std::cout << "Completed itr " << itr << ", residual is: " << curr_residual << std::endl;
-        }
-
-        const auto curr_delta = karith::abs(prev_residual - curr_residual);
-        if (curr_delta <= residual_norm_delta_stop) {
           if (verbose) {
-            std::cout << "  Itr-to-itr residual change has dropped below "
-                         "residual_norm_delta_stop, stop"
-                      << std::endl;
+            std::cout << "Completed itr " << itr << ", residual is: " << curr_residual << std::endl;
           }
-          stop = true;
+
+          const auto curr_delta = karith::abs(prev_residual - curr_residual);
+          if (curr_delta <= residual_norm_delta_stop) {
+            if (verbose) {
+              std::cout << "  Itr-to-itr residual change has dropped below residual_norm_delta_stop, stop" << std::endl;
+            }
+            stop = true;
+          } else {
+            prev_residual = curr_residual;
+          }
         } else {
-          prev_residual = curr_residual;
-        }
-      } else {
-        if (verbose) {
-          std::cout << "Completed itr " << itr << ", residual is unknown." << std::endl;
+          if (verbose) {
+            std::cout << "Completed itr " << itr << ", residual is unknown." << std::endl;
+          }
+          curr_residual = 0;
+          prev_residual = 0;
         }
 
-        curr_residual = 0;
-        prev_residual = 0;
+        ++itr;
+      }
+    } else {
+      initialize_LU(thandle, A_row_map, A_entries, A_values,
+                    L_row_map, L_entries, L_values,
+                    U_row_map, U_entries, U_values);
+
+      bool stop = nrows == 0;  // Don't iterate at all if nrows=0
+      while (!stop && itr < max_iter) {
+        if (itr == 0 || !do_compute_residual) {
+          multiply_matrices(kh, thandle, L_row_map, L_entries, L_values, U_row_map, U_entries, U_values, LU_row_map,
+                            LU_entries, LU_values);
+        }
+
+        add_candidates(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
+                       U_values, LU_row_map, LU_entries, LU_values, L_new_row_map, L_new_entries, L_new_values,
+                       U_new_row_map, U_new_entries, U_new_values);
+
+        transpose_wrap(thandle, U_new_row_map, U_new_entries, U_new_values, Ut_new_row_map, Ut_new_entries,
+                       Ut_new_values);
+
+        compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_new_row_map, L_new_entries, L_new_values,
+                            U_new_row_map, U_new_entries, U_new_values, Ut_new_row_map, Ut_new_entries, Ut_new_values,
+                            async_update);
+
+        {
+          const index_t l_nnz = L_new_values.extent(0);
+          const index_t u_nnz = U_new_values.extent(0);
+
+          const auto l_filter_rank = std::max(static_cast<index_t>(0), l_nnz - l_nnz_limit - 1);
+          const auto u_filter_rank = std::max(static_cast<index_t>(0), u_nnz - u_nnz_limit - 1);
+
+          const auto l_threshold = threshold_select(L_new_values, l_filter_rank, V_copy);
+          const auto u_threshold = threshold_select(U_new_values, u_filter_rank, V_copy);
+
+          threshold_filter(thandle, l_threshold, L_new_row_map, L_new_entries, L_new_values, L_row_map, L_entries,
+                           L_values);
+
+          threshold_filter(thandle, u_threshold, U_new_row_map, U_new_entries, U_new_values, U_row_map, U_entries,
+                           U_values);
+        }
+
+        transpose_wrap(thandle, U_row_map, U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values);
+
+        compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
+                            U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values, async_update);
+
+        if (do_compute_residual) {
+          curr_residual = compute_residual_norm(kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
+                                                L_values, U_row_map, U_entries, U_values, R_row_map, R_entries, R_values,
+                                                LU_row_map, LU_entries, LU_values);
+
+          if (verbose) {
+            std::cout << "Completed itr " << itr << ", residual is: " << curr_residual << std::endl;
+          }
+
+          const auto curr_delta = karith::abs(prev_residual - curr_residual);
+          if (curr_delta <= residual_norm_delta_stop) {
+            if (verbose) {
+              std::cout << "  Itr-to-itr residual change has dropped below "
+                           "residual_norm_delta_stop, stop"
+                        << std::endl;
+            }
+            stop = true;
+          } else {
+            prev_residual = curr_residual;
+          }
+        } else {
+          if (verbose) {
+            std::cout << "Completed itr " << itr << ", residual is unknown." << std::endl;
+          }
+
+          curr_residual = 0;
+          prev_residual = 0;
+        }
+
+        ++itr;
       }
 
-      ++itr;
+      if (reuse_numeric_pattern) {
+        cache_pattern(thandle, L_row_map, L_entries, U_row_map, U_entries, rowmap_hash, entries_hash);
+      }
     }
 
     curr_residual = nrows == 0 ? scalar_t(0.) : curr_residual;
