@@ -275,8 +275,8 @@ void run_test_par_ilut_reuse_numeric_pattern() {
   EntriesType U_reuse_entries("U_reuse_entries", 0);
   ValuesType U_reuse_values("U_reuse_values", 0);
 
-  par_ilut_numeric(&kh, row_map2, entries2, values2, L_reuse_row_map, L_reuse_entries, L_reuse_values,
-                   U_reuse_row_map, U_reuse_entries, U_reuse_values);
+  par_ilut_numeric(&kh, row_map2, entries2, values2, L_reuse_row_map, L_reuse_entries, L_reuse_values, U_reuse_row_map,
+                   U_reuse_entries, U_reuse_values);
 
   // The second call should load exactly the pattern cached by the first call.
   expect_1d_views_equal(L_row_map_expected, L_reuse_row_map, "reused L row_map");
@@ -494,18 +494,18 @@ void test_par_ilut_zerorow_A() {
   Test::run_test_par_ilut_zerorow_A<scalar_t, lno_t, size_type, device>();
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                  \
-  TEST_F(TestCategory, sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {           \
-    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                \
-  }                                                                                                  \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                              \
+  TEST_F(TestCategory, sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                       \
+    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                            \
+  }                                                                                                              \
   TEST_F(TestCategory, sparse##_##par_ilut_reuse_numeric_pattern##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_par_ilut_reuse_numeric_pattern<SCALAR, ORDINAL, OFFSET, DEVICE>();                          \
-  }                                                                                                  \
-  TEST_F(TestCategory, sparse##_##par_ilut_zerorow_A##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_par_ilut_zerorow_A<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
-  }                                                                                                  \
-  TEST_F(TestCategory, sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
-    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();                                        \
+    test_par_ilut_reuse_numeric_pattern<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
+  }                                                                                                              \
+  TEST_F(TestCategory, sparse##_##par_ilut_zerorow_A##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {             \
+    test_par_ilut_zerorow_A<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                  \
+  }                                                                                                              \
+  TEST_F(TestCategory, sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {               \
+    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                    \
   }
 
 #define NO_TEST_COMPLEX
