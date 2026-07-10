@@ -340,24 +340,29 @@ struct IlutWrap {
   }
 
   template <class ViewType>
-  static std::uint64_t hash_view_on_host(const ViewType& v) {
-    auto h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v);
-
-    std::uint64_t hash            = 1469598103934665603ULL;
-    constexpr std::uint64_t prime = 1099511628211ULL;
-
-    for (size_t i = 0; i < h.extent(0); ++i) {
-      std::uint64_t x = static_cast<std::uint64_t>(h(i));
-      hash ^= x + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
-      hash *= prime;
-    }
+  static std::uint64_t hash_view(const ViewType& v) {
+    std::uint64_t hash = 0;
+    Kokkos::parallel_reduce(
+        "hash_view", range_policy(0, static_cast<size_type>(v.extent(0))),
+        KOKKOS_LAMBDA(const size_type i, std::uint64_t& lsum) {
+          std::uint64_t z = static_cast<std::uint64_t>(v(i));
+          // Mix in the index so that permutations of the same values don't collide as easily.
+          z ^= 0x9e3779b97f4a7c15ULL + (static_cast<std::uint64_t>(i) << 1);
+          // splitmix64
+          z += 0x9e3779b97f4a7c15ULL;
+          z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+          z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+          z ^= (z >> 31);
+          lsum += z;
+        },
+        hash);
     return hash;
   }
 
   template <class ARowMapType, class AEntriesType>
   static Kokkos::pair<std::uint64_t, std::uint64_t> compute_structure_signature(const ARowMapType& A_row_map,
                                                                                 const AEntriesType& A_entries) {
-    return Kokkos::make_pair(hash_view_on_host(A_row_map), hash_view_on_host(A_entries));
+    return Kokkos::make_pair(hash_view(A_row_map), hash_view(A_entries));
   }
 
   /**
