@@ -918,13 +918,26 @@ struct IlutWrap {
       initialize_LU_values_on_pattern(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                                       U_row_map, U_entries, U_values);
 
+      //
+      // main loop
+      //
       bool stop = nrows == 0;
       while (!stop && itr < max_iter) {
+        // Get transpose of U, needed for compute_l_u_factors. Store in Ut_new*
+        // since we aren't using those temporaries anymore
         transpose_wrap(thandle, U_row_map, U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
+        // Do one sweep of the fixed-point ILU algorithm
         compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map,
                             U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values, async_update);
 
+        //
+        // Compute residual and check stop conditions
+        //
+        // compute_residual_norm can use a lot of memory, especially if fill_in_limit is
+        // large. If user selects residual_norm_delta_stop <= 0, just skip this step and
+        // always run max_iters times.
+        //
         if (do_compute_residual) {
           curr_residual = compute_residual_norm(kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
                                                 L_values, U_row_map, U_entries, U_values, R_row_map, R_entries,
@@ -954,27 +967,40 @@ struct IlutWrap {
         ++itr;
       }
     } else {
+      // Set the initial L/U values for the initial approximation
       initialize_LU(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
                     U_values);
 
+      //
+      // main loop
+      //
       bool stop = nrows == 0;  // Don't iterate at all if nrows=0
       while (!stop && itr < max_iter) {
+        // LU = L*U
+        //
+        // computing residual does this operation, so we don't need to repeat it if we
+        // are computing residuals.
         if (itr == 0 || !do_compute_residual) {
           multiply_matrices(kh, thandle, L_row_map, L_entries, L_values, U_row_map, U_entries, U_values, LU_row_map,
                             LU_entries, LU_values);
         }
 
+        // Identify candidate locations and add them
         add_candidates(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
                        U_values, LU_row_map, LU_entries, LU_values, L_new_row_map, L_new_entries, L_new_values,
                        U_new_row_map, U_new_entries, U_new_values);
 
+        // Get transpose of U_new, needed for compute_l_u_factors
         transpose_wrap(thandle, U_new_row_map, U_new_entries, U_new_values, Ut_new_row_map, Ut_new_entries,
                        Ut_new_values);
 
+        // Do one sweep of the fixed-point ILU algorithm
         compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_new_row_map, L_new_entries, L_new_values,
                             U_new_row_map, U_new_entries, U_new_values, Ut_new_row_map, Ut_new_entries, Ut_new_values,
                             async_update);
 
+        // Filter smallest elements from L_new and U_new. Store result back
+        // in L and U.
         {
           const index_t l_nnz = L_new_values.extent(0);
           const index_t u_nnz = U_new_values.extent(0);
@@ -992,11 +1018,21 @@ struct IlutWrap {
                            U_values);
         }
 
+        // Get transpose of U, needed for compute_l_u_factors. Store in Ut_new*
+        // since we aren't using those temporaries anymore
         transpose_wrap(thandle, U_row_map, U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
+        // Do one sweep of the fixed-point ILU algorithm
         compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map,
                             U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values, async_update);
 
+        //
+        // Compute residual and check stop conditions
+        //
+        // compute_residual_norm can use a lot of memory, especially if fill_in_limit is
+        // large. If user selects residual_norm_delta_stop <= 0, just skip this step and
+        // always run max_iters times.
+        //
         if (do_compute_residual) {
           curr_residual = compute_residual_norm(kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
                                                 L_values, U_row_map, U_entries, U_values, R_row_map, R_entries,
