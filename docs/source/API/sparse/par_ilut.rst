@@ -89,7 +89,7 @@ has already been called for the provided ``KernelHandle``.
 By default, each call performs a fresh adaptive numeric factorization for the
 provided matrix values. When the handle option ``reuse_numeric_pattern`` is
 enabled, repeated calls on matrices with the same sparsity structure may reuse
-the previously computed factor sparsity pattern and performs fixed-pattern
+the previously computed factor sparsity pattern and perform fixed-pattern
 numeric updates instead of rebuilding the adaptive pattern.
 
 .. math::
