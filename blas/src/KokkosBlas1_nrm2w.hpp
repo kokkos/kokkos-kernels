@@ -40,7 +40,7 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 
   using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
                                         typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-                                        typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   using layout_t = typename XVector_Internal::array_layout;
 
@@ -130,19 +130,22 @@ void nrm2w(const execution_space& space, const RV& R, const XMV& X, const XMV& W
 
   using UnifiedXLayout  = typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
   using UnifiedRVLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
+  using UnifiedRVDevice =
+      std::conditional_t<Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename RV::memory_space>::assignable,
+                         Kokkos::HostSpace, execution_space>;
 
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.
-  typedef Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, typename RV::device_type,
+  typedef Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, UnifiedRVDevice,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RV_Internal;
-  typedef Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, typename XMV::device_type,
+  typedef Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XMV_Internal;
 
-  RV_Internal R_internal  = R;
-  XMV_Internal X_internal = X;
-  XMV_Internal W_internal = W;
+  RV_Internal R_internal  = KokkosKernels::Impl::unificationCast<RV_Internal>(R);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
+  XMV_Internal W_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(W);
 
   Impl::Nrm2w<execution_space, RV_Internal, XMV_Internal>::nrm2w(space, R_internal, X_internal, W_internal, true);
 }

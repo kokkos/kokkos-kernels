@@ -79,15 +79,16 @@ void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X)
   // Create unmanaged versions of the input Views.  RMV and XMV may be
   // rank 1 or rank 2.  AV may be either a rank-1 View, or a scalar
   // value.
-  using RMV_Internal = Kokkos::View<typename RMV::non_const_data_type, UnifiedRLayout, typename RMV::device_type,
+  using RMV_Internal = Kokkos::View<typename RMV::non_const_data_type, UnifiedRLayout, execution_space,
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, typename XMV::device_type,
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  using AV_Internal  = typename KokkosKernels::Impl::GetUnifiedScalarViewType<AV, XMV_Internal, true>::type;
+  using AV_Internal = typename KokkosKernels::Impl::GetUnifiedScalarExecSpaceViewType<execution_space, AV, XMV_Internal,
+                                                                                      /* const */ true>::type;
 
-  RMV_Internal R_internal = R;
-  AV_Internal a_internal  = a;
-  XMV_Internal X_internal = X;
+  RMV_Internal R_internal = KokkosKernels::Impl::unificationCast<RMV_Internal>(R);
+  AV_Internal a_internal  = KokkosKernels::Impl::unificationCast<AV_Internal>(a);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
 
   Impl::Scal<execution_space, RMV_Internal, AV_Internal, XMV_Internal>::scal(space, R_internal, a_internal, X_internal);
 }
