@@ -5,41 +5,35 @@
 
 ### New Features
 
-#### BLAS updates
+#### LAPACK updates
 
-- Add scaled l2 norm computation [\#3130](https://github.com/kokkos/kokkos-kernels/pull/3130)
 - Lapack - gegqr: adding kernels to compute Q [\#3056](https://github.com/kokkos/kokkos-kernels/pull/3056)
 - Lapack {or,un}mqr [\#2962](https://github.com/kokkos/kokkos-kernels/pull/2962)
+- Adds potrs tpl wrappers to lapack [\#3061](https://github.com/kokkos/kokkos-kernels/pull/3061)
+- Cholesky factorization TPL wrappers for Kokkos Kernels [\#3010](https://github.com/kokkos/kokkos-kernels/pull/3010)
 
 #### Batched updates
 
+- Add scaled l2 norm computation [\#3130](https://github.com/kokkos/kokkos-kernels/pull/3130)
+- Add serial, team and teamvector implementations of the rot [\#2960](https://github.com/kokkos/kokkos-kernels/pull/2960), rotg [\#3049](https://github.com/kokkos/kokkos-kernels/pull/3049), rotm [\#3080](https://github.com/kokkos/kokkos-kernels/pull/3080) and rotmg [\#3088](https://github.com/kokkos/kokkos-kernels/pull/3088) functions.
 - Add batched swap [\#3147](https://github.com/kokkos/kokkos-kernels/pull/3147)
 - Implement Team and TeamVector Iamax [\#3138](https://github.com/kokkos/kokkos-kernels/pull/3138)
 - Add batched norm [\#3120](https://github.com/kokkos/kokkos-kernels/pull/3120)
-- Add batched rotmg [\#3088](https://github.com/kokkos/kokkos-kernels/pull/3088)
-- Implement batched serial/team/teamvector rotm [\#3080](https://github.com/kokkos/kokkos-kernels/pull/3080)
-- Add batched rotg [\#3049](https://github.com/kokkos/kokkos-kernels/pull/3049)
-- Implement batched serial/team/teamvector rot [\#2960](https://github.com/kokkos/kokkos-kernels/pull/2960)
 
 #### Sparse updates
 
 - Add option to conjugate values to sparse matrix transpose [\#3052](https://github.com/kokkos/kokkos-kernels/pull/3052)
 - Merge-Based SpMV wrap-up [\#1501](https://github.com/kokkos/kokkos-kernels/pull/1501)
 
-#### TPL support
-
-- Adds potrs tpl wrappers to lapack [\#3061](https://github.com/kokkos/kokkos-kernels/pull/3061)
-- Cholesky factorization TPL wrappers for Kokkos Kernels [\#3010](https://github.com/kokkos/kokkos-kernels/pull/3010)
-
 ### Enhancements
 
 #### BLAS
 
-- Reintroduce ConjTrans support for TeamGemm [\#3085](https://github.com/kokkos/kokkos-kernels/pull/3085)
 - KokkosBlas axpby unification refactor [\#3055](https://github.com/kokkos/kokkos-kernels/pull/3055)
 
 #### Batched
 
+- Reintroduce ConjTrans support for TeamGemm [\#3085](https://github.com/kokkos/kokkos-kernels/pull/3085)
 - Refactor batched dot [\#3110](https://github.com/kokkos/kokkos-kernels/pull/3110)
 - Make batched rotm to align with rotmg [\#3089](https://github.com/kokkos/kokkos-kernels/pull/3089)
 - Batched: allowing dynrankview in get_extent get_stride [\#3036](https://github.com/kokkos/kokkos-kernels/pull/3036)
