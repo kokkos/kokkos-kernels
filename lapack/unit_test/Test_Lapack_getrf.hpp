@@ -14,10 +14,28 @@
 
 #include <KokkosLapack_getrf.hpp>
 #include <KokkosBlas3_gemm.hpp>
-#include <KokkosBlas3_trsm.hpp>
+#include <KokkosBlas3_trmm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
 namespace Test {
+
+template <class MatrixType>
+struct copy_U {
+  MatrixType m_A, m_U;
+
+  copy_U(const MatrixType &A, const MatrixType &U) : m_A(A), m_U(U) {
+    static_assert(MatrixType::rank() == 2);
+  }
+
+  KOKKOS_FUNCTION void operator() (const int idx) const {
+    const int colIdx = idx / m_A.extent(0);
+    const int rowIdx = idx % m_A.extent(0);
+
+    if(rowIdx <= colIdx) {
+      m_U(rowIdx, colIdx) = m_A(rowIdx, colIdx);
+    }
+  }
+};
 
 template <class MatrixType>
 struct copy_L_plus_I {
@@ -33,9 +51,9 @@ struct copy_L_plus_I {
     const int colIdx = idx / m_A.extent(0);
     const int rowIdx = idx % m_A.extent(0);
 
-    if(colIdx == rowIdx) {
+    if(rowIdx == colIdx) {
       m_L(rowIdx, colIdx) = ATS::one();
-    } else if(colIdx < rowIdx) {
+    } else if (rowIdx > colIdx) {
       m_L(rowIdx, colIdx) = m_A(rowIdx, colIdx);
     }
   }
@@ -61,7 +79,8 @@ void impl_test_getrf_sym() {
   A_h(3, 0) = zero; A_h(3, 1) = zero; A_h(3, 2) = -one; A_h(3, 3) =  two;
   Kokkos::deep_copy(A, A_h);
 
-  IpivType ipiv("LU pivots", 4);
+  const int min_mn = Kokkos::min(A.extent(0), A.extent(1));
+  IpivType ipiv("LU pivots", min_mn);
   InfoType info("LU info", 1);
 
   KokkosLapack::getrf(ExecutionSpace(), A, ipiv, info);
@@ -110,7 +129,8 @@ void impl_test_getrf_unsym() {
   A_h(2, 0) = scalar_type(2); A_h(2, 1) = scalar_type(7); A_h(2, 2) = scalar_type(9);
   Kokkos::deep_copy(A, A_h);
 
-  IpivType ipiv("LU pivots", 3);
+  const int min_mn = Kokkos::min(A.extent(0), A.extent(1));
+  IpivType ipiv("LU pivots", min_mn);
   InfoType info("LU info", 1);
 
   KokkosLapack::getrf(ExecutionSpace(), A, ipiv, info);
@@ -139,6 +159,63 @@ void impl_test_getrf_unsym() {
 }  // impl_test_getrf_unsym
 
 template <class AMatrixType>
+void impl_test_getrf_tall() {
+  using Device   = typename AMatrixType::device_type;
+  using IpivType = Kokkos::View<int*, Device>;
+  using InfoType = Kokkos::View<int*, Device>;
+  using scalar_type    = typename AMatrixType::non_const_value_type;
+  using ExecutionSpace = typename Device::execution_space;
+
+  const scalar_type zero = KokkosKernels::ArithTraits<scalar_type>::zero();
+  const scalar_type one  = KokkosKernels::ArithTraits<scalar_type>::one();
+  const scalar_type two  = one + one;
+
+  constexpr int m = 4, n = 3;
+  const int min_mn = Kokkos::min(m, n);
+  const auto tol = min_mn*m*n*KokkosKernels::ArithTraits<scalar_type>::eps();
+
+  AMatrixType A("matrix A", m, n), L("L factor", m, min_mn), U("U factor", min_mn, n), LU("L*U product", m, n);
+  auto A_h = Kokkos::create_mirror_view(A);
+  Kokkos::View<scalar_type**, Kokkos::HostSpace> Aref("A reference", m, n);
+  A_h(0, 0) =  two; A_h(0, 1) = -one; A_h(0, 2) = zero;
+  A_h(1, 0) = -one; A_h(1, 1) =  two; A_h(1, 2) = -one;
+  A_h(2, 0) = zero; A_h(2, 1) = -one; A_h(2, 2) =  two;
+  A_h(3, 0) =  one; A_h(3, 1) =  one; A_h(3, 2) =  one;
+  Kokkos::deep_copy(A, A_h);
+  Kokkos::deep_copy(Aref, A_h);
+
+  IpivType ipiv("LU pivots", min_mn);
+  InfoType info("LU info", 1);
+
+  KokkosLapack::getrf(ExecutionSpace(), A, ipiv, info);
+  Kokkos::deep_copy(A_h, A);
+
+  copy_L_plus_I my_func_L(A, L);
+  Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0, m * n), my_func_L);
+  copy_U my_func_U(A, U);
+  Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0, m * n), my_func_U);
+  KokkosBlas::gemm(ExecutionSpace(), "N", "N", 1.0, L, U, 0.0, LU);
+
+  auto LU_h = Kokkos::create_mirror_view(LU);
+  Kokkos::deep_copy(LU_h, LU);
+
+  auto ipiv_h = Kokkos::create_mirror_view(ipiv);
+  Kokkos::deep_copy(ipiv_h, ipiv);
+
+  scalar_type tmp = zero;
+  for (int rowIdx = 0; rowIdx < m; ++rowIdx) {
+    for (int colIdx = 0; colIdx < n; ++colIdx) {
+      if (rowIdx < min_mn) {
+	tmp = Aref(rowIdx, colIdx);
+	Aref(rowIdx, colIdx) = Aref(ipiv_h(rowIdx) - 1, colIdx);
+	Aref(ipiv_h(rowIdx) - 1, colIdx) = tmp;
+      }
+      EXPECT_NEAR_KK_REL(Aref(rowIdx, colIdx), LU_h(rowIdx, colIdx), tol);
+    }
+  }
+}  // impl_test_getrf_tall
+
+template <class AMatrixType>
 void impl_test_getrf(const int m, const int n) {
   using Device   = typename AMatrixType::device_type;
   using IpivType = Kokkos::View<int*, Device>;
@@ -146,41 +223,51 @@ void impl_test_getrf(const int m, const int n) {
   using scalar_type    = typename AMatrixType::non_const_value_type;
   using ExecutionSpace = typename Device::execution_space;
 
-  const int minMN = Kokkos::min(m, n);
+  const int min_mn = Kokkos::min(m, n);
+  const auto tol  = min_mn*m*n*KokkosKernels::ArithTraits<scalar_type>::eps();
 
   AMatrixType A("matrix A", m, n), Aref("copy of A for reference", m, n), LU("LU product", m, n);
+  AMatrixType L("L", m, min_mn), U("U", min_mn, n);
 
-  IpivType ipiv("LU pivots", minMN);
+  IpivType ipiv("LU pivots", min_mn);
   InfoType info("LU info", 1);
 
   Kokkos::Random_XorShift64_Pool<ExecutionSpace> rand_pool(13718);
   Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<ExecutionSpace>, scalar_type>::max());
   Kokkos::deep_copy(Aref, A);
 
-  std::cout << "Aref\n"
-	    << "   [" << Aref(0, 0) << ", " << Aref(0, 1) << ", " << Aref(0, 2) << ", " << Aref(0, 3) << "]\n"
-	    << "   [" << Aref(1, 0) << ", " << Aref(1, 1) << ", " << Aref(1, 2) << ", " << Aref(1, 3) << "]\n"
-	    << "   [" << Aref(2, 0) << ", " << Aref(2, 1) << ", " << Aref(2, 2) << ", " << Aref(2, 3) << "]\n"
-	    << "   [" << Aref(3, 0) << ", " << Aref(3, 1) << ", " << Aref(3, 2) << ", " << Aref(3, 3) << "]" << std::endl;
-
   KokkosLapack::getrf(ExecutionSpace(), A, ipiv, info);
 
-  std::cout << "A\n"
-	    << "   [" << A(0, 0) << ", " << A(0, 1) << ", " << A(0, 2) << ", " << A(0, 3) << "]\n"
-	    << "   [" << A(1, 0) << ", " << A(1, 1) << ", " << A(1, 2) << ", " << A(1, 3) << "]\n"
-	    << "   [" << A(2, 0) << ", " << A(2, 1) << ", " << A(2, 2) << ", " << A(2, 3) << "]\n"
-	    << "   [" << A(3, 0) << ", " << A(3, 1) << ", " << A(3, 2) << ", " << A(3, 3) << "]" << std::endl;
-  std::cout << "ipiv: [" << ipiv(0) << ", " << ipiv(1) << ", " << ipiv(2) << ",  " << ipiv(3) << "]" << std::endl;
+  auto ipiv_h = Kokkos::create_mirror_view(ipiv);
+  Kokkos::deep_copy(ipiv_h, ipiv);
 
-  copy_L_plus_I my_func(A, LU);
-  Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0, m * n), my_func);
-  KokkosBlas::trsm(ExecutionSpace(), "R", "U", "N", "N", 1.0, A, LU);
+  copy_U my_func_U(A, U);
+  Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0, m * n), my_func_U);
+  Kokkos::fence();
 
-  std::cout << "LU\n"
-	    << "   [" << LU(0, 0) << ", " << LU(0, 1) << ", " << LU(0, 2) << ", " << LU(0, 3) << "]\n"
-	    << "   [" << LU(1, 0) << ", " << LU(1, 1) << ", " << LU(1, 2) << ", " << LU(1, 3) << "]\n"
-	    << "   [" << LU(2, 0) << ", " << LU(2, 1) << ", " << LU(2, 2) << ", " << LU(2, 3) << "]\n"
-	    << "   [" << LU(3, 0) << ", " << LU(3, 1) << ", " << LU(3, 2) << ", " << LU(3, 3) << "]" << std::endl;
+  copy_L_plus_I my_func_L(A, L);
+  Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0, m * n), my_func_L);
+  Kokkos::fence();
+
+  KokkosBlas::gemm(ExecutionSpace(), "N", "N", 1.0, L, U, 0.0, LU);
+  Kokkos::fence();
+
+  auto Aref_h = Kokkos::create_mirror_view(Aref);
+  Kokkos::deep_copy(Aref_h, Aref);
+  auto LU_h = Kokkos::create_mirror_view(LU);
+  Kokkos::deep_copy(LU_h, LU);
+
+  scalar_type tmp = KokkosKernels::ArithTraits<scalar_type>::zero();
+  for(int rowIdx = 0; rowIdx < m; ++rowIdx) {
+    for(int colIdx = 0; colIdx < n; ++colIdx) {
+      if (rowIdx < min_mn) {
+	tmp = Aref_h(rowIdx, colIdx);
+	Aref_h(rowIdx, colIdx) = Aref_h(ipiv(rowIdx) - 1, colIdx);
+	Aref_h(ipiv(rowIdx) - 1, colIdx) = tmp;
+      }
+      EXPECT_NEAR_KK_REL(LU_h(rowIdx, colIdx), Aref_h(rowIdx, colIdx), tol);
+    }
+  }
 }
 
 }  // namespace Test
@@ -193,10 +280,15 @@ void test_getrf() {
 
   Test::impl_test_getrf_sym<view_type_a>();
   Test::impl_test_getrf_unsym<view_type_a>();
+  Test::impl_test_getrf_tall<view_type_a>();
 
+  Test::impl_test_getrf<view_type_a>(0, 0);
+  Test::impl_test_getrf<view_type_a>(1, 1);
+  Test::impl_test_getrf<view_type_a>(2, 2);
   Test::impl_test_getrf<view_type_a>(4, 4);
-  // Test::impl_test_getrf<view_type_a>(100, 70);
-  // Test::impl_test_getrf<view_type_a>(70, 100);
+  Test::impl_test_getrf<view_type_a>(100, 100);
+  Test::impl_test_getrf<view_type_a>(100, 70);
+  Test::impl_test_getrf<view_type_a>(70, 100);
 #endif
 }
 

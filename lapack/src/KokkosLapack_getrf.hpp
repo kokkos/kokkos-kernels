@@ -76,6 +76,9 @@ void getrf(const ExecutionSpace& space, const AMatrix& A, const IpivView& Ipiv, 
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
+  // Check for possible quick return
+  if (A.extent(0) == 0 || A.extent(1) == 0) return;
+
   using ALayout           = typename AMatrix::array_layout;
   using AMatrix_Internal  = Kokkos::View<typename AMatrix::non_const_value_type**, ALayout, typename AMatrix::device_type,
 					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
