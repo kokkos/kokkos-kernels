@@ -57,7 +57,7 @@ struct iamax_eti_spec_avail {
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)         \
+#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE)                    \
   template <>                                                                                                     \
   struct iamax_eti_spec_avail<                                                                                    \
       EXEC_SPACE, Kokkos::View<INDEX_TYPE*, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -71,11 +71,11 @@ struct iamax_eti_spec_avail {
     enum : bool { value = true };                                                                                 \
   };
 
-#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE)                                     \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(unsigned long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)      \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(unsigned int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)       \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)
+#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE)                          \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE) \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(unsigned long, SCALAR, LAYOUT, EXEC_SPACE)      \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(unsigned int, SCALAR, LAYOUT, EXEC_SPACE)       \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST(int, SCALAR, LAYOUT, EXEC_SPACE)
 
 // Include the actual specialization declarations
 #include <KokkosBlas1_iamax_tpl_spec_avail.hpp>
@@ -183,7 +183,7 @@ struct Iamax<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                  \
+#define KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE)                             \
   extern template struct Iamax<                                                                                   \
       EXEC_SPACE, Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,  \
       Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, false, true>; \
@@ -191,18 +191,18 @@ struct Iamax<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
       EXEC_SPACE, Kokkos::View<INDEX_TYPE, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
       Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, false, true>;
 
-#define KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                                \
-  KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(unsigned long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)      \
-  KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(unsigned int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)       \
-  KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)
+#define KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                     \
+  KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE) \
+  KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(unsigned long, SCALAR, LAYOUT, EXEC_SPACE)      \
+  KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(unsigned int, SCALAR, LAYOUT, EXEC_SPACE)       \
+  KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX(int, SCALAR, LAYOUT, EXEC_SPACE)
 
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Iamax for rank == 1.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                  \
+#define KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE)                             \
   template struct Iamax<                                                                                          \
       EXEC_SPACE, Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,  \
       Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, false, true>; \
@@ -210,11 +210,11 @@ struct Iamax<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
       EXEC_SPACE, Kokkos::View<INDEX_TYPE, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
       Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, false, true>;
 
-#define KOKKOSBLAS1_IAMAX_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                                \
-  KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(unsigned long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)      \
-  KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(unsigned int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)       \
-  KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)
+#define KOKKOSBLAS1_IAMAX_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                     \
+  KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE) \
+  KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(unsigned long, SCALAR, LAYOUT, EXEC_SPACE)      \
+  KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(unsigned int, SCALAR, LAYOUT, EXEC_SPACE)       \
+  KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX(int, SCALAR, LAYOUT, EXEC_SPACE)
 
 //
 // Macro for declaration of full specialization of
@@ -223,7 +223,7 @@ struct Iamax<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                \
+#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE)                           \
   extern template struct Iamax<                                                                                    \
       EXEC_SPACE, Kokkos::View<INDEX_TYPE*, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,  \
       Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>; \
@@ -231,18 +231,18 @@ struct Iamax<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
       EXEC_SPACE, Kokkos::View<INDEX_TYPE*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
       Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>;
 
-#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                                \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(unsigned long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)      \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(unsigned int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)       \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)
+#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                     \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE) \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(unsigned long, SCALAR, LAYOUT, EXEC_SPACE)      \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(unsigned int, SCALAR, LAYOUT, EXEC_SPACE)       \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_DECL_INDEX(int, SCALAR, LAYOUT, EXEC_SPACE)
 
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Iamax for rank == 2.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                \
+#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE)                           \
   template struct Iamax<                                                                                           \
       EXEC_SPACE, Kokkos::View<INDEX_TYPE*, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,  \
       Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>; \
@@ -250,11 +250,11 @@ struct Iamax<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBR
       EXEC_SPACE, Kokkos::View<INDEX_TYPE*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
       Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>;
 
-#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                                \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(unsigned long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)      \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(unsigned int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)       \
-  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)
+#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                     \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(unsigned long long, SCALAR, LAYOUT, EXEC_SPACE) \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(unsigned long, SCALAR, LAYOUT, EXEC_SPACE)      \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(unsigned int, SCALAR, LAYOUT, EXEC_SPACE)       \
+  KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_INST_INDEX(int, SCALAR, LAYOUT, EXEC_SPACE)
 
 #include <KokkosBlas1_iamax_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosBlas1_iamax_eti_spec_decl.hpp>
