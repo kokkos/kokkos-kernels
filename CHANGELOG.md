@@ -124,7 +124,7 @@
 - Avoid custom comparator for Kokkos::sort in par_ilut [\#3044](https://github.com/kokkos/kokkos-kernels/pull/3044)
 - More graph coarsening fixes for team policy violations [\#3018](https://github.com/kokkos/kokkos-kernels/pull/3018)
 - `PredicMaxRowNNZ` -> `PredictMaxRowNNZ` (typo?) [\#3017](https://github.com/kokkos/kokkos-kernels/pull/3017)
-
+- Fixing call to scal in GEMM, it is missing space param making the function possibly blocking on a different stream [\#3185](https://github.com/kokkos/kokkos-kernels/pull/3185)
 
 ## [5.1.0](https://github.com/kokkos/kokkos-kernels/tree/5.1.0)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.0.2...5.1.0)
