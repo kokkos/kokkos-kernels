@@ -99,8 +99,9 @@ void doAllCrs2Coo(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_crs2coo) {
-  uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
+  uint64_t ticks = ::Test::getTestSeed();
   std::srand(ticks);
+  SCOPED_TRACE("rand seed: " + std::to_string(ticks));
 
   // Square cases
   for (size_t i = 1; i < 256; i *= 4) {
