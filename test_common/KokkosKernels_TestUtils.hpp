@@ -4,6 +4,7 @@
 #ifndef KOKKOSKERNELS_TEST_UTILS_HPP
 #define KOKKOSKERNELS_TEST_UTILS_HPP
 
+#include <chrono>
 #include <random>
 
 #include "KokkosKernels_Utils.hpp"
@@ -43,6 +44,27 @@
 #endif
 
 namespace Test {
+
+/// Returns a reproducible test seed.
+///
+/// If --gtest_random_seed=N is passed on the command line with N > 0, that
+/// value is used. Otherwise a time-based seed is generated. Failed tests
+/// report the seed via SCOPED_TRACE or assertion messages so it can be
+/// reproduced by re-running with --gtest_random_seed set to that value.
+inline uint64_t getTestSeed() {
+  static uint64_t seed = []() -> uint64_t {
+    uint64_t s;
+    std::int32_t flag_seed = testing::GTEST_FLAG(random_seed);
+    if (flag_seed > 0) {
+      s = static_cast<uint64_t>(flag_seed);
+    } else {
+      s = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
+    }
+    return s;
+  }();
+
+  return seed;
+}
 
 namespace Impl {
 
@@ -337,7 +359,7 @@ class RandCooMat {
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
   RandCooMat(int64_t m, int64_t n, int64_t n_tuples, ScalarType min_val, ScalarType max_val) {
-    uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
+    uint64_t ticks = getTestSeed();
 
     info = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
                        ", " + typeid(ExeSpaceType).name() + std::to_string(n) +
@@ -415,7 +437,7 @@ class RandCsMatrix {
 
         for (Ordinal i = 0; i < r; i++) v.at(i) = i;
 
-        std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
+        std::shuffle(v.begin(), v.end(), std::mt19937(ticks));
 
         for (Ordinal i = 0; i < r; i++) ids_(i + nnz_) = v.at(i);
 
@@ -459,7 +481,7 @@ class RandCsMatrix {
                                 dim2 * dim1 + 1);  // over-allocated
     ids_          = Kokkos::create_mirror_view(ids_d_);
 
-    uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
+    uint64_t ticks = getTestSeed();
 
     info = std::string(std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
                        ", " + execution_space().name() + ">(" + std::to_string(dim2) + ", " + std::to_string(dim1) +
