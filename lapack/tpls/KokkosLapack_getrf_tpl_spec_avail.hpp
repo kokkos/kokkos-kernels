@@ -20,7 +20,7 @@ struct getrf_tpl_spec_avail {
   struct getrf_tpl_spec_avail<                                                                                      \
       ExecSpace,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<std::int32_t*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {   \
     enum : bool { value = true };                                                                                   \
   };

@@ -34,7 +34,7 @@ inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus, const c
 #define KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(call) \
   KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, __LINE__)
 
-  //  [[deprecated("Please use KokkosKernels::Impl::cuda_data_type_from() in KokkosKernels_Cuda_utils.hpp")]]
+  //  [[deprecated("Please use KokkosKernels::Impl::cuda_data_type_from() in KokkosKernels_Cuda_Utils.hpp")]]
 template <typename T>
 cudaDataType cuda_data_type_from() {
   return KokkosKernels::Impl::cuda_data_type_from<T>();

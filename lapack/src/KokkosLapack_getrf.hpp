@@ -25,7 +25,7 @@ namespace KokkosLapack {
 /// \tparam InfoView  Type of array Info, as a rank-1 Kokkos::View.
 ///
 /// \param A [in,out] On entry, the M-by-N matrix to be decomposed.
-///                   On exit, the L and U factors with L diagaonal assumed
+///                   On exit, the L and U factors with L diagonal assumed
 ///                   to be unit.
 /// \param Ipiv [out] One-dimensional array of size min(M,N) that contains the
 ///                   pivot ordering selected for the decomposition.
@@ -36,9 +36,9 @@ namespace KokkosLapack {
 ///
 template <class ExecutionSpace, class AMatrix, class IpivView, class InfoView>
 void getrf(const ExecutionSpace& space, const AMatrix& A, const IpivView& Ipiv, const InfoView& Info) {
-  // NOTE: Currently, KokkosLapack::getrf only supports LAPACK, MAGMA and
+  // NOTE: Currently, KokkosLapack::getrf only supports LAPACK, cuSOLVER and
   // rocSOLVER TPLs.
-  //       MAGMA/rocSOLVER TPL should be enabled to call the MAGMA/rocSOLVER GPU
+  //       cuSOLVER/rocSOLVER TPL should be enabled to call the cuSOLVER/rocSOLVER GPU
   //       interface for device views LAPACK TPL should be enabled to call the
   //       LAPACK interface for host views
 
@@ -77,7 +77,10 @@ void getrf(const ExecutionSpace& space, const AMatrix& A, const IpivView& Ipiv, 
   }
 
   // Check for possible quick return
-  if (A.extent(0) == 0 || A.extent(1) == 0) return;
+  if (A.extent(0) == 0 || A.extent(1) == 0) {
+    Kokkos::deep_copy(space, Info, 0);
+    return;
+  }
 
   using ALayout           = typename AMatrix::array_layout;
   using AMatrix_Internal  = Kokkos::View<typename AMatrix::non_const_value_type**, ALayout, typename AMatrix::device_type,

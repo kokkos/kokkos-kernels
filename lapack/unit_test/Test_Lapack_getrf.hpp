@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-// only enable this test where KokkosLapack supports gesv:
+// only enable this test where KokkosLapack supports getrf:
 // CUDA+CUSOLVER, HIP+ROCSOLVER and HOST+LAPACK
 #if (defined(TEST_CUDA_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)) ||               \
     (defined(TEST_HIP_LAPACK_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) ||               \
@@ -166,6 +166,8 @@ void impl_test_getrf_tall() {
   using scalar_type    = typename AMatrixType::non_const_value_type;
   using ExecutionSpace = typename Device::execution_space;
 
+  ExecutionSpace space{};
+
   const scalar_type zero = KokkosKernels::ArithTraits<scalar_type>::zero();
   const scalar_type one  = KokkosKernels::ArithTraits<scalar_type>::one();
   const scalar_type two  = one + one;
@@ -187,14 +189,14 @@ void impl_test_getrf_tall() {
   IpivType ipiv("LU pivots", min_mn);
   InfoType info("LU info", 1);
 
-  KokkosLapack::getrf(ExecutionSpace(), A, ipiv, info);
+  KokkosLapack::getrf(space, A, ipiv, info);
   Kokkos::deep_copy(A_h, A);
 
   copy_L_plus_I my_func_L(A, L);
-  Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0, m * n), my_func_L);
+  Kokkos::parallel_for(Kokkos::RangePolicy(space, 0, m * n), my_func_L);
   copy_U my_func_U(A, U);
-  Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0, m * n), my_func_U);
-  KokkosBlas::gemm(ExecutionSpace(), "N", "N", 1.0, L, U, 0.0, LU);
+  Kokkos::parallel_for(Kokkos::RangePolicy(space, 0, m * n), my_func_U);
+  KokkosBlas::gemm(space, "N", "N", 1.0, L, U, 0.0, LU);
 
   auto LU_h = Kokkos::create_mirror_view(LU);
   Kokkos::deep_copy(LU_h, LU);

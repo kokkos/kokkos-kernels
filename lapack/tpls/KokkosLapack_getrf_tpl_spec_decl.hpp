@@ -57,21 +57,21 @@ void lapackGetrfWrapper(const AViewType& A, const IpivView& Ipiv, const InfoView
   struct GETRF<                                                                                                        \
       EXECSPACE,                                                                                                       \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
-      Kokkos::View<std::int32_t*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,       \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true, \
       getrf_eti_spec_avail<EXECSPACE,                                                                                  \
                            Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                        \
                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<std::int32_t*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,	               \
+                           Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,	                       \
                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<std::int32_t*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                   \
+                           Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                            \
                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
     using AViewType =                                                                                                  \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     using IpivView =                                                                                                   \
-        Kokkos::View<std::int32_t*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+        Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
     using InfoViewType =                                                                                               \
-        Kokkos::View<std::int32_t*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+        Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
                                                                                                                        \
     static void getrf(const EXECSPACE& /* space */, const AViewType& A, const IpivView& Ipiv,                          \
                       const InfoViewType& Info) {                                                                      \
@@ -124,8 +124,6 @@ void cusolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, const
   using ALayout_t = typename AViewType::array_layout;
   static_assert(std::is_same_v<ALayout_t, Kokkos::LayoutLeft>,
                 "KokkosLapack - cusolver getrf: A needs to have a Kokkos::LayoutLeft");
-
-  const cudaDataType cuda_compute_type = KokkosKernels::Impl::cuda_data_type_from<Scalar>();
 
   const int m   = A.extent_int(0);
   const int n   = A.extent_int(1);
@@ -257,7 +255,6 @@ void rocsolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
                                                        reinterpret_cast<rocblas_double_complex*>(A.data()), lda,
                                                        Ipiv.data(), Info.data()));
   }
-  Kokkos::deep_copy(Info, 0);  // Success
   KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));
 }
 
