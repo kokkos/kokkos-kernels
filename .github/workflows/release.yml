@@ -13,7 +13,7 @@ jobs:
       hashes: ${{ steps.hash.outputs.hashes }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Build artifacts
         run: |
           git archive --prefix=kokkos-kernels-${{ github.ref_name }}/ -o kokkos-kernels-${{ github.ref_name }}.zip HEAD
@@ -63,7 +63,7 @@ jobs:
         with:
           name: release-artifacts
       - name: Upload assets
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           files: |
             kokkos-kernels-${{ github.ref_name }}.zip

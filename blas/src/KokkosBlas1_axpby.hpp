@@ -108,14 +108,14 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X, const B
   }
   // Get unified types (all preferring the layout of the InternalTypeX)
   using PreferredLayout = typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
-  using InternalTypeX   = Kokkos::View<typename XMV::const_data_type, PreferredLayout, typename XMV::device_type,
+  using InternalTypeX   = Kokkos::View<typename XMV::const_data_type, PreferredLayout, execution_space,
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
   using InternalTypeY =
       Kokkos::View<typename YMV::non_const_data_type,
                    typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YMV, PreferredLayout>::array_layout,
-                   typename YMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  InternalTypeX internal_X = X;
-  InternalTypeY internal_Y = Y;
+                   execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  InternalTypeX internal_X = KokkosKernels::Impl::unificationCast<InternalTypeX>(X);
+  InternalTypeY internal_Y = KokkosKernels::Impl::unificationCast<InternalTypeY>(Y);
   // Run the rank-1 or rank-2 cases, with the appropriate coefficient unification
   if constexpr ((int)XMV::rank == 1) {
     using InternalTypeA =
@@ -228,8 +228,14 @@ KOKKOS_FUNCTION void serial_axpy(const scalar_type alpha, const XMV X, YMV Y) {
   static_assert(XMV::rank == YMV::rank, "KokkosBlas::serial_axpy: XMV and YMV must have the same rank.");
 
 #ifndef NDEBUG
-  if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-    Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
+  if constexpr (XMV::rank == 1) {
+    if (X.extent(0) != Y.extent(0)) {
+      Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
+    }
+  } else if constexpr (XMV::rank == 2) {
+    if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+      Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
+    }
   }
 #endif  // NDEBUG
   if constexpr (XMV::rank() == 1)
