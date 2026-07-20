@@ -226,14 +226,15 @@ KOKKOSLAPACK_GETRF_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos:
 namespace KokkosLapack {
 namespace Impl {
 
-template <class ExecutionSpace, class AViewType, class TauViewType, class InfoViewType>
-void rocsolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, const TauViewType& Tau,
+template <class ExecutionSpace, class AViewType, class IpivViewType, class InfoViewType>
+void rocsolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, const IpivViewType& Ipiv,
                            const InfoViewType& Info) {
   using Scalar = typename AViewType::non_const_value_type;
 
   using ALayout_t = typename AViewType::array_layout;
   static_assert(std::is_same_v<ALayout_t, Kokkos::LayoutLeft>,
                 "KokkosLapack - rocsolver getrf: A needs to have a Kokkos::LayoutLeft");
+
   const rocblas_int m   = static_cast<rocblas_int>(A.extent(0));
   const rocblas_int n   = static_cast<rocblas_int>(A.extent(1));
   const rocblas_int lda = static_cast<rocblas_int>(A.stride(1));
@@ -241,20 +242,20 @@ void rocsolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
   KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();
   KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));
   if constexpr (std::is_same_v<Scalar, float>) {
-    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_sgetrf(s.handle, m, n, A.data(), lda, Tau.data()));
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_sgetrf(s.handle, m, n, A.data(), lda, Ipiv.data(), Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
-    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_dgetrf(s.handle, m, n, A.data(), lda, Tau.data()));
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_dgetrf(s.handle, m, n, A.data(), lda, Ipiv.data(), Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_cgetrf(s.handle, m, n,
                                                        reinterpret_cast<rocblas_float_complex*>(A.data()), lda,
-                                                       reinterpret_cast<rocblas_float_complex*>(Tau.data())));
+                                                       Ipiv.data(), Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_zgetrf(s.handle, m, n,
                                                        reinterpret_cast<rocblas_double_complex*>(A.data()), lda,
-                                                       reinterpret_cast<rocblas_double_complex*>(Tau.data())));
+                                                       Ipiv.data(), Info.data()));
   }
   Kokkos::deep_copy(Info, 0);  // Success
   KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));
@@ -265,29 +266,29 @@ void rocsolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
   struct GETRF<                                                                                                        \
       Kokkos::HIP,                                                                                                     \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
       true,                                                                                                            \
       getrf_eti_spec_avail<Kokkos::HIP,                                                                                \
                            Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                      \
                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                       \
+                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                          \
                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
                            Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                          \
                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
     using AViewType   = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                         \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
-    using TauViewType = Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                          \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
+    using IpivViewType = Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                            \
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
     using InfoViewType =                                                                                               \
         Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
                                                                                                                        \
-    static void getrf(const Kokkos::HIP& space, const AViewType& A, const TauViewType& Tau,                            \
+    static void getrf(const Kokkos::HIP& space, const AViewType& A, const IpivViewType& Ipiv,                          \
                       const InfoViewType& Info) {                                                                      \
       Kokkos::Profiling::pushRegion("KokkosLapack::getrf[TPL_ROCSOLVER," #SCALAR "]");                                 \
-      getrf_print_specialization<AViewType, TauViewType, InfoViewType>();                                              \
+      getrf_print_specialization<AViewType, IpivViewType, InfoViewType>();                                             \
                                                                                                                        \
-      rocsolverGetrfWrapper(space, A, Tau, Info);                                                                      \
+      rocsolverGetrfWrapper(space, A, Ipiv, Info);                                                                     \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };

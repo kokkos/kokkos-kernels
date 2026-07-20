@@ -70,12 +70,12 @@ KOKKOSLAPACK_GETRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>, Kokkos::Layou
 namespace KokkosLapack {
 namespace Impl {
 
-#define KOKKOSLAPACK_GETRF_TPL_SPEC_AVAIL_ROCSOLVER(SCALAR, LAYOUT, MEMSPACE)                                \
+#define KOKKOSLAPACK_GETRF_TPL_SPEC_AVAIL_ROCSOLVER(SCALAR, LAYOUT, MEMSPACE)                                         \
   template <>                                                                                                         \
   struct getrf_tpl_spec_avail<                                                                                        \
       Kokkos::HIP,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<std::int64_t*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {   \
     enum : bool { value = true };                                                                                     \
   };
