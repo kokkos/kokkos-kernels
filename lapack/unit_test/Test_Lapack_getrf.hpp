@@ -262,8 +262,8 @@ void impl_test_getrf(const int m, const int n) {
     for(int colIdx = 0; colIdx < n; ++colIdx) {
       if (rowIdx < min_mn) {
 	tmp = Aref_h(rowIdx, colIdx);
-	Aref_h(rowIdx, colIdx) = Aref_h(ipiv(rowIdx) - 1, colIdx);
-	Aref_h(ipiv(rowIdx) - 1, colIdx) = tmp;
+	Aref_h(rowIdx, colIdx) = Aref_h(ipiv_h(rowIdx) - 1, colIdx);
+	Aref_h(ipiv_h(rowIdx) - 1, colIdx) = tmp;
       }
       EXPECT_NEAR_KK_REL(LU_h(rowIdx, colIdx), Aref_h(rowIdx, colIdx), tol);
     }
