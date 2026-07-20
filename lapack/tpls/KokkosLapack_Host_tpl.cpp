@@ -262,7 +262,7 @@ int HostLapack<float>::potrs(const char uplo, const int n, const int nrhs, const
 }
 
 template <>
-void HostLapack<float>::getrf(const int m, const int n, float *a, const int lda, int *ipiv, int *info) {
+void HostLapack<float>::getrf(const int m, const int n, float* a, const int lda, int* ipiv, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   sgetrf_(&m, &n, a, &lda, ipiv, info);
 #else
@@ -359,7 +359,7 @@ void HostLapack<double>::gegqr(const int m, const int n, const int k, double* a,
 }
 
 template <>
-void HostLapack<double>::getrf(const int m, const int n, double *a, const int lda, int *ipiv, int *info) {
+void HostLapack<double>::getrf(const int m, const int n, double* a, const int lda, int* ipiv, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   dgetrf_(&m, &n, a, &lda, ipiv, info);
 #else
@@ -457,7 +457,8 @@ int HostLapack<std::complex<float>>::potrs(const char uplo, const int n, const i
 }
 
 template <>
-void HostLapack<std::complex<float>>::getrf(const int m, const int n, std::complex<float> *a, const int lda, int *ipiv, int *info) {
+void HostLapack<std::complex<float>>::getrf(const int m, const int n, std::complex<float>* a, const int lda, int* ipiv,
+                                            int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   cgetrf_(&m, &n, a, &lda, ipiv, info);
 #else
@@ -556,7 +557,8 @@ int HostLapack<std::complex<double>>::potrs(const char uplo, const int n, const 
 }
 
 template <>
-void HostLapack<std::complex<double>>::getrf(const int m, const int n, std::complex<double> *a, const int lda, int *ipiv, int *info) {
+void HostLapack<std::complex<double>>::getrf(const int m, const int n, std::complex<double>* a, const int lda,
+                                             int* ipiv, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   zgetrf_(&m, &n, a, &lda, ipiv, info);
 #else

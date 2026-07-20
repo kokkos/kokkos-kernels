@@ -82,15 +82,17 @@ void getrf(const ExecutionSpace& space, const AMatrix& A, const IpivView& Ipiv, 
     return;
   }
 
-  using ALayout           = typename AMatrix::array_layout;
-  using AMatrix_Internal  = Kokkos::View<typename AMatrix::non_const_value_type**, ALayout, typename AMatrix::device_type,
-					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using IpivView_Internal = Kokkos::View<typename IpivView::non_const_value_type*,
-					 typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<IpivView, ALayout>::array_layout,
-					 typename IpivView::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using InfoView_Internal = Kokkos::View<typename InfoView::non_const_value_type*,
-					 typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<InfoView, ALayout>::array_layout,
-                                         typename InfoView::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using ALayout          = typename AMatrix::array_layout;
+  using AMatrix_Internal = Kokkos::View<typename AMatrix::non_const_value_type**, ALayout,
+                                        typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using IpivView_Internal =
+      Kokkos::View<typename IpivView::non_const_value_type*,
+                   typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<IpivView, ALayout>::array_layout,
+                   typename IpivView::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using InfoView_Internal =
+      Kokkos::View<typename InfoView::non_const_value_type*,
+                   typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<InfoView, ALayout>::array_layout,
+                   typename InfoView::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   AMatrix_Internal A_i     = A;
   IpivView_Internal Ipiv_i = Ipiv;

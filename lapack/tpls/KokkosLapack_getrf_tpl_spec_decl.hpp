@@ -34,8 +34,8 @@ namespace Impl {
 
 template <class AViewType, class IpivView, class InfoView>
 void lapackGetrfWrapper(const AViewType& A, const IpivView& Ipiv, const InfoView& Info) {
-  using Scalar       = typename AViewType::non_const_value_type;
-  using ALayout_t    = typename AViewType::array_layout;
+  using Scalar    = typename AViewType::non_const_value_type;
+  using ALayout_t = typename AViewType::array_layout;
   static_assert(std::is_same_v<ALayout_t, Kokkos::LayoutLeft>,
                 "KokkosLapack - getrf: A needs to have a Kokkos::LayoutLeft");
   const int m   = A.extent_int(0);
@@ -45,8 +45,8 @@ void lapackGetrfWrapper(const AViewType& A, const IpivView& Ipiv, const InfoView
   if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
     using MagType = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
 
-    HostLapack<std::complex<MagType>>::getrf(m, n, reinterpret_cast<std::complex<MagType>*>(A.data()), lda,
-                                             Ipiv.data(), Info.data());
+    HostLapack<std::complex<MagType>>::getrf(m, n, reinterpret_cast<std::complex<MagType>*>(A.data()), lda, Ipiv.data(),
+                                             Info.data());
   } else {
     HostLapack<Scalar>::getrf(m, n, A.data(), lda, Ipiv.data(), Info.data());
   }
@@ -59,13 +59,13 @@ void lapackGetrfWrapper(const AViewType& A, const IpivView& Ipiv, const InfoView
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,       \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true, \
-      getrf_eti_spec_avail<EXECSPACE,                                                                                  \
-                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                        \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,	                       \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                            \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
+      getrf_eti_spec_avail<                                                                                            \
+          EXECSPACE,                                                                                                   \
+          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                                         \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
+          Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
+          Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                                             \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                                             \
     using AViewType =                                                                                                  \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     using IpivView =                                                                                                   \
@@ -136,68 +136,68 @@ void cusolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, const
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSgetrf_bufferSize(s.handle, m, n, A.data(), lda, &lwork));
     Kokkos::View<float*, memory_space> Workspace("cusolver sgetrf workspace", lwork);
 
-    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSgetrf(s.handle, m, n, A.data(), lda, Workspace.data(),
-							  Ipiv.data(), Info.data()));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(
+        cusolverDnSgetrf(s.handle, m, n, A.data(), lda, Workspace.data(), Ipiv.data(), Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, double>) {
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnDgetrf_bufferSize(s.handle, m, n, A.data(), lda, &lwork));
     Kokkos::View<double*, memory_space> Workspace("cusolver dgetrf workspace", lwork);
 
-    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnDgetrf(s.handle, m, n, A.data(), lda, Workspace.data(),
-							  Ipiv.data(), Info.data()));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(
+        cusolverDnDgetrf(s.handle, m, n, A.data(), lda, Workspace.data(), Ipiv.data(), Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
-    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnCgetrf_bufferSize(s.handle, m, n, reinterpret_cast<cuComplex*>(A.data()),
-								     lda, &lwork));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(
+        cusolverDnCgetrf_bufferSize(s.handle, m, n, reinterpret_cast<cuComplex*>(A.data()), lda, &lwork));
     Kokkos::View<cuComplex*, memory_space> Workspace("cusolver cgetrf workspace", lwork);
 
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnCgetrf(s.handle, m, n, reinterpret_cast<cuComplex*>(A.data()), lda,
-							  reinterpret_cast<cuComplex*>(Workspace.data()), Ipiv.data(),
-							  Info.data()));
+                                                          reinterpret_cast<cuComplex*>(Workspace.data()), Ipiv.data(),
+                                                          Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
-    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnZgetrf_bufferSize(s.handle, m, n, reinterpret_cast<cuDoubleComplex*>(A.data()),
-								     lda, &lwork));
+    KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(
+        cusolverDnZgetrf_bufferSize(s.handle, m, n, reinterpret_cast<cuDoubleComplex*>(A.data()), lda, &lwork));
     Kokkos::View<cuDoubleComplex*, memory_space> Workspace("cusolver zgetrf workspace", lwork);
 
     KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnZgetrf(s.handle, m, n, reinterpret_cast<cuDoubleComplex*>(A.data()),
                                                           lda, reinterpret_cast<cuDoubleComplex*>(Workspace.data()),
-							  Ipiv.data(), Info.data()));
+                                                          Ipiv.data(), Info.data()));
   }
   KOKKOSLAPACK_IMPL_CUSOLVER_SAFE_CALL(cusolverDnSetStream(s.handle, NULL));
 }
 
-#define KOKKOSLAPACK_GETRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                         \
-  template <>                                                                                                          \
-  struct GETRF<                                                                                                        \
-      Kokkos::Cuda,                                                                                                    \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                          \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
-      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
-      true,                                                                                                            \
-      getrf_eti_spec_avail<Kokkos::Cuda,                                                                               \
-                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
-    using AViewType   = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                        \
-				     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
-    using IpivViewType = Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                           \
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                        \
-    using InfoViewType =                                                                                               \
-        Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-                                                                                                                       \
-    static void getrf(const Kokkos::Cuda& space, const AViewType& A, const IpivViewType& Ipiv,                         \
-                      const InfoViewType& Info) {                                                                      \
-      Kokkos::Profiling::pushRegion("KokkosLapack::getrf[TPL_CUSOLVER," #SCALAR "]");                                  \
-      getrf_print_specialization<AViewType, IpivViewType, InfoViewType>();                                             \
-                                                                                                                       \
-      cusolverGetrfWrapper(space, A, Ipiv, Info);                                                                      \
-      Kokkos::Profiling::popRegion();                                                                                  \
-    }                                                                                                                  \
+#define KOKKOSLAPACK_GETRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                        \
+  template <>                                                                                                         \
+  struct GETRF<                                                                                                       \
+      Kokkos::Cuda,                                                                                                   \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                         \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
+      true,                                                                                                           \
+      getrf_eti_spec_avail<Kokkos::Cuda,                                                                              \
+                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                    \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
+                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                        \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
+                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                        \
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                           \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
+    using IpivViewType =                                                                                              \
+        Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+    using InfoViewType =                                                                                              \
+        Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+                                                                                                                      \
+    static void getrf(const Kokkos::Cuda& space, const AViewType& A, const IpivViewType& Ipiv,                        \
+                      const InfoViewType& Info) {                                                                     \
+      Kokkos::Profiling::pushRegion("KokkosLapack::getrf[TPL_CUSOLVER," #SCALAR "]");                                 \
+      getrf_print_specialization<AViewType, IpivViewType, InfoViewType>();                                            \
+                                                                                                                      \
+      cusolverGetrfWrapper(space, A, Ipiv, Info);                                                                     \
+      Kokkos::Profiling::popRegion();                                                                                 \
+    }                                                                                                                 \
   };
 
 KOKKOSLAPACK_GETRF_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
@@ -246,14 +246,12 @@ void rocsolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
     KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_dgetrf(s.handle, m, n, A.data(), lda, Ipiv.data(), Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
-    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_cgetrf(s.handle, m, n,
-                                                       reinterpret_cast<rocblas_float_complex*>(A.data()), lda,
-                                                       Ipiv.data(), Info.data()));
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_cgetrf(
+        s.handle, m, n, reinterpret_cast<rocblas_float_complex*>(A.data()), lda, Ipiv.data(), Info.data()));
   }
   if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
-    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_zgetrf(s.handle, m, n,
-                                                       reinterpret_cast<rocblas_double_complex*>(A.data()), lda,
-                                                       Ipiv.data(), Info.data()));
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocsolver_zgetrf(
+        s.handle, m, n, reinterpret_cast<rocblas_double_complex*>(A.data()), lda, Ipiv.data(), Info.data()));
   }
   KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, NULL));
 }
@@ -266,17 +264,17 @@ void rocsolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
       true,                                                                                                            \
-      getrf_eti_spec_avail<Kokkos::HIP,                                                                                \
-                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                      \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                          \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                          \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
-    using AViewType   = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                         \
+      getrf_eti_spec_avail<                                                                                            \
+          Kokkos::HIP,                                                                                                 \
+          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                                       \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
+          Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+          Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                                           \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                                             \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                           \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
-    using IpivViewType = Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                            \
-                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
+    using IpivViewType =                                                                                               \
+        Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
     using InfoViewType =                                                                                               \
         Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
                                                                                                                        \
