@@ -173,6 +173,73 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type, XMV, scalar_x, S
   }
 };
 
+// Partial specialization of MV_Scal_Functor for a rank-0 View aVector.
+// The scalar_x == 2 branch reads the single value via m_a() instead of m_a(k).
+// startingColumn is ignored (rank-0 views have no extent to subview).
+template <class RMV, class aLayout, class aDevice, class aMemTraits, class XMV, int scalar_x, class SizeType>
+struct MV_Scal_Functor<RMV, Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>, XMV,
+                       scalar_x, SizeType> {
+  using aVector   = Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>;
+  using size_type = SizeType;
+  using ATS       = KokkosKernels::ArithTraits<typename RMV::non_const_value_type>;
+
+  const size_type numCols;
+  RMV R_;
+  XMV X_;
+  aVector a_;
+
+  MV_Scal_Functor(const RMV& R, const XMV& X, const aVector& a, const SizeType /* startingColumn */)
+      : numCols(X.extent(1)), R_(R), X_(X), a_(a) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_type& i) const {
+    if (scalar_x == 0) {
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        R_(i, k) = ATS::zero();
+      }
+    }
+    if (scalar_x == -1) {
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        R_(i, k) = -X_(i, k);
+      }
+    }
+    if (scalar_x == 1) {
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        R_(i, k) = X_(i, k);
+      }
+    }
+    if (scalar_x == 2) {
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        R_(i, k) = a_() * X_(i, k);
+      }
+    }
+  }
+};
+
 // Column-unrolled variant of MV_Scal_Functor.  The number of columns
 // in X and Y, UNROLL, is a compile-time constant.
 template <class RMV, class aVector, class XMV, int scalar_x, int UNROLL, class SizeType>
@@ -277,6 +344,61 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type, XMV, scal
 #endif
       for (int k = 0; k < UNROLL; ++k) {
         m_r(i, k) = m_a * m_x(i, k);
+      }
+    }
+  }
+};
+
+// Partial specialization of MV_Scal_Unroll_Functor for a rank-0 View aVector.
+// The scalar_x == 2 branch uses m_a() instead of m_a(k).
+// startingColumn is ignored (rank-0 views have no extent to subview).
+template <class RMV, class aLayout, class aDevice, class aMemTraits, class XMV, int scalar_x, int UNROLL,
+          class SizeType>
+struct MV_Scal_Unroll_Functor<RMV, Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>, XMV,
+                               scalar_x, UNROLL, SizeType> {
+  using aVector   = Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>;
+  using size_type = SizeType;
+  using ATS       = KokkosKernels::ArithTraits<typename RMV::non_const_value_type>;
+
+  RMV m_r;
+  XMV m_x;
+  aVector m_a;
+
+  MV_Scal_Unroll_Functor(const RMV& r, const XMV& x, const aVector& a, const SizeType /* startingColumn */)
+      : m_r(r), m_x(x), m_a(a) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_type& i) const {
+    if (scalar_x == 0) {
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i, k) = ATS::zero();
+      }
+    }
+    if (scalar_x == -1) {
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i, k) = -m_x(i, k);
+      }
+    }
+    if (scalar_x == 1) {
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i, k) = m_x(i, k);
+      }
+    }
+    if (scalar_x == 2) {
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i, k) = m_a() * m_x(i, k);
       }
     }
   }

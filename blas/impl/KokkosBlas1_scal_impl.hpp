@@ -107,6 +107,40 @@ struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x, SizeT
   }
 };
 
+// Partial specialization of V_Scal_Functor for a rank-0 View AV.
+// The scalar_x == 2 branch reads the single value via m_a() instead of m_a(0).
+// startingColumn is ignored (rank-0 views have no extent to subview).
+template <class RV, class aLayout, class aDevice, class aMemTraits, class XV, int scalar_x, class SizeType>
+struct V_Scal_Functor<RV, Kokkos::View<typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>, XV, scalar_x,
+                      SizeType> {
+  using AV        = Kokkos::View<typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>;
+  using size_type = SizeType;
+  using ATS       = KokkosKernels::ArithTraits<typename RV::non_const_value_type>;
+
+  RV m_r;
+  XV m_x;
+  AV m_a;
+
+  V_Scal_Functor(const RV& r, const XV& x, const AV& a, const SizeType /* startingColumn */)
+      : m_r(r), m_x(x), m_a(a) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_type& i) const {
+    if (scalar_x == 0) {
+      m_r(i) = ATS::zero();
+    }
+    if (scalar_x == -1) {
+      m_r(i) = -m_x(i);
+    }
+    if (scalar_x == 1) {
+      m_r(i) = m_x(i);
+    }
+    if (scalar_x == 2) {
+      m_r(i) = m_a() * m_x(i);
+    }
+  }
+};
+
 // Variant of MV_Scal_Generic for single vectors (1-D Views) r and x.
 // As above, av is either a 1-D View (and only its first entry will be
 // read), or a scalar.
