@@ -121,8 +121,7 @@ struct V_Scal_Functor<RV, Kokkos::View<typename XV::non_const_value_type, aLayou
   XV m_x;
   AV m_a;
 
-  V_Scal_Functor(const RV& r, const XV& x, const AV& a, const SizeType /* startingColumn */)
-      : m_r(r), m_x(x), m_a(a) {}
+  V_Scal_Functor(const RV& r, const XV& x, const AV& a, const SizeType /* startingColumn */) : m_r(r), m_x(x), m_a(a) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {

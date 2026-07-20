@@ -355,7 +355,7 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type, XMV, scal
 template <class RMV, class aLayout, class aDevice, class aMemTraits, class XMV, int scalar_x, int UNROLL,
           class SizeType>
 struct MV_Scal_Unroll_Functor<RMV, Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>, XMV,
-                               scalar_x, UNROLL, SizeType> {
+                              scalar_x, UNROLL, SizeType> {
   using aVector   = Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>;
   using size_type = SizeType;
   using ATS       = KokkosKernels::ArithTraits<typename RMV::non_const_value_type>;

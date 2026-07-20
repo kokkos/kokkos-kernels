@@ -180,8 +180,7 @@ void impl_test_scal_mv_rank0_view(int N, int K) {
   KokkosBlas::scal(y.d_view, a_host, x.d_view);
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++)
-    for (int j = 0; j < K; j++)
-      EXPECT_NEAR_KK(static_cast<ScalarB>(ScalarA(3) * x.h_view(i, j)), y.h_view(i, j), eps);
+    for (int j = 0; j < K; j++) EXPECT_NEAR_KK(static_cast<ScalarB>(ScalarA(3) * x.h_view(i, j)), y.h_view(i, j), eps);
 
   // Device rank-0 view
   Kokkos::View<ScalarA, typename Device::memory_space> a_dev("alpha_dev");
@@ -190,8 +189,7 @@ void impl_test_scal_mv_rank0_view(int N, int K) {
   KokkosBlas::scal(y.d_view, a_dev, x.d_view);
   Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++)
-    for (int j = 0; j < K; j++)
-      EXPECT_NEAR_KK(static_cast<ScalarB>(ScalarA(5) * x.h_view(i, j)), y.h_view(i, j), eps);
+    for (int j = 0; j < K; j++) EXPECT_NEAR_KK(static_cast<ScalarB>(ScalarA(5) * x.h_view(i, j)), y.h_view(i, j), eps);
 }
 }  // namespace Test
 
