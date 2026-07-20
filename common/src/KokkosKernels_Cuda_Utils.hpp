@@ -4,8 +4,14 @@
 #ifndef KOKKOSKERNELS_CUDA_UTILS_HPP
 #define KOKKOSKERNELS_CUDA_UTILS_HPP
 
-namespace KokkosKernels {
-namespace Impl {
+#include <Kokkos_Macros.hpp>
+#include <Kokkos_Half_FloatingPointWrapper.hpp>
+#include <stdexcept>
+
+#if defined(KOKKOS_ENABLE_CUDA)
+#include <cuda.h>
+
+namespace KokkosKernels::Impl {
 
 template <typename T>
 cudaDataType cuda_data_type_from() {
@@ -50,7 +56,7 @@ inline cudaDataType cuda_data_type_from<Kokkos::complex<double>>() {
   return CUDA_C_64F;
 }
 
-}  // namespace Impl
-}  // namespace KokkosKernels
+}  // namespace KokkosKernels::Impl
 
+#endif  // KOKKOS_ENABLE_CUDA
 #endif  // KOKKOSKERNELS_CUDA_UTILS_HPP
