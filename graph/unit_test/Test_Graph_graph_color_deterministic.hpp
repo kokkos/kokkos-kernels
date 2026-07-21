@@ -187,7 +187,7 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
     size_t num_colors;
 
     Kokkos::Timer timer1;
-    int res = run_graphcolor_deter<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
+    int res = Test::run_graphcolor_deter<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
     EXPECT_TRUE((res == 0));
 
     EXPECT_TRUE((num_colors == 2));

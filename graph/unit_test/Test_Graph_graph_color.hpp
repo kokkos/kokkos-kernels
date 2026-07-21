@@ -112,7 +112,7 @@ void test_coloring(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size
 
     Kokkos::Timer timer1;
     crsMat_t output_mat;
-    int res = run_graphcolor<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
+    int res = Test::run_graphcolor<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
     // double coloring_time = timer1.seconds();
     EXPECT_TRUE((res == 0));
 
