@@ -124,6 +124,33 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>, Kokkos::LayoutR
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::HIPSpace)
 
 #endif
+
+// oneMKL
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+
+#define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(SCALAR, LAYOUT)                                       \
+  template <class ExecSpace>                                                                         \
+  struct gemm_tpl_spec_avail<                                                                        \
+      ExecSpace,                                                                                     \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                        \
+      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                        \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                                     \
+    enum : bool { value = true };                                                                    \
+  };
+
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(float, Kokkos::LayoutLeft)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(float, Kokkos::LayoutRight)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(double, Kokkos::LayoutLeft)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(double, Kokkos::LayoutRight)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutLeft)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutRight)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutLeft)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutRight)
+
+#endif
 }  // namespace Impl
 }  // namespace KokkosBlas
 

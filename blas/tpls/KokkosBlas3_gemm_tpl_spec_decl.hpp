@@ -359,4 +359,86 @@ KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, false)
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
+// oneMKL
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+#include <mkl.h>
+#include <oneapi/mkl/blas.hpp>
+#include <KokkosBlas_tpl_spec.hpp>
+
+namespace KokkosBlas {
+namespace Impl {
+
+#define KOKKOSBLAS3_XGEMM_ONEMKL(SCALAR, LAYOUT, ETI_SPEC_AVAIL)                                                       \
+  template <class ExecSpace>                                                                                           \
+  struct GEMM<ExecSpace,                                                                                               \
+              Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>,           \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
+              Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>,           \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
+              Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>,                 \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
+              true, ETI_SPEC_AVAIL> {                                                                                  \
+    using device_type = Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>;                                      \
+    using mem_traits  = Kokkos::MemoryTraits<Kokkos::Unmanaged>;                                                       \
+    using AViewType   = Kokkos::View<const SCALAR**, LAYOUT, device_type, mem_traits>;                                 \
+    using BViewType   = Kokkos::View<const SCALAR**, LAYOUT, device_type, mem_traits>;                                 \
+    using CViewType   = Kokkos::View<SCALAR**, LAYOUT, device_type, mem_traits>;                                       \
+                                                                                                                       \
+    static void gemm(const ExecSpace& exec, const char transA[], const char transB[],                                  \
+                     typename AViewType::const_value_type& alpha, const AViewType& A, const BViewType& B,              \
+                     typename CViewType::const_value_type& beta, const CViewType& C) {                                 \
+      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_ONEMKL," #SCALAR "]");                                       \
+                                                                                                                       \
+      const bool A_t         = (transA[0] != 'N') && (transA[0] != 'n');                                               \
+      const bool row_major   = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                       \
+      const std::int64_t M   = C.extent(0);                                                                            \
+      const std::int64_t N   = C.extent(1);                                                                            \
+      const std::int64_t K   = A_t ? A.extent(0) : A.extent(1);                                                        \
+      const std::int64_t AST = row_major ? A.stride(0) : A.stride(1), LDA = AST == 0 ? 1 : AST;                        \
+      const std::int64_t BST = row_major ? B.stride(0) : B.stride(1), LDB = BST == 0 ? 1 : BST;                        \
+      const std::int64_t CST = row_major ? C.stride(0) : C.stride(1), LDC = CST == 0 ? 1 : CST;                        \
+                                                                                                                       \
+      oneapi::mkl::transpose transa = mode_kk_to_onemkl(transA[0]);                                                    \
+      oneapi::mkl::transpose transb = mode_kk_to_onemkl(transB[0]);                                                    \
+                                                                                                                       \
+      using mag_type    = kokkos_to_std_type_map<SCALAR, KokkosKernels::ArithTraits<SCALAR>::is_complex>::type;        \
+      const mag_type* a = reinterpret_cast<const mag_type*>(A.data());                                                 \
+      const mag_type* b = reinterpret_cast<const mag_type*>(B.data());                                                 \
+      mag_type* c       = reinterpret_cast<mag_type*>(C.data());                                                       \
+                                                                                                                       \
+      if (row_major) {                                                                                                 \
+        oneapi::mkl::blas::row_major::gemm(exec.sycl_queue(), transa, transb, M, N, K, alpha, a, LDA, b, LDB, beta, c, \
+                                           LDC);                                                                       \
+      } else {                                                                                                         \
+        oneapi::mkl::blas::column_major::gemm(exec.sycl_queue(), transa, transb, M, N, K, alpha, a, LDA, b, LDB, beta, \
+                                              c, LDC);                                                                 \
+      }                                                                                                                \
+      Kokkos::Profiling::popRegion();                                                                                  \
+    }                                                                                                                  \
+  };
+
+KOKKOSBLAS3_XGEMM_ONEMKL(float, Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_XGEMM_ONEMKL(float, Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_XGEMM_ONEMKL(float, Kokkos::LayoutRight, true)
+KOKKOSBLAS3_XGEMM_ONEMKL(float, Kokkos::LayoutRight, false)
+
+KOKKOSBLAS3_XGEMM_ONEMKL(double, Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_XGEMM_ONEMKL(double, Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_XGEMM_ONEMKL(double, Kokkos::LayoutRight, true)
+KOKKOSBLAS3_XGEMM_ONEMKL(double, Kokkos::LayoutRight, false)
+
+KOKKOSBLAS3_XGEMM_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_XGEMM_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_XGEMM_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutRight, true)
+KOKKOSBLAS3_XGEMM_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutRight, false)
+
+KOKKOSBLAS3_XGEMM_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_XGEMM_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_XGEMM_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutRight, true)
+KOKKOSBLAS3_XGEMM_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutRight, false)
+
+}  // namespace Impl
+}  // namespace KokkosBlas
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL && KOKKOS_ENABLE_SYCL
+
 #endif
