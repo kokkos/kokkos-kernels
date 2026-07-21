@@ -343,7 +343,7 @@ struct IlutWrap {
   template <class ARowMapType, class AEntriesType>
   static Kokkos::pair<uint32_t, uint32_t> compute_structure_signature(const ARowMapType& A_row_map,
                                                                       const AEntriesType& A_entries) {
-    return Kokkos::make_pair(hashView(A_row_map), hashView(A_entries));
+    return Kokkos::make_pair(KokkosKernels::Impl::hashView(A_row_map), KokkosKernels::Impl::hashView(A_entries));
   }
 
   /**
