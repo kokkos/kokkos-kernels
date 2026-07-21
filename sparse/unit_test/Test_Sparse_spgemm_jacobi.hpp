@@ -192,17 +192,17 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row
   view_t dinv("Dinv", numRows, 1);
   Kokkos::deep_copy(dinv, 2.0);
 
-  run_spgemm_jacobi<crsMat_t, device, scalar_t, view_t>(input_mat, input_mat, omega, dinv, SPGEMM_SERIAL, output_mat2);
+  Test::run_spgemm_jacobi<crsMat_t, device, scalar_t, view_t>(input_mat, input_mat, omega, dinv, SPGEMM_SERIAL, output_mat2);
 
   SPGEMMAlgorithm spgemm_algorithm = SPGEMM_KK_MEMORY;  // should we test other SpGEMM algorithms as well?
 
   crsMat_t output_mat;
 
-  run_spgemm_jacobi<crsMat_t, device>(input_mat, input_mat, omega, dinv, spgemm_algorithm, output_mat);
+  Test::run_spgemm_jacobi<crsMat_t, device>(input_mat, input_mat, omega, dinv, spgemm_algorithm, output_mat);
   // Sort the reference output_mat2, but not output_mat. It should already be
   // soted.
   KokkosSparse::sort_crs_matrix(output_mat2);
-  bool is_identical = is_same_mat<crsMat_t, device>(output_mat, output_mat2);
+  bool is_identical = Test::is_same_mat<crsMat_t, device>(output_mat, output_mat2);
   EXPECT_TRUE(is_identical);
 }
 

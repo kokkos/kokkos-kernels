@@ -132,7 +132,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
 
   lno_t numCols = numRows;
 
-  const GSTestParams<lno_t, scalar_t, mag_t> params;
+  const Test::GSTestParams<lno_t, scalar_t, mag_t> params;
   lno_t block_size = params.block_size;
 
   crsMat_t crsmat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
@@ -177,8 +177,8 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
           for (const auto skip_numeric : {false, true}) {
             Kokkos::Timer timer1;
             // int res =
-            run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph,
-                                     apply_type, skip_symbolic, skip_numeric, shmem_size, params.omega);
+            Test::run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph,
+                                           apply_type, skip_symbolic, skip_numeric, shmem_size, params.omega);
             // double gs = timer1.seconds();
             // KokkosKernels::Impl::print_1Dview(x_vector);
             KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
@@ -210,7 +210,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
 
   lno_t numCols = numRows;
 
-  const GSTestParams<lno_t, scalar_t, mag_t> params;
+  const Test::GSTestParams<lno_t, scalar_t, mag_t> params;
   lno_t block_size = params.block_size;
 
   crsMat_t crsmat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
@@ -266,8 +266,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
           for (const auto skip_numeric : {false, true}) {
             Kokkos::Timer timer1;
             // int res =
-            run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph,
-                                     apply_type, skip_symbolic, skip_numeric, shmem_size, params.omega);
+            Test::run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph,
+                                           apply_type, skip_symbolic, skip_numeric, shmem_size, params.omega);
             // double gs = timer1.seconds();
             // KokkosKernels::Impl::print_1Dview(x_vector);
             Kokkos::deep_copy(x_host, x_vector);

@@ -366,14 +366,14 @@ void test_findRelOffset() {
   NullBuffer null_buffer;
   // std::ostream &out = std::cout;
   std::ostream out(&null_buffer);
-  out << "Test KokkosSparse::findRelOffset" << endl;
+  out << "Test KokkosSparse::findRelOffset" << std::endl;
 
   bool success = true;
   // host test
-  generalTest<lno_t, device_t>(success, out);
+  Test::generalTest<lno_t, device_t>(success, out);
   EXPECT_TRUE(success);
   // host test
-  testLongArray<lno_t, device_t>(success, out);
+  Test::testLongArray<lno_t, device_t>(success, out);
   EXPECT_TRUE(success);
 }
 
