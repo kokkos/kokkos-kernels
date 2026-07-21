@@ -120,7 +120,8 @@ template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typena
           typename device>
 void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
-  srand(245);
+  initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
   typedef typename device::execution_space exec_space;
@@ -196,7 +197,8 @@ template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typena
           typename device>
 void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
-  srand(245);
+  initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
 

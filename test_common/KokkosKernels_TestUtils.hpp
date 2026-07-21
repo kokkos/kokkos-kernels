@@ -68,6 +68,25 @@ inline uint64_t getTestSeed() {
 }
 
 namespace Impl {
+/// Returns a reference to the seed last set via initRandSeed(), or 0 if never called.
+inline uint64_t& randSeedState() {
+  static uint64_t s = 0;
+  return s;
+}
+}  // namespace Impl
+
+/// Seeds std::rand with the reproducible test seed and records it.
+/// Must be called at the start of any test that uses create_random_x_vector,
+/// shuffleMatrixEntries, or RandCsMatrix (which uses std::rand internally).
+/// The random-generation helpers assert this has been called so that
+/// uninitialized tests are caught early.
+inline void initRandSeed() {
+  uint64_t seed = getTestSeed();
+  std::srand(static_cast<unsigned int>(seed));
+  Impl::randSeedState() = seed;
+}
+
+namespace Impl {
 
 template <class Scalar1, class Scalar2, class Scalar3>
 ::testing::AssertionResult kk_expect_near_pred_format(const char* expr1, const char* expr2, const char* expr3,
@@ -263,7 +282,8 @@ using KokkosKernels::Impl::getRandomBounds;
 template <typename vec_t>
 vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
   typedef typename vec_t::value_type scalar_t;
-  std::srand(static_cast<unsigned int>(getTestSeed()));
+  EXPECT_EQ(Impl::randSeedState(), getTestSeed())
+      << "Call Test::initRandSeed() before using create_random_x_vector";
   auto h_x = Kokkos::create_mirror_view(kok_x);
   if constexpr (vec_t::rank == 2) {
     for (size_t j = 0; j < h_x.extent(1); ++j) {
@@ -428,7 +448,8 @@ class RandCsMatrix {
   ///  3. map_(i) == col_map(j) iff map_(i) == col_map(j) == nullptr
   ///  4. map_(i) - col_map(i - 1) is in [0, m]
   void populate_random_cs_mat(uint64_t ticks) {
-    std::srand(ticks);
+    EXPECT_EQ(Impl::randSeedState(), getTestSeed())
+        << "Call Test::initRandSeed() before constructing RandCsMatrix";
     std::mt19937 rand(ticks);
     for (Ordinal col_idx = 0; col_idx < dim1_; col_idx++) {
       Ordinal r = std::rand() % (dim2_ + 1);
@@ -520,6 +541,8 @@ class RandCsMatrix {
 /// matrix.
 template <typename Rowptrs, typename Entries, typename Values>
 void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values, const size_t block_size = 1) {
+  EXPECT_EQ(Impl::randSeedState(), getTestSeed())
+      << "Call Test::initRandSeed() before using shuffleMatrixEntries";
   using size_type          = typename Rowptrs::non_const_value_type;
   using ordinal_type       = typename Entries::value_type;
   auto rowptrsHost         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowptrs);
