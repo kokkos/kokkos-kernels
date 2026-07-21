@@ -342,7 +342,7 @@ struct IlutWrap {
 
   template <class ARowMapType, class AEntriesType>
   static Kokkos::pair<uint32_t, uint32_t> compute_structure_signature(const ARowMapType& A_row_map,
-                                                                                const AEntriesType& A_entries) {
+                                                                      const AEntriesType& A_entries) {
     return Kokkos::make_pair(hashView(A_row_map), hashView(A_entries));
   }
 
@@ -865,9 +865,9 @@ struct IlutWrap {
       std::cout << "  reuse_numeric_pattern: " << reuse_numeric_pattern << std::endl;
     }
 
-    bool reuse_cached_pattern  = false;
-    uint32_t rowmap_hash  = 0;
-    uint32_t entries_hash = 0;
+    bool reuse_cached_pattern = false;
+    uint32_t rowmap_hash      = 0;
+    uint32_t entries_hash     = 0;
     if (reuse_numeric_pattern) {
       const auto signature = compute_structure_signature(A_row_map, A_entries);
       rowmap_hash          = signature.first;
