@@ -85,6 +85,9 @@ struct TrsvTest {
     View2D b_y("B", numCols, numMV);
     View2D b_x_copy("B", numCols, numMV);
 
+    SCOPED_TRACE("rand seed: " + std::to_string(Test::getTestSeed()));
+    Test::initRandSeed();
+
     Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
     Kokkos::fill_random(b_x_copy, rand_pool, scalar_t(10));
 

@@ -51,10 +51,11 @@ void test_rand_coo_mat_determinism() {
   using Layout = Kokkos::LayoutLeft;
   using RCM    = Test::RandCooMat<Scalar, Layout, Device>;
 
-  // Two constructions get the same seed from getTestSeed() (static singleton).
-  // Kokkos::Random_XorShift64_Pool is deterministic given the same seed, so
-  // both instances must produce identical rows, cols, and data.
+  // Two constructions each preceded by initRandSeed() simulate two separate
+  // test runs with the same seed.  Both must produce identical output.
+  Test::initRandSeed();
   RCM mat1(8, 8, 20, -1.0, 1.0);
+  Test::initRandSeed();
   RCM mat2(8, 8, 20, -1.0, 1.0);
 
   uint64_t row_hash1 = hashView(mat1.get_row());
@@ -86,11 +87,12 @@ void test_rand_cs_matrix_determinism() {
   using Layout = Kokkos::LayoutLeft;
   using RCS    = Test::RandCsMatrix<Scalar, Layout, Device>;
 
-  // RandCsMatrix uses both std::srand/std::rand (structure) and
-  // Kokkos::Random_XorShift64_Pool (values), both seeded from getTestSeed().
-  // The second construction calls std::srand(seed) again, resetting global
-  // std::rand state, so it produces the same structure.
+  // RandCsMatrix uses both std::rand (structure) and Kokkos::fill_random
+  // (values).  Two runs each preceded by initRandSeed() must produce identical
+  // output because both rand streams start from the same seed.
+  Test::initRandSeed();
   RCS mat1(6, 6, -1.0, 1.0);
+  Test::initRandSeed();
   RCS mat2(6, 6, -1.0, 1.0);
 
   uint64_t map_hash1 = hashView(mat1.get_map());
@@ -123,9 +125,9 @@ void test_rand_cs_matrix_determinism() {
 // ============================================================================
 // create_random_x_vector determinism
 //
-// Unlike RandCooMat/RandCsMatrix, create_random_x_vector uses the global
-// std::rand() without calling srand() itself.  We seed std::srand with the
-// same value before each call and verify bit-for-bit identical output.
+// create_random_x_vector uses std::rand() and requires the caller to have
+// called Test::initRandSeed() first.  Two calls each preceded by initRandSeed()
+// simulate two separate test runs and must produce identical output.
 // ============================================================================
 
 template <class Device>
@@ -135,13 +137,12 @@ void test_create_random_x_vector_determinism() {
   using vec1d_t = Kokkos::View<Scalar*, Layout, Device>;
   using vec2d_t = Kokkos::View<Scalar**, Layout, Device>;
 
-  // create_random_x_vector calls std::srand(getTestSeed()) internally, so
-  // two calls produce identical output for the same seed.
-
   // --- rank-1 ---
   vec1d_t x1("x1", 32), x2("x1_dup", 32);
-  Test::create_random_x_vector(x1);
-  Test::create_random_x_vector(x2);
+  Test::initRandSeed();
+  Test::create_random_x_vector(x1, 10.0);
+  Test::initRandSeed();
+  Test::create_random_x_vector(x2, 10.0);
 
   EXPECT_EQ(hashView(x1), hashView(x2))
       << "create_random_x_vector (rank-1) differs between two calls with the same seed.\n"
@@ -149,8 +150,10 @@ void test_create_random_x_vector_determinism() {
 
   // --- rank-2 ---
   vec2d_t X1("X1", 32, 4), X2("X1_dup", 32, 4);
-  Test::create_random_x_vector(X1);
-  Test::create_random_x_vector(X2);
+  Test::initRandSeed();
+  Test::create_random_x_vector(X1, 10.0);
+  Test::initRandSeed();
+  Test::create_random_x_vector(X2, 10.0);
 
   auto h1    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, X1);
   auto h2    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, X2);
