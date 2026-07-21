@@ -10,6 +10,7 @@ API: LAPACK
    lapack/gegqr
    lapack/potrf
    lapack/potrs
+   lapack/getrf
    lapack/gesv
    lapack/gesvd
    lapack/trtri
