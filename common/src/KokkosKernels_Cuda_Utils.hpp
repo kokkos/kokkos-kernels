@@ -5,7 +5,7 @@
 #define KOKKOSKERNELS_CUDA_UTILS_HPP
 
 #include <Kokkos_Macros.hpp>
-#include <Kokkos_Half_FloatingPointWrapper.hpp>
+#include <Kokkos_Half.hpp>
 #include <stdexcept>
 
 #if defined(KOKKOS_ENABLE_CUDA)

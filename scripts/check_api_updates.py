@@ -70,6 +70,7 @@ SRC_DOC_MAPPING = dict([
     ('lapack/src/KokkosLapack_gegqr.hpp', ['docs/source/API/lapack/gegqr.rst']),
     ('lapack/src/KokkosLapack_potrf.hpp', ['docs/source/API/lapack/potrf.rst']),
     ('lapack/src/KokkosLapack_potrs.hpp', ['docs/source/API/lapack/potrs.rst']),
+    ('lapack/src/KokkosLapack_getrf.hpp', ['docs/source/API/lapack/getrf.rst']),
     ('lapack/src/KokkosLapack_gesv.hpp', ['docs/source/API/lapack/gesv.rst']),
     ('lapack/src/KokkosLapack_svd.hpp', ['docs/source/API/lapack/gesvd.rst']),
     ('lapack/src/KokkosLapack_trtri.hpp', ['docs/source/API/lapack/trtri.rst']),

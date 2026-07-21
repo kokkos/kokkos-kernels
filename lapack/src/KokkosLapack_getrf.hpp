@@ -12,8 +12,9 @@
 
 #include <type_traits>
 
-#include "KokkosLapack_getrf_spec.hpp"
-#include "KokkosKernels_Error.hpp"
+#include <KokkosLapack_getrf_spec.hpp>
+#include <KokkosKernels_Error.hpp>
+#include <KokkosKernels_helpers.hpp>
 
 namespace KokkosLapack {
 

@@ -32,12 +32,12 @@ Below are tables summarizing the currently supported function calls and third pa
      - rocBLAS
      - oneMKL
    * - getrf
-     - 
-     - 
-     - 
-     - 
-     - 
-     - 
+     - :doc:`getrf <lapack/getrf>`
+     - --
+     - X
+     - X
+     - X
+     - --
    * - getrs
      - 
      - 
