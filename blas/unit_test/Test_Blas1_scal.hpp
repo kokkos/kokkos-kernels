@@ -17,14 +17,14 @@ void impl_test_scal(int N) {
   ScalarA a(3);
   typename AT::mag_type eps = AT::epsilon() * 1000;
 
-  view_stride_adapter<ViewTypeA> x("X", N);
-  view_stride_adapter<ViewTypeB> y("Y", N);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    TestUtils::getRandomBounds(1.0, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -51,14 +51,14 @@ void impl_test_scal_mv(int N, int K) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
-  view_stride_adapter<ViewTypeA> x("X", N, K);
-  view_stride_adapter<ViewTypeB> y("Y", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    TestUtils::getRandomBounds(1.0, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
 

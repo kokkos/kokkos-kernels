@@ -111,8 +111,6 @@ crsMat_t makeCrsMatrix() {
 // deep_copy a few times.
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void testCrsMatrix() {
-  using namespace Test;
-
   typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crs_matrix_type;
   crs_matrix_type A = makeCrsMatrix<crs_matrix_type>();
   // mfh 28 Sep 2013: Use A in some way, so the compiler can't
@@ -154,7 +152,6 @@ void testCrsMatrixRawConstructor() {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void testCrsMatrixhost_mirror_type() {
-  using namespace Test;
   using crs_matrix      = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using crs_matrix_host = typename crs_matrix::host_mirror_type;
   using crs_graph       = typename crs_matrix::StaticCrsGraphType;

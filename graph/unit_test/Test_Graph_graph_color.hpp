@@ -56,7 +56,6 @@ int run_graphcolor(crsMat_t input_mat, ColoringAlgorithm coloring_algorithm, siz
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_coloring(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;

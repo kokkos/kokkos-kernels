@@ -166,9 +166,8 @@ void run_gauss_seidel_streams(std::vector<ExecSpace>& instances, std::vector<Han
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool symmetric) {
-  using namespace Test;
-  initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
@@ -182,9 +181,9 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   lno_t nv = input_mat.numRows();
   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
-  scalar_view_t y_vector = create_random_y_vector(input_mat, solution_x);
+  scalar_view_t y_vector = TestUtils::create_random_y_vector(input_mat, solution_x);
   // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
   // behavior of each algorithm _should be_ the same on every execution space,
   // which is why we just test GS_DEFAULT.
@@ -241,9 +240,8 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, lno_t numVecs,
                              bool symmetric) {
-  using namespace Test;
-  initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, device> scalar_view2d_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
@@ -259,10 +257,10 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   lno_t nv = input_mat.numRows();
   host_scalar_view2d_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv, numVecs);
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   scalar_view2d_t x_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, numVecs);
   Kokkos::deep_copy(x_vector, solution_x);
-  scalar_view2d_t y_vector = create_random_y_vector_mv(input_mat, x_vector);
+  scalar_view2d_t y_vector = TestUtils::create_random_y_vector_mv(input_mat, x_vector);
   auto x_host              = Kokkos::create_mirror_view(x_vector);
   std::vector<mag_t> initial_norms(numVecs);
   for (lno_t i = 0; i < numVecs; i++) {
@@ -373,7 +371,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   // record the correct solution, to compare against at the end
   vector_t xgold("X gold", numRows);
   Kokkos::deep_copy(xgold, x);
-  vector_t y = Test::create_random_y_vector(input_mat, x);
+  vector_t y = TestUtils::create_random_y_vector(input_mat, x);
   exec_space().fence();
   auto y_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y);
   // initial solution is zero
@@ -408,7 +406,6 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth) {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type const_lno_row_view_t;
@@ -450,7 +447,6 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_empty() {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_type;
@@ -492,8 +488,7 @@ void test_gauss_seidel_empty() {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerShortRow, bool symmetric) {
-  using namespace Test;
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::index_type::non_const_type entries_view_t;
@@ -518,7 +513,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   scalar_t offDiagBase;
   {
     scalar_t unused;
-    Test::getRandomBounds(0.6, unused, offDiagBase);
+    TestUtils::getRandomBounds(0.6, unused, offDiagBase);
   }
   std::uniform_int_distribution<lno_t> colDist(0, numRows - 1);
   std::uniform_real_distribution<double> offDiagCoeffDist(-0.3, 0.3);
@@ -550,9 +545,9 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   }
   lno_t nv = input_mat.numRows();
   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
-  scalar_view_t y_vector = create_random_y_vector(input_mat, solution_x);
+  scalar_view_t y_vector = TestUtils::create_random_y_vector(input_mat, solution_x);
   // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
   // behavior of each algorithm _should be_ the same on every execution space,
   // which is why we just test GS_DEFAULT.
@@ -578,8 +573,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
-  using namespace Test;
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
@@ -590,9 +584,9 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
   input_mat = KokkosSparse::sort_and_merge_matrix(input_mat);
   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), numRows);
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
-  scalar_view_t y_vector = create_random_y_vector(input_mat, solution_x);
+  scalar_view_t y_vector = TestUtils::create_random_y_vector(input_mat, solution_x);
   scalar_view_t x_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x vector"), numRows);
   typedef KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
                               typename device::memory_space, typename device::memory_space>
@@ -614,9 +608,8 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
                                      bool symmetric, double omega,
                                      KokkosGraph::ColoringAlgorithm coloringAlgo = KokkosGraph::COLORING_DEFAULT,
                                      int nstreams                                = 1) {
-  using namespace Test;
-  initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using scalar_view_t   = typename crsMat_t::values_type::non_const_type;
   using mag_t           = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
@@ -666,9 +659,9 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
     lno_t nv = input_mat_v[i].numRows();
     scalar_view_t solution_x_tmp(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
     solution_x_v[i] = solution_x_tmp;
-    create_random_x_vector(solution_x_v[i]);
+    TestUtils::create_random_x_vector(solution_x_v[i]);
     initial_norm_res_v[i] = KokkosBlas::nrm2(solution_x_v[i]);
-    y_vector_v[i]         = create_random_y_vector(input_mat_v[i], solution_x_v[i]);
+    y_vector_v[i]         = TestUtils::create_random_y_vector(input_mat_v[i], solution_x_v[i]);
     // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
     // behavior of each algorithm _should be_ the same on every execution space,
     // which is why we just test GS_DEFAULT.

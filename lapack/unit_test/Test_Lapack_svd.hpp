@@ -453,7 +453,7 @@ int impl_test_svd(const int m, const int n) {
 
   // Initialize A with random numbers
   scalar_type randStart = 0, randEnd = 0;
-  Test::getRandomBounds(max_val, randStart, randEnd);
+  TestUtils::getRandomBounds(max_val, randStart, randEnd);
   Kokkos::fill_random(A, rand_pool, randStart, randEnd);
   Kokkos::deep_copy(Aref, A);
 

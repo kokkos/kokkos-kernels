@@ -135,7 +135,6 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz, lno_t 
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-  using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);
 

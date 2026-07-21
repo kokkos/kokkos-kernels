@@ -197,7 +197,6 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-  using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);
 
@@ -388,7 +387,6 @@ void test_issue402() {
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-  using namespace Test;
   typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 
   // this specific matrix (from a circuit simulation) reliably replicated issue

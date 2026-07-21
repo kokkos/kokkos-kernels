@@ -65,7 +65,7 @@ void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col, DataType data
 
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCrs2Coo(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  using RandCrsMatType = RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
+  using RandCrsMatType = TestUtils::RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
   RandCrsMatType crsMat(m, n, min_val, max_val, m == 0 || n == 0);
 
   using CrsOT   = typename RandCrsMatType::IdViewTypeD::value_type;
@@ -99,8 +99,8 @@ void doAllCrs2Coo(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_crs2coo) {
-  Test::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(Test::getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
 
   // Square cases
   for (size_t i = 1; i < 256; i *= 4) {
