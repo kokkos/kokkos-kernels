@@ -11,6 +11,7 @@
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
 
+#include <cstdint>
 #include <concepts>
 #include <chrono>
 #include <random>
@@ -491,6 +492,7 @@ class RandCsMatrix {
   ///  4. map_(i) - col_map(i - 1) is in [0, m]
   void populate_random_cs_mat(uint64_t ticks) {
     std::srand(ticks);
+    std::mt19937 rand(ticks);
     for (Ordinal col_idx = 0; col_idx < dim1_; col_idx++) {
       Ordinal r = std::rand() % (dim2_ + 1);
       if (r == 0 || fully_sparse_) {  // 100% sparse vector
@@ -501,7 +503,7 @@ class RandCsMatrix {
 
         for (Ordinal i = 0; i < r; i++) v.at(i) = i;
 
-        std::shuffle(v.begin(), v.end(), std::mt19937(ticks));
+        std::shuffle(v.begin(), v.end(), rand);
 
         for (Ordinal i = 0; i < r; i++) ids_(i + nnz_) = v.at(i);
 
