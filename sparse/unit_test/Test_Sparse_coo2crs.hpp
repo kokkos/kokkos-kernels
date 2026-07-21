@@ -159,7 +159,7 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data,
       // NOTE: ASSERT_EQ doesn't work -- values may be summed in different
       // orders We sum at most m x n values.
       auto eps = crsMatRef.numCols() * crsMatRef.numRows() * 10e1 * ats::epsilon();
-      EXPECT_NEAR_KK(crs_vals_ref(j), crs_vals(k), eps, fail_msg + " mismatched values!" + failure_info);
+      EXPECT_NEAR_KK(crs_vals_ref(j), crs_vals(k), eps) << fail_msg + " mismatched values!" + failure_info;
     }
   }
 }
