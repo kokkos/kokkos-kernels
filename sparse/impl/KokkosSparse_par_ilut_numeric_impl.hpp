@@ -15,6 +15,7 @@
 #include <KokkosSparse_Utils.hpp>
 #include <KokkosSparse_SortCrs.hpp>
 #include <KokkosKernels_Utils.hpp>
+#include <KokkosKernels_SimpleUtils.hpp>
 
 #include <limits>
 
@@ -339,30 +340,10 @@ struct IlutWrap {
     return first;
   }
 
-  template <class ViewType>
-  static std::uint64_t hash_view(const ViewType& v) {
-    std::uint64_t hash = 0;
-    Kokkos::parallel_reduce(
-        "hash_view", range_policy(0, static_cast<size_type>(v.extent(0))),
-        KOKKOS_LAMBDA(const size_type i, std::uint64_t& lsum) {
-          std::uint64_t z = static_cast<std::uint64_t>(v(i));
-          // Mix in the index so that permutations of the same values don't collide as easily.
-          z ^= 0x9e3779b97f4a7c15ULL + (static_cast<std::uint64_t>(i) << 1);
-          // splitmix64
-          z += 0x9e3779b97f4a7c15ULL;
-          z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
-          z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
-          z ^= (z >> 31);
-          lsum += z;
-        },
-        hash);
-    return hash;
-  }
-
   template <class ARowMapType, class AEntriesType>
-  static Kokkos::pair<std::uint64_t, std::uint64_t> compute_structure_signature(const ARowMapType& A_row_map,
+  static Kokkos::pair<uint32_t, uint32_t> compute_structure_signature(const ARowMapType& A_row_map,
                                                                                 const AEntriesType& A_entries) {
-    return Kokkos::make_pair(hash_view(A_row_map), hash_view(A_entries));
+    return Kokkos::make_pair(hashView(A_row_map), hashView(A_entries));
   }
 
   /**
@@ -813,8 +794,8 @@ struct IlutWrap {
 
   template <class LRowMapType, class LEntriesType, class URowMapType, class UEntriesType>
   static void cache_pattern(IlutHandle& thandle, const LRowMapType& L_row_map, const LEntriesType& L_entries,
-                            const URowMapType& U_row_map, const UEntriesType& U_entries, std::uint64_t rowmap_hash,
-                            std::uint64_t entries_hash) {
+                            const URowMapType& U_row_map, const UEntriesType& U_entries, uint32_t rowmap_hash,
+                            uint32_t entries_hash) {
     auto& cache_L_row_map = thandle.get_cached_L_row_map();
     auto& cache_L_entries = thandle.get_cached_L_entries();
     auto& cache_U_row_map = thandle.get_cached_U_row_map();
@@ -885,8 +866,8 @@ struct IlutWrap {
     }
 
     bool reuse_cached_pattern  = false;
-    std::uint64_t rowmap_hash  = 0;
-    std::uint64_t entries_hash = 0;
+    uint32_t rowmap_hash  = 0;
+    uint32_t entries_hash = 0;
     if (reuse_numeric_pattern) {
       const auto signature = compute_structure_signature(A_row_map, A_entries);
       rowmap_hash          = signature.first;

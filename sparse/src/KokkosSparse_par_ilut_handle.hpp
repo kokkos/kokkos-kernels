@@ -108,8 +108,8 @@ class PAR_ILUTHandle {
 
   // Internal cached pattern state for repeated numeric calls with same structure.
   bool cached_pattern_valid;
-  std::uint64_t cached_rowmap_hash;
-  std::uint64_t cached_entries_hash;
+  uint32_t cached_rowmap_hash;
+  uint32_t cached_entries_hash;
   nnz_row_view_t cached_L_row_map;
   nnz_lno_view_t cached_L_entries;
   nnz_row_view_t cached_U_row_map;
@@ -239,18 +239,18 @@ class PAR_ILUTHandle {
     cached_U_entries     = nnz_lno_view_t();
   }
 
-  bool cached_pattern_matches_structure_hash(std::uint64_t rowmap_hash, std::uint64_t entries_hash) const {
+  bool cached_pattern_matches_structure_hash(uint32_t rowmap_hash, uint32_t entries_hash) const {
     return cached_pattern_valid && cached_rowmap_hash == rowmap_hash && cached_entries_hash == entries_hash &&
            size_type(cached_L_row_map.extent(0)) == nrows + 1 && size_type(cached_U_row_map.extent(0)) == nrows + 1;
   }
 
-  void set_cached_structure_hash(std::uint64_t rowmap_hash, std::uint64_t entries_hash) {
+  void set_cached_structure_hash(uint32_t rowmap_hash, uint32_t entries_hash) {
     cached_rowmap_hash  = rowmap_hash;
     cached_entries_hash = entries_hash;
   }
 
-  std::uint64_t get_cached_rowmap_hash() const { return cached_rowmap_hash; }
-  std::uint64_t get_cached_entries_hash() const { return cached_entries_hash; }
+  uint32_t get_cached_rowmap_hash() const { return cached_rowmap_hash; }
+  uint32_t get_cached_entries_hash() const { return cached_entries_hash; }
 
   nnz_row_view_t& get_cached_L_row_map() { return cached_L_row_map; }
   nnz_lno_view_t& get_cached_L_entries() { return cached_L_entries; }
