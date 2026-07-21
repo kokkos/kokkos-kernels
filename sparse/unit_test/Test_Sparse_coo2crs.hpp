@@ -208,8 +208,8 @@ TEST_F(TestCategory, sparse_coo2crs) {
   }
 #endif
 
-  Test::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(Test::getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
 
   doAllCoo2Crs<TestDevice>(0, 0);
 

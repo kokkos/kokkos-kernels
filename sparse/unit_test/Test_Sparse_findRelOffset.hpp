@@ -359,8 +359,6 @@ void testLongArray(bool& /*success*/, std::ostream& out) {
 
 template <typename lno_t, typename device_t>
 void test_findRelOffset() {
-  using namespace Test;
-
   class NullBuffer : public std::streambuf {
    public:
     int overflow(int c) override { return c; }

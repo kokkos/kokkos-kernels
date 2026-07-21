@@ -94,8 +94,8 @@ void doAllCsc2csr(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_csc2csr) {
-  Test::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(Test::getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
 
   // Empty cases
   doCsc2Csr<float, Kokkos::LayoutLeft, TestDevice>(1, 0, 1, 10);

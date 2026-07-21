@@ -221,22 +221,48 @@ testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, c
 
 }  // namespace Impl
 
-// Checks |val1 - val2| <= |tol|. Works for scalars, rank-1 Kokkos Views, and SIMD vectors.
-// Expands to a GTest expression so callers can append a failure message.
-#define EXPECT_NEAR_KK(val1, val2, tol) \
-  EXPECT_PRED_FORMAT3(TestUtils::Impl::expect_near_pred_format_scalar, val1, val2, tol)
+#define KK_EXPECT_NEAR(val1, val2, tol) EXPECT_PRED_FORMAT3(::TestUtils::Impl::kk_expect_near_pred_format, val1, val2, tol)
 
-// Checks |val1 - val2| <= tol * max(|val1|, |val2|) per element.
-// Works for scalars, rank-1 Kokkos Views, and SIMD vectors.
+// Checks |val1 - val2| <= |tol|.  Expands to a GTest expression so callers
+// can append a failure message: EXPECT_NEAR_KK(a, b, eps) << "context";
+#define EXPECT_NEAR_KK(val1, val2, tol)                                                    \
+  EXPECT_LE(                                                                                \
+      (double)KokkosKernels::ArithTraits<std::decay_t<decltype(val1)>>::abs((val1) - (val2)), \
+      (double)KokkosKernels::ArithTraits<std::decay_t<decltype(tol)>>::abs(tol))
+
+// Checks |val1 - val2| <= tol * max(|val1|, |val2|).
 // Expands to a GTest expression; supports << for failure messages.
-#define EXPECT_NEAR_KK_REL(val1, val2, tol) \
-  EXPECT_PRED_FORMAT3(TestUtils::Impl::expect_near_pred_format_scalar_rel, val1, val2, tol)
+#define EXPECT_NEAR_KK_REL(val1, val2, tol)                                                \
+  EXPECT_NEAR_KK(val1, val2,                                                               \
+      (tol) * Kokkos::max(                                                                 \
+          KokkosKernels::ArithTraits<std::decay_t<decltype(val1)>>::abs(val1),             \
+          KokkosKernels::ArithTraits<std::decay_t<decltype(val2)>>::abs(val2)))
 
-// Element-wise absolute comparison for rank-1 Kokkos Views.
-#define EXPECT_NEAR_KK_1DVIEW(v1, v2, tol) EXPECT_NEAR_KK(v1, v2, tol)
+// Checks element-wise |v1(i) - v2(i)| <= |tol| for every index i.
+#define EXPECT_NEAR_KK_1DVIEW(v1, v2, tol)                                                 \
+  do {                                                                                      \
+    const size_t _kk_v1_size = (v1).extent(0);                                             \
+    EXPECT_EQ(_kk_v1_size, (v2).extent(0));                                                \
+    auto _kk_h_v1 = Kokkos::create_mirror_view(v1);                                        \
+    auto _kk_h_v2 = Kokkos::create_mirror_view(v2);                                        \
+    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v1, _kk_h_v1);        \
+    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v2, _kk_h_v2);        \
+    for (size_t _kk_i = 0; _kk_i < _kk_v1_size; ++_kk_i)                                 \
+      EXPECT_NEAR_KK(_kk_h_v1(_kk_i), _kk_h_v2(_kk_i), tol);                             \
+  } while (false)
 
-// Element-wise relative comparison for rank-1 Kokkos Views.
-#define EXPECT_NEAR_KK_REL_1DVIEW(v1, v2, tol) EXPECT_NEAR_KK_REL(v1, v2, tol)
+// Checks element-wise relative tolerance for every index i.
+#define EXPECT_NEAR_KK_REL_1DVIEW(v1, v2, tol)                                             \
+  do {                                                                                      \
+    const size_t _kk_v1_size = (v1).extent(0);                                             \
+    EXPECT_EQ(_kk_v1_size, (v2).extent(0));                                                \
+    auto _kk_h_v1 = Kokkos::create_mirror_view(v1);                                        \
+    auto _kk_h_v2 = Kokkos::create_mirror_view(v2);                                        \
+    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v1, _kk_h_v1);        \
+    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v2, _kk_h_v2);        \
+    for (size_t _kk_i = 0; _kk_i < _kk_v1_size; ++_kk_i)                                 \
+      EXPECT_NEAR_KK_REL(_kk_h_v1(_kk_i), _kk_h_v2(_kk_i), tol);                         \
+  } while (false)
 
 // Utility class for testing kernels with rank-1 and rank-2 views that may be
 // LayoutStride. Simplifies making a LayoutStride view of a given size that is
@@ -626,66 +652,6 @@ void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values, const
   }
   Kokkos::deep_copy(entries, entriesHost);
   Kokkos::deep_copy(values, valuesHost);
-}
-
-// Create a random nrows by ncols matrix for testing mat-mat addition kernels.
-// minNNZ, maxNNZ: min and max number of nonzeros in any row.
-// maxNNZ > ncols will result in duplicated entries in a row, otherwise entries
-// in a row are unique.
-// sortRows: whether to sort columns in a row
-template <typename crsMat_t, typename ordinal_type>
-crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNNZ, ordinal_type maxNNZ, bool sortRows) {
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type size_type_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename size_type_view_t::non_const_value_type size_type;  // rowptr type
-  typedef typename lno_view_t::non_const_value_type lno_t;            // colind type
-  typedef typename scalar_view_t::non_const_value_type scalar_t;
-  typedef KokkosKernels::ArithTraits<scalar_t> KAT;
-  static_assert(std::is_same<ordinal_type, lno_t>::value, "ordinal_type should be same as lno_t from crsMat_t");
-  // first, populate rowmap
-  size_type_view_t rowmap("rowmap", nrows + 1);
-  typename size_type_view_t::host_mirror_type h_rowmap = Kokkos::create_mirror_view(rowmap);
-  size_type nnz                                        = 0;
-  size_type maxRowEntries                              = 0;
-  for (lno_t i = 0; i < nrows; i++) {
-    size_type rowEntries = rand() % (maxNNZ - minNNZ + 1) + minNNZ;
-    h_rowmap(i)          = nnz;
-    nnz += rowEntries;
-    maxRowEntries = std::max(rowEntries, maxRowEntries);
-  }
-  h_rowmap(nrows) = nnz;
-  Kokkos::deep_copy(rowmap, h_rowmap);
-  // allocate values and entries
-  scalar_view_t values("values", nnz);
-  // populate values
-  typename scalar_view_t::host_mirror_type h_values = Kokkos::create_mirror_view(values);
-  for (size_type i = 0; i < nnz; i++) {
-    h_values(i) = KAT::one() * (((typename KAT::mag_type)rand()) / static_cast<typename KAT::mag_type>(RAND_MAX));
-  }
-  Kokkos::deep_copy(values, h_values);
-  // populate entries (make sure no entry is repeated within a row)
-  lno_view_t entries("entries", nnz);
-  typename lno_view_t::host_mirror_type h_entries = Kokkos::create_mirror_view(entries);
-  std::vector<lno_t> indices(std::max((size_type)ncols, maxRowEntries));
-  auto re = std::mt19937(rand());
-  for (lno_t i = 0; i < nrows; i++) {
-    // this formula guarantees no duplicates if maxNNZ <= ncols, and duplicates
-    // if minNNZ > ncols
-    for (size_t j = 0; j < indices.size(); j++) indices[j] = j % ncols;
-    std::shuffle(indices.begin(), indices.end(), re);
-    size_type rowStart = h_rowmap(i);
-    size_type rowCount = h_rowmap(i + 1) - rowStart;
-    if (sortRows) {
-      std::sort(indices.begin(), indices.begin() + rowCount);
-    }
-    for (size_type j = 0; j < rowCount; j++) {
-      h_entries(rowStart + j) = indices[j];
-    }
-  }
-  Kokkos::deep_copy(entries, h_entries);
-  return crsMat_t("test matrix", nrows, ncols, nnz, values, rowmap, entries);
 }
 
 }  // namespace TestUtils

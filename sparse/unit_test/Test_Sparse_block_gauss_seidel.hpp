@@ -119,9 +119,8 @@ int run_block_gauss_seidel_1(
 template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
-  using namespace Test;
-  initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
   typedef typename device::execution_space exec_space;
@@ -196,9 +195,8 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
 template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
-  using namespace Test;
-  initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
 

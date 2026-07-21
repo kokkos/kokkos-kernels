@@ -166,9 +166,8 @@ void run_gauss_seidel_streams(std::vector<ExecSpace>& instances, std::vector<Han
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool symmetric) {
-  using namespace Test;
-  initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
@@ -241,9 +240,8 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, lno_t numVecs,
                              bool symmetric) {
-  using namespace Test;
-  initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, device> scalar_view2d_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
@@ -408,7 +406,6 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth) {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type const_lno_row_view_t;
@@ -450,7 +447,6 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_empty() {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_type;
@@ -492,8 +488,7 @@ void test_gauss_seidel_empty() {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerShortRow, bool symmetric) {
-  using namespace Test;
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::index_type::non_const_type entries_view_t;
@@ -578,8 +573,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
-  using namespace Test;
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
@@ -614,9 +608,8 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
                                      bool symmetric, double omega,
                                      KokkosGraph::ColoringAlgorithm coloringAlgo = KokkosGraph::COLORING_DEFAULT,
                                      int nstreams                                = 1) {
-  using namespace Test;
-  initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using scalar_view_t   = typename crsMat_t::values_type::non_const_type;
   using mag_t           = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;

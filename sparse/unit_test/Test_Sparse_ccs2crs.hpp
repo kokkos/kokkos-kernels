@@ -103,8 +103,8 @@ void doAllCcs2crs(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_ccs2crs) {
-  Test::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(Test::getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
 
   // Empty cases
   doCcs2Crs<float, Kokkos::LayoutLeft, TestDevice>(1, 0, 1, 10);
