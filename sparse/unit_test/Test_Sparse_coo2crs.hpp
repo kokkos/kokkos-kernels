@@ -166,7 +166,7 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data,
 
 template <class ScalarType, class LayoutType, class Device>
 void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  RandCooMat<ScalarType, LayoutType, Device> cooMat(m, n, m * n, min_val, max_val);
+  TestUtils::RandCooMat<ScalarType, LayoutType, Device> cooMat(m, n, m * n, min_val, max_val);
   auto randRow  = cooMat.get_row();
   auto randCol  = cooMat.get_col();
   auto randData = cooMat.get_data();
@@ -208,8 +208,8 @@ TEST_F(TestCategory, sparse_coo2crs) {
   }
 #endif
 
-  Test::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(Test::getTestSeed()));
+  TestUtils::initRandSeed();
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
 
   doAllCoo2Crs<TestDevice>(0, 0);
 
@@ -227,7 +227,7 @@ TEST_F(TestCategory, sparse_coo2crs) {
     doAllCoo2Crs<TestDevice>(m, n);
   }
 
-  RandCooMat<double, Kokkos::LayoutRight, TestDevice> cooMat(2, 2, 2 * 2, 10, 10);
+  TestUtils::RandCooMat<double, Kokkos::LayoutRight, TestDevice> cooMat(2, 2, 2 * 2, 10, 10);
   auto crsMatrix = KokkosSparse::coo2crs(2, 2, cooMat.get_row(), cooMat.get_col(), cooMat.get_data());
   auto cooMatrix = KokkosSparse::crs2coo(crsMatrix);
 

@@ -309,7 +309,7 @@ int test_batched_gemm() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   if constexpr (std::is_same_v<typename ParamTagType::batchLayout, typename BatchLayout::Right>) {
     using param_tag_type =
-        ::Test::SharedParamTag<typename ParamTagType::transA, typename ParamTagType::transB, BatchLayout::Right>;
+        ::TestUtils::SharedParamTag<typename ParamTagType::transA, typename ParamTagType::transB, BatchLayout::Right>;
     typedef Kokkos::View<ValueType***, Kokkos::LayoutLeft, DeviceType> llVt;
     test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType, param_tag_type>(0);
     test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType, param_tag_type>(1);
@@ -327,7 +327,7 @@ int test_batched_gemm() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   if constexpr (std::is_same_v<typename ParamTagType::batchLayout, typename BatchLayout::Left>) {
     using param_tag_type =
-        ::Test::SharedParamTag<typename ParamTagType::transA, typename ParamTagType::transB, BatchLayout::Left>;
+        ::TestUtils::SharedParamTag<typename ParamTagType::transA, typename ParamTagType::transB, BatchLayout::Left>;
     typedef Kokkos::View<ValueType***, Kokkos::LayoutRight, DeviceType> lrVt;
     test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType, param_tag_type>(0);
     test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType, param_tag_type>(1);

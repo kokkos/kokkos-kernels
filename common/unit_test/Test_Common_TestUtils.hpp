@@ -49,32 +49,32 @@ template <class Device>
 void test_rand_coo_mat_determinism() {
   using Scalar = double;
   using Layout = Kokkos::LayoutLeft;
-  using RCM    = Test::RandCooMat<Scalar, Layout, Device>;
+  using RCM    = TestUtils::RandCooMat<Scalar, Layout, Device>;
 
   // Two constructions each preceded by initRandSeed() simulate two separate
   // test runs with the same seed.  Both must produce identical output.
-  Test::initRandSeed();
+  TestUtils::initRandSeed();
   RCM mat1(8, 8, 20, -1.0, 1.0);
-  Test::initRandSeed();
+  TestUtils::initRandSeed();
   RCM mat2(8, 8, 20, -1.0, 1.0);
 
   uint64_t row_hash1 = hashView(mat1.get_row());
   uint64_t row_hash2 = hashView(mat2.get_row());
   EXPECT_EQ(row_hash1, row_hash2)
       << "RandCooMat rows differ between two constructions with the same seed.\n"
-      << "Seed: " << Test::getTestSeed();
+      << "Seed: " << TestUtils::getTestSeed();
 
   uint64_t col_hash1 = hashView(mat1.get_col());
   uint64_t col_hash2 = hashView(mat2.get_col());
   EXPECT_EQ(col_hash1, col_hash2)
       << "RandCooMat cols differ between two constructions with the same seed.\n"
-      << "Seed: " << Test::getTestSeed();
+      << "Seed: " << TestUtils::getTestSeed();
 
   uint64_t data_hash1 = hashView(mat1.get_data());
   uint64_t data_hash2 = hashView(mat2.get_data());
   EXPECT_EQ(data_hash1, data_hash2)
       << "RandCooMat data differ between two constructions with the same seed.\n"
-      << "Seed: " << Test::getTestSeed();
+      << "Seed: " << TestUtils::getTestSeed();
 }
 
 // ============================================================================
@@ -85,40 +85,40 @@ template <class Device>
 void test_rand_cs_matrix_determinism() {
   using Scalar = double;
   using Layout = Kokkos::LayoutLeft;
-  using RCS    = Test::RandCsMatrix<Scalar, Layout, Device>;
+  using RCS    = TestUtils::RandCsMatrix<Scalar, Layout, Device>;
 
   // RandCsMatrix uses both std::rand (structure) and Kokkos::fill_random
   // (values).  Two runs each preceded by initRandSeed() must produce identical
   // output because both rand streams start from the same seed.
-  Test::initRandSeed();
+  TestUtils::initRandSeed();
   RCS mat1(6, 6, -1.0, 1.0);
-  Test::initRandSeed();
+  TestUtils::initRandSeed();
   RCS mat2(6, 6, -1.0, 1.0);
 
   uint64_t map_hash1 = hashView(mat1.get_map());
   uint64_t map_hash2 = hashView(mat2.get_map());
   EXPECT_EQ(map_hash1, map_hash2)
       << "RandCsMatrix map (structure) differs between two constructions with the same seed.\n"
-      << "Seed: " << Test::getTestSeed();
+      << "Seed: " << TestUtils::getTestSeed();
 
   // The nnz may differ in principle only if std::rand is not reset, so check
   // it explicitly for a clearer message.
   EXPECT_EQ(mat1.get_nnz(), mat2.get_nnz())
       << "RandCsMatrix nnz differs between two constructions with the same seed.\n"
-      << "Seed: " << Test::getTestSeed();
+      << "Seed: " << TestUtils::getTestSeed();
 
   if (mat1.get_nnz() == mat2.get_nnz()) {
     uint64_t ids_hash1 = hashView(mat1.get_ids());
     uint64_t ids_hash2 = hashView(mat2.get_ids());
     EXPECT_EQ(ids_hash1, ids_hash2)
         << "RandCsMatrix ids differ between two constructions with the same seed.\n"
-        << "Seed: " << Test::getTestSeed();
+        << "Seed: " << TestUtils::getTestSeed();
 
     uint64_t vals_hash1 = hashView(mat1.get_vals());
     uint64_t vals_hash2 = hashView(mat2.get_vals());
     EXPECT_EQ(vals_hash1, vals_hash2)
         << "RandCsMatrix values differ between two constructions with the same seed.\n"
-        << "Seed: " << Test::getTestSeed();
+        << "Seed: " << TestUtils::getTestSeed();
   }
 }
 
@@ -126,7 +126,7 @@ void test_rand_cs_matrix_determinism() {
 // create_random_x_vector determinism
 //
 // create_random_x_vector uses std::rand() and requires the caller to have
-// called Test::initRandSeed() first.  Two calls each preceded by initRandSeed()
+// called TestUtils::initRandSeed() first.  Two calls each preceded by initRandSeed()
 // simulate two separate test runs and must produce identical output.
 // ============================================================================
 
@@ -139,21 +139,21 @@ void test_create_random_x_vector_determinism() {
 
   // --- rank-1 ---
   vec1d_t x1("x1", 32), x2("x1_dup", 32);
-  Test::initRandSeed();
-  Test::create_random_x_vector(x1, 10.0);
-  Test::initRandSeed();
-  Test::create_random_x_vector(x2, 10.0);
+  TestUtils::initRandSeed();
+  TestUtils::create_random_x_vector(x1, 10.0);
+  TestUtils::initRandSeed();
+  TestUtils::create_random_x_vector(x2, 10.0);
 
   EXPECT_EQ(hashView(x1), hashView(x2))
       << "create_random_x_vector (rank-1) differs between two calls with the same seed.\n"
-      << "Seed: " << Test::getTestSeed();
+      << "Seed: " << TestUtils::getTestSeed();
 
   // --- rank-2 ---
   vec2d_t X1("X1", 32, 4), X2("X1_dup", 32, 4);
-  Test::initRandSeed();
-  Test::create_random_x_vector(X1, 10.0);
-  Test::initRandSeed();
-  Test::create_random_x_vector(X2, 10.0);
+  TestUtils::initRandSeed();
+  TestUtils::create_random_x_vector(X1, 10.0);
+  TestUtils::initRandSeed();
+  TestUtils::create_random_x_vector(X2, 10.0);
 
   auto h1    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, X1);
   auto h2    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, X2);
@@ -161,7 +161,7 @@ void test_create_random_x_vector_determinism() {
   EXPECT_EQ(fnv1a(h1.data(), h1.extent(0) * h1.extent(1)),
             fnv1a(h2.data(), h2.extent(0) * h2.extent(1)))
       << "create_random_x_vector (rank-2) differs between two calls with the same seed.\n"
-      << "Seed: " << Test::getTestSeed();
+      << "Seed: " << TestUtils::getTestSeed();
 }
 
 }  // namespace

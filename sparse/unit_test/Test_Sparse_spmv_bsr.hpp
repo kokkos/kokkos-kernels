@@ -111,7 +111,7 @@ Bsr bsr_random(const int blockSize, const int blockRows, const int blockCols) {
   using Graph        = typename Crs::staticcrsgraph_type;
 
   // construct a random Crs Matrix
-  Test::RandCsMatrix<scalar_type, Kokkos::LayoutLeft, typename Bsr::device_type, ordinal_type, size_type> rcs(
+  TestUtils::RandCsMatrix<scalar_type, Kokkos::LayoutLeft, typename Bsr::device_type, ordinal_type, size_type> rcs(
       blockRows, blockCols, scalar_type(0), max_a<scalar_type>());
 
   const auto colids = Kokkos::subview(rcs.get_ids(), Kokkos::make_pair(size_type(0), rcs.get_nnz()));
@@ -410,7 +410,7 @@ void test_spmv_corner_cases() {
 
 template <typename Scalar, typename Ordinal, typename Offset, typename Device>
 void test_spmv_random() {
-  SCOPED_TRACE("rand seed: " + std::to_string(Test::getTestSeed()));
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Crs = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   // thoroughly test smaller matrices
@@ -656,7 +656,7 @@ void test_spm_mv_corner_cases() {
 
 template <typename Scalar, typename Ordinal, typename Offset, typename Layout, typename Device>
 void test_spm_mv_random() {
-  SCOPED_TRACE("rand seed: " + std::to_string(Test::getTestSeed()));
+  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Crs = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   // thoroughly test smaller matrices
