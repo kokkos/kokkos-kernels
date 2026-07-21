@@ -182,7 +182,7 @@ else()
 
   kokkoskernels_add_option("ENABLED_COMPONENTS" "ALL" STRING
     "A list of components to enable in testing and building"
-    VALID_ENTRIES BATCHED BLAS LAPACK GRAPH SPARSE ALL)
+    VALID_ENTRIES BATCHED BLAS LAPACK GRAPH SPARSE ODE ALL)
 
   # ==================================================================
   # Enable Device Types for ETI (exec- + mem-space)
