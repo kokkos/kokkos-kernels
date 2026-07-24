@@ -27,7 +27,6 @@ void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, SizeType &nn
   rowPtr = new SizeType[nrows + 1];
 
   OrdinalType elements_per_row = nrows ? nnz / nrows : 0;
-  srand(13721);
   rowPtr[0] = 0;
   for (int row = 0; row < nrows; row++) {
     int varianz       = (1.0 * rand() / RAND_MAX - 0.5) * row_size_variance;
@@ -70,7 +69,7 @@ void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, SizeType &nn
   Kokkos::View<ScalarType *, Kokkos::HostSpace> valuesView(values, nnz * static_cast<size_t>(block_elem_count));
   ScalarType randStart, randEnd;
   KokkosKernels::Impl::getRandomBounds(50.0, randStart, randEnd);
-  Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> pool(13718);
+  Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> pool(rand());
   Kokkos::fill_random(valuesView, pool, randStart, randEnd);
 }
 
@@ -81,7 +80,6 @@ void kk_sparseMatrix_generate_lower_upper_triangle(char uplo, OrdinalType nrows,
   rowPtr = new SizeType[nrows + 1];
 
   // OrdinalType elements_per_row = nnz/nrows;
-  srand(13721);
   rowPtr[0] = 0;
   for (int row = 0; row < nrows; row++) {
     if (uplo == 'L')
@@ -126,7 +124,6 @@ void kk_diagonally_dominant_sparseMatrix_generate(
         "kk_diagonally_dominant_sparseMatrix_generate: requested too many "
         "entries per row for the given bandwidth.");
   }
-  srand(13721);
   rowPtr[0] = 0;
   for (int row = 0; row < nrows; row++) {
     // variance is how many more (or less) entries this row has compared to the
@@ -431,8 +428,7 @@ sellMat_t kk_generate_sell_sparse_matrix(typename sellMat_t::const_ordinal_type 
     // A normal distribution is chosen to
     // draw how many entires will be padding
     // in a given row of the matrix.
-    std::random_device rd{};
-    std::mt19937 gen{rd()};
+    std::mt19937 gen{static_cast<unsigned int>(rand())};
     std::normal_distribution<double> padding_distribution{0, row_size_variance};
     std::uniform_int_distribution<ordinal_type> colind_distribution(-bandwidth_val, bandwidth_val);
     std::uniform_real_distribution<double> values_distribution(-10, 10);
