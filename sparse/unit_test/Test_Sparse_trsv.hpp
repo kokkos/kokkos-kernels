@@ -88,7 +88,7 @@ struct TrsvTest {
     SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
     TestUtils::initRandSeed();
 
-    Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
+    Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(rand());
     Kokkos::fill_random(b_x_copy, rand_pool, scalar_t(10));
 
     scalar_t alpha = 1;
