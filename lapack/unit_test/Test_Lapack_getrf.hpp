@@ -63,11 +63,13 @@ void impl_test_getrf_sym() {
   using scalar_type    = typename AMatrixType::non_const_value_type;
   using ExecutionSpace = typename Device::execution_space;
 
+  constexpr int m = 4, n = 4;
+
   const scalar_type zero = KokkosKernels::ArithTraits<scalar_type>::zero();
   const scalar_type one  = KokkosKernels::ArithTraits<scalar_type>::one();
   const scalar_type two  = one + one;
 
-  AMatrixType A("matrix A", 4, 4);
+  AMatrixType A("matrix A", m, n);
   auto A_h  = Kokkos::create_mirror_view(A);
   A_h(0, 0) = two;
   A_h(0, 1) = -one;
@@ -98,7 +100,7 @@ void impl_test_getrf_sym() {
   const scalar_type four  = two + two;
   const scalar_type five  = two + three;
 
-  auto tol = 10 * KokkosKernels::ArithTraits<scalar_type>::eps();
+  auto tol = min_mn * m * n * KokkosKernels::ArithTraits<scalar_type>::eps();
 
   EXPECT_NEAR_KK_REL(A_h(0, 0), two, tol);
   EXPECT_NEAR_KK_REL(A_h(0, 1), -one, tol);
@@ -130,7 +132,9 @@ void impl_test_getrf_unsym() {
   using scalar_type    = typename AMatrixType::non_const_value_type;
   using ExecutionSpace = typename Device::execution_space;
 
-  AMatrixType A("matrix A", 3, 3);
+  constexpr int m = 3, n = 3;
+
+  AMatrixType A("matrix A", m, n);
   auto A_h  = Kokkos::create_mirror_view(A);
   A_h(0, 0) = scalar_type(0);
   A_h(0, 1) = scalar_type(5);
@@ -152,7 +156,7 @@ void impl_test_getrf_unsym() {
   auto ipiv_h = Kokkos::create_mirror_view(ipiv);
   Kokkos::deep_copy(ipiv_h, ipiv);
 
-  auto tol = 10 * KokkosKernels::ArithTraits<scalar_type>::eps();
+  auto tol = min_mn * m * n * KokkosKernels::ArithTraits<scalar_type>::eps();
 
   ASSERT_EQ(ipiv_h(0), 2);
   ASSERT_EQ(ipiv_h(1), 3);
