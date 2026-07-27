@@ -121,10 +121,10 @@ struct Scal<execution_space, RV, typename XV::non_const_value_type, XV, 1, false
 
     if (numRows < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha, X, a);
+      V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha, X, 0, a);
     } else {
       typedef typename XV::size_type index_type;
-      V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha, X, a);
+      V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha, X, 0, a);
     }
     Kokkos::Profiling::popRegion();
   }
