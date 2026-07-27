@@ -129,9 +129,9 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutRi
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
 
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ONEMKL(SCALAR, LAYOUT)                                       \
-  template <class ExecSpace>                                                                         \
+  template <>                                                                                        \
   struct gemm_tpl_spec_avail<                                                                        \
-      ExecSpace,                                                                                     \
+      Kokkos::SYCL,                                                                                  \
       Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                        \
       Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>, \

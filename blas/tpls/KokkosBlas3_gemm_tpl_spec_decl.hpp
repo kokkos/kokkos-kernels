@@ -369,8 +369,8 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS3_XGEMM_ONEMKL(SCALAR, LAYOUT, ETI_SPEC_AVAIL)                                                       \
-  template <class ExecSpace>                                                                                           \
-  struct GEMM<ExecSpace,                                                                                               \
+  template <>                                                                                                          \
+  struct GEMM<Kokkos::SYCL,                                                                                            \
               Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>,           \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
               Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>,           \
@@ -384,7 +384,7 @@ namespace Impl {
     using BViewType   = Kokkos::View<const SCALAR**, LAYOUT, device_type, mem_traits>;                                 \
     using CViewType   = Kokkos::View<SCALAR**, LAYOUT, device_type, mem_traits>;                                       \
                                                                                                                        \
-    static void gemm(const ExecSpace& exec, const char transA[], const char transB[],                                  \
+    static void gemm(const Kokkos::SYCL& exec, const char transA[], const char transB[],                               \
                      typename AViewType::const_value_type& alpha, const AViewType& A, const BViewType& B,              \
                      typename CViewType::const_value_type& beta, const CViewType& C) {                                 \
       Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_ONEMKL," #SCALAR "]");                                       \
