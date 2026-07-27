@@ -596,11 +596,12 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
           nnz_lno_t search_end = team_cuckoo_key_size;  // KOKKOSKERNELS_MACRO_MIN(team_cuckoo_key_size,
                                                         // hash + max_tries);
           for (nnz_lno_t trial = hash; trial < search_end;) {
-            if (keys[trial] == my_b_col) {
+            const nnz_lno_t curr = Kokkos::atomic_load(keys + trial);
+            if (curr == my_b_col) {
               kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
               fail = 0;
               break;
-            } else if (keys[trial] == init_value) {
+            } else if (curr == init_value) {
               if (!insert_is_on) {
                 try_to_insert = false;
                 break;
@@ -619,11 +620,12 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
             search_end = hash;  // max_tries - (team_cuckoo_key_size -  hash);
 
             for (nnz_lno_t trial = 0; try_to_insert && trial < search_end;) {
-              if (keys[trial] == my_b_col) {
+              const nnz_lno_t curr = Kokkos::atomic_load(keys + trial);
+              if (curr == my_b_col) {
                 kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
                 fail = 0;
                 break;
-              } else if (keys[trial] == init_value) {
+              } else if (curr == init_value) {
                 if (!insert_is_on) {
                   break;
                 } else if (init_value == Kokkos::atomic_compare_exchange(keys + trial, init_value, my_b_col)) {
@@ -642,12 +644,13 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
               nnz_lno_t new_hash = (my_b_col * HASHSCALAR) & pow2_hash_func;
 
               for (nnz_lno_t trial = new_hash; trial < pow2_hash_size;) {
-                if (global_acc_row_keys[trial] == my_b_col) {
+                const nnz_lno_t curr = Kokkos::atomic_load(global_acc_row_keys + trial);
+                if (curr == my_b_col) {
                   kk_vector_block_add_mul(block_dim, global_acc_row_vals + trial * block_size, a_val, b_val);
                   // c_row_vals[trial] += my_b_val;
                   fail = 0;
                   break;
-                } else if (global_acc_row_keys[trial] == init_value) {
+                } else if (curr == init_value) {
                   if (init_value ==
                       Kokkos::atomic_compare_exchange(global_acc_row_keys + trial, init_value, my_b_col)) {
                     kk_vector_block_add_mul(block_dim, global_acc_row_vals + trial * block_size, a_val, b_val);
@@ -662,12 +665,13 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
               }
               if (fail) {
                 for (nnz_lno_t trial = 0; trial < new_hash;) {
-                  if (global_acc_row_keys[trial] == my_b_col) {
+                  const nnz_lno_t curr = Kokkos::atomic_load(global_acc_row_keys + trial);
+                  if (curr == my_b_col) {
                     // c_row_vals[trial] += my_b_val;
                     kk_vector_block_add_mul(block_dim, global_acc_row_vals + trial * block_size, a_val, b_val);
                     fail = 0;
                     break;
-                  } else if (global_acc_row_keys[trial] == init_value) {
+                  } else if (curr == init_value) {
                     if (init_value ==
                         Kokkos::atomic_compare_exchange(global_acc_row_keys + trial, init_value, my_b_col)) {
                       // Kokkos::atomic_inc(used_hash_sizes + 1);
@@ -698,11 +702,12 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
               nnz_lno_t trial = (my_b_col * HASHSCALAR) & team_cuckoo_hash_func;
               for (nnz_lno_t max_tries = team_cuckoo_key_size; max_tries-- > 0;
                    trial               = (trial + 1) & team_cuckoo_hash_func) {
-                if (keys[trial] == my_b_col) {
+                const nnz_lno_t curr = Kokkos::atomic_load(keys + trial);
+                if (curr == my_b_col) {
                   kk_block_add(block_dim, vals + trial * block_size, b_val);
                   fail = 0;
                   break;
-                } else if (keys[trial] == init_value) {
+                } else if (curr == init_value) {
                   break;
                 }
               }
@@ -873,11 +878,12 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
           fail = 1;
 
           for (nnz_lno_t trial = hash; trial < team_cuckoo_key_size;) {
-            if (keys[trial] == my_b_col) {
+            const nnz_lno_t curr = Kokkos::atomic_load(keys + trial);
+            if (curr == my_b_col) {
               kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
               fail = 0;
               break;
-            } else if (keys[trial] == init_value) {
+            } else if (curr == init_value) {
               if (init_value == Kokkos::atomic_compare_exchange(keys + trial, init_value, my_b_col)) {
                 kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
                 fail = 0;
@@ -889,11 +895,12 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
           }
           if (fail) {
             for (nnz_lno_t trial = 0; trial < hash;) {
-              if (keys[trial] == my_b_col) {
+              const nnz_lno_t curr = Kokkos::atomic_load(keys + trial);
+              if (curr == my_b_col) {
                 kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
                 fail = 0;
                 break;
-              } else if (keys[trial] == init_value) {
+              } else if (curr == init_value) {
                 if (init_value == Kokkos::atomic_compare_exchange(keys + trial, init_value, my_b_col)) {
                   kk_vector_block_add_mul(block_dim, vals + trial * block_size, a_val, b_val);
                   fail = 0;
