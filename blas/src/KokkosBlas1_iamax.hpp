@@ -35,17 +35,16 @@ typename XVector::size_type iamax(const execution_space& space, const XVector& x
                 "KokkosBlas::iamax: "
                 "Both Vector inputs must have rank 1.");
 
-  typedef typename XVector::size_type index_type;
+  using index_type = typename XVector::size_type;
 
-  typedef Kokkos::View<typename XVector::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout, execution_space,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XVector_Internal;
+  using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
+                                        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   using layout_t = typename XVector_Internal::array_layout;
 
-  typedef Kokkos::View<index_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RVector_Internal;
+  using RVector_Internal =
+      Kokkos::View<index_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   index_type result;
   RVector_Internal R = RVector_Internal(&result, layout_t());
@@ -111,7 +110,7 @@ void iamax(const execution_space& space, const RV& R, const XMV& X,
                 "KokkosBlas::iamax: "
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
-  typedef typename XMV::size_type index_type;
+  using index_type = typename XMV::size_type;
   static_assert(std::is_same<typename RV::value_type, index_type>::value,
                 "KokkosBlas::iamax: R must have the type of"
                 "the Xvectors size_type it is an output argument "

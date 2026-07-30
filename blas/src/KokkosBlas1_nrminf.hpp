@@ -92,8 +92,8 @@ void nrminf(const execution_space& space, const RV& R, const XMV& X,
                 "KokkosBlas::nrminf: "
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
-  typedef
-      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
+  using mag_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type;
   static_assert(std::is_same<typename RV::value_type, mag_type>::value,
                 "KokkosBlas::nrminf: R must have the magnitude type of"
                 "the xvectors value_type it is an output argument "

@@ -118,12 +118,10 @@ void sum(const execution_space& space, const RV& R, const XMV& X,
 
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.
-  typedef Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, UnifiedRVDevice,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RV_Internal;
-  typedef Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XMV_Internal;
+  using RV_Internal  = Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, UnifiedRVDevice,
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   RV_Internal R_internal  = KokkosKernels::Impl::unificationCast<RV_Internal>(R);
   XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);

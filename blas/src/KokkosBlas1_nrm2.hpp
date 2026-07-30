@@ -34,18 +34,17 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrm2: "
                 "XVector must have rank 1.");
-  typedef typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
-      mag_type;
+  using mag_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type;
 
-  typedef Kokkos::View<typename XVector::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout, execution_space,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XVector_Internal;
+  using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
+                                        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   using layout_t = typename XVector_Internal::array_layout;
 
-  typedef Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RVector_Internal;
+  using RVector_Internal =
+      Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   mag_type result;
   RVector_Internal R = RVector_Internal(&result, layout_t());
@@ -109,8 +108,8 @@ void nrm2(const execution_space& space, const RV& R, const XMV& X,
                 "KokkosBlas::nrm2: "
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
-  typedef
-      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
+  using mag_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type;
   static_assert(std::is_same<typename RV::value_type, mag_type>::value,
                 "KokkosBlas::nrm2: R must have the magnitude type of"
                 "the xvectors value_type it is an output argument "

@@ -79,36 +79,40 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(false)
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(LAYOUT, KOKKOS_TYPE, TPL_TYPE, TPL_DOT, ETI_SPEC_AVAIL)                  \
-  template <>                                                                                                         \
-  struct Dot<Kokkos::Cuda,                                                                                            \
-             Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, 1,  \
-             true, ETI_SPEC_AVAIL> {                                                                                  \
-    typedef Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;        \
-    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;      \
-    typedef typename XV::size_type size_type;                                                                         \
-                                                                                                                      \
-    static void dot(const Kokkos::Cuda& space, RV& R, const XV& X, const XV& Y) {                                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_CUBLAS," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + \
-                                    "]");                                                                             \
-      const size_type numElems = X.extent(0);                                                                         \
-      /* TODO: CUDA-12's 64-bit indices allow larger numElems */                                                      \
-      if (numElems <= static_cast<size_type>(std::numeric_limits<int>::max())) {                                      \
-        dot_print_specialization<RV, XV, XV>();                                                                       \
-        const int N                            = static_cast<int>(numElems);                                          \
-        KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
-        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                             \
-        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(TPL_DOT(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,         \
-                                                 reinterpret_cast<const TPL_TYPE*>(Y.data()), 1,                      \
-                                                 reinterpret_cast<TPL_TYPE*>(&R())));                                 \
-        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                            \
-      } else {                                                                                                        \
-        Dot<Kokkos::Cuda, RV, XV, XV, 1, 1, false, ETI_SPEC_AVAIL>::dot(space, R, X, Y);                              \
-      }                                                                                                               \
-      Kokkos::Profiling::popRegion();                                                                                 \
-    }                                                                                                                 \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_DOT, ETI_SPEC_AVAIL)                           \
+  template <>                                                                                                          \
+  struct Dot<                                                                                                          \
+      Kokkos::Cuda,                                                                                                    \
+      Kokkos::View<KOKKOS_TYPE, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+      Kokkos::View<const KOKKOS_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
+      Kokkos::View<const KOKKOS_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, \
+      1, true, ETI_SPEC_AVAIL> {                                                                                       \
+    typedef Kokkos::View<KOKKOS_TYPE, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+        RV;                                                                                                            \
+    typedef Kokkos::View<const KOKKOS_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda,                                         \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                     \
+        XV;                                                                                                            \
+    typedef typename XV::size_type size_type;                                                                          \
+                                                                                                                       \
+    static void dot(const Kokkos::Cuda& space, RV& R, const XV& X, const XV& Y) {                                      \
+      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_CUBLAS," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() +  \
+                                    "]");                                                                              \
+      const size_type numElems = X.extent(0);                                                                          \
+      /* TODO: CUDA-12's 64-bit indices allow larger numElems */                                                       \
+      if (numElems <= static_cast<size_type>(std::numeric_limits<int>::max())) {                                       \
+        dot_print_specialization<RV, XV, XV>();                                                                        \
+        const int N                            = static_cast<int>(numElems);                                           \
+        KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                     \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                              \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(TPL_DOT(s.handle, N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,          \
+                                                 reinterpret_cast<const TPL_TYPE*>(Y.data()), 1,                       \
+                                                 reinterpret_cast<TPL_TYPE*>(&R())));                                  \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                             \
+      } else {                                                                                                         \
+        Dot<Kokkos::Cuda, RV, XV, XV, 1, 1, false, ETI_SPEC_AVAIL>::dot(space, R, X, Y);                               \
+      }                                                                                                                \
+      Kokkos::Profiling::popRegion();                                                                                  \
+    }                                                                                                                  \
   };
 
 #define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(ETI_SPEC_AVAIL)                                                  \
@@ -132,15 +136,19 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(false)
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(LAYOUT, KOKKOS_TYPE, TPL_TYPE, TPL_DOT, ETI_SPEC_AVAIL)                  \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_DOT, ETI_SPEC_AVAIL)                          \
   template <>                                                                                                          \
-  struct Dot<Kokkos::HIP,                                                                                              \
-             Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,           \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, 1,    \
-             true, ETI_SPEC_AVAIL> {                                                                                   \
-    typedef Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;         \
-    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;        \
+  struct Dot<                                                                                                          \
+      Kokkos::HIP,                                                                                                     \
+      Kokkos::View<KOKKOS_TYPE, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+      Kokkos::View<const KOKKOS_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
+      Kokkos::View<const KOKKOS_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1,  \
+      1, true, ETI_SPEC_AVAIL> {                                                                                       \
+    typedef Kokkos::View<KOKKOS_TYPE, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+        RV;                                                                                                            \
+    typedef Kokkos::View<const KOKKOS_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP,                                          \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                     \
+        XV;                                                                                                            \
     typedef typename XV::size_type size_type;                                                                          \
                                                                                                                        \
     static void dot(const Kokkos::HIP& space, RV& R, const XV& X, const XV& Y) {                                       \
@@ -163,13 +171,11 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(ETI_SPEC_AVAIL)                                            \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, float, float, rocblas_sdot, ETI_SPEC_AVAIL)      \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, double, double, rocblas_ddot, ETI_SPEC_AVAIL)    \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::complex<float>, rocblas_float_complex,   \
-                                        rocblas_cdotc, ETI_SPEC_AVAIL)                                       \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::complex<double>, rocblas_double_complex, \
-                                        rocblas_zdotc, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(ETI_SPEC_AVAIL)                                                     \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sdot, ETI_SPEC_AVAIL)                                   \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_ddot, ETI_SPEC_AVAIL)                                 \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cdotc, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zdotc, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(true)
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(false)
@@ -185,43 +191,45 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(false)
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(LAYOUT, KOKKOS_TYPE, TPL_TYPE, TPL_DOT, ETI_SPEC_AVAIL)                  \
-  template <>                                                                                                         \
-  struct Dot<Kokkos::SYCL,                                                                                            \
-             Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-             Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, 1,  \
-             true, ETI_SPEC_AVAIL> {                                                                                  \
-    typedef Kokkos::View<KOKKOS_TYPE, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;        \
-    typedef Kokkos::View<const KOKKOS_TYPE*, LAYOUT, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;      \
-    typedef typename XV::size_type size_type;                                                                         \
-                                                                                                                      \
-    static void dot(const Kokkos::SYCL& exec, RV& R, const XV& X, const XV& Y) {                                      \
-      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_ONEMKL," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() + \
-                                    "]");                                                                             \
-      const size_type numElems = X.extent(0);                                                                         \
-      if (numElems <= static_cast<size_type>(std::numeric_limits<std::int64_t>::max())) {                             \
-        dot_print_specialization<RV, XV, XV>();                                                                       \
-        const std::int64_t N = static_cast<std::int64_t>(numElems);                                                   \
-        Kokkos::View<typename RV::value_type, Kokkos::SYCL> device_result("device_result");                           \
-        TPL_DOT(exec.sycl_queue(), N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,                                 \
-                reinterpret_cast<const TPL_TYPE*>(Y.data()), 1, reinterpret_cast<TPL_TYPE*>(device_result.data()));   \
-        Kokkos::deep_copy(R, device_result);                                                                          \
-      } else {                                                                                                        \
-        Dot<Kokkos::SYCL, RV, XV, XV, 1, 1, false, ETI_SPEC_AVAIL>::dot(exec, R, X, Y);                               \
-      }                                                                                                               \
-      Kokkos::Profiling::popRegion();                                                                                 \
-    }                                                                                                                 \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(KOKKOS_TYPE, TPL_TYPE, TPL_DOT, ETI_SPEC_AVAIL)                           \
+  template <>                                                                                                          \
+  struct Dot<                                                                                                          \
+      Kokkos::SYCL,                                                                                                    \
+      Kokkos::View<KOKKOS_TYPE, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+      Kokkos::View<const KOKKOS_TYPE*, Kokkos::LayoutLeft, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
+      Kokkos::View<const KOKKOS_TYPE*, Kokkos::LayoutLeft, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, \
+      1, true, ETI_SPEC_AVAIL> {                                                                                       \
+    typedef Kokkos::View<KOKKOS_TYPE, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+        RV;                                                                                                            \
+    typedef Kokkos::View<const KOKKOS_TYPE*, Kokkos::LayoutLeft, Kokkos::SYCL,                                         \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                     \
+        XV;                                                                                                            \
+    typedef typename XV::size_type size_type;                                                                          \
+                                                                                                                       \
+    static void dot(const Kokkos::SYCL& exec, RV& R, const XV& X, const XV& Y) {                                       \
+      Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_ONEMKL," + KokkosKernels::ArithTraits<KOKKOS_TYPE>::name() +  \
+                                    "]");                                                                              \
+      const size_type numElems = X.extent(0);                                                                          \
+      if (numElems <= static_cast<size_type>(std::numeric_limits<std::int64_t>::max())) {                              \
+        dot_print_specialization<RV, XV, XV>();                                                                        \
+        const std::int64_t N = static_cast<std::int64_t>(numElems);                                                    \
+        Kokkos::View<typename RV::value_type, Kokkos::SYCL> device_result("device_result");                            \
+        TPL_DOT(exec.sycl_queue(), N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,                                  \
+                reinterpret_cast<const TPL_TYPE*>(Y.data()), 1, reinterpret_cast<TPL_TYPE*>(device_result.data()));    \
+        Kokkos::deep_copy(R, device_result);                                                                           \
+      } else {                                                                                                         \
+        Dot<Kokkos::SYCL, RV, XV, XV, 1, 1, false, ETI_SPEC_AVAIL>::dot(exec, R, X, Y);                                \
+      }                                                                                                                \
+      Kokkos::Profiling::popRegion();                                                                                  \
+    }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(ETI_SPEC_AVAIL)                                              \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, float, float, oneapi::mkl::blas::row_major::dot,   \
-                                       ETI_SPEC_AVAIL)                                                        \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, double, double, oneapi::mkl::blas::row_major::dot, \
-                                       ETI_SPEC_AVAIL)                                                        \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<float>, std::complex<float>,       \
-                                       oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL)                    \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<double>, std::complex<double>,     \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(ETI_SPEC_AVAIL)                                          \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(float, float, oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL)   \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(double, double, oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<float>, std::complex<float>,                       \
+                                       oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL)                \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<double>, std::complex<double>,                     \
                                        oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(true)

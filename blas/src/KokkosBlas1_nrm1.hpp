@@ -99,8 +99,8 @@ void nrm1(const execution_space& space, const RV& R, const XMV& X,
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
                 "KokkosBlas::nrm1: execution_space cannot access data in XMV");
 
-  typedef
-      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
+  using mag_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type;
   static_assert(std::is_same_v<typename RV::value_type, mag_type>,
                 "KokkosBlas::nrm1: R must have the magnitude type of"
                 "the xvectors value_type it is an output argument "
