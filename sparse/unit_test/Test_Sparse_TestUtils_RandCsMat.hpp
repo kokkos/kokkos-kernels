@@ -10,7 +10,6 @@ void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   using size_type        = typename RandCs::size_type;
   auto expected_min      = ScalarType(1.0);
   size_type expected_nnz = 0;
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   RandCs cm(m, n, min_val, max_val);
 
   for (size_type i = 0; i < cm.get_nnz(); ++i) ASSERT_GE(cm(i), expected_min) << cm.info;

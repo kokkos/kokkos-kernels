@@ -410,7 +410,6 @@ void test_spmv_corner_cases() {
 
 template <typename Scalar, typename Ordinal, typename Offset, typename Device>
 void test_spmv_random() {
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Crs = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   // thoroughly test smaller matrices
@@ -656,7 +655,6 @@ void test_spm_mv_corner_cases() {
 
 template <typename Scalar, typename Ordinal, typename Offset, typename Layout, typename Device>
 void test_spm_mv_random() {
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Crs = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   // thoroughly test smaller matrices

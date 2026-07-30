@@ -208,9 +208,6 @@ TEST_F(TestCategory, sparse_coo2crs) {
   }
 #endif
 
-  TestUtils::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
-
   doAllCoo2Crs<TestDevice>(0, 0);
 
   // Square cases

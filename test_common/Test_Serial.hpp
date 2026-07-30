@@ -7,16 +7,13 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
 
+#include "Test_common.hpp"
+
 #if defined(KOKKOSKERNELS_TEST_ETI_ONLY) && !defined(KOKKOSKERNELS_ETI_ONLY)
 #define KOKKOSKERNELS_ETI_ONLY
 #endif
 
-class serial : public ::testing::Test {
- protected:
-  static void SetUpTestCase() {}
-
-  static void TearDownTestCase() {}
-};
+class serial : public CommonParent {};
 
 #define TestCategory serial
 #define TestDevice Kokkos::Serial
