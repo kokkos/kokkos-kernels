@@ -25,16 +25,18 @@ inline void scal_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUT, ETI_SPEC_AVAIL)                   \
+#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, ETI_SPEC_AVAIL)                           \
   template <typename ExecSpace>                                                                                       \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                     \
-  struct Scal<ExecSpace, Kokkos::View<SCALAR_TYPE*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
-              SCALAR_TYPE,                                                                                            \
-              Kokkos::View<const SCALAR_TYPE*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, true, \
-              ETI_SPEC_AVAIL> {                                                                                       \
-    typedef Kokkos::View<SCALAR_TYPE*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;               \
+  struct Scal<                                                                                                        \
+      ExecSpace, Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      SCALAR_TYPE,                                                                                                    \
+      Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1,   \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
+    typedef Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;   \
     typedef SCALAR_TYPE AS;                                                                                           \
-    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;         \
+    typedef Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+        XV;                                                                                                           \
     typedef typename XV::size_type size_type;                                                                         \
                                                                                                                       \
     static void scal(const ExecSpace& space, const RV& R, const AS& alpha, const XV& X) {                             \
@@ -53,29 +55,29 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(double, double, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(double, double, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(float, float, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(float, float, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>, ETI_SPEC_AVAIL)
 
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(true)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(false)
 
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(true)
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(false)
 
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(true)
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(false)
 
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(true)
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -89,15 +91,19 @@ KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, LAYOUT, ETI_SPEC_AVAIL)       \
+#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, ETI_SPEC_AVAIL)               \
   template <>                                                                                                          \
-  struct Scal<Kokkos::Cuda,                                                                                            \
-              Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, SCALAR_TYPE, \
-              Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1,     \
-              true, ETI_SPEC_AVAIL> {                                                                                  \
-    typedef Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;             \
+  struct Scal<                                                                                                         \
+      Kokkos::Cuda,                                                                                                    \
+      Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
+      SCALAR_TYPE,                                                                                                     \
+      Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, \
+      true, ETI_SPEC_AVAIL> {                                                                                          \
+    typedef Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
     typedef SCALAR_TYPE AS;                                                                                            \
-    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;       \
+    typedef Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda,                                         \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                     \
+        XV;                                                                                                            \
     typedef typename XV::size_type size_type;                                                                          \
                                                                                                                        \
     static void scal(const Kokkos::Cuda& space, const RV& R, const AS& alpha, const XV& X) {                           \
@@ -119,29 +125,29 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(double, double, cublasDscal, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(double, double, cublasDscal, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(float, float, cublasSscal, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(float, float, cublasSscal, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZscal, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZscal, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCscal, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCscal, ETI_SPEC_AVAIL)
 
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(true)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(false)
 
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(true)
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(false)
 
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(true)
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(false)
 
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(true)
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -155,15 +161,19 @@ KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, LAYOUT, ETI_SPEC_AVAIL) \
+#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, ETI_SPEC_AVAIL)         \
   template <>                                                                                                         \
-  struct Scal<Kokkos::HIP, Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-              SCALAR_TYPE,                                                                                            \
-              Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1,     \
-              true, ETI_SPEC_AVAIL> {                                                                                 \
-    typedef Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;             \
+  struct Scal<                                                                                                        \
+      Kokkos::HIP,                                                                                                    \
+      Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
+      SCALAR_TYPE,                                                                                                    \
+      Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
+    typedef Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
     typedef SCALAR_TYPE AS;                                                                                           \
-    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;       \
+    typedef Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP,                                         \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                    \
+        XV;                                                                                                           \
     typedef typename XV::size_type size_type;                                                                         \
                                                                                                                       \
     static void scal(const Kokkos::HIP& space, const RV& R, const AS& alpha, const XV& X) {                           \
@@ -189,31 +199,30 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dscal, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dscal, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sscal, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sscal, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                           \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zscal, LAYOUT, \
+#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL)                                           \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zscal, \
                                           ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                         \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cscal, LAYOUT, \
-                                          ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cscal, ETI_SPEC_AVAIL)
 
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(true)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(false)
 
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(true)
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(false)
 
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(true)
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(false)
 
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(true)
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
