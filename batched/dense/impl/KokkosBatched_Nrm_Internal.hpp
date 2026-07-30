@@ -159,6 +159,10 @@ KOKKOS_INLINE_FUNCTION void SerialNrmInternal<NrmType>::invoke(const int n, cons
       }
       nrm = scale * KokkosKernels::ArithTraits<NrmValueType>::sqrt(sumsq);
     }
+  } else if constexpr (std::is_same_v<NrmType, Norm::GenuineL1>) {
+    for (int i = 0; i < n; ++i) {
+      nrm += KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]);
+    }
   }
 
   *norm = nrm;
@@ -217,6 +221,13 @@ KOKKOS_INLINE_FUNCTION void TeamNrmInternal<MemberType, NrmType>::invoke(const M
       const auto [scale, sumsq] = accumulator.reference();
       nrm                       = scale * KokkosKernels::ArithTraits<NrmValueType>::sqrt(sumsq);
     }
+  } else if constexpr (std::is_same_v<NrmType, Norm::GenuineL1>) {
+    Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(member, n),
+        [&](const int i, NrmValueType &thread_nrm) {
+          thread_nrm += KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]);
+        },
+        nrm);
   }
 
   *norm = nrm;
@@ -275,6 +286,13 @@ KOKKOS_INLINE_FUNCTION void TeamVectorNrmInternal<MemberType, NrmType>::invoke(c
       const auto [scale, sumsq] = accumulator.reference();
       nrm                       = scale * KokkosKernels::ArithTraits<NrmValueType>::sqrt(sumsq);
     }
+  } else if constexpr (std::is_same_v<NrmType, Norm::GenuineL1>) {
+    Kokkos::parallel_reduce(
+        Kokkos::TeamVectorRange(member, n),
+        [&](const int i, NrmValueType &thread_nrm) {
+          thread_nrm += KokkosKernels::ArithTraits<ValueType>::abs(x[i * xs0]);
+        },
+        nrm);
   }
   *norm = nrm;
 }

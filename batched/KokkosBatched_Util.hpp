@@ -245,6 +245,7 @@ struct Norm {
   struct L2 {};
   struct LInf {};
   struct ScaledL2 {};
+  struct GenuineL1 {};
 };
 
 template <class T>
@@ -261,6 +262,9 @@ struct is_norm<Norm::LInf> : std::true_type {};
 
 template <>
 struct is_norm<Norm::ScaledL2> : std::true_type {};
+
+template <>
+struct is_norm<Norm::GenuineL1> : std::true_type {};
 
 template <class T>
 constexpr bool is_norm_v = is_norm<T>::value;
