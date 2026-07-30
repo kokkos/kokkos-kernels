@@ -114,6 +114,9 @@ class PAR_ILUTHandle {
   nnz_lno_view_t cached_L_entries;
   nnz_row_view_t cached_U_row_map;
   nnz_lno_view_t cached_U_entries;
+  nnz_row_view_t cached_Ut_row_map;
+  nnz_lno_view_t cached_Ut_entries;
+  nnz_row_view_t cached_U_to_Ut_perm;
 
  public:
   // See KokkosKernelsHandle::create_par_ilut_handle for default user input
@@ -140,7 +143,10 @@ class PAR_ILUTHandle {
         cached_L_row_map(),
         cached_L_entries(),
         cached_U_row_map(),
-        cached_U_entries() {}
+        cached_U_entries(),
+        cached_Ut_row_map(),
+        cached_Ut_entries(),
+        cached_U_to_Ut_perm() {}
 
   KOKKOS_INLINE_FUNCTION
   ~PAR_ILUTHandle() {}
@@ -237,11 +243,17 @@ class PAR_ILUTHandle {
     cached_L_entries     = nnz_lno_view_t();
     cached_U_row_map     = nnz_row_view_t();
     cached_U_entries     = nnz_lno_view_t();
+    cached_Ut_row_map    = nnz_row_view_t();
+    cached_Ut_entries    = nnz_lno_view_t();
+    cached_U_to_Ut_perm  = nnz_row_view_t();
   }
 
   bool cached_pattern_matches_structure_hash(uint32_t rowmap_hash, uint32_t entries_hash) const {
     return cached_pattern_valid && cached_rowmap_hash == rowmap_hash && cached_entries_hash == entries_hash &&
-           size_type(cached_L_row_map.extent(0)) == nrows + 1 && size_type(cached_U_row_map.extent(0)) == nrows + 1;
+           size_type(cached_L_row_map.extent(0)) == nrows + 1 && size_type(cached_U_row_map.extent(0)) == nrows + 1 &&
+           size_type(cached_Ut_row_map.extent(0)) == nrows + 1 &&
+           cached_Ut_entries.extent(0) == cached_U_entries.extent(0) &&
+           cached_U_to_Ut_perm.extent(0) == cached_U_entries.extent(0);
   }
 
   void set_cached_structure_hash(uint32_t rowmap_hash, uint32_t entries_hash) {
@@ -256,11 +268,17 @@ class PAR_ILUTHandle {
   nnz_lno_view_t& get_cached_L_entries() { return cached_L_entries; }
   nnz_row_view_t& get_cached_U_row_map() { return cached_U_row_map; }
   nnz_lno_view_t& get_cached_U_entries() { return cached_U_entries; }
+  nnz_row_view_t& get_cached_Ut_row_map() { return cached_Ut_row_map; }
+  nnz_lno_view_t& get_cached_Ut_entries() { return cached_Ut_entries; }
+  nnz_row_view_t& get_cached_U_to_Ut_perm() { return cached_U_to_Ut_perm; }
 
   const nnz_row_view_t& get_cached_L_row_map() const { return cached_L_row_map; }
   const nnz_lno_view_t& get_cached_L_entries() const { return cached_L_entries; }
   const nnz_row_view_t& get_cached_U_row_map() const { return cached_U_row_map; }
   const nnz_lno_view_t& get_cached_U_entries() const { return cached_U_entries; }
+  const nnz_row_view_t& get_cached_Ut_row_map() const { return cached_Ut_row_map; }
+  const nnz_lno_view_t& get_cached_Ut_entries() const { return cached_Ut_entries; }
+  const nnz_row_view_t& get_cached_U_to_Ut_perm() const { return cached_U_to_Ut_perm; }
 
   void mark_cached_pattern_valid() { cached_pattern_valid = true; }
 };

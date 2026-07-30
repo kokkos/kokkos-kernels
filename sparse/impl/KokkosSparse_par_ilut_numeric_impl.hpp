@@ -114,6 +114,66 @@ struct IlutWrap {
   }
 
   /**
+   * Build the sorted CRS pattern of U^T and a permutation mapping each entry of U
+   * to its corresponding value position in U^T.
+   *
+   * If U_values are updated without changing the U pattern, Ut_values can be
+   * refreshed by:
+   *
+   *   Ut_values(U_to_Ut_perm(u_nnz)) = U_values(u_nnz)
+   *
+   * This is used in the reuse_numeric_pattern cache-hit path, where U's sparsity
+   * pattern is fixed across repeated numeric calls and fixed across iterations
+   * within a numeric call.
+   */
+  template <class URowMapType, class UEntriesType, class UtRowMapType, class UtEntriesType, class PermType>
+  static void transpose_pattern_with_perm(IlutHandle& ih, const URowMapType& U_row_map, const UEntriesType& U_entries,
+                                          UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries, PermType& U_to_Ut_perm) {
+    const size_type nrows = ih.get_nrows();
+    const size_type nnz   = U_entries.extent(0);
+
+    Kokkos::deep_copy(Ut_row_map, 0);
+    Kokkos::realloc(Kokkos::WithoutInitializing, Ut_entries, nnz);
+    Kokkos::realloc(Kokkos::WithoutInitializing, U_to_Ut_perm, nnz);
+
+    HandleDeviceRowMapType U_pos("par_ilut_U_pos", nnz);
+    HandleDeviceRowMapType Ut_pos("par_ilut_Ut_pos", nnz);
+
+    Kokkos::parallel_for(
+        "par_ilut init transpose positions", range_policy(0, nnz), KOKKOS_LAMBDA(const size_type i) { U_pos(i) = i; });
+
+    KokkosSparse::Impl::transpose_matrix<URowMapType, UEntriesType, HandleDeviceRowMapType, UtRowMapType, UtEntriesType,
+                                         HandleDeviceRowMapType, UtRowMapType, execution_space>(
+        nrows, nrows, U_row_map, U_entries, U_pos, Ut_row_map, Ut_entries, Ut_pos);
+
+    // Sort Ut rows and carry along the original U-position payload.
+    sort_crs_matrix<execution_space>(Ut_row_map, Ut_entries, Ut_pos);
+
+    Kokkos::parallel_for(
+        "par_ilut invert transpose permutation", range_policy(0, nnz), KOKKOS_LAMBDA(const size_type t_nnz) {
+          const size_type u_nnz = Ut_pos(t_nnz);
+          U_to_Ut_perm(u_nnz)   = t_nnz;
+        });
+  }
+
+  /**
+   * Refresh Ut_values from U_values using a previously built U-to-Ut
+   * permutation. This avoids recomputing and sorting the transpose structure
+   * when U's sparsity pattern is unchanged.
+   */
+  template <class UValuesType, class PermType, class UtValuesType>
+  static void update_transpose_values(const UValuesType& U_values, const PermType& U_to_Ut_perm,
+                                      UtValuesType& Ut_values) {
+    const size_type nnz = U_values.extent(0);
+
+    Kokkos::realloc(Kokkos::WithoutInitializing, Ut_values, nnz);
+
+    Kokkos::parallel_for(
+        "par_ilut update transpose values", range_policy(0, nnz),
+        KOKKOS_LAMBDA(const size_type u_nnz) { Ut_values(U_to_Ut_perm(u_nnz)) = U_values(u_nnz); });
+  }
+
+  /**
    * Adds new entries from the sparsity pattern of A - L * U
    * to L and U, where new values are chosen based on the residual
    * value divided by the corresponding diagonal entry.
@@ -347,10 +407,23 @@ struct IlutWrap {
   }
 
   /**
-   * The compute_sum component of compute_l_u_factors
+   * The compute_sum component of compute_l_u_factors.
+   *
+   * Computes
+   *
+   *   A(row_idx, col_idx) - sum_{k < min(row_idx, col_idx)} L(row_idx,k) U(k,col_idx)
+   *
+   * by merging row row_idx of L with row col_idx of U^T.
+   *
+   * If need_ut_nnz is false, this routine exits the sparse merge once either
+   * sorted stream reaches last_entry = min(row_idx, col_idx), because no later
+   * entries can contribute to the dot product.
+   *
+   * If need_ut_nnz is true, the routine continues so it can recover the
+   * corresponding position of U(row_idx,col_idx) in Ut for async updates.
    */
-  template <class ARowMapType, class AEntriesType, class AValuesType, class LRowMapType, class LEntriesType,
-            class LValuesType, class UtRowMapType, class UtEntriesType, class UtValuesType>
+  template <bool need_ut_nnz, class ARowMapType, class AEntriesType, class AValuesType, class LRowMapType,
+            class LEntriesType, class LValuesType, class UtRowMapType, class UtEntriesType, class UtValuesType>
   KOKKOS_FUNCTION static Kokkos::pair<typename AValuesType::non_const_value_type, size_type> compute_sum(
       const size_type row_idx, typename IlutHandle::nnz_lno_t col_idx, const ARowMapType& A_row_map,
       const AEntriesType& A_entries, const AValuesType& A_values, const LRowMapType& L_row_map,
@@ -358,12 +431,15 @@ struct IlutWrap {
       const UtEntriesType& Ut_entries, const UtValuesType& Ut_values) {
     const auto a_row_nnz_begin = A_row_map(row_idx);
     const auto a_row_nnz_end   = A_row_map(row_idx + 1);
+
     auto a_nnz_it = kok_lower_bound(A_entries.data() + a_row_nnz_begin, A_entries.data() + a_row_nnz_end, col_idx);
+
     const size_type a_nnz = a_nnz_it - A_entries.data();
     const bool has_a      = a_nnz < a_row_nnz_end && A_entries(a_nnz) == col_idx;
-    const auto a_val      = has_a ? A_values(a_nnz) : 0.0;
-    scalar_t sum          = 0.0;
-    size_type ut_nnz      = 0;
+    const auto a_val      = has_a ? A_values(a_nnz) : scalar_t(0.0);
+
+    scalar_t sum     = scalar_t(0.0);
+    size_type ut_nnz = 0;
 
     auto l_row_nnz           = L_row_map(row_idx);
     const auto l_row_nnz_end = L_row_map(row_idx + 1);
@@ -371,20 +447,34 @@ struct IlutWrap {
     auto ut_row_nnz           = Ut_row_map(col_idx);
     const auto ut_row_nnz_end = Ut_row_map(col_idx + 1);
 
-    const auto last_entry = Kokkos::fmin(row_idx, col_idx);
+    const size_type last_entry = row_idx < static_cast<size_type>(col_idx) ? row_idx : static_cast<size_type>(col_idx);
+
     while (l_row_nnz < l_row_nnz_end && ut_row_nnz < ut_row_nnz_end) {
       const auto l_col = L_entries(l_row_nnz);
       const auto u_row = Ut_entries(ut_row_nnz);
-      if (l_col == u_row && l_col < last_entry) {
+
+      const size_type l_col_size = static_cast<size_type>(l_col);
+      const size_type u_row_size = static_cast<size_type>(u_row);
+
+      if constexpr (!need_ut_nnz) {
+        if (l_col_size >= last_entry || u_row_size >= last_entry) {
+          break;
+        }
+      }
+
+      if (l_col == u_row && l_col_size < last_entry) {
         const scalar_t ut_val = Ut_values(ut_row_nnz);
         sum += L_values(l_row_nnz) * ut_val;
       }
-      if (static_cast<size_type>(u_row) == row_idx) {
-        ut_nnz = ut_row_nnz;
+
+      if constexpr (need_ut_nnz) {
+        if (u_row_size == row_idx) {
+          ut_nnz = ut_row_nnz;
+        }
       }
 
-      l_row_nnz += l_col <= u_row ? 1 : 0;
-      ut_row_nnz += u_row <= l_col ? 1 : 0;
+      l_row_nnz += l_col_size <= u_row_size ? 1 : 0;
+      ut_row_nnz += u_row_size <= l_col_size ? 1 : 0;
     }
 
     return Kokkos::make_pair(a_val - sum, ut_nnz);
@@ -426,8 +516,8 @@ struct IlutWrap {
             const auto col_idx    = L_entries(l_nnz);
             const scalar_t u_diag = Ut_values(Ut_row_map(col_idx + 1) - 1);
             if (u_diag != 0.0) {
-              const auto new_val = compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values, L_row_map, L_entries,
-                                               L_values, Ut_row_map, Ut_entries, Ut_values)
+              const auto new_val = compute_sum<false>(row_idx, col_idx, A_row_map, A_entries, A_values, L_row_map,
+                                                      L_entries, L_values, Ut_row_map, Ut_entries, Ut_values)
                                        .first /
                                    u_diag;
               L_values(l_nnz) = new_val;
@@ -439,8 +529,8 @@ struct IlutWrap {
 
           for (auto u_nnz = u_row_nnz_begin; u_nnz < u_row_nnz_end; ++u_nnz) {
             const auto col_idx = U_entries(u_nnz);
-            const auto sum     = compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values, L_row_map, L_entries,
-                                             L_values, Ut_row_map, Ut_entries, Ut_values);
+            const auto sum     = compute_sum<async_update>(row_idx, col_idx, A_row_map, A_entries, A_values, L_row_map,
+                                                       L_entries, L_values, Ut_row_map, Ut_entries, Ut_values);
             const auto new_val = sum.first;
             const auto ut_nnz  = sum.second;
             U_values(u_nnz)    = new_val;
@@ -546,11 +636,11 @@ struct IlutWrap {
 
   template <class IRowMapType, class IEntriesType, class IValuesType, class ORowMapType, class OEntriesType,
             class OValuesType>
-  struct ThresholdFilterAssignFunctor {
-    ThresholdFilterAssignFunctor(const float_t threshold_, const IRowMapType& I_row_map_,
-                                 const IEntriesType& I_entries_, const IValuesType& I_values_,
-                                 const ORowMapType& O_row_map_, const OEntriesType& O_entries_,
-                                 const OValuesType& O_values_)
+  struct ThresholdFilterAssignTeamFunctor {
+    ThresholdFilterAssignTeamFunctor(const float_t threshold_, const IRowMapType& I_row_map_,
+                                     const IEntriesType& I_entries_, const IValuesType& I_values_,
+                                     const ORowMapType& O_row_map_, const OEntriesType& O_entries_,
+                                     const OValuesType& O_values_)
         : threshold(threshold_),
           I_row_map(I_row_map_),
           I_entries(I_entries_),
@@ -559,19 +649,29 @@ struct IlutWrap {
           O_entries(O_entries_),
           O_values(O_values_) {}
 
-    KOKKOS_INLINE_FUNCTION void operator()(const size_type row_idx) const {
+    KOKKOS_INLINE_FUNCTION void operator()(const member_type& team) const {
+      const auto row_idx = team.league_rank();
+
       const auto i_row_nnx_begin = I_row_map(row_idx);
       const auto i_row_nnx_end   = I_row_map(row_idx + 1);
+      const auto o_row_nnx_begin = O_row_map(row_idx);
 
-      auto onnz = O_row_map(row_idx);
+      Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, i_row_nnx_begin, i_row_nnx_end),
+                            [&](const size_type innz, size_type& update, const bool final) {
+                              const auto col_idx = I_entries(innz);
 
-      for (size_type innz = i_row_nnx_begin; innz < i_row_nnx_end; ++innz) {
-        if (karith::abs(I_values(innz)) >= threshold || static_cast<size_type>(I_entries(innz)) == row_idx) {
-          O_entries(onnz) = I_entries(innz);
-          O_values(onnz)  = I_values(innz);
-          ++onnz;
-        }
-      }
+                              const bool keep = karith::abs(I_values(innz)) >= threshold ||
+                                                static_cast<size_type>(col_idx) == static_cast<size_type>(row_idx);
+
+                              const size_type local_pos = update;
+                              update += keep ? size_type(1) : size_type(0);
+
+                              if (final && keep) {
+                                const size_type onnz = o_row_nnx_begin + local_pos;
+                                O_entries(onnz)      = col_idx;
+                                O_values(onnz)       = I_values(innz);
+                              }
+                            });
     }
 
     float_t threshold;
@@ -591,8 +691,7 @@ struct IlutWrap {
   static void threshold_filter(IlutHandle& ih, const float_t threshold, const IRowMapType& I_row_map,
                                const IEntriesType& I_entries, const IValuesType& I_values, ORowMapType& O_row_map,
                                OEntriesType& O_entries, OValuesType& O_values) {
-    const auto policy     = ih.get_default_team_policy();
-    const size_type nrows = ih.get_nrows();
+    const auto policy = ih.get_default_team_policy();
 
     Kokkos::parallel_for("threshold_filter count", policy,
                          ThresholdFilterCountFunctor<IRowMapType, IEntriesType, IValuesType, ORowMapType>(
@@ -603,10 +702,10 @@ struct IlutWrap {
     Kokkos::realloc(Kokkos::WithoutInitializing, O_entries, new_nnz);
     Kokkos::realloc(Kokkos::WithoutInitializing, O_values, new_nnz);
 
-    Kokkos::parallel_for(
-        "threshold_filter assign", range_policy(0, nrows),
-        ThresholdFilterAssignFunctor<IRowMapType, IEntriesType, IValuesType, ORowMapType, OEntriesType, OValuesType>(
-            threshold, I_row_map, I_entries, I_values, O_row_map, O_entries, O_values));
+    Kokkos::parallel_for("threshold_filter assign team", policy,
+                         ThresholdFilterAssignTeamFunctor<IRowMapType, IEntriesType, IValuesType, ORowMapType,
+                                                          OEntriesType, OValuesType>(
+                             threshold, I_row_map, I_entries, I_values, O_row_map, O_entries, O_values));
   }
 
   /**
@@ -796,20 +895,27 @@ struct IlutWrap {
   static void cache_pattern(IlutHandle& thandle, const LRowMapType& L_row_map, const LEntriesType& L_entries,
                             const URowMapType& U_row_map, const UEntriesType& U_entries, uint32_t rowmap_hash,
                             uint32_t entries_hash) {
-    auto& cache_L_row_map = thandle.get_cached_L_row_map();
-    auto& cache_L_entries = thandle.get_cached_L_entries();
-    auto& cache_U_row_map = thandle.get_cached_U_row_map();
-    auto& cache_U_entries = thandle.get_cached_U_entries();
+    auto& cache_L_row_map    = thandle.get_cached_L_row_map();
+    auto& cache_L_entries    = thandle.get_cached_L_entries();
+    auto& cache_U_row_map    = thandle.get_cached_U_row_map();
+    auto& cache_U_entries    = thandle.get_cached_U_entries();
+    auto& cache_Ut_row_map   = thandle.get_cached_Ut_row_map();
+    auto& cache_Ut_entries   = thandle.get_cached_Ut_entries();
+    auto& cache_U_to_Ut_perm = thandle.get_cached_U_to_Ut_perm();
 
     Kokkos::realloc(Kokkos::WithoutInitializing, cache_L_row_map, L_row_map.extent(0));
     Kokkos::realloc(Kokkos::WithoutInitializing, cache_L_entries, L_entries.extent(0));
     Kokkos::realloc(Kokkos::WithoutInitializing, cache_U_row_map, U_row_map.extent(0));
     Kokkos::realloc(Kokkos::WithoutInitializing, cache_U_entries, U_entries.extent(0));
+    Kokkos::realloc(Kokkos::WithoutInitializing, cache_Ut_row_map, U_row_map.extent(0));
 
     Kokkos::deep_copy(cache_L_row_map, L_row_map);
     Kokkos::deep_copy(cache_L_entries, L_entries);
     Kokkos::deep_copy(cache_U_row_map, U_row_map);
     Kokkos::deep_copy(cache_U_entries, U_entries);
+
+    transpose_pattern_with_perm(thandle, cache_U_row_map, cache_U_entries, cache_Ut_row_map, cache_Ut_entries,
+                                cache_U_to_Ut_perm);
 
     thandle.set_cached_structure_hash(rowmap_hash, entries_hash);
     thandle.mark_cached_pattern_valid();
@@ -831,6 +937,22 @@ struct IlutWrap {
     Kokkos::realloc(Kokkos::WithoutInitializing, U_entries, cache_U_entries.extent(0));
     Kokkos::deep_copy(L_entries, cache_L_entries);
     Kokkos::deep_copy(U_entries, cache_U_entries);
+  }
+
+  template <class UtRowMapType, class UtEntriesType, class PermType>
+  static void load_cached_transpose_pattern(IlutHandle& thandle, UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries,
+                                            PermType& U_to_Ut_perm) {
+    const auto& cache_Ut_row_map   = thandle.get_cached_Ut_row_map();
+    const auto& cache_Ut_entries   = thandle.get_cached_Ut_entries();
+    const auto& cache_U_to_Ut_perm = thandle.get_cached_U_to_Ut_perm();
+
+    Kokkos::deep_copy(Ut_row_map, cache_Ut_row_map);
+
+    Kokkos::realloc(Kokkos::WithoutInitializing, Ut_entries, cache_Ut_entries.extent(0));
+    Kokkos::realloc(Kokkos::WithoutInitializing, U_to_Ut_perm, cache_U_to_Ut_perm.extent(0));
+
+    Kokkos::deep_copy(Ut_entries, cache_Ut_entries);
+    Kokkos::deep_copy(U_to_Ut_perm, cache_U_to_Ut_perm);
   }
 
   /**
@@ -885,7 +1007,7 @@ struct IlutWrap {
         U_new_row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "U_new_row_map"), nrows + 1),
         Ut_new_row_map("Ut_new_row_map", nrows + 1);
 
-    HandleDeviceRowMapType R_row_map;
+    HandleDeviceRowMapType R_row_map, U_to_Ut_perm;
     HandleDeviceEntriesType LU_entries, L_new_entries, U_new_entries, Ut_new_entries, R_entries;
     HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, R_values;
     HandleDeviceFloatType V_copy;
@@ -897,6 +1019,7 @@ struct IlutWrap {
 
     if (reuse_cached_pattern) {
       load_cached_pattern(thandle, L_row_map, L_entries, U_row_map, U_entries);
+      load_cached_transpose_pattern(thandle, Ut_new_row_map, Ut_new_entries, U_to_Ut_perm);
 
       Kokkos::realloc(Kokkos::WithoutInitializing, L_values, L_entries.extent(0));
       Kokkos::realloc(Kokkos::WithoutInitializing, U_values, U_entries.extent(0));
@@ -909,9 +1032,9 @@ struct IlutWrap {
       //
       bool stop = nrows == 0;
       while (!stop && itr < max_iter) {
-        // Get transpose of U, needed for compute_l_u_factors. Store in Ut_new*
-        // since we aren't using those temporaries anymore
-        transpose_wrap(thandle, U_row_map, U_entries, U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values);
+        // U's pattern is fixed in the cached-pattern path. Reuse the cached
+        // transpose pattern and only refresh the transposed values.
+        update_transpose_values(U_values, U_to_Ut_perm, Ut_new_values);
 
         // Do one sweep of the fixed-point ILU algorithm
         compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map,
