@@ -7,6 +7,8 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
 
+#include "KokkosKernels_TestUtils.hpp"
+
 #if defined(KOKKOSKERNELS_TEST_ETI_ONLY) && !defined(KOKKOSKERNELS_ETI_ONLY)
 #define KOKKOSKERNELS_ETI_ONLY
 #endif
@@ -32,10 +34,10 @@ class CommonParent : public ::testing::Test {
     }
 
     // 1. Generate random integer dataset
-    utils::initRandSeed();
+    TestUtils::initRandSeed();
 
     // 2. Format a string describing our dataset state
-    std::string msg = test_name + " => rand seed: " + std::to_string(utils::getTestSeed());
+    std::string msg = test_name + " => rand seed: " + std::to_string(TestUtils::getTestSeed());
 
     // 3. Keep trace alive for the whole test scope via modern pointer mechanics
     current_trace = std::make_unique<::testing::ScopedTrace>("", 0, msg);
