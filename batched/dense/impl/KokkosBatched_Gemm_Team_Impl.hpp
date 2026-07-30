@@ -22,12 +22,10 @@ template <typename ScalarType, typename AViewType, typename BViewType, typename 
 KOKKOS_INLINE_FUNCTION int TeamGemm<MemberType, ArgTransA, ArgTransB, ArgAlgo>::invoke(
     const MemberType &member, const ScalarType alpha, const AViewType &A, const BViewType &B, const ScalarType beta,
     const CViewType &C) {
-  const int A_extent_0 =
-      std::same_as<ArgTransA, Trans::NoTranspose> ? Impl::get_extent_int(A, 1) : Impl::get_extent_int(A, 0);
-  const int C_extent_0 = Impl::get_extent_int(C, 0), C_extent_1 = Impl::get_extent_int(C, 1);
+  const int k = std::same_as<ArgTransA, Trans::NoTranspose> ? Impl::get_extent_int(A, 1) : Impl::get_extent_int(A, 0);
+  const int m = Impl::get_extent_int(C, 0), n = Impl::get_extent_int(C, 1);
 
   // Quick return if possible
-  const int m = C_extent_0, n = C_extent_1, k = A_extent_0;
   if (m == 0 || n == 0 || ((alpha == ScalarType(0) || k == 0) && beta == ScalarType(1))) return 0;
 
   auto info = Impl::checkGemmInput<ArgTransA, ArgTransB>(A, B, C);
@@ -49,9 +47,9 @@ KOKKOS_INLINE_FUNCTION int TeamGemm<MemberType, ArgTransA, ArgTransB, ArgAlgo>::
   const std::size_t C_stride_0 = Impl::get_stride(C, 0), C_stride_1 = Impl::get_stride(C, 1);
 
   // C = beta C + alpha op(A) op(B)
-  return Impl::TeamGemmInternal<ArgAlgo>::invoke(member, opA(), opB(), C_extent_0, C_extent_1, A_extent_0, alpha,
-                                                 A.data(), A_stride_0, A_stride_1, B.data(), B_stride_0, B_stride_1,
-                                                 beta, C.data(), C_stride_0, C_stride_1);
+  return Impl::TeamGemmInternal<ArgAlgo>::invoke(member, opA(), opB(), m, n, k, alpha, A.data(), A_stride_0, A_stride_1,
+                                                 B.data(), B_stride_0, B_stride_1, beta, C.data(), C_stride_0,
+                                                 C_stride_1);
 }
 
 }  // namespace KokkosBatched
