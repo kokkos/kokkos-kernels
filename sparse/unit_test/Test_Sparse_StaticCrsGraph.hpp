@@ -130,8 +130,6 @@ void run_test_graph2() {
 
 template <class Space>
 void run_test_graph3(size_t B, size_t N) {
-  srand(10310);
-
   using dView = KokkosSparse::StaticCrsGraph<int, Space>;
   using hView = typename dView::host_mirror_type;
 

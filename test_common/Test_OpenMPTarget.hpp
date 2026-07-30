@@ -7,16 +7,13 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
 
+#include "Test_common.hpp"
+
 #if defined(KOKKOSKERNELS_TEST_ETI_ONLY) && !defined(KOKKOSKERNELS_ETI_ONLY)
 #define KOKKOSKERNELS_ETI_ONLY
 #endif
 
-class openmptarget : public ::testing::Test {
- protected:
-  static void SetUpTestCase() {}
-
-  static void TearDownTestCase() {}
-};
+class openmptarget : public CommonParent {};
 
 #define TestCategory openmptarget
 #define TestDevice Kokkos::Experimental::OpenMPTarget

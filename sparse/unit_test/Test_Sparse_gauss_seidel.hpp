@@ -166,8 +166,6 @@ void run_gauss_seidel_streams(std::vector<ExecSpace>& instances, std::vector<Han
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool symmetric) {
-  TestUtils::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
@@ -240,8 +238,6 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, lno_t numVecs,
                              bool symmetric) {
-  TestUtils::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, device> scalar_view2d_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
@@ -350,7 +346,6 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
   const scalar_t zero = KokkosKernels::ArithTraits<scalar_t>::zero();
   const scalar_t one  = KokkosKernels::ArithTraits<scalar_t>::one();
-  srand(245);
   typedef typename device::execution_space exec_space;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   lno_t numCols      = numRows;
@@ -415,7 +410,6 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth
   typedef KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
                               typename device::memory_space, typename device::memory_space>
       KernelHandle;
-  srand(245);
   size_type nnzTotal = nnzPerRow * numRows;
   lno_t nnzVariance  = nnzPerRow / 4;
   crsMat_t A =
@@ -488,7 +482,6 @@ void test_gauss_seidel_empty() {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerShortRow, bool symmetric) {
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::index_type::non_const_type entries_view_t;
@@ -573,7 +566,6 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
@@ -608,8 +600,6 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
                                      bool symmetric, double omega,
                                      KokkosGraph::ColoringAlgorithm coloringAlgo = KokkosGraph::COLORING_DEFAULT,
                                      int nstreams                                = 1) {
-  TestUtils::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using scalar_view_t   = typename crsMat_t::values_type::non_const_type;
   using mag_t           = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;

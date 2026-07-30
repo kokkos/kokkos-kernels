@@ -99,9 +99,6 @@ void doAllCrs2Coo(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_crs2coo) {
-  TestUtils::initRandSeed();
-  SCOPED_TRACE("rand seed: " + std::to_string(TestUtils::getTestSeed()));
-
   // Square cases
   for (size_t i = 1; i < 256; i *= 4) {
     size_t dim = (std::rand() % 511) + 1;
