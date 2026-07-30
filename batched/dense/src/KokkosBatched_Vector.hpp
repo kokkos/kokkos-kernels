@@ -191,45 +191,53 @@ template <typename T>
 struct MagnitudeScalarType;
 
 template <>
+struct MagnitudeScalarType<Kokkos::Experimental::half_t> {
+  using type = Kokkos::Experimental::half_t;
+};
+template <>
 struct MagnitudeScalarType<float> {
-  typedef float type;
+  using type = float;
 };
 template <>
 struct MagnitudeScalarType<double> {
-  typedef double type;
+  using type = double;
 };
 template <>
 struct MagnitudeScalarType<long double> {
-  typedef long double type;
+  using type = long double;
 };
 template <>
 struct MagnitudeScalarType<Kokkos::complex<float>> {
-  typedef float type;
+  using type = float;
 };
 template <>
 struct MagnitudeScalarType<Kokkos::complex<double>> {
-  typedef double type;
+  using type = double;
 };
 
 template <int l>
+struct MagnitudeScalarType<Vector<SIMD<Kokkos::Experimental::half_t>, l>> {
+  using type = Kokkos::Experimental::half_t;
+};
+template <int l>
 struct MagnitudeScalarType<Vector<SIMD<float>, l>> {
-  typedef float type;
+  using type = float;
 };
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<double>, l>> {
-  typedef double type;
+  using type = double;
 };
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<long double>, l>> {
-  typedef long double type;
+  using type = long double;
 };
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<float>>, l>> {
-  typedef float type;
+  using type = float;
 };
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<double>>, l>> {
-  typedef double type;
+  using type = double;
 };
 
 }  // namespace KokkosBatched
