@@ -19,7 +19,7 @@ namespace KokkosBatched {
 
 template <typename MemberType, typename ArgTransA, typename ArgTransB, typename ArgAlgo>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
-KOKKOS_INLINE_FUNCTION int TeamGemm<MemberType, ArgTransA, ArgTransB, ArgAlgo>::invoke(
+KOKKOS_INLINE_FUNCTION int TeamVectorGemm<MemberType, ArgTransA, ArgTransB, ArgAlgo>::invoke(
     const MemberType &member, const ScalarType alpha, const AViewType &A, const BViewType &B, const ScalarType beta,
     const CViewType &C) {
   const int k = std::same_as<ArgTransA, Trans::NoTranspose> ? Impl::get_extent_int(A, 1) : Impl::get_extent_int(A, 0);
