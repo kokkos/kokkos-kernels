@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  kokkos_version: 5.1.0
+  kokkos_version: 5.2.0
 
 jobs:
   check-pr-labels:
