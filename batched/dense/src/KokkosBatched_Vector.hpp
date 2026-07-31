@@ -190,10 +190,12 @@ struct DefaultInternalVectorLength<Kokkos::complex<double>, Kokkos::HIPSpace> {
 template <typename T>
 struct MagnitudeScalarType;
 
+#if !KOKKOS_HALF_T_IS_FLOAT
 template <>
 struct MagnitudeScalarType<Kokkos::Experimental::half_t> {
   using type = Kokkos::Experimental::half_t;
 };
+#endif
 template <>
 struct MagnitudeScalarType<float> {
   using type = float;
@@ -215,10 +217,12 @@ struct MagnitudeScalarType<Kokkos::complex<double>> {
   using type = double;
 };
 
+#if !KOKKOS_HALF_T_IS_FLOAT
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<Kokkos::Experimental::half_t>, l>> {
   using type = Kokkos::Experimental::half_t;
 };
+#endif
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<float>, l>> {
   using type = float;
