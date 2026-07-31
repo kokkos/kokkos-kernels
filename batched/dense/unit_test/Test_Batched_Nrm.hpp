@@ -98,11 +98,11 @@ void impl_test_batched_nrm_analytical(const std::size_t Nb) {
       // L1 norm: 21, L2 norm: sqrt(91), Linf norm: sqrt(61)
       h_norm_ref(ib) = std::is_same_v<ArgNorm, Norm::L1>         ? RealType(21)
                        : std::is_same_v<ArgNorm, Norm::L2>       ? Kokkos::sqrt(RealType(91))
-                       : std::is_same_v<ArgNorm, Norm::LInf>     ? Kokkos::sqrt(RealType(61))
+                       : std::is_same_v<ArgNorm, Norm::LInf>     ? RealType(11)
                        : std::is_same_v<ArgNorm, Norm::ScaledL2> ? Kokkos::sqrt(RealType(91))
                        : std::is_same_v<ArgNorm, Norm::GenuineL1>
                            ? (Kokkos::sqrt(RealType(5)) + 5 + Kokkos::sqrt(RealType(61)))
-                       : std::is_same_v<ArgNorm, Norm::GenuineLInf> ? RealType(11)
+                       : std::is_same_v<ArgNorm, Norm::GenuineLInf> ? Kokkos::sqrt(RealType(61))
                                                                     : RealType(-1);
     } else {
       h_x(ib, 0) = ScalarType(1);
@@ -294,7 +294,7 @@ void impl_test_batched_nrm(const std::size_t Nb, const std::size_t N) {
       norm_tmp = Kokkos::sqrt(norm_tmp);
     } else if constexpr (std::is_same_v<ArgNorm, Norm::LInf>) {
       for (std::size_t i = 0; i < N; i++) {
-        const auto abs_val = ats::abs(h_x(ib, i));
+        const auto abs_val = asum(h_x(ib, i));
         if (abs_val > norm_tmp) norm_tmp = abs_val;
       }
     } else if constexpr (std::is_same_v<ArgNorm, Norm::GenuineL1>) {
@@ -303,7 +303,7 @@ void impl_test_batched_nrm(const std::size_t Nb, const std::size_t N) {
       }
     } else if constexpr (std::is_same_v<ArgNorm, Norm::GenuineLInf>) {
       for (std::size_t i = 0; i < N; i++) {
-        const auto abs_val = asum(h_x(ib, i));
+        const auto abs_val = ats::abs(h_x(ib, i));
         if (abs_val > norm_tmp) norm_tmp = abs_val;
       }
     }
