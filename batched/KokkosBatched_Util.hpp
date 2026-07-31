@@ -242,10 +242,11 @@ struct Diag {
 
 struct Norm {
   struct L1 {};
-  struct L2 {};
-  struct LInf {};
-  struct ScaledL2 {};
   struct GenuineL1 {};
+  struct L2 {};
+  struct ScaledL2 {};
+  struct LInf {};
+  struct GenuineLInf {};
 };
 
 template <class T>
@@ -255,16 +256,19 @@ template <>
 struct is_norm<Norm::L1> : std::true_type {};
 
 template <>
-struct is_norm<Norm::L2> : std::true_type {};
+struct is_norm<Norm::GenuineL1> : std::true_type {};
 
 template <>
-struct is_norm<Norm::LInf> : std::true_type {};
+struct is_norm<Norm::L2> : std::true_type {};
 
 template <>
 struct is_norm<Norm::ScaledL2> : std::true_type {};
 
 template <>
-struct is_norm<Norm::GenuineL1> : std::true_type {};
+struct is_norm<Norm::LInf> : std::true_type {};
+
+template <>
+struct is_norm<Norm::GenuineLInf> : std::true_type {};
 
 template <class T>
 constexpr bool is_norm_v = is_norm<T>::value;
