@@ -490,7 +490,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   const scalar_t one = KokkosKernels::ArithTraits<scalar_t>::one();
   // Host matrix generation: avoid MSVC's RAND_MAX==32767 and rand()%N, which skew
   // off-diagonals and break diagonal dominance vs POSIX rand(). Use a portable RNG.
-  std::mt19937 rng(rand());
+  std::mt19937 rng(static_cast<long unsigned int>(rand()));
   std::vector<size_type> rowmap = {0};
   std::vector<lno_t> entries;
   std::vector<scalar_t> values;
