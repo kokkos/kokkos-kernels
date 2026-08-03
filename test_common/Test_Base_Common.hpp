@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
-#ifndef TEST_COMMON_HPP
-#define TEST_COMMON_HPP
+#ifndef TEST_BASE_COMMON_HPP
+#define TEST_BASE_COMMON_HPP
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -43,4 +43,4 @@ class CommonParent : public ::testing::Test {
   std::unique_ptr<::testing::ScopedTrace> current_trace;
 };
 
-#endif  // TEST_COMMON_HPP
+#endif  // TEST_BASE_COMMON_HPP

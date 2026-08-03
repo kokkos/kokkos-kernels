@@ -7,7 +7,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
 
-#include "Test_Common.hpp"
+#include "Test_Base_Common.hpp"
 
 #if defined(KOKKOSKERNELS_TEST_ETI_ONLY) && !defined(KOKKOSKERNELS_ETI_ONLY)
 #define KOKKOSKERNELS_ETI_ONLY
