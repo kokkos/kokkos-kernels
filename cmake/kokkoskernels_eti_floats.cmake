@@ -16,8 +16,25 @@ kokkoskernels_add_option("INST_HALF" OFF BOOL
 kokkoskernels_add_option("INST_BHALF" OFF BOOL
   "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::bhalf_t.  Disabling this may increase build times. Default: OFF")
 
+set(KOKKOS_IMPL_HALF_TYPE_DEFINED 0)
+if (KOKKOS_ENABLE_SYCL)
+  set(KOKKOS_IMPL_HALF_TYPE_DEFINED 1)
+endif()
+
+if (KOKKOS_ENABLE_HIP)
+  set(KOKKOS_IMPL_HALF_TYPE_DEFINED 1)
+endif()
+
+if(KOKKOS_ENALE_CUDA)
+  set(KOKKOS_IMPL_HALF_TYPE_DEFINED 1)
+endif()
+
 set(REAL_FLOATS              FLOAT DOUBLE)
+if (KOKKOSKERNELS_INST_HALF AND KOKKOS_IMPL_HALF_TYPE_DEFINED)
+set(FLOATS                   HALF FLOAT DOUBLE COMPLEX_FLOAT COMPLEX_DOUBLE)
+else()
 set(FLOATS                   FLOAT DOUBLE COMPLEX_FLOAT COMPLEX_DOUBLE)
+endif()
 set(DOUBLE_CPP_TYPE          "double")
 set(FLOAT_CPP_TYPE           "float")
 set(HALF_CPP_TYPE            "Kokkos::Experimental::half_t")
@@ -53,9 +70,9 @@ if(KOKKOSKERNELS_INST_FLOAT)
 endif()
 
 # TODO: Fix build errors in kokkos when half_t is used in ETI
-#IF (KOKKOSKERNELS_INST_HALF)
-#  LIST(APPEND SCALAR_LIST "Kokkos::Experimental::half_t")
-#ENDIF()
+if (KOKKOSKERNELS_INST_HALF)
+ list(APPEND SCALAR_LIST "Kokkos::Experimental::half_t")
+endif()
 
 if(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
   list(APPEND SCALAR_LIST "complex<double>")
