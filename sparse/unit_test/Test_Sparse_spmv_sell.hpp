@@ -178,7 +178,7 @@ void test_spmv_sell(ordinal_t num_rows, ordinal_t num_cols, ordinal_t row_length
     typename x_vector_type::host_mirror_type x_h = Kokkos::create_mirror_view(x);
     typename y_vector_type::host_mirror_type y_h = Kokkos::create_mirror_view(y);
 
-    std::mt19937 gen{rand()};
+    std::mt19937 gen{static_cast<long unsigned int>(rand())};
     std::uniform_real_distribution<double> values_distribution(-10, 10);
 
     for (int colIdx = 0; colIdx < matA.num_cols; ++colIdx) {

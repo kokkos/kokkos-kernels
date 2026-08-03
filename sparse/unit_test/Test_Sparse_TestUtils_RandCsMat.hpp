@@ -31,7 +31,7 @@ void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
 
   // No need to check data here. Kokkos unit-tests deep_copy.
   auto vals = cm.get_vals();
-  ASSERT_EQ(vals.extent(0), size_t(cm.get_nnz()) + 1) << cm.info;
+  ASSERT_EQ(vals.extent(0), size_t(cm.get_nnz())) << cm.info;
 
   auto row_ids = cm.get_ids();
   ASSERT_EQ(row_ids.extent(0), size_t(cm.get_nnz())) << cm.info;

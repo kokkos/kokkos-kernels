@@ -488,7 +488,6 @@ class RandCsMatrix {
     vals_   = Kokkos::create_mirror_view(vals_d_);
     Kokkos::fill_random(vals_, random, min_val, max_val);  // random scalars
     Kokkos::fence();
-    vals_(nnz_ - 1) = ScalarType(0);
 
     // Copy to device
     Kokkos::deep_copy(vals_d_, vals_);
