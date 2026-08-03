@@ -113,47 +113,44 @@ template <class Scalar1, class Scalar2, class Scalar3>
 
 }  // namespace Impl
 
-#define KK_EXPECT_NEAR(val1, val2, tol) EXPECT_PRED_FORMAT3(::TestUtils::Impl::kk_expect_near_pred_format, val1, val2, tol)
+#define KK_EXPECT_NEAR(val1, val2, tol) \
+  EXPECT_PRED_FORMAT3(::TestUtils::Impl::kk_expect_near_pred_format, val1, val2, tol)
 
 // Checks |val1 - val2| <= |tol|.  Expands to a GTest expression so callers
 // can append a failure message: EXPECT_NEAR_KK(a, b, eps) << "context";
-#define EXPECT_NEAR_KK(val1, val2, tol)                                                    \
-  EXPECT_LE(                                                                                \
-      (double)KokkosKernels::ArithTraits<std::decay_t<decltype(val1)>>::abs((val1) - (val2)), \
-      (double)KokkosKernels::ArithTraits<std::decay_t<decltype(tol)>>::abs(tol))
+#define EXPECT_NEAR_KK(val1, val2, tol)                                                             \
+  EXPECT_LE((double)KokkosKernels::ArithTraits<std::decay_t<decltype(val1)>>::abs((val1) - (val2)), \
+            (double)KokkosKernels::ArithTraits<std::decay_t<decltype(tol)>>::abs(tol))
 
 // Checks |val1 - val2| <= tol * max(|val1|, |val2|).
 // Expands to a GTest expression; supports << for failure messages.
-#define EXPECT_NEAR_KK_REL(val1, val2, tol)                                                \
-  EXPECT_NEAR_KK(val1, val2,                                                               \
-      (tol) * Kokkos::max(                                                                 \
-          KokkosKernels::ArithTraits<std::decay_t<decltype(val1)>>::abs(val1),             \
-          KokkosKernels::ArithTraits<std::decay_t<decltype(val2)>>::abs(val2)))
+#define EXPECT_NEAR_KK_REL(val1, val2, tol)                                                             \
+  EXPECT_NEAR_KK(val1, val2,                                                                            \
+                 (tol)*Kokkos::max(KokkosKernels::ArithTraits<std::decay_t<decltype(val1)>>::abs(val1), \
+                                   KokkosKernels::ArithTraits<std::decay_t<decltype(val2)>>::abs(val2)))
 
 // Checks element-wise |v1(i) - v2(i)| <= |tol| for every index i.
-#define EXPECT_NEAR_KK_1DVIEW(v1, v2, tol)                                                 \
-  do {                                                                                      \
-    const size_t _kk_v1_size = (v1).extent(0);                                             \
-    EXPECT_EQ(_kk_v1_size, (v2).extent(0));                                                \
-    auto _kk_h_v1 = Kokkos::create_mirror_view(v1);                                        \
-    auto _kk_h_v2 = Kokkos::create_mirror_view(v2);                                        \
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v1, _kk_h_v1);        \
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v2, _kk_h_v2);        \
-    for (size_t _kk_i = 0; _kk_i < _kk_v1_size; ++_kk_i)                                 \
-      EXPECT_NEAR_KK(_kk_h_v1(_kk_i), _kk_h_v2(_kk_i), tol);                             \
+#define EXPECT_NEAR_KK_1DVIEW(v1, v2, tol)                                                                      \
+  do {                                                                                                          \
+    const size_t _kk_v1_size = (v1).extent(0);                                                                  \
+    EXPECT_EQ(_kk_v1_size, (v2).extent(0));                                                                     \
+    auto _kk_h_v1 = Kokkos::create_mirror_view(v1);                                                             \
+    auto _kk_h_v2 = Kokkos::create_mirror_view(v2);                                                             \
+    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v1, _kk_h_v1);                              \
+    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v2, _kk_h_v2);                              \
+    for (size_t _kk_i = 0; _kk_i < _kk_v1_size; ++_kk_i) EXPECT_NEAR_KK(_kk_h_v1(_kk_i), _kk_h_v2(_kk_i), tol); \
   } while (false)
 
 // Checks element-wise relative tolerance for every index i.
-#define EXPECT_NEAR_KK_REL_1DVIEW(v1, v2, tol)                                             \
-  do {                                                                                      \
-    const size_t _kk_v1_size = (v1).extent(0);                                             \
-    EXPECT_EQ(_kk_v1_size, (v2).extent(0));                                                \
-    auto _kk_h_v1 = Kokkos::create_mirror_view(v1);                                        \
-    auto _kk_h_v2 = Kokkos::create_mirror_view(v2);                                        \
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v1, _kk_h_v1);        \
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v2, _kk_h_v2);        \
-    for (size_t _kk_i = 0; _kk_i < _kk_v1_size; ++_kk_i)                                 \
-      EXPECT_NEAR_KK_REL(_kk_h_v1(_kk_i), _kk_h_v2(_kk_i), tol);                         \
+#define EXPECT_NEAR_KK_REL_1DVIEW(v1, v2, tol)                                                                      \
+  do {                                                                                                              \
+    const size_t _kk_v1_size = (v1).extent(0);                                                                      \
+    EXPECT_EQ(_kk_v1_size, (v2).extent(0));                                                                         \
+    auto _kk_h_v1 = Kokkos::create_mirror_view(v1);                                                                 \
+    auto _kk_h_v2 = Kokkos::create_mirror_view(v2);                                                                 \
+    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v1, _kk_h_v1);                                  \
+    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v2, _kk_h_v2);                                  \
+    for (size_t _kk_i = 0; _kk_i < _kk_v1_size; ++_kk_i) EXPECT_NEAR_KK_REL(_kk_h_v1(_kk_i), _kk_h_v2(_kk_i), tol); \
   } while (false)
 
 // Utility class for testing kernels with rank-1 and rank-2 views that may be
@@ -232,7 +229,6 @@ struct view_stride_adapter {
   HViewBase h_base;
 };
 
-
 /// This function returns a descriptive user defined failure string for
 /// insertion into gtest macros such as FAIL() and EXPECT_LE(). \param file The
 /// filename where the failure originated \param func The function where the
@@ -265,8 +261,7 @@ using KokkosKernels::Impl::getRandomBounds;
 template <typename vec_t>
 vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
   typedef typename vec_t::value_type scalar_t;
-  EXPECT_EQ(Impl::randSeedState(), getTestSeed())
-      << "Call Test::initRandSeed() before using create_random_x_vector";
+  EXPECT_EQ(Impl::randSeedState(), getTestSeed()) << "Call Test::initRandSeed() before using create_random_x_vector";
   auto h_x = Kokkos::create_mirror_view(kok_x);
   if constexpr (vec_t::rank == 2) {
     for (size_t j = 0; j < h_x.extent(1); ++j) {
@@ -516,8 +511,7 @@ class RandCsMatrix {
 /// matrix.
 template <typename Rowptrs, typename Entries, typename Values>
 void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values, const size_t block_size = 1) {
-  EXPECT_EQ(Impl::randSeedState(), getTestSeed())
-      << "Call Test::initRandSeed() before using shuffleMatrixEntries";
+  EXPECT_EQ(Impl::randSeedState(), getTestSeed()) << "Call Test::initRandSeed() before using shuffleMatrixEntries";
   using size_type          = typename Rowptrs::non_const_value_type;
   using ordinal_type       = typename Entries::value_type;
   auto rowptrsHost         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowptrs);

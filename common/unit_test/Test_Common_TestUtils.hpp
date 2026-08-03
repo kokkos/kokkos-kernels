@@ -60,21 +60,18 @@ void test_rand_coo_mat_determinism() {
 
   uint64_t row_hash1 = hashView(mat1.get_row());
   uint64_t row_hash2 = hashView(mat2.get_row());
-  EXPECT_EQ(row_hash1, row_hash2)
-      << "RandCooMat rows differ between two constructions with the same seed.\n"
-      << "Seed: " << TestUtils::getTestSeed();
+  EXPECT_EQ(row_hash1, row_hash2) << "RandCooMat rows differ between two constructions with the same seed.\n"
+                                  << "Seed: " << TestUtils::getTestSeed();
 
   uint64_t col_hash1 = hashView(mat1.get_col());
   uint64_t col_hash2 = hashView(mat2.get_col());
-  EXPECT_EQ(col_hash1, col_hash2)
-      << "RandCooMat cols differ between two constructions with the same seed.\n"
-      << "Seed: " << TestUtils::getTestSeed();
+  EXPECT_EQ(col_hash1, col_hash2) << "RandCooMat cols differ between two constructions with the same seed.\n"
+                                  << "Seed: " << TestUtils::getTestSeed();
 
   uint64_t data_hash1 = hashView(mat1.get_data());
   uint64_t data_hash2 = hashView(mat2.get_data());
-  EXPECT_EQ(data_hash1, data_hash2)
-      << "RandCooMat data differ between two constructions with the same seed.\n"
-      << "Seed: " << TestUtils::getTestSeed();
+  EXPECT_EQ(data_hash1, data_hash2) << "RandCooMat data differ between two constructions with the same seed.\n"
+                                    << "Seed: " << TestUtils::getTestSeed();
 }
 
 // ============================================================================
@@ -110,15 +107,13 @@ void test_rand_cs_matrix_determinism() {
   if (mat1.get_nnz() == mat2.get_nnz()) {
     uint64_t ids_hash1 = hashView(mat1.get_ids());
     uint64_t ids_hash2 = hashView(mat2.get_ids());
-    EXPECT_EQ(ids_hash1, ids_hash2)
-        << "RandCsMatrix ids differ between two constructions with the same seed.\n"
-        << "Seed: " << TestUtils::getTestSeed();
+    EXPECT_EQ(ids_hash1, ids_hash2) << "RandCsMatrix ids differ between two constructions with the same seed.\n"
+                                    << "Seed: " << TestUtils::getTestSeed();
 
     uint64_t vals_hash1 = hashView(mat1.get_vals());
     uint64_t vals_hash2 = hashView(mat2.get_vals());
-    EXPECT_EQ(vals_hash1, vals_hash2)
-        << "RandCsMatrix values differ between two constructions with the same seed.\n"
-        << "Seed: " << TestUtils::getTestSeed();
+    EXPECT_EQ(vals_hash1, vals_hash2) << "RandCsMatrix values differ between two constructions with the same seed.\n"
+                                      << "Seed: " << TestUtils::getTestSeed();
   }
 }
 
@@ -155,24 +150,19 @@ void test_create_random_x_vector_determinism() {
   TestUtils::initRandSeed();
   TestUtils::create_random_x_vector(X2, 10.0);
 
-  auto h1    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, X1);
-  auto h2    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, X2);
+  auto h1 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, X1);
+  auto h2 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, X2);
   Kokkos::fence();
-  EXPECT_EQ(fnv1a(h1.data(), h1.extent(0) * h1.extent(1)),
-            fnv1a(h2.data(), h2.extent(0) * h2.extent(1)))
+  EXPECT_EQ(fnv1a(h1.data(), h1.extent(0) * h1.extent(1)), fnv1a(h2.data(), h2.extent(0) * h2.extent(1)))
       << "create_random_x_vector (rank-2) differs between two calls with the same seed.\n"
       << "Seed: " << TestUtils::getTestSeed();
 }
 
 }  // namespace
 
-TEST_F(TestCategory, common_rand_coo_mat_determinism) {
-  test_rand_coo_mat_determinism<TestDevice>();
-}
+TEST_F(TestCategory, common_rand_coo_mat_determinism) { test_rand_coo_mat_determinism<TestDevice>(); }
 
-TEST_F(TestCategory, common_rand_cs_matrix_determinism) {
-  test_rand_cs_matrix_determinism<TestDevice>();
-}
+TEST_F(TestCategory, common_rand_cs_matrix_determinism) { test_rand_cs_matrix_determinism<TestDevice>(); }
 
 TEST_F(TestCategory, common_create_random_x_vector_determinism) {
   test_create_random_x_vector_determinism<TestDevice>();

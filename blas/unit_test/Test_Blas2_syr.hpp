@@ -111,11 +111,13 @@ class SyrTester {
   T shrinkAngleToZeroTwoPiRange(const T input);
 
   template <class TX>
-  void callKkSyrAndCompareAgainstExpected(const ScalarA& alpha, TX& x, TestUtils::view_stride_adapter<_ViewTypeA, false>& A,
+  void callKkSyrAndCompareAgainstExpected(const ScalarA& alpha, TX& x,
+                                          TestUtils::view_stride_adapter<_ViewTypeA, false>& A,
                                           const _ViewTypeExpected& h_expected, const std::string& situation);
 
   template <class TX>
-  void callKkGerAndCompareKkSyrAgainstIt(const ScalarA& alpha, TX& x, TestUtils::view_stride_adapter<_ViewTypeA, false>& org_A,
+  void callKkGerAndCompareKkSyrAgainstIt(const ScalarA& alpha, TX& x,
+                                         TestUtils::view_stride_adapter<_ViewTypeA, false>& org_A,
                                          const _HostViewTypeA& h_A_syr, const std::string& situation);
 
   const bool _A_is_complex;
@@ -304,8 +306,8 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(const int N, 
 
 template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
 void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::populateVariables(
-    ScalarA& alpha, TestUtils::view_stride_adapter<_ViewTypeX, false>& x, TestUtils::view_stride_adapter<_ViewTypeA, false>& A,
-    _ViewTypeExpected& h_expected, bool& expectedResultIsKnown) {
+    ScalarA& alpha, TestUtils::view_stride_adapter<_ViewTypeX, false>& x,
+    TestUtils::view_stride_adapter<_ViewTypeA, false>& A, _ViewTypeExpected& h_expected, bool& expectedResultIsKnown) {
   expectedResultIsKnown = false;
 
   if (_useAnalyticalResults) {
@@ -1197,8 +1199,8 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::compareKkSyrAgainstRefe
 template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
 template <class TX>
 void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::callKkSyrAndCompareAgainstExpected(
-    const ScalarA& alpha, TX& x, TestUtils::view_stride_adapter<_ViewTypeA, false>& A, const _ViewTypeExpected& h_expected,
-    const std::string& situation) {
+    const ScalarA& alpha, TX& x, TestUtils::view_stride_adapter<_ViewTypeA, false>& A,
+    const _ViewTypeExpected& h_expected, const std::string& situation) {
 #ifndef NDEBUG
   std::cout << "In Test_Blas2_syr, '" << situation << "', alpha = " << alpha << std::endl;
   Kokkos::printf(
@@ -1240,8 +1242,8 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::callKkSyrAndCompar
 template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
 template <class TX>
 void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::callKkGerAndCompareKkSyrAgainstIt(
-    const ScalarA& alpha, TX& x, TestUtils::view_stride_adapter<_ViewTypeA, false>& org_A, const _HostViewTypeA& h_A_syr,
-    const std::string& situation) {
+    const ScalarA& alpha, TX& x, TestUtils::view_stride_adapter<_ViewTypeA, false>& org_A,
+    const _HostViewTypeA& h_A_syr, const std::string& situation) {
   TestUtils::view_stride_adapter<_ViewTypeA, false> A_ger("A_ger", _M, _N);
   Kokkos::deep_copy(A_ger.d_base, org_A.d_base);
 

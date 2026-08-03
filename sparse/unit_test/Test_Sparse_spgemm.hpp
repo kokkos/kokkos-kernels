@@ -279,15 +279,13 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     int res     = 0;
     try {
       switch (callMode) {
-      case Test::spgemm_reuse_view:
-        res = Test::run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
-        break;
-      case Test::spgemm_reuse_matrix:
-        res = Test::run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
-        break;
-      case Test::spgemm_noreuse:
-        Test::run_spgemm_noreuse(spgemm_algorithm, A, B, output_mat);
-        break;
+        case Test::spgemm_reuse_view:
+          res = Test::run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
+          break;
+        case Test::spgemm_reuse_matrix:
+          res = Test::run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
+          break;
+        case Test::spgemm_noreuse: Test::run_spgemm_noreuse(spgemm_algorithm, A, B, output_mat); break;
       }
     } catch (const char *message) {
       EXPECT_TRUE(is_expected_to_fail) << algo << ": " << message;

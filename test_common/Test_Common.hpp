@@ -24,8 +24,7 @@ class CommonParent : public ::testing::Test {
   }
 
   void SetUp() override {
-    const ::testing::TestInfo* const test_info =
-      ::testing::UnitTest::GetInstance()->current_test_info();
+    const ::testing::TestInfo* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
 
     std::string test_name = "UnknownTest";
     if (test_info != nullptr) {
@@ -43,9 +42,7 @@ class CommonParent : public ::testing::Test {
     current_trace = std::make_unique<::testing::ScopedTrace>("", 0, msg);
   }
 
-  void TearDown() override {
-    current_trace.reset();
-  }
+  void TearDown() override { current_trace.reset(); }
 
   std::unique_ptr<::testing::ScopedTrace> current_trace;
 };

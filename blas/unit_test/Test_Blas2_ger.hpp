@@ -64,8 +64,9 @@ class GerTester {
   using _AuxType = typename _KAT_A::mag_type;
 
   void populateVariables(ScalarA& alpha, TestUtils::view_stride_adapter<_ViewTypeX, false>& x,
-                         TestUtils::view_stride_adapter<_ViewTypeY, false>& y, TestUtils::view_stride_adapter<_ViewTypeA, false>& A,
-                         _ViewTypeExpected& h_expected, bool& expectedResultIsKnown);
+                         TestUtils::view_stride_adapter<_ViewTypeY, false>& y,
+                         TestUtils::view_stride_adapter<_ViewTypeA, false>& A, _ViewTypeExpected& h_expected,
+                         bool& expectedResultIsKnown);
 
   template <class T>
   typename std::enable_if<
@@ -117,7 +118,8 @@ class GerTester {
   T shrinkAngleToZeroTwoPiRange(const T input);
 
   template <class TX, class TY>
-  void callKkGerAndCompareAgainstExpected(const ScalarA& alpha, TX& x, TY& y, TestUtils::view_stride_adapter<_ViewTypeA, false>& A,
+  void callKkGerAndCompareAgainstExpected(const ScalarA& alpha, TX& x, TY& y,
+                                          TestUtils::view_stride_adapter<_ViewTypeA, false>& A,
                                           const _ViewTypeExpected& h_expected, const std::string& situation);
 
   const bool _A_is_complex;
@@ -307,8 +309,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>:
 
 template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY, class ScalarA, class tLayoutA, class Device>
 void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::populateVariables(
-    ScalarA& alpha, TestUtils::view_stride_adapter<_ViewTypeX, false>& x, TestUtils::view_stride_adapter<_ViewTypeY, false>& y,
-    TestUtils::view_stride_adapter<_ViewTypeA, false>& A, _ViewTypeExpected& h_expected, bool& expectedResultIsKnown) {
+    ScalarA& alpha, TestUtils::view_stride_adapter<_ViewTypeX, false>& x,
+    TestUtils::view_stride_adapter<_ViewTypeY, false>& y, TestUtils::view_stride_adapter<_ViewTypeA, false>& A,
+    _ViewTypeExpected& h_expected, bool& expectedResultIsKnown) {
   expectedResultIsKnown = false;
 
   if (_useAnalyticalResults) {
@@ -1112,8 +1115,8 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::comp
 template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY, class ScalarA, class tLayoutA, class Device>
 template <class TX, class TY>
 void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::callKkGerAndCompareAgainstExpected(
-    const ScalarA& alpha, TX& x, TY& y, TestUtils::view_stride_adapter<_ViewTypeA, false>& A, const _ViewTypeExpected& h_expected,
-    const std::string& situation) {
+    const ScalarA& alpha, TX& x, TY& y, TestUtils::view_stride_adapter<_ViewTypeA, false>& A,
+    const _ViewTypeExpected& h_expected, const std::string& situation) {
 #ifndef NDEBUG
   Kokkos::printf(
       "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): "

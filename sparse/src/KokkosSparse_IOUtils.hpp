@@ -27,7 +27,7 @@ void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, SizeType &nn
   rowPtr = new SizeType[nrows + 1];
 
   OrdinalType elements_per_row = nrows ? nnz / nrows : 0;
-  rowPtr[0] = 0;
+  rowPtr[0]                    = 0;
   for (int row = 0; row < nrows; row++) {
     int varianz       = (1.0 * rand() / RAND_MAX - 0.5) * row_size_variance;
     int numRowEntries = elements_per_row + varianz;
