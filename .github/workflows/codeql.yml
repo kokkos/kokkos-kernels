@@ -38,13 +38,13 @@ jobs:
         egress-policy: audit
 
     - name: checkout_kokkos_kernels
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         path: kokkos-kernels
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+      uses: github/codeql-action/init@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
       with:
         languages: c-cpp
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -52,11 +52,11 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
 
     - name: checkout_kokkos
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         repository: 'kokkos/kokkos'
         path: 'kokkos'
-        ref: '5.1.0'
+        ref: '5.2.0'
 
     - name: configure_kokkos
       run: |
@@ -100,6 +100,6 @@ jobs:
       run: make -j2
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+      uses: github/codeql-action/analyze@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
       with:
         category: "/language:c-cpp"
