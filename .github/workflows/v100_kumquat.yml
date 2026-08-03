@@ -79,10 +79,11 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
             -DKokkos_ROOT=kokkos/install \
-            -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+            -DKokkosKernels_ENABLE_COMPILER_WARNINGS=ON \
+            -DKokkosKernels_ENABLE_WARNINGS_AS_ERRORS=ON \
             -DKokkosKernels_ENABLE_TESTS=ON \
-            -DKokkosKernels_ENABLE_PERFTESTS=ON \
             -DKokkosKernels_ENABLE_EXAMPLES=ON \
+            -DKokkosKernels_ENABLE_PERFTESTS=ON \
             -DKokkosKernels_ENABLE_TPL_CUSOLVER=ON \
             -DKokkosKernels_ENABLE_TPL_CUSPARSE=ON \
             -DKokkosKernels_ENABLE_TPL_CUBLAS=ON \
