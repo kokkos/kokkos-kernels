@@ -6,8 +6,8 @@ updates:
       interval: weekly
     group:
       codeql-action:
-        pattern:
-	  - "github/codeql-action/*"
+        patterns:
+          - "github/codeql-action/*"
 
   - package-ecosystem: pip
     directory: /docs
