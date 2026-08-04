@@ -135,33 +135,6 @@ struct UpdatePermAndMeshFunctor {
   }
 };
 
-template <typename perm_view_type, typename coors_view_type>
-struct UpdateMeshFunctor {
-  using ordinal_t = typename perm_view_type::value_type;
-  perm_view_type reverse_perm;
-  coors_view_type coordinates_orig;
-  coors_view_type coordinates;
-  ordinal_t dim_notchanged;
-  ordinal_t ndim;
-
-  UpdateMeshFunctor(const perm_view_type &reverse_perm_, const coors_view_type &coordinates_orig_,
-                    coors_view_type &coordinates_, const ordinal_t &dim_notchanged_)
-      : reverse_perm(reverse_perm_),
-        coordinates_orig(coordinates_orig_),
-        coordinates(coordinates_),
-        dim_notchanged(dim_notchanged_) {
-    ndim = static_cast<ordinal_t>(coordinates_orig.extent(1));
-  }
-  KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i) const {
-    ordinal_t gbl_orig_idx = reverse_perm(i);
-    for (ordinal_t j = 0; j < ndim; j++) {
-      if (j != dim_notchanged) {
-        coordinates(i, j) = coordinates_orig(gbl_orig_idx, j);
-      }
-    }
-  }
-};
-
 template <typename perm_view_type>
 struct UpdatePermFunctor {
   using ordinal_t = typename perm_view_type::value_type;
