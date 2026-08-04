@@ -46,7 +46,7 @@ struct ColumnMinMaxFunctor {
   using layout_type = typename view_type::array_layout;
   using device_type = typename view_type::device_type;
   using internal_view_type =
-      Kokkos::View<const scalar_type**, layout_type, device_type, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+      Kokkos::View<const scalar_type **, layout_type, device_type, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
   using value_type = MinMaxPair<scalar_type>[];
   internal_view_type A;
   ordinal_t value_count;
@@ -234,7 +234,7 @@ struct ShuffleCoordsAndGenerateReversePermFunctor {
                                              const perm_view_type &src_reverse_perm_,
                                              const perm_view_type &dest_indices_, const dim_view_type &partitioned_dim_,
                                              const minmax_view_type &minmax_, coors_view_type &dst_coordinates_,
-								             perm_view_type &dst_reverse_perm_, const ordinal_t &left_size_)
+                                             perm_view_type &dst_reverse_perm_, const ordinal_t &left_size_)
       : src_coordinates(src_coordinates_),
         src_reverse_perm(src_reverse_perm_),
         dest_indices(dest_indices_),
@@ -364,7 +364,7 @@ inline void bisect_parallel_scan(const coors_view_type &coors, const dim_view_ty
       // Update min_val or max_val to calculate a new mid_point
       // Idea: shift mid_point to the heavier partition
       Kokkos::parallel_for(
-          Kokkos::RangePolicy<execution_space>(0, 1), KOKKOS_LAMBDA (const ordinal_type& i) {
+          Kokkos::RangePolicy<execution_space>(0, 1), KOKKOS_LAMBDA(const ordinal_type &i) {
             if (p1_weight > p2_weight)
               minmax_bisect(0) = (minmax_bisect(1) + minmax_bisect(0)) / 2.0;
             else
@@ -529,7 +529,7 @@ std::vector<typename perm_view_type::value_type> rcb_parallel(coors_view_type &c
   // Allocate working buffers
   std::vector<coors_view_type> coordinates_buf(2);
   std::vector<perm_view_type> reverse_perm_buf(2);
-  coordinates_buf[0]  = coordinates; 
+  coordinates_buf[0]  = coordinates;
   coordinates_buf[1]  = coors_view_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coordinates_buf"), N, ndim);
   reverse_perm_buf[0] = reverse_perm;
   reverse_perm_buf[1] = perm_view_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_buf"), N);
@@ -550,7 +550,7 @@ std::vector<typename perm_view_type::value_type> rcb_parallel(coors_view_type &c
   ordinal_type n_partitions =
       1;  // number of partitions at the previous level (initial value is 1, i.e., starting with the entire mesh points)
   std::vector<std::vector<ordinal_type>> partition_sizes(
-      n_levels);   // contain the numbers of basis functions (or elements) per partition in levels
+      n_levels);                    // contain the numbers of basis functions (or elements) per partition in levels
   partition_sizes[0].push_back(N);  // starting with the entire mesh points
 
   ordinal_type src = 0;
@@ -588,19 +588,19 @@ std::vector<typename perm_view_type::value_type> rcb_parallel(coors_view_type &c
       find_min_max(sub_coordinates_src, minmax);
 
       Kokkos::parallel_for(
-          Kokkos::RangePolicy<execution_space>(0, 1), KOKKOS_LAMBDA (const ordinal_type &i) {
+          Kokkos::RangePolicy<execution_space>(0, 1), KOKKOS_LAMBDA(const ordinal_type &i) {
             scalar_t max_span       = minmax(0).max_val - minmax(0).min_val;
             ordinal_type dim_select = 0;
             for (ordinal_type j = 1; j < ndim; j++) {
               scalar_t span = minmax(j).max_val - minmax(j).min_val;
               if (max_span < span) {
-                max_span = span;
+                max_span   = span;
                 dim_select = j;
               }
             }
             partitioned_dim() = dim_select;
-            minmax_bisect(0) = minmax(dim_select).min_val;
-            minmax_bisect(1) = minmax(dim_select).max_val;
+            minmax_bisect(0)  = minmax(dim_select).min_val;
+            minmax_bisect(1)  = minmax(dim_select).max_val;
           });
 
       // Bisect partition on the most elongated dimension
@@ -642,7 +642,7 @@ std::vector<typename perm_view_type::value_type> rcb_parallel(coors_view_type &c
 template <typename coors_view_type, typename perm_view_type>
 std::vector<typename perm_view_type::value_type> rcb(coors_view_type &coordinates, perm_view_type &perm,
                                                      perm_view_type &reverse_perm, const int &n_levels,
-                                                     const int &max_bisection_steps       = 11, 
+                                                     const int &max_bisection_steps       = 11,
                                                      const bool &bisect_use_parallel_scan = true) {
   if (bisect_use_parallel_scan) {
     printf("rcb with parallel_scan bisect\n");
