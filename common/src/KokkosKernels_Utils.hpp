@@ -1291,14 +1291,12 @@ KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr *p) {
 
 // Deterministic fill_random
 template <class ViewT>
-void det_fill_random(ViewT view, uint64_t seed,
-                     typename ViewT::non_const_value_type min,
-                     typename ViewT::non_const_value_type max)
-{
+void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_type min,
+                     typename ViewT::non_const_value_type max) {
   static_assert(ViewT::rank == 1, "det_fill_random: only rank-1 views supported");
 
   using pool_t  = Kokkos::Random_XorShift64_Pool<Kokkos::Serial>;
-  using sview_t = Kokkos::View<typename ViewT::non_const_value_type*, Kokkos::Serial>;
+  using sview_t = Kokkos::View<typename ViewT::non_const_value_type *, Kokkos::Serial>;
 
   sview_t h_view("fill_random_tmp", view.extent(0));
   pool_t pool(seed);
@@ -1307,9 +1305,7 @@ void det_fill_random(ViewT view, uint64_t seed,
 }
 
 template <class ViewT>
-void det_fill_random(ViewT view, uint64_t seed,
-                     typename ViewT::non_const_value_type max)
-{
+void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_type max) {
   det_fill_random(view, seed, 0, max);
 }
 

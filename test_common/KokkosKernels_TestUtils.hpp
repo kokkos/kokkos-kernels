@@ -359,8 +359,8 @@ class RandCooMat {
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
   RandCooMat(int64_t m, int64_t n, int64_t n_tuples, ScalarType min_val, ScalarType max_val) {
-    info = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
-                       ", " + typeid(ExeSpaceType).name() + std::to_string(n) + "\n");
+    info   = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
+                         ", " + typeid(ExeSpaceType).name() + std::to_string(n) + "\n");
     row_d_ = RowViewTypeD("RandCooMat.RowViewType", n_tuples);
     KokkosKernels::Impl::det_fill_random(row_d_, rand(), -m, m);
 
