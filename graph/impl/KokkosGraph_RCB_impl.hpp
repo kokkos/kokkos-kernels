@@ -364,7 +364,7 @@ inline void bisect_parallel_scan(const coors_view_type &coors, const dim_view_ty
       // Update min_val or max_val to calculate a new mid_point
       // Idea: shift mid_point to the heavier partition
       Kokkos::parallel_for(
-          Kokkos::RangePolicy<execution_space>(0, 1), KOKKOS_LAMBDA(const ordinal_type &i) {
+          Kokkos::RangePolicy<execution_space>(0, 1), KOKKOS_LAMBDA(const ordinal_type /* unused */) {
             if (p1_weight > p2_weight)
               minmax_bisect(0) = (minmax_bisect(1) + minmax_bisect(0)) / 2.0;
             else
@@ -588,7 +588,7 @@ std::vector<typename perm_view_type::value_type> rcb_parallel(coors_view_type &c
       find_min_max(sub_coordinates_src, minmax);
 
       Kokkos::parallel_for(
-          Kokkos::RangePolicy<execution_space>(0, 1), KOKKOS_LAMBDA(const ordinal_type &i) {
+          Kokkos::RangePolicy<execution_space>(0, 1), KOKKOS_LAMBDA(const ordinal_type /* unused */) {
             scalar_t max_span       = minmax(0).max_val - minmax(0).min_val;
             ordinal_type dim_select = 0;
             for (ordinal_type j = 1; j < ndim; j++) {
