@@ -4,6 +4,7 @@
 #define KOKKOSSPARSE_IOUTILS_HPP
 
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosKernels_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_SellMatrix.hpp"
 
@@ -69,8 +70,7 @@ void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, SizeType &nn
   Kokkos::View<ScalarType *, Kokkos::HostSpace> valuesView(values, nnz * static_cast<size_t>(block_elem_count));
   ScalarType randStart, randEnd;
   KokkosKernels::Impl::getRandomBounds(50.0, randStart, randEnd);
-  Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> pool(rand());
-  Kokkos::fill_random(valuesView, pool, randStart, randEnd);
+  KokkosKernels::Impl::det_fill_random(valuesView, rand(), randStart, randEnd);
 }
 
 template <typename ScalarType, typename OrdinalType, typename SizeType>

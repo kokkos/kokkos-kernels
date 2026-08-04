@@ -48,11 +48,10 @@ void randomize_matrix_values(const Values &v) {
   using ScalarType = typename Values::value_type;
   ScalarType randStart, randEnd;
   KokkosKernels::Impl::getRandomBounds(50.0, randStart, randEnd);
-  Kokkos::Random_XorShift64_Pool<typename Values::execution_space> pool(13718);
   // Instead of sampling from [-50, 50] or [-50-50i, 50+50i],
   // sample from [1, 50] or [1+i, 50+50i]. That way relative
   // error between values can't become large if values happen to sum close to 0.
-  Kokkos::fill_random(v, pool, randEnd / 50.0, randEnd);
+  KokkosKernels::Impl::det_fill_random(v, rand(), randEnd / 50.0, randEnd);
 }
 
 template <typename crsMat_t>

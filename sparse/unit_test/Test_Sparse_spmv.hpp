@@ -368,12 +368,10 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz, l
   y_vector_type input_y("y", nr), input_y_nans("y_nans", nr);
   y_vector_type input_yt("y", nc), input_yt_nans("y_nans", nc);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(rand());
-
-  Kokkos::fill_random(input_x, rand_pool, randomUpperBound<scalar_t>(max_x));
-  Kokkos::fill_random(input_y, rand_pool, randomUpperBound<scalar_t>(max_y));
-  Kokkos::fill_random(input_xt, rand_pool, randomUpperBound<scalar_t>(max_x));
-  Kokkos::fill_random(input_yt, rand_pool, randomUpperBound<scalar_t>(max_y));
+  KokkosKernels::Impl::det_fill_random(input_x, rand(), randomUpperBound<scalar_t>(max_x));
+  KokkosKernels::Impl::det_fill_random(input_y, rand(), randomUpperBound<scalar_t>(max_y));
+  KokkosKernels::Impl::det_fill_random(input_xt, rand(), randomUpperBound<scalar_t>(max_x));
+  KokkosKernels::Impl::det_fill_random(input_yt, rand(), randomUpperBound<scalar_t>(max_y));
 
   // sprinkle in some nans
   Kokkos::deep_copy(input_y_nans, input_y);
@@ -394,7 +392,7 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz, l
   // We also need to bound the values
   // in the matrix to bound the cancellations
   // coming from arithmetic operations.
-  Kokkos::fill_random(input_mat.values, rand_pool, randomUpperBound<scalar_t>(max_val));
+  KokkosKernels::Impl::det_fill_random(input_mat.values, rand(), randomUpperBound<scalar_t>(max_val));
 
   std::vector<const char *> nonTransModes = {"N"};
   std::vector<const char *> transModes    = {"T"};
@@ -469,11 +467,10 @@ void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_
   ViewTypeY b_yt("B", numCols, numMV);
   ViewTypeY b_yt_copy("B", numCols, numMV);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(rand());
-  Kokkos::fill_random(b_x, rand_pool, randomUpperBound<scalar_t>(max_x));
-  Kokkos::fill_random(b_y, rand_pool, randomUpperBound<scalar_t>(max_y));
-  Kokkos::fill_random(b_xt, rand_pool, randomUpperBound<scalar_t>(max_x));
-  Kokkos::fill_random(b_yt, rand_pool, randomUpperBound<scalar_t>(max_y));
+  KokkosKernels::Impl::det_fill_random(b_x, rand(), randomUpperBound<scalar_t>(max_x));
+  KokkosKernels::Impl::det_fill_random(b_y, rand(), randomUpperBound<scalar_t>(max_y));
+  KokkosKernels::Impl::det_fill_random(b_xt, rand(), randomUpperBound<scalar_t>(max_x));
+  KokkosKernels::Impl::det_fill_random(b_yt, rand(), randomUpperBound<scalar_t>(max_y));
 
   crsMat_t input_mat =
       KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
@@ -483,7 +480,7 @@ void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_
   // We also need to bound the values
   // in the matrix to bound the cancellations
   // coming from arithmetic operations.
-  Kokkos::fill_random(input_mat.values, rand_pool, randomUpperBound<scalar_t>(max_val));
+  KokkosKernels::Impl::det_fill_random(input_mat.values, rand(), randomUpperBound<scalar_t>(max_val));
 
   Kokkos::deep_copy(b_y_copy, b_y);
   Kokkos::deep_copy(b_yt_copy, b_yt);
@@ -540,7 +537,6 @@ void test_spmv_mv_heavy(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandw
 
   crsMat_t input_mat =
       KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(rand());
 
   const lno_t max_nnz_per_row = numRows ? (nnz / numRows + row_size_variance) : 0;
 
@@ -553,11 +549,11 @@ void test_spmv_mv_heavy(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandw
     ViewTypeY b_yt("B", numCols, nv);
     ViewTypeY b_yt_copy("B", numCols, nv);
 
-    Kokkos::fill_random(b_x, rand_pool, scalar_t(10));
-    Kokkos::fill_random(b_y, rand_pool, scalar_t(10));
-    Kokkos::fill_random(b_xt, rand_pool, scalar_t(10));
-    Kokkos::fill_random(b_yt, rand_pool, scalar_t(10));
-    Kokkos::fill_random(input_mat.values, rand_pool, scalar_t(10));
+    KokkosKernels::Impl::det_fill_random(b_x, rand(), scalar_t(10));
+    KokkosKernels::Impl::det_fill_random(b_y, rand(), scalar_t(10));
+    KokkosKernels::Impl::det_fill_random(b_xt, rand(), scalar_t(10));
+    KokkosKernels::Impl::det_fill_random(b_yt, rand(), scalar_t(10));
+    KokkosKernels::Impl::det_fill_random(input_mat.values, rand(), scalar_t(10));
 
     Kokkos::deep_copy(b_y_copy, b_y);
     Kokkos::deep_copy(b_yt_copy, b_yt);
@@ -606,11 +602,9 @@ void test_spmv_padded_sizealigned(lno_t numRows, lno_t numCols, size_type nnz, l
   constexpr mag_t max_y   = static_cast<mag_t>(10);
   constexpr mag_t max_val = static_cast<mag_t>(10);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(rand());
-
   crsMat_t input_mat =
       KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
-  Kokkos::fill_random(input_mat.values, rand_pool, scalar_t(10));
+  KokkosKernels::Impl::det_fill_random(input_mat.values, rand(), scalar_t(10));
 
   const lno_t max_nnz_per_row = numRows ? (nnz / numRows + row_size_variance) : 0;
 
@@ -635,10 +629,10 @@ void test_spmv_padded_sizealigned(lno_t numRows, lno_t numCols, size_type nnz, l
       ViewTypeY yt      = Kokkos::subview(b_yt, colRange, Kokkos::ALL());
       ViewTypeY yt_copy = Kokkos::subview(b_yt_copy, colRange, Kokkos::ALL());
 
-      Kokkos::fill_random(x, rand_pool, scalar_t(10));
-      Kokkos::fill_random(y, rand_pool, scalar_t(10));
-      Kokkos::fill_random(xt, rand_pool, scalar_t(10));
-      Kokkos::fill_random(yt, rand_pool, scalar_t(10));
+      KokkosKernels::Impl::det_fill_random(x, rand(), scalar_t(10));
+      KokkosKernels::Impl::det_fill_random(y, rand(), scalar_t(10));
+      KokkosKernels::Impl::det_fill_random(xt, rand(), scalar_t(10));
+      KokkosKernels::Impl::det_fill_random(yt, rand(), scalar_t(10));
 
       Kokkos::deep_copy(y_copy, y);
       Kokkos::deep_copy(yt_copy, yt);
@@ -716,10 +710,8 @@ void test_spmv_struct_1D(lno_t nx, lno_t leftBC, lno_t rightBC) {
   x_vector_type input_x("x", nc);
   y_vector_type output_y("y", nr);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(rand());
-
-  Kokkos::fill_random(input_x, rand_pool, max_x);
-  Kokkos::fill_random(output_y, rand_pool, max_y);
+  KokkosKernels::Impl::det_fill_random(input_x, rand(), max_x);
+  KokkosKernels::Impl::det_fill_random(output_y, rand(), max_y);
 
   const mag_t max_error = max_y + 3 * max_val * max_x;
 
@@ -767,10 +759,8 @@ void test_spmv_struct_2D(lno_t nx, lno_t ny, lno_t horizontalBC, lno_t verticalB
   x_vector_type input_x("x", nc);
   y_vector_type output_y("y", nr);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(rand());
-
-  Kokkos::fill_random(input_x, rand_pool, max_x);
-  Kokkos::fill_random(output_y, rand_pool, max_y);
+  KokkosKernels::Impl::det_fill_random(input_x, rand(), max_x);
+  KokkosKernels::Impl::det_fill_random(output_y, rand(), max_y);
 
   {
     constexpr mag_t max_val   = static_cast<mag_t>(4);
@@ -836,10 +826,8 @@ void test_spmv_struct_3D(lno_t nx, lno_t ny, lno_t nz, lno_t horizontal1BC, lno_
   x_vector_type input_x("x", nc);
   y_vector_type output_y("y", nr);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(rand());
-
-  Kokkos::fill_random(input_x, rand_pool, max_x);
-  Kokkos::fill_random(output_y, rand_pool, max_y);
+  KokkosKernels::Impl::det_fill_random(input_x, rand(), max_x);
+  KokkosKernels::Impl::det_fill_random(output_y, rand(), max_y);
 
   {
     constexpr mag_t max_val   = static_cast<mag_t>(6);
@@ -884,10 +872,8 @@ void test_spmv_mv_struct_1D(lno_t nx, int numMV) {
   y_multivector_type output_y("y", nr, numMV);
   y_multivector_type output_y_copy("y_copy", nr, numMV);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(rand());
-
-  Kokkos::fill_random(input_x, rand_pool, max_x);
-  Kokkos::fill_random(output_y, rand_pool, max_y);
+  KokkosKernels::Impl::det_fill_random(input_x, rand(), max_x);
+  KokkosKernels::Impl::det_fill_random(output_y, rand(), max_y);
 
   constexpr mag_t max_error = 5;
 
@@ -1047,7 +1033,6 @@ void test_spmv_all_interfaces_light() {
   using execution_space = typename DeviceType::execution_space;
   using mag_t           = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, DeviceType, void, size_type>;
-  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(rand());
   const lno_t m      = 111;
   const lno_t n      = 99;
   const mag_t maxVal = 10.0;
@@ -1065,8 +1050,8 @@ void test_spmv_all_interfaces_light() {
   multivector_t x_mv("x_mv", n, 3);
   vector_t x("x", n);
   // Randomize x (it won't be modified after that)
-  Kokkos::fill_random(x_mv, rand_pool, randomUpperBound<scalar_t>(maxVal));
-  Kokkos::fill_random(x, rand_pool, randomUpperBound<scalar_t>(maxVal));
+  KokkosKernels::Impl::det_fill_random(x_mv, rand(), randomUpperBound<scalar_t>(maxVal));
+  KokkosKernels::Impl::det_fill_random(x, rand(), randomUpperBound<scalar_t>(maxVal));
   multivector_t y_mv("y_mv", m, 3);
   vector_t y("y", m);
   // Compute the correct y = Ax once

@@ -85,8 +85,7 @@ struct TrsvTest {
     View2D b_y("B", numCols, numMV);
     View2D b_x_copy("B", numCols, numMV);
 
-    Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(rand());
-    Kokkos::fill_random(b_x_copy, rand_pool, scalar_t(10));
+    KokkosKernels::Impl::det_fill_random(b_x_copy, rand(), scalar_t(10));
 
     scalar_t alpha = 1;
     scalar_t beta  = 0;
