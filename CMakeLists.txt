@@ -379,7 +379,7 @@ else()
       SOURCES ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc)
     # Disables pthreads, this is a problem for serial builds in Trilinos & Sierra if it's enabled.
     target_compile_definitions(kokkoskernels_gtest PUBLIC "-DGTEST_HAS_PTHREAD=0")
-    target_include_directories(kokkoskernels_gtest PUBLIC SYSTEM $<BUILD_INTERFACE:${GTEST_SOURCE_DIR}>)
+    target_include_directories(kokkoskernels_gtest SYSTEM PUBLIC $<BUILD_INTERFACE:${GTEST_SOURCE_DIR}>)
 
     #Gtest minimally requires C++11
     target_compile_features(kokkoskernels_gtest PUBLIC cxx_std_11)
