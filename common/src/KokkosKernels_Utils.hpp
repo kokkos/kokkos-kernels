@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Random.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include <iostream>
@@ -1286,6 +1287,30 @@ KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr *p) {
   const std::uintptr_t ptrValNew = (ptrVal + alignof(T) - 1) & (~(alignof(T) - 1));
   return reinterpret_cast<T *>(reinterpret_cast<char *>(const_cast<std::remove_cv_t<InPtr> *>(p)) +
                                (ptrValNew - ptrVal));
+}
+
+// Deterministic fill_random
+template <class ViewT>
+void det_fill_random(ViewT view, uint64_t seed,
+                     typename ViewT::non_const_value_type min,
+                     typename ViewT::non_const_value_type max)
+{
+  static_assert(ViewT::rank == 1, "det_fill_random: only rank-1 views supported");
+
+  using pool_t  = Kokkos::Random_XorShift64_Pool<Kokkos::Serial>;
+  using sview_t = Kokkos::View<typename ViewT::non_const_value_type*, Kokkos::Serial>;
+
+  sview_t h_view("fill_random_tmp", view.extent(0));
+  pool_t pool(seed);
+  Kokkos::fill_random(h_view, pool, min, max);
+  Kokkos::deep_copy(view, h_view);
+}
+
+template <class ViewT>
+void det_fill_random(ViewT view, uint64_t seed,
+                     typename ViewT::non_const_value_type max)
+{
+  det_fill_random(view, seed, 0, max);
 }
 
 }  // namespace Impl

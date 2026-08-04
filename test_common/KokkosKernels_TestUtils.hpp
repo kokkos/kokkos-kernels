@@ -361,16 +361,14 @@ class RandCooMat {
   RandCooMat(int64_t m, int64_t n, int64_t n_tuples, ScalarType min_val, ScalarType max_val) {
     info = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
                        ", " + typeid(ExeSpaceType).name() + std::to_string(n) + "\n");
-    Kokkos::Random_XorShift64_Pool<ExeSpaceType> random(rand());
-
     row_d_ = RowViewTypeD("RandCooMat.RowViewType", n_tuples);
-    Kokkos::fill_random(row_d_, random, -m, m);
+    KokkosKernels::Impl::det_fill_random(row_d_, rand(), -m, m);
 
     col_d_ = ColViewTypeD("RandCooMat.ColViewType", n_tuples);
-    Kokkos::fill_random(col_d_, random, -n, n);
+    KokkosKernels::Impl::det_fill_random(col_d_, rand(), -n, n);
 
     data_d_ = DataViewTypeD("RandCooMat.DataViewType", n_tuples);
-    Kokkos::fill_random(data_d_, random, min_val, max_val);
+    KokkosKernels::Impl::det_fill_random(data_d_, rand(), min_val, max_val);
 
     ExeSpaceType().fence();
   }
@@ -481,12 +479,11 @@ class RandCsMatrix {
     info = std::string(std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
                        ", " + execution_space().name() + ">(" + std::to_string(dim2) + ", " + std::to_string(dim1) +
                        ", fully sparse: " + (fully_sparse_ ? "true" : "false") + "\n");
-    Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(rand());
     populate_random_cs_mat();
 
     vals_d_ = ValViewTypeD("RandCsMatrix.ValViewType", nnz_);
     vals_   = Kokkos::create_mirror_view(vals_d_);
-    Kokkos::fill_random(vals_, random, min_val, max_val);  // random scalars
+    KokkosKernels::Impl::det_fill_random(vals_, rand(), min_val, max_val);  // random scalars
     Kokkos::fence();
 
     // Copy to device
