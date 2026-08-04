@@ -1033,12 +1033,12 @@ void test_spmv_all_interfaces_light() {
   using execution_space = typename DeviceType::execution_space;
   using mag_t           = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, DeviceType, void, size_type>;
-  const lno_t m      = 111;
-  const lno_t n      = 99;
-  const mag_t maxVal = 10.0;
-  const mag_t eps    = 10.0 * KokkosKernels::ArithTraits<mag_t>::eps();
-  size_type nnz      = 600;
-  crsMat_t A         = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnz, 2, lno_t(n * 0.7));
+  const lno_t m         = 111;
+  const lno_t n         = 99;
+  const mag_t maxVal    = 10.0;
+  const mag_t eps       = 10.0 * KokkosKernels::ArithTraits<mag_t>::eps();
+  size_type nnz         = 600;
+  crsMat_t A            = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnz, 2, lno_t(n * 0.7));
   // note: A's values are in range [0, 50)
   const mag_t maxError = (nnz / m) * 50.0 * maxVal;
   using multivector_t  = Kokkos::View<scalar_t **, layout_t, DeviceType>;
