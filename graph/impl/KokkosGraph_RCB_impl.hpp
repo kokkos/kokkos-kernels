@@ -580,11 +580,6 @@ std::vector<typename perm_view_type::value_type> rcb_parallel(coors_view_type &c
           Kokkos::subview(partition_dests, Kokkos::make_pair(coordinates_offset, coordinates_offset + N0));
 
       // Find min, max, span of each dimension and select the most elongated dimension for partitioning
-      scalar_t mid_point;
-      scalar_t x_span = 0.0;
-      scalar_t y_span = 0.0;
-      scalar_t z_span = 0.0;
-
       find_min_max(sub_coordinates_src, minmax);
 
       Kokkos::parallel_for(
