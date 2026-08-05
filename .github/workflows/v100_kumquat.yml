@@ -79,10 +79,11 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
             -DKokkos_ROOT=kokkos/install \
-            -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=OFF \
+            -DKokkosKernels_ENABLE_COMPILER_WARNINGS=ON \
+            -DKokkosKernels_ENABLE_WARNINGS_AS_ERRORS=ON \
             -DKokkosKernels_ENABLE_TESTS=ON \
-            -DKokkosKernels_ENABLE_PERFTESTS=ON \
             -DKokkosKernels_ENABLE_EXAMPLES=ON \
+            -DKokkosKernels_ENABLE_PERFTESTS=ON \
             -DKokkosKernels_ENABLE_TPL_CUSOLVER=ON \
             -DKokkosKernels_ENABLE_TPL_CUSPARSE=ON \
             -DKokkosKernels_ENABLE_TPL_CUBLAS=ON \
@@ -161,13 +162,14 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
             -DKokkos_ROOT=kokkos/install \
+            -DKokkosKernels_ENABLE_COMPILER_WARNINGS=ON \
+            -DKokkosKernels_ENABLE_WARNINGS_AS_ERRORS=ON \
             -DKokkosKernels_ENABLE_TESTS=ON \
             -DKokkosKernels_ENABLE_EXAMPLES=ON \
             -DKokkosKernels_ENABLE_PERFTESTS=ON \
             -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
             -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
             -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
-            -DKokkosKernels_ENABLE_TPL_BLAS=OFF \
             -DBUILD_SHARED_LIBS=OFF \
             -DKokkosKernels_ENABLE_DOCS=OFF
 
@@ -232,6 +234,8 @@ jobs:
             -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
             -DCMAKE_CXX_STANDARD=20 \
             -DKokkos_ROOT=kokkos/install \
+            -DKokkosKernels_ENABLE_COMPILER_WARNINGS=ON \
+            -DKokkosKernels_ENABLE_WARNINGS_AS_ERRORS=ON \
             -DKokkosKernels_ENABLE_TESTS=ON \
             -DKokkosKernels_ENABLE_EXAMPLES=ON \
             -DKokkosKernels_ENABLE_BENCHMARKS=ON \
@@ -303,6 +307,8 @@ jobs:
             -D Kokkos_ROOT=kokkos/install \
             -D BUILD_SHARED_LIBS:BOOL=OFF \
             -D CMAKE_CUDA_FLAGS="-Wno-deprecated-gpu-targets" \
+            -D KokkosKernels_ENABLE_COMPILER_WARNINGS=ON \
+            -D KokkosKernels_ENABLE_WARNINGS_AS_ERRORS=ON \
             -D KokkosKernels_INST_COMPLEX_DOUBLE=ON \
             -D KokkosKernels_INST_OFFSET_INT=ON \
             -D KokkosKernels_INST_OFFSET_SIZE_T=ON \
