@@ -110,7 +110,9 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
     if (first_mismatch < nentries_actual) {
       size_t mismatch_row = 0;
       for (size_t r = 0; r + 1 < rowmap_actual.extent(0); ++r) {
-        if (rowmap_actual(r) <= first_mismatch && first_mismatch < rowmap_actual(r + 1)) {
+        const size_t row_begin = static_cast<size_t>(rowmap_actual(r));
+        const size_t row_end   = static_cast<size_t>(rowmap_actual(r + 1));
+        if (row_begin <= first_mismatch && first_mismatch < row_end) {
           mismatch_row = r;
           break;
         }
