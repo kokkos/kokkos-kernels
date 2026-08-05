@@ -319,10 +319,11 @@ inline void bisect_parallel_scan(const coors_view_type &coors, const dim_view_ty
 
   const ordinal_type N = static_cast<ordinal_type>(coors.extent(0));
 
+  Kokkos::RangePolicy<execution_space, ordinal_type> policy(0, N);
   ScanLeftRightPartitionsFunctor scan_functor(coors, partitioned_dim, minmax_bisect, partition_dests);
 
   for (int bisection_step = 0; bisection_step < max_bisection_steps; ++bisection_step) {
-    Kokkos::parallel_scan("RCB_PrefixScan", N, scan_functor, p1_size);
+    Kokkos::parallel_scan("RCB_PrefixScan", policy, scan_functor, p1_size);
 
     p2_size = N - p1_size;
 
