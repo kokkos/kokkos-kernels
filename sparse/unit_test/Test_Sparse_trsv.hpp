@@ -85,8 +85,7 @@ struct TrsvTest {
     View2D b_y("B", numCols, numMV);
     View2D b_x_copy("B", numCols, numMV);
 
-    Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
-    Kokkos::fill_random(b_x_copy, rand_pool, scalar_t(10));
+    KokkosKernels::Impl::det_fill_random(b_x_copy, rand(), scalar_t(10));
 
     scalar_t alpha = 1;
     scalar_t beta  = 0;
@@ -95,7 +94,7 @@ struct TrsvTest {
     auto lower_part =
         get_LU<Crs, sp_matrix_type, size_type>('L', numRows, nnz, row_size_variance, bandwidth, block_size);
 
-    Test::shuffleMatrixEntries(lower_part.graph.row_map, lower_part.graph.entries, lower_part.values, block_size);
+    TestUtils::shuffleMatrixEntries(lower_part.graph.row_map, lower_part.graph.entries, lower_part.values, block_size);
 
     KokkosSparse::spmv("N", alpha, lower_part, b_x_copy, beta, b_y);
     check_trsv_mv<UseBlocks>(lower_part, b_x, b_y, b_x_copy, numMV, "L", "N");
@@ -108,7 +107,7 @@ struct TrsvTest {
     auto upper_part =
         get_LU<Crs, sp_matrix_type, size_type>('U', numRows, nnz, row_size_variance, bandwidth, block_size);
 
-    Test::shuffleMatrixEntries(upper_part.graph.row_map, upper_part.graph.entries, upper_part.values, block_size);
+    TestUtils::shuffleMatrixEntries(upper_part.graph.row_map, upper_part.graph.entries, upper_part.values, block_size);
 
     KokkosSparse::spmv("N", alpha, upper_part, b_x_copy, beta, b_y);
     check_trsv_mv<UseBlocks>(upper_part, b_x, b_y, b_x_copy, numMV, "U", "N");

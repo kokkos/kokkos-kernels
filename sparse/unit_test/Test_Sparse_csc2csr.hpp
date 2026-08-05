@@ -7,7 +7,7 @@
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val, bool fully_sparse = false) {
-  RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> cscMat(n, m, min_val, max_val, fully_sparse);
+  TestUtils::RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> cscMat(n, m, min_val, max_val, fully_sparse);
 
   auto csrMat = KokkosSparse::csc2csr(cscMat.get_dim2(), cscMat.get_dim1(), cscMat.get_nnz(), cscMat.get_vals(),
                                       cscMat.get_map(), cscMat.get_ids());
@@ -94,9 +94,6 @@ void doAllCsc2csr(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_csc2csr) {
-  uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
-  std::srand(ticks);
-
   // Empty cases
   doCsc2Csr<float, Kokkos::LayoutLeft, TestDevice>(1, 0, 1, 10);
   doCsc2Csr<float, Kokkos::LayoutLeft, TestDevice>(0, 1, 1, 10);

@@ -65,7 +65,7 @@ void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col, DataType data
 
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCrs2Coo(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  using RandCrsMatType = RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
+  using RandCrsMatType = TestUtils::RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
   RandCrsMatType crsMat(m, n, min_val, max_val, m == 0 || n == 0);
 
   using CrsOT   = typename RandCrsMatType::IdViewTypeD::value_type;
@@ -99,9 +99,6 @@ void doAllCrs2Coo(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_crs2coo) {
-  uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
-  std::srand(ticks);
-
   // Square cases
   for (size_t i = 1; i < 256; i *= 4) {
     size_t dim = (std::rand() % 511) + 1;

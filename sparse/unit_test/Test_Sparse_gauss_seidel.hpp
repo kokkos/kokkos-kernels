@@ -166,11 +166,9 @@ void run_gauss_seidel_streams(std::vector<ExecSpace>& instances, std::vector<Han
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool symmetric) {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
-  srand(245);
   lno_t numCols      = numRows;
   crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, row_size_variance, bandwidth);
@@ -181,9 +179,9 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   lno_t nv = input_mat.numRows();
   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
-  scalar_view_t y_vector = create_random_y_vector(input_mat, solution_x);
+  scalar_view_t y_vector = TestUtils::create_random_y_vector(input_mat, solution_x);
   // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
   // behavior of each algorithm _should be_ the same on every execution space,
   // which is why we just test GS_DEFAULT.
@@ -195,7 +193,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
     Kokkos::Timer timer1;
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel(input_mat, GS_DEFAULT, x_vector, y_vector, symmetric, apply_type);
+    Test::run_gauss_seidel(input_mat, GS_DEFAULT, x_vector, y_vector, symmetric, apply_type);
     // double gs = timer1.seconds();
     // KokkosKernels::Impl::print_1Dview(x_vector);
     KokkosBlas::axpby(one, solution_x, -one, x_vector);
@@ -211,8 +209,8 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
         Kokkos::Timer timer1;
         // Zero out X before solving
         Kokkos::deep_copy(x_vector, zero);
-        run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize], false,
-                         clusterAlgo);
+        Test::run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize],
+                               false, clusterAlgo);
         KokkosBlas::axpby(one, solution_x, -one, x_vector);
         mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
         EXPECT_LT(result_norm_res, initial_norm_res);
@@ -222,7 +220,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   //*** Two-stage version ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
+    Test::run_gauss_seidel(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
     KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
     EXPECT_LT(result_norm_res, initial_norm_res);
@@ -230,7 +228,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   //*** Two-stage version (classic) ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, true);
+    Test::run_gauss_seidel(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, true);
     KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
     EXPECT_LT(result_norm_res, initial_norm_res);
@@ -240,8 +238,6 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, lno_t numVecs,
                              bool symmetric) {
-  using namespace Test;
-  srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, device> scalar_view2d_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
@@ -257,10 +253,10 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   lno_t nv = input_mat.numRows();
   host_scalar_view2d_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv, numVecs);
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   scalar_view2d_t x_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, numVecs);
   Kokkos::deep_copy(x_vector, solution_x);
-  scalar_view2d_t y_vector = create_random_y_vector_mv(input_mat, x_vector);
+  scalar_view2d_t y_vector = TestUtils::create_random_y_vector_mv(input_mat, x_vector);
   auto x_host              = Kokkos::create_mirror_view(x_vector);
   std::vector<mag_t> initial_norms(numVecs);
   for (lno_t i = 0; i < numVecs; i++) {
@@ -277,7 +273,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
     Kokkos::Timer timer1;
     // Zero out X before solving
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel(input_mat, GS_DEFAULT, x_vector, y_vector, symmetric, apply_type);
+    Test::run_gauss_seidel(input_mat, GS_DEFAULT, x_vector, y_vector, symmetric, apply_type);
     Kokkos::deep_copy(x_host, x_vector);
     for (lno_t i = 0; i < numVecs; i++) {
       scalar_t diffDot = 0;
@@ -297,8 +293,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
         Kokkos::Timer timer1;
         // Zero out X before solving
         Kokkos::deep_copy(x_vector, zero);
-        run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize], false,
-                         (ClusteringAlgorithm)algo);
+        Test::run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize],
+                               false, (ClusteringAlgorithm)algo);
         Kokkos::deep_copy(x_host, x_vector);
         for (lno_t i = 0; i < numVecs; i++) {
           scalar_t diffDot = 0;
@@ -316,7 +312,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
     // Zero out X before solving
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
+    Test::run_gauss_seidel(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
     Kokkos::deep_copy(x_host, x_vector);
     for (lno_t i = 0; i < numVecs; i++) {
       scalar_t diffDot = 0;
@@ -332,7 +328,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
     // Zero out X before solving
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, true);
+    Test::run_gauss_seidel(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, true);
     Kokkos::deep_copy(x_host, x_vector);
     for (lno_t i = 0; i < numVecs; i++) {
       scalar_t diffDot = 0;
@@ -350,7 +346,6 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
   const scalar_t zero = KokkosKernels::ArithTraits<scalar_t>::zero();
   const scalar_t one  = KokkosKernels::ArithTraits<scalar_t>::one();
-  srand(245);
   typedef typename device::execution_space exec_space;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   lno_t numCols      = numRows;
@@ -371,7 +366,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   // record the correct solution, to compare against at the end
   vector_t xgold("X gold", numRows);
   Kokkos::deep_copy(xgold, x);
-  vector_t y = Test::create_random_y_vector(input_mat, x);
+  vector_t y = TestUtils::create_random_y_vector(input_mat, x);
   exec_space().fence();
   auto y_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y);
   // initial solution is zero
@@ -406,7 +401,6 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth) {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type const_lno_row_view_t;
@@ -416,7 +410,6 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth
   typedef KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
                               typename device::memory_space, typename device::memory_space>
       KernelHandle;
-  srand(245);
   size_type nnzTotal = nnzPerRow * numRows;
   lno_t nnzVariance  = nnzPerRow / 4;
   crsMat_t A =
@@ -448,7 +441,6 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_empty() {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_type;
@@ -490,7 +482,6 @@ void test_gauss_seidel_empty() {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerShortRow, bool symmetric) {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::index_type::non_const_type entries_view_t;
@@ -499,7 +490,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   const scalar_t one = KokkosKernels::ArithTraits<scalar_t>::one();
   // Host matrix generation: avoid MSVC's RAND_MAX==32767 and rand()%N, which skew
   // off-diagonals and break diagonal dominance vs POSIX rand(). Use a portable RNG.
-  std::mt19937 rng(245u);
+  std::mt19937 rng(static_cast<long unsigned int>(rand()));
   std::vector<size_type> rowmap = {0};
   std::vector<lno_t> entries;
   std::vector<scalar_t> values;
@@ -515,7 +506,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   scalar_t offDiagBase;
   {
     scalar_t unused;
-    Test::getRandomBounds(0.6, unused, offDiagBase);
+    TestUtils::getRandomBounds(0.6, unused, offDiagBase);
   }
   std::uniform_int_distribution<lno_t> colDist(0, numRows - 1);
   std::uniform_real_distribution<double> offDiagCoeffDist(-0.3, 0.3);
@@ -547,9 +538,9 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   }
   lno_t nv = input_mat.numRows();
   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
-  scalar_view_t y_vector = create_random_y_vector(input_mat, solution_x);
+  scalar_view_t y_vector = TestUtils::create_random_y_vector(input_mat, solution_x);
   // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
   // behavior of each algorithm _should be_ the same on every execution space,
   // which is why we just test GS_DEFAULT.
@@ -566,7 +557,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
     gsHandle->set_long_row_threshold(3 * nnzPerShortRow);
     // Reset x vector to 0
     Kokkos::deep_copy(x_vector, scalar_t());
-    run_gauss_seidel(kh, input_mat, x_vector, y_vector, symmetric, 0.9, apply_type);
+    Test::run_gauss_seidel(kh, input_mat, x_vector, y_vector, symmetric, 0.9, apply_type);
     KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
     EXPECT_LT(result_norm_res, 0.25 * initial_norm_res);
@@ -575,7 +566,6 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
@@ -586,9 +576,9 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
   input_mat = KokkosSparse::sort_and_merge_matrix(input_mat);
   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), numRows);
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
-  scalar_view_t y_vector = create_random_y_vector(input_mat, solution_x);
+  scalar_view_t y_vector = TestUtils::create_random_y_vector(input_mat, solution_x);
   scalar_view_t x_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x vector"), numRows);
   typedef KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
                               typename device::memory_space, typename device::memory_space>
@@ -599,7 +589,7 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   EXPECT_EQ(kh.get_point_gs_handle()->get_coloring_algorithm(), KokkosGraph::COLORING_VBBIT);
   // Reset x vector to 0
   Kokkos::deep_copy(x_vector, scalar_t());
-  run_gauss_seidel(kh, input_mat, x_vector, y_vector, true, 0.9, 0);
+  Test::run_gauss_seidel(kh, input_mat, x_vector, y_vector, true, 0.9, 0);
   KokkosBlas::axpby(one, solution_x, -one, x_vector);
   mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
   EXPECT_LT(result_norm_res, 0.25 * initial_norm_res);
@@ -610,7 +600,6 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
                                      bool symmetric, double omega,
                                      KokkosGraph::ColoringAlgorithm coloringAlgo = KokkosGraph::COLORING_DEFAULT,
                                      int nstreams                                = 1) {
-  using namespace Test;
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using scalar_view_t   = typename crsMat_t::values_type::non_const_type;
   using mag_t           = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
@@ -621,8 +610,7 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
   using const_scalar_t  = const scalar_t;
   using KernelHandle    = KokkosKernelsHandle<const_size_type, const_lno_t, const_scalar_t, execution_space,
                                            typename device::memory_space, typename device::memory_space>;
-  srand(245);
-  lno_t numCols                         = numRows;
+  lno_t numCols         = numRows;
   typename crsMat_t::value_type m_omega = omega;
 
 #ifdef KOKKOS_ENABLE_OPENMP
@@ -661,9 +649,9 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
     lno_t nv = input_mat_v[i].numRows();
     scalar_view_t solution_x_tmp(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
     solution_x_v[i] = solution_x_tmp;
-    create_random_x_vector(solution_x_v[i]);
+    TestUtils::create_random_x_vector(solution_x_v[i]);
     initial_norm_res_v[i] = KokkosBlas::nrm2(solution_x_v[i]);
-    y_vector_v[i]         = create_random_y_vector(input_mat_v[i], solution_x_v[i]);
+    y_vector_v[i]         = TestUtils::create_random_y_vector(input_mat_v[i], solution_x_v[i]);
     // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
     // behavior of each algorithm _should be_ the same on every execution space,
     // which is why we just test GS_DEFAULT.
@@ -680,8 +668,8 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
     for (int i = 0; i < nstreams; i++) Kokkos::deep_copy(instances[i], x_vector_v[i], zero);
 
-    run_gauss_seidel_streams(instances, kh_v, input_mat_v, x_vector_v, y_vector_v, symmetric, m_omega, apply_type,
-                             nstreams);
+    Test::run_gauss_seidel_streams(instances, kh_v, input_mat_v, x_vector_v, y_vector_v, symmetric, m_omega, apply_type,
+                                   nstreams);
     for (int i = 0; i < nstreams; i++) {
       KokkosBlas::axpby(instances[i], one, solution_x_v[i], -one, x_vector_v[i]);
       mag_t result_norm_res = KokkosBlas::nrm2(instances[i], x_vector_v[i]);

@@ -119,8 +119,6 @@ int run_block_gauss_seidel_1(
 template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
-  using namespace Test;
-  srand(245);
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
   typedef typename device::execution_space exec_space;
@@ -132,7 +130,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
 
   lno_t numCols = numRows;
 
-  const GSTestParams<lno_t, scalar_t, mag_t> params;
+  const Test::GSTestParams<lno_t, scalar_t, mag_t> params;
   lno_t block_size = params.block_size;
 
   crsMat_t crsmat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
@@ -158,11 +156,11 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
   const scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv);
-  // create_random_x_vector operates on host mirror, then copies to device. But
+  // TestUtils::create_random_x_vector operates on host mirror, then copies to device. But
   // create_y does everything on device.
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   exec_space().fence();
-  scalar_view_t y_vector = create_random_y_vector(crsmat2, solution_x);
+  scalar_view_t y_vector = TestUtils::create_random_y_vector(crsmat2, solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
 
   for (const auto gs_algorithm : params.gs_algorithms) {
@@ -177,8 +175,8 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
           for (const auto skip_numeric : {false, true}) {
             Kokkos::Timer timer1;
             // int res =
-            run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph,
-                                     apply_type, skip_symbolic, skip_numeric, shmem_size, params.omega);
+            Test::run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph,
+                                           apply_type, skip_symbolic, skip_numeric, shmem_size, params.omega);
             // double gs = timer1.seconds();
             // KokkosKernels::Impl::print_1Dview(x_vector);
             KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
@@ -195,8 +193,6 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
 template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
-  using namespace Test;
-  srand(245);
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
 
@@ -210,7 +206,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
 
   lno_t numCols = numRows;
 
-  const GSTestParams<lno_t, scalar_t, mag_t> params;
+  const Test::GSTestParams<lno_t, scalar_t, mag_t> params;
   lno_t block_size = params.block_size;
 
   crsMat_t crsmat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
@@ -237,8 +233,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   const lno_t numVecs = params.numVecs;
 
   scalar_view2d_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, params.numVecs);
-  create_random_x_vector(solution_x);
-  scalar_view2d_t y_vector = create_random_y_vector_mv(crsmat2, solution_x);
+  TestUtils::create_random_x_vector(solution_x);
+  scalar_view2d_t y_vector = TestUtils::create_random_y_vector_mv(crsmat2, solution_x);
   exec_space().fence();
   auto solution_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), solution_x);
   // Need to fence before reading from solution_host
@@ -266,8 +262,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
           for (const auto skip_numeric : {false, true}) {
             Kokkos::Timer timer1;
             // int res =
-            run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph,
-                                     apply_type, skip_symbolic, skip_numeric, shmem_size, params.omega);
+            Test::run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph,
+                                           apply_type, skip_symbolic, skip_numeric, shmem_size, params.omega);
             // double gs = timer1.seconds();
             // KokkosKernels::Impl::print_1Dview(x_vector);
             Kokkos::deep_copy(x_host, x_vector);
@@ -293,7 +289,6 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
 template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_block_gauss_seidel_empty() {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_type;

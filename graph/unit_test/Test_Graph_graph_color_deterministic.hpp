@@ -56,7 +56,6 @@ int run_graphcolor_deter(crsMat_t input_mat, ColoringAlgorithm coloring_algorith
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_coloring_deterministic(lno_t numRows, size_type nnz) {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
@@ -188,7 +187,7 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
     size_t num_colors;
 
     Kokkos::Timer timer1;
-    int res = run_graphcolor_deter<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
+    int res = Test::run_graphcolor_deter<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
     EXPECT_TRUE((res == 0));
 
     EXPECT_TRUE((num_colors == 2));

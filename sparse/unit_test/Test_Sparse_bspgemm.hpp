@@ -135,7 +135,6 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz, lno_t 
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-  using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);
 
@@ -150,7 +149,7 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz, lno_t 
   KokkosSparse::sort_bsr_matrix(B);
 
   bsrMat_t output_mat2;
-  run_block_spgemm(A, B, output_mat2, SPGEMM_DEBUG, use_dynamic_scheduling, shared_memory_size);
+  Test::run_block_spgemm(A, B, output_mat2, SPGEMM_DEBUG, use_dynamic_scheduling, shared_memory_size);
 
   std::vector<SPGEMMAlgorithm> algorithms = {
       SPGEMM_KK, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */, SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
@@ -181,7 +180,7 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz, lno_t 
     bool failed = false;
     int res     = 0;
     try {
-      res = run_block_spgemm(A, B, output_mat, spgemm_algorithm, use_dynamic_scheduling, shared_memory_size);
+      res = Test::run_block_spgemm(A, B, output_mat, spgemm_algorithm, use_dynamic_scheduling, shared_memory_size);
     } catch (const char *message) {
       EXPECT_TRUE(is_expected_to_fail) << algo << ": " << message;
       failed = true;
@@ -199,7 +198,7 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz, lno_t 
     timer1.reset();
     if (!is_expected_to_fail) {
       EXPECT_TRUE((res == 0)) << algo;
-      bool is_identical = is_same_block_matrix(output_mat, output_mat2);
+      bool is_identical = Test::is_same_block_matrix(output_mat, output_mat2);
       EXPECT_TRUE(is_identical) << algo;
       // EXPECT_TRUE( equal) << algo;
     }

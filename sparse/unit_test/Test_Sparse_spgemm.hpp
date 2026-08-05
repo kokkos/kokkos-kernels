@@ -48,11 +48,10 @@ void randomize_matrix_values(const Values &v) {
   using ScalarType = typename Values::value_type;
   ScalarType randStart, randEnd;
   KokkosKernels::Impl::getRandomBounds(50.0, randStart, randEnd);
-  Kokkos::Random_XorShift64_Pool<typename Values::execution_space> pool(13718);
   // Instead of sampling from [-50, 50] or [-50-50i, 50+50i],
   // sample from [1, 50] or [1+i, 50+50i]. That way relative
   // error between values can't become large if values happen to sum close to 0.
-  Kokkos::fill_random(v, pool, randEnd / 50.0, randEnd);
+  KokkosKernels::Impl::det_fill_random(v, rand(), randEnd / 50.0, randEnd);
 }
 
 template <typename crsMat_t>
@@ -197,7 +196,6 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-  using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);
 
@@ -211,8 +209,8 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
   // values are stored in a 1-D (1 rank) array.
   crsMat_t A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, k, nnz, row_size_variance, bandwidth);
   crsMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(k, n, nnz, row_size_variance, bandwidth);
-  randomize_matrix_values(A.values);
-  randomize_matrix_values(B.values);
+  Test::randomize_matrix_values(A.values);
+  Test::randomize_matrix_values(B.values);
 
   KokkosSparse::sort_crs_matrix(A);
   KokkosSparse::sort_crs_matrix(B);
@@ -221,11 +219,11 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
   // If this test won't reuse symbolic, we can compute the reference matrix once
   // here
   if (!testReuse) {
-    run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2, false);
+    Test::run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2, false);
   }
 
   std::vector<SPGEMMAlgorithm> algorithms;
-  if (callMode == spgemm_noreuse) {
+  if (callMode == Test::spgemm_noreuse) {
     // No-reuse interface always uses the default algorithm
     algorithms = {SPGEMM_DEFAULT, SPGEMM_KK};
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
@@ -280,13 +278,13 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     int res     = 0;
     try {
       switch (callMode) {
-        case spgemm_reuse_view:
-          res = run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
+        case Test::spgemm_reuse_view:
+          res = Test::run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
           break;
-        case spgemm_reuse_matrix:
-          res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
+        case Test::spgemm_reuse_matrix:
+          res = Test::run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
           break;
-        case spgemm_noreuse: run_spgemm_noreuse(spgemm_algorithm, A, B, output_mat); break;
+        case Test::spgemm_noreuse: Test::run_spgemm_noreuse(spgemm_algorithm, A, B, output_mat); break;
       }
     } catch (const char *message) {
       EXPECT_TRUE(is_expected_to_fail) << algo << ": " << message;
@@ -303,7 +301,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     // If this is testing reuse, the values of A and B changed so
     // the reference matrix must be recomputed
     if (testReuse) {
-      run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2, false);
+      Test::run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2, false);
     }
 
     // double spgemm_time = timer1.seconds();
@@ -311,7 +309,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     timer1.reset();
     if (!is_expected_to_fail) {
       EXPECT_TRUE((res == 0)) << algo;
-      bool is_identical = is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
+      bool is_identical = TestUtils::is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
       EXPECT_TRUE(is_identical) << algo;
       // EXPECT_TRUE( equal) << algo;
     }
@@ -388,7 +386,6 @@ void test_issue402() {
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-  using namespace Test;
   typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 
   // this specific matrix (from a circuit simulation) reliably replicated issue
@@ -428,12 +425,12 @@ void test_issue402() {
   KokkosSparse::sort_crs_matrix(A);
   KokkosSparse::sort_crs_matrix(B);
   crsMat_t Cgold;
-  run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, Cgold, false);
+  Test::run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, Cgold, false);
   crsMat_t C;
   bool success = true;
   std::string errMsg;
   try {
-    int res = run_spgemm<crsMat_t, device>(A, B, SPGEMM_KK_MEMORY, C, false);
+    int res = Test::run_spgemm<crsMat_t, device>(A, B, SPGEMM_KK_MEMORY, C, false);
     if (res) throw "run_spgemm returned error code";
   } catch (const char *message) {
     errMsg  = message;
@@ -446,7 +443,7 @@ void test_issue402() {
     success = false;
   }
   EXPECT_TRUE(success) << "SpGEMM still has issue 402 bug! Error message:\n" << errMsg << '\n';
-  bool correctResult = is_same_matrix<crsMat_t, device>(C, Cgold);
+  bool correctResult = TestUtils::is_same_matrix<crsMat_t, device>(C, Cgold);
   EXPECT_TRUE(correctResult) << "SpGEMM still has issue 402 bug; C=AA' is incorrect!\n";
 }
 
