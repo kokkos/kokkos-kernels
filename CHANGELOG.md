@@ -7,6 +7,7 @@
 
 - Treat gtest includes as SYSTEM [\#3226](https://github.com/kokkos/kokkos-kernels/pull/3226)
 - Fixing spgemm due to hash spilling [\#3209](https://github.com/kokkos/kokkos-kernels/pull/3209)
+- Add ODE to list of valid entries for KokkosKernels_ENABLED_COMPONENTS [\#3198](https://github.com/kokkos/kokkos-kernels/pull/3198)
 
 ## [5.2.0](https://github.com/kokkos/kokkos-kernels/tree/5.2.0)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.1.1...5.2.0)
