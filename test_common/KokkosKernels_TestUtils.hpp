@@ -13,6 +13,8 @@
 
 #include <random>
 #include <algorithm>
+#include <type_traits>
+#include <vector>
 
 // Simplify ETI macros
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
