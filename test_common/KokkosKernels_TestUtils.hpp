@@ -4,14 +4,15 @@
 #ifndef KOKKOSKERNELS_TEST_UTILS_HPP
 #define KOKKOSKERNELS_TEST_UTILS_HPP
 
-#include <random>
-
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBatched_Vector.hpp"
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
+
+#include <random>
+#include <algorithm>
 
 // Simplify ETI macros
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
@@ -491,6 +492,66 @@ void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values, const
   }
   Kokkos::deep_copy(entries, entriesHost);
   Kokkos::deep_copy(values, valuesHost);
+}
+
+// Create a random nrows by ncols matrix for testing mat-mat addition kernels.
+// minNNZ, maxNNZ: min and max number of nonzeros in any row.
+// maxNNZ > ncols will result in duplicated entries in a row, otherwise entries
+// in a row are unique.
+// sortRows: whether to sort columns in a row
+template <typename crsMat_t, typename ordinal_type>
+crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNNZ, ordinal_type maxNNZ, bool sortRows) {
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type size_type_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_view_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename size_type_view_t::non_const_value_type size_type;  // rowptr type
+  typedef typename lno_view_t::non_const_value_type lno_t;            // colind type
+  typedef typename scalar_view_t::non_const_value_type scalar_t;
+  typedef KokkosKernels::ArithTraits<scalar_t> KAT;
+  static_assert(std::is_same<ordinal_type, lno_t>::value, "ordinal_type should be same as lno_t from crsMat_t");
+  // first, populate rowmap
+  size_type_view_t rowmap("rowmap", nrows + 1);
+  typename size_type_view_t::host_mirror_type h_rowmap = Kokkos::create_mirror_view(rowmap);
+  size_type nnz                                        = 0;
+  size_type maxRowEntries                              = 0;
+  for (lno_t i = 0; i < nrows; i++) {
+    size_type rowEntries = rand() % (maxNNZ - minNNZ + 1) + minNNZ;
+    h_rowmap(i)          = nnz;
+    nnz += rowEntries;
+    maxRowEntries = std::max(rowEntries, maxRowEntries);
+  }
+  h_rowmap(nrows) = nnz;
+  Kokkos::deep_copy(rowmap, h_rowmap);
+  // allocate values and entries
+  scalar_view_t values("values", nnz);
+  // populate values
+  typename scalar_view_t::host_mirror_type h_values = Kokkos::create_mirror_view(values);
+  for (size_type i = 0; i < nnz; i++) {
+    h_values(i) = KAT::one() * (((typename KAT::mag_type)rand()) / static_cast<typename KAT::mag_type>(RAND_MAX));
+  }
+  Kokkos::deep_copy(values, h_values);
+  // populate entries (make sure no entry is repeated within a row)
+  lno_view_t entries("entries", nnz);
+  typename lno_view_t::host_mirror_type h_entries = Kokkos::create_mirror_view(entries);
+  std::vector<lno_t> indices(std::max((size_type)ncols, maxRowEntries));
+  auto re = std::mt19937(rand());
+  for (lno_t i = 0; i < nrows; i++) {
+    // this formula guarantees no duplicates if maxNNZ <= ncols, and duplicates
+    // if minNNZ > ncols
+    for (size_t j = 0; j < indices.size(); j++) indices[j] = j % ncols;
+    std::shuffle(indices.begin(), indices.end(), re);
+    size_type rowStart = h_rowmap(i);
+    size_type rowCount = h_rowmap(i + 1) - rowStart;
+    if (sortRows) {
+      std::sort(indices.begin(), indices.begin() + rowCount);
+    }
+    for (size_type j = 0; j < rowCount; j++) {
+      h_entries(rowStart + j) = indices[j];
+    }
+  }
+  Kokkos::deep_copy(entries, h_entries);
+  return crsMat_t("test matrix", nrows, ncols, nnz, values, rowmap, entries);
 }
 
 }  // namespace TestUtils
