@@ -445,11 +445,10 @@ class RandCsMatrix {
     Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(ticks);
     populate_random_cs_mat(ticks);
 
-    vals_d_ = ValViewTypeD("RandCsMatrix.ValViewType", nnz_ + 1);
+    vals_d_ = ValViewTypeD("RandCsMatrix.ValViewType", nnz_);
     vals_   = Kokkos::create_mirror_view(vals_d_);
     Kokkos::fill_random(vals_, random, min_val, max_val);  // random scalars
     Kokkos::fence();
-    vals_(nnz_) = ScalarType(0);
 
     // Copy to device
     Kokkos::deep_copy(vals_d_, vals_);
