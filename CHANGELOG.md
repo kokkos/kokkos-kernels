@@ -1,5 +1,13 @@
 # Change Log
 
+## [5.2.1](https://github.com/kokkos/kokkos-kernels/tree/5.2.1)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.2.0...5.2.1)
+
+### Bug fixes
+
+- Treat gtest includes as SYSTEM [\#3226](https://github.com/kokkos/kokkos-kernels/pull/3226)
+- Fixing spgemm due to hash spilling [\#3209](https://github.com/kokkos/kokkos-kernels/pull/3209)
+
 ## [5.2.0](https://github.com/kokkos/kokkos-kernels/tree/5.2.0)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.1.1...5.2.0)
 
