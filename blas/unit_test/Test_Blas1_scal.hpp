@@ -291,6 +291,16 @@ int test_scal_rank0_view() {
   Test::impl_test_scal_rank0_view<view_type_a_lr, view_type_b_lr, Device>(1024);
 #endif
 
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
+  typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
+  Test::impl_test_scal_rank0_view<view_type_a_ls, view_type_b_ls, Device>(0);
+  Test::impl_test_scal_rank0_view<view_type_a_ls, view_type_b_ls, Device>(13);
+  Test::impl_test_scal_rank0_view<view_type_a_ls, view_type_b_ls, Device>(1024);
+  Test::impl_test_scal_rank0_view<view_type_a_ls, view_type_b_ll, Device>(1024);
+  Test::impl_test_scal_rank0_view<view_type_a_ll, view_type_b_ls, Device>(1024);
+#endif
+
   return 1;
 }
 
@@ -312,6 +322,16 @@ int test_scal_mv_rank0_view() {
   Test::impl_test_scal_mv_rank0_view<view_type_a_lr, view_type_b_lr, Device>(0, 5);
   Test::impl_test_scal_mv_rank0_view<view_type_a_lr, view_type_b_lr, Device>(13, 5);
   Test::impl_test_scal_mv_rank0_view<view_type_a_lr, view_type_b_lr, Device>(1024, 5);
+#endif
+
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
+  typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;
+  Test::impl_test_scal_mv_rank0_view<view_type_a_ls, view_type_b_ls, Device>(0, 5);
+  Test::impl_test_scal_mv_rank0_view<view_type_a_ls, view_type_b_ls, Device>(13, 5);
+  Test::impl_test_scal_mv_rank0_view<view_type_a_ls, view_type_b_ls, Device>(1024, 5);
+  Test::impl_test_scal_mv_rank0_view<view_type_a_ls, view_type_b_ll, Device>(1024, 5);
+  Test::impl_test_scal_mv_rank0_view<view_type_a_ll, view_type_b_ls, Device>(1024, 5);
 #endif
 
   return 1;

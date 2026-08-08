@@ -136,9 +136,9 @@ struct Scal<execution_space, RV, typename XV::non_const_value_type, XV, 1, false
 /// The optimization shortcut for av == 0/-1/1 is skipped since av lives on
 /// device and reading it on host would require a fence.
 template <class execution_space, class RV, class aLayout, class aDevice, class aMemTraits, class XV>
-struct Scal<execution_space, RV, Kokkos::View<typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>, XV, 1,
+struct Scal<execution_space, RV, Kokkos::View<const typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>, XV, 1,
             false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  using AV        = Kokkos::View<typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>;
+  using AV        = Kokkos::View<const typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>;
   using size_type = typename XV::size_type;
 
   static void scal(const execution_space& space, const RV& R, const AV& alpha, const XV& X) {
@@ -164,9 +164,9 @@ struct Scal<execution_space, RV, Kokkos::View<typename XV::non_const_value_type,
 /// Compute R(i,j) = av()*X(i,j) where av is a device-side rank-0 View.
 /// The same single coefficient is applied to all columns.
 template <class execution_space, class RMV, class aLayout, class aDevice, class aMemTraits, class XMV>
-struct Scal<execution_space, RMV, Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>, XMV,
+struct Scal<execution_space, RMV, Kokkos::View<const typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>, XMV,
             2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  using AV        = Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>;
+  using AV        = Kokkos::View<const typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>;
   using size_type = typename XMV::size_type;
 
   static void scal(const execution_space& space, const RMV& R, const AV& av, const XMV& X) {

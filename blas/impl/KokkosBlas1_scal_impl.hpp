@@ -111,9 +111,9 @@ struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x, SizeT
 // The scalar_x == 2 branch reads the single value via m_a() instead of m_a(0).
 // startingColumn is ignored (rank-0 views have no extent to subview).
 template <class RV, class aLayout, class aDevice, class aMemTraits, class XV, int scalar_x, class SizeType>
-struct V_Scal_Functor<RV, Kokkos::View<typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>, XV, scalar_x,
+struct V_Scal_Functor<RV, Kokkos::View<const typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>, XV, scalar_x,
                       SizeType> {
-  using AV        = Kokkos::View<typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>;
+  using AV        = Kokkos::View<const typename XV::non_const_value_type, aLayout, aDevice, aMemTraits>;
   using size_type = SizeType;
   using ATS       = KokkosKernels::ArithTraits<typename RV::non_const_value_type>;
 

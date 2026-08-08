@@ -177,9 +177,9 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type, XMV, scalar_x, S
 // The scalar_x == 2 branch reads the single value via m_a() instead of m_a(k).
 // startingColumn is ignored (rank-0 views have no extent to subview).
 template <class RMV, class aLayout, class aDevice, class aMemTraits, class XMV, int scalar_x, class SizeType>
-struct MV_Scal_Functor<RMV, Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>, XMV,
+struct MV_Scal_Functor<RMV, Kokkos::View<const typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>, XMV,
                        scalar_x, SizeType> {
-  using aVector   = Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>;
+  using aVector   = Kokkos::View<const typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>;
   using size_type = SizeType;
   using ATS       = KokkosKernels::ArithTraits<typename RMV::non_const_value_type>;
 
@@ -354,9 +354,9 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type, XMV, scal
 // startingColumn is ignored (rank-0 views have no extent to subview).
 template <class RMV, class aLayout, class aDevice, class aMemTraits, class XMV, int scalar_x, int UNROLL,
           class SizeType>
-struct MV_Scal_Unroll_Functor<RMV, Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>, XMV,
+struct MV_Scal_Unroll_Functor<RMV, Kokkos::View<const typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>, XMV,
                               scalar_x, UNROLL, SizeType> {
-  using aVector   = Kokkos::View<typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>;
+  using aVector   = Kokkos::View<const typename XMV::non_const_value_type, aLayout, aDevice, aMemTraits>;
   using size_type = SizeType;
   using ATS       = KokkosKernels::ArithTraits<typename RMV::non_const_value_type>;
 
