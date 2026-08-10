@@ -92,8 +92,9 @@ void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X)
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
   using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  using AV_Internal  = typename KokkosBlas::Impl::UnifiedScalCoeff<AV, typename XMV_Internal::non_const_value_type,
-                                                                   UnifiedXLayout>::type;
+  using AV_Internal  = typename KokkosBlas::Impl::UnifiedScalCoeff<execution_space, AV,
+                                                                    typename XMV_Internal::non_const_value_type,
+                                                                    UnifiedXLayout>::type;
 
   RMV_Internal R_internal = KokkosKernels::Impl::unificationCast<RMV_Internal>(R);
   AV_Internal a_internal  = KokkosBlas::Impl::unifyScalCoeff<AV_Internal>(a);

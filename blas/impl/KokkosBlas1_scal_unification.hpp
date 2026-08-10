@@ -22,24 +22,29 @@ namespace Impl {
 // PreferredLayout should be the layout of the X vector for ETI-friendly dispatch.
 
 // General case: Coeff is not a View → use scalar
-template <typename Coeff, typename PreferredScalar, typename PreferredLayout, bool isView = Kokkos::is_view_v<Coeff>>
+// ExecSpace is the kernel execution space; it is used as the device type for unified View
+// coefficients so the resulting type matches the ETI declarations (which use EXEC_SPACE directly).
+template <typename ExecSpace, typename Coeff, typename PreferredScalar, typename PreferredLayout,
+          bool isView = Kokkos::is_view_v<Coeff>>
 struct UnifiedScalCoeff {
   using type = PreferredScalar;
 };
 
 // Specialization: Coeff is a View
-template <typename Coeff, typename PreferredScalar, typename PreferredLayout>
-struct UnifiedScalCoeff<Coeff, PreferredScalar, PreferredLayout, true> {
+template <typename ExecSpace, typename Coeff, typename PreferredScalar, typename PreferredLayout>
+struct UnifiedScalCoeff<ExecSpace, Coeff, PreferredScalar, PreferredLayout, true> {
   static constexpr bool IsRank0 = (int)Coeff::rank == 0;
   static constexpr bool IsHostAccessible =
       Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename Coeff::memory_space>::accessible;
 
   // Preserves rank: const_data_type of rank-0 is `const scalar`,
-  //                 const_data_type of rank-1 is `const scalar*`
+  //                 const_data_type of rank-1 is `const scalar*`.
+  // Use ExecSpace (not Coeff::device_type) so the resulting type matches the ETI
+  // declarations, which are parameterised on the execution space directly.
   using UnifiedViewType =
       Kokkos::View<typename Coeff::const_data_type,
                    typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<Coeff, PreferredLayout>::array_layout,
-                   typename Coeff::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   // rank-0 + host-accessible → scalar; otherwise → rank-preserving unmanaged View
   using type = std::conditional_t<IsRank0 && IsHostAccessible, PreferredScalar, UnifiedViewType>;
