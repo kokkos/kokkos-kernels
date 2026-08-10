@@ -37,7 +37,7 @@ struct UnifiedScalCoeff<ExecSpace, Coeff, PreferredScalar, PreferredLayout, true
   static constexpr bool IsHostAccessible =
       Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename Coeff::memory_space>::accessible;
   static constexpr bool IsExecAccessible =
-    Kokkos::SpaceAccessibility<ExecSpace, typename Coeff::memory_space>::accessible;
+      Kokkos::SpaceAccessibility<ExecSpace, typename Coeff::memory_space>::accessible;
 
   // Preserves rank: const_data_type of rank-0 is `const scalar`,
   //                 const_data_type of rank-1 is `const scalar*`.
@@ -49,8 +49,7 @@ struct UnifiedScalCoeff<ExecSpace, Coeff, PreferredScalar, PreferredLayout, true
                    ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   // rank-0 + host-only accessibility → scalar; otherwise → rank-preserving unmanaged View
-  using type =
-    std::conditional_t<IsRank0 && IsHostAccessible && !IsExecAccessible, PreferredScalar, UnifiedViewType>;
+  using type = std::conditional_t<IsRank0 && IsHostAccessible && !IsExecAccessible, PreferredScalar, UnifiedViewType>;
 };
 
 template <typename UnifiedCoeff, typename Coeff>
