@@ -406,8 +406,8 @@ TEST_F(TestCategory, scal_mv_double_int) {
 }
 #endif
 
-// Rank-0 view alpha tests (not ETI'd — always compiled in non-ETI-only mode)
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#if defined(KOKKOSKERNELS_INST_DOUBLE) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, scal_rank0_view_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_rank0_view_double");
   test_scal_rank0_view<double, double, TestDevice>();
