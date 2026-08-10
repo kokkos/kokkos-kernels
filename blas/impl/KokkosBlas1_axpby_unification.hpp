@@ -123,8 +123,8 @@ struct CoeffScalarType<Coeff, true> {
 // - c is a scalar
 // - c is a rank-0 device view
 // - c is a rank-1 device view (with one coefficient per column)
-template <typename Coeff>
-KOKKOS_INLINE_FUNCTION typename CoeffScalarType<Coeff>::type getCoefficient(const Coeff& c, int column = 0) {
+template <typename Coeff, typename size_type=int>
+KOKKOS_INLINE_FUNCTION typename CoeffScalarType<Coeff>::type getCoefficient(const Coeff& c, const size_type column = 0) {
   if constexpr (Kokkos::is_view_v<Coeff>) {
     if constexpr (isRank1View<Coeff>()) {
       return c(column);
@@ -140,8 +140,8 @@ KOKKOS_INLINE_FUNCTION typename CoeffScalarType<Coeff>::type getCoefficient(cons
 
 // Version of getCoefficient that supports c being a rank-1, extent 1 View (where column can be anything).
 // This is the "slow" version because it uses a runtime branch
-template <typename Coeff>
-KOKKOS_INLINE_FUNCTION typename CoeffScalarType<Coeff>::type getCoefficientSlow(const Coeff& c, int column = 0) {
+template <typename Coeff, typename size_type=int>
+KOKKOS_INLINE_FUNCTION typename CoeffScalarType<Coeff>::type getCoefficientSlow(const Coeff& c, const size_type column = 0) {
   if constexpr (Kokkos::is_view_v<Coeff>) {
     if constexpr (isRank1View<Coeff>()) {
       if (c.extent_int(0) == 1)

@@ -88,7 +88,7 @@ struct MV_Scal_Functor {
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
-        R_(i, k) = getCoefficient(a_, static_cast<int>(k)) * X_(i, k);
+        R_(i, k) = getCoefficient(a_, k) * X_(i, k);
       }
     }
   }

@@ -63,6 +63,13 @@ void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X)
     static_assert((int)AV::rank == 0 || ((int)AV::rank == 1 && (int)RMV::rank == 2),
                   "KokkosBlas::scal: a must be a scalar, a rank-0 View, "
                   "or (for 2-D R and X) a rank-1 View.");
+    static_assert((int)AV::rank != 0 ||
+                  Kokkos::SpaceAccessibility<execution_space, typename AV::memory_space>::accessible ||
+                  Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename AV::memory_space>::accessible,
+                  "KokkosBlas::scal: a rank-0 View must be accessible from execution_space or the host.");
+    static_assert((int)AV::rank == 0 ||
+                  Kokkos::SpaceAccessibility<execution_space, typename AV::memory_space>::accessible,
+                  "KokkosBlas::scal: a rank >0 View must be accessible from execution_space.");
   }
 
   // Check compatibility of dimensions at run time.
