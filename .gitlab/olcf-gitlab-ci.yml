@@ -21,7 +21,7 @@ hipcc:
     - ctest -VV -S ${PWD}/kokkos-kernels/.gitlab/frontier-ctest.cmake
     - rm -rf kokkos-kernels-performance
     - git clone https://github.com/kokkos/kokkos-kernels-performance.git
-    - find kokkos-kernels_build/benchmarks -name "*.json" -exec mv {} kokkos-kernels-performance/Frontier \;
+    - find kokkos-kernels/build/benchmarks -name "*.json" -exec mv {} kokkos-kernels-performance/Frontier \;
     - cd kokkos-kernels-performance
     - git add Frontier/*
     - git commit -m "frontier performance run"
