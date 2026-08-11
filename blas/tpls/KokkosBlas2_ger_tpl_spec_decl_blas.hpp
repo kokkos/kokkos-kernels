@@ -86,7 +86,7 @@ namespace Impl {
                                                                                                                        \
     static void ger(const ExecSpace& space, const char trans[], typename AViewType::const_value_type& alpha,           \
                     const XViewType& X, const YViewType& Y, const AViewType& A) {                                      \
-      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,complex<double>");                                       \
+      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,complex<double>]");                                      \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUT);                                                                          \
       const std::complex<double> alpha_val = static_cast<const std::complex<double>>(alpha);                           \
       bool justTranspose                   = (trans[0] == 'T') || (trans[0] == 't');                                   \
@@ -132,7 +132,7 @@ namespace Impl {
                                                                                                                        \
     static void ger(const ExecSpace& space, const char trans[], typename AViewType::const_value_type& alpha,           \
                     const XViewType& X, const YViewType& Y, const AViewType& A) {                                      \
-      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,complex<float>");                                        \
+      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,complex<float>]");                                       \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUT);                                                                          \
       const std::complex<float> alpha_val = static_cast<const std::complex<float>>(alpha);                             \
       bool justTranspose                  = (trans[0] == 'T') || (trans[0] == 't');                                    \

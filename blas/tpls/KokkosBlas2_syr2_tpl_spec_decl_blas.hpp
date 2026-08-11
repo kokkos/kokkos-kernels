@@ -89,7 +89,7 @@ namespace Impl {
     static void syr2(const ExecSpace& space, const char trans[], const char uplo[],                                    \
                      typename AViewType::const_value_type& alpha, const XViewType& X, const YViewType& Y,              \
                      const AViewType& A) {                                                                             \
-      Kokkos::Profiling::pushRegion("KokkosBlas::syr2[TPL_BLAS,complex<double>");                                      \
+      Kokkos::Profiling::pushRegion("KokkosBlas::syr2[TPL_BLAS,complex<double>]");                                     \
       KOKKOSBLAS2_SYR2_DETERMINE_ARGS(LAYOUT);                                                                         \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                                     \
       if (justTranspose) {                                                                                             \
@@ -128,7 +128,7 @@ namespace Impl {
     static void syr2(const ExecSpace& space, const char trans[], const char uplo[],                                    \
                      typename AViewType::const_value_type& alpha, const XViewType& X, const YViewType& Y,              \
                      const AViewType& A) {                                                                             \
-      Kokkos::Profiling::pushRegion("KokkosBlas::syr2[TPL_BLAS,complex<float>");                                       \
+      Kokkos::Profiling::pushRegion("KokkosBlas::syr2[TPL_BLAS,complex<float>]");                                      \
       KOKKOSBLAS2_SYR2_DETERMINE_ARGS(LAYOUT);                                                                         \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                                     \
       if (justTranspose) {                                                                                             \
