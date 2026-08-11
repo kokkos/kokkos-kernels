@@ -1929,163 +1929,30 @@ void kk_extract_subblock_crsmatrix_sequential(const entries_type &A_entries, con
   blk_row_map(blk_nrows) = blk_nnz;  // last element
 }
 
-template <typename RowMapViewType, typename EntriesViewType, typename PermViewType,
-          typename ColIdxViewType, typename EntryIdxViewType>
-struct ScanSparseRowRCBFunctor {
-  using size_type    = typename RowMapViewType::non_const_value_type;
-  using ordinal_type = typename PermViewType::non_const_value_type;
-	  
-  RowMapViewType row_map;
-  EntriesViewType entries;
-  PermViewType perm_rcb;
+template <typename RowMapInViewType, typename PermViewType, typename RowMapViewType>
+struct CreatePermutedRowMapRCBFunctor {
+  using size_type = typename RowMapViewType::non_const_value_type;
+
+  RowMapInViewType row_map_in;
   PermViewType reverse_perm_rcb;
-  ColIdxViewType col_indices;
-  EntryIdxViewType entry_indices;
-
-  ordinal_type lcl_row_idx, blk_rowcol_start, blk_nrowscols;
-
-  ScanSparseRowRCBFunctor(const RowMapViewType &row_map_,
-                          const EntriesViewType &entries_,
-                          const PermViewType &perm_rcb_,
-                          const PermViewType &reverse_perm_rcb_,
-                                ColIdxViewType &col_indices_,
-                                EntryIdxViewType &entry_indices_,
-                          const ordinal_type &lcl_row_idx_,
-                          const ordinal_type &blk_rowcol_start_,
-                          const ordinal_type &blk_nrowscols_)
-      : row_map(row_map_),
-        entries(entries_),
-        perm_rcb(perm_rcb_),
-        reverse_perm_rcb(reverse_perm_rcb_),
-        col_indices(col_indices_),
-        entry_indices(entry_indices_),
-        lcl_row_idx(lcl_row_idx_),
-        blk_rowcol_start(blk_rowcol_start_),
-        blk_nrowscols(blk_nrowscols_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const ordinal_type i, ordinal_type &update, const bool final_pass) const {
-    ordinal_type origRow = reverse_perm_rcb(blk_rowcol_start + lcl_row_idx); // origRow: original row idx
-    size_type j = row_map(origRow) + static_cast<size_type>(i); // j: original entry idx
-    ordinal_type origColId = entries(j);
-    ordinal_type newColId  = perm_rcb(origColId); // newColId: reordered col idx
-    bool is_contained = (newColId >= blk_rowcol_start) && (newColId < (blk_rowcol_start + blk_nrowscols));
-    if (final_pass) {
-      if (is_contained) {
-        // 'update' holds the number of columns seen before index i
-        col_indices(update) = newColId - blk_rowcol_start;
-        entry_indices(update) = j;
-      }
-    }
-    // Increment the running prefix sum if this column belongs to this row
-    if (is_contained) {
-      update += 1;
-    }
-  }
-};
-
-template <typename RowMapViewType, typename EntriesViewType, typename PermViewType,
-          typename ColIdxViewType, typename EntryIdxViewType, typename NnzViewType>
-struct ScanSparseRowsRCBFunctor {
-  using execution_space = typename RowMapViewType::execution_space;
-  using policy_type  = Kokkos::TeamPolicy<execution_space>;
-  using member_type  = typename policy_type::member_type;
-  using size_type    = typename RowMapViewType::non_const_value_type;
-  using ordinal_type = typename PermViewType::non_const_value_type;
-	  
   RowMapViewType row_map;
-  EntriesViewType entries;
-  PermViewType perm_rcb;
-  PermViewType reverse_perm_rcb;
-  ColIdxViewType col_indices;
-  EntryIdxViewType entry_indices;
-  NnzViewType nnz_rows;
+  size_type nrows;
 
-  ordinal_type blk_rowcol_start, blk_nrowscols;
-
-  ScanSparseRowsRCBFunctor(const RowMapViewType &row_map_,
-                           const EntriesViewType &entries_,
-                           const PermViewType &perm_rcb_,
-                           const PermViewType &reverse_perm_rcb_,
-                                 ColIdxViewType &col_indices_,
-                                 EntryIdxViewType &entry_indices_,
-                                 NnzViewType &nnz_rows_,
-                          const ordinal_type &blk_rowcol_start_,
-                          const ordinal_type &blk_nrowscols_)
-      : row_map(row_map_),
-        entries(entries_),
-        perm_rcb(perm_rcb_),
+  CreatePermutedRowMapRCBFunctor(const RowMapInViewType &row_map_in_,
+                                 const PermViewType &reverse_perm_rcb_,
+                                       RowMapViewType &row_map_)
+      : row_map_in(row_map_in_),
         reverse_perm_rcb(reverse_perm_rcb_),
-        col_indices(col_indices_),
-        entry_indices(entry_indices_),
-        nnz_rows(nnz_rows_),
-        blk_rowcol_start(blk_rowcol_start_),
-        blk_nrowscols(blk_nrowscols_) {}
+        row_map(row_map_) {
+      nrows = static_cast<size_type>(row_map_in.extent(0)) - 1;
+    }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const member_type &team) const {
-    ordinal_type rowid = static_cast<ordinal_type>(team.league_rank());
-    ordinal_type origRow = reverse_perm_rcb(blk_rowcol_start + rowid); // origRow: original row idx
-    ordinal_type orig_nnz_row = row_map(origRow + 1) - row_map(origRow);
-          
-    Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, orig_nnz_row), [&](const ordinal_type i, ordinal_type &update,  const bool final_pass) {
-      size_type j = row_map(origRow) + static_cast<size_type>(i); // j: original entry idx
-      ordinal_type origColId = entries(j);
-      ordinal_type newColId  = perm_rcb(origColId); // newColId: reordered col idx
-      bool is_contained = (newColId >= blk_rowcol_start) && (newColId < (blk_rowcol_start + blk_nrowscols));
-      if (final_pass) {
-        if (is_contained) {
-          // 'update' holds the number of columns seen before index i
-          col_indices(rowid, update) = newColId - blk_rowcol_start;
-          entry_indices(rowid, update) = j;
-        }
-      }
-      // Increment the running prefix sum if this column belongs to this row
-      if (is_contained) {
-        update += 1;
-      }
-    }, nnz_rows(rowid));
-  }
-};
-
-template <typename ValuesInViewType, typename ColIdxViewType, typename EntryIdxViewType,
-          typename RowMapViewType, typename EntriesViewType, typename ValuesViewType>
-struct CreateSparseDiagBlockRCBFunctor {
-  using execution_space = typename RowMapViewType::execution_space;
-  using policy_type = Kokkos::TeamPolicy<execution_space>;
-  using member_type = typename policy_type::member_type;
-  using size_type    = typename RowMapViewType::non_const_value_type;
-
-  ValuesInViewType values_in;
-  ColIdxViewType col_indices;
-  EntryIdxViewType entry_indices;
-  RowMapViewType row_map;
-  EntriesViewType entries;
-  ValuesViewType values;
-
-  CreateSparseDiagBlockRCBFunctor(const ValuesInViewType &values_in_,
-                                  const ColIdxViewType &col_indices_,
-                                  const EntryIdxViewType &entry_indices_,
-                                  const RowMapViewType &row_map_,
-                                        EntriesViewType &entries_,
-                                        ValuesViewType &values_)
-      : values_in(values_in_),
-        col_indices(col_indices_),
-        entry_indices(entry_indices_),
-        row_map(row_map_),
-        entries(entries_),
-        values(values_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const member_type &team) const {
-    size_type rowid = static_cast<size_type>(team.league_rank());
-    size_type row_begin = static_cast<size_type>(row_map(rowid));
-    size_type row_end   = static_cast<size_type>(row_map(rowid + 1));
-
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, row_begin, row_end), [&](const size_type ii) {
-      entries(ii) = col_indices(rowid, ii - row_begin);
-      values(ii)  = values_in(entry_indices(rowid, ii - row_begin));
-    });
+  void operator()(const size_type i, size_type &update, const bool final_pass) const {
+    if (final_pass) row_map(i) = update;
+    size_type origRow = static_cast<size_type>(reverse_perm_rcb(i));
+    update += row_map_in(origRow + 1) - row_map_in(origRow);
+    if (final_pass && (i == (nrows - 1))) row_map(nrows) = update;
   }
 };
 
@@ -2603,190 +2470,7 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(
 
   using ordinal_type = typename crsMat_t::non_const_ordinal_type;
   using size_type    = typename crsMat_t::non_const_size_type;
-
-  static_assert(Kokkos::is_view_v<perm_view_type>,
-                "KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential: perm_view_type must be "
-                "a Kokkos::View.");
-
-  static_assert(static_cast<int>(perm_view_type::rank()) == 1,
-                "KokkosSparse::Impl::recursive_coordinate_bisection: perm_view_type must have rank 1.");
-
-  row_map_type A_row_map = A.graph.row_map;
-  entries_type A_entries = A.graph.entries;
-  values_type A_values   = A.values;
-
-struct timeval begin, end;
-double t_first = 0.0;
-double t_copy = 0.0;
-double t_second = 0.0;
-
-gettimeofday( &begin, NULL );
-  auto A_row_map_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_row_map);
-  auto A_entries_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_entries);
-  auto A_values_h  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_values);
-Kokkos::fence();
-gettimeofday( &end, NULL );
-t_copy += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
-
-  ordinal_type A_nrows  = static_cast<ordinal_type>(A.numRows());
-  ordinal_type A_ncols  = static_cast<ordinal_type>(A.numCols());
-  ordinal_type n_blocks = static_cast<ordinal_type>(DiagBlk_v.size());
-
-  if (A_nrows != A_ncols) {
-    std::ostringstream os;
-    os << "The diagonal block extraction only works with square matrices -- "
-          "matrix A: "
-       << A_nrows << " x " << A_ncols;
-    throw std::runtime_error(os.str());
-  }
-
-  if (n_blocks == 1) {
-    // One block case: simply shallow copy A to DiagBlk_v[0]
-    DiagBlk_v[0] = crsMat_t(A);
-  } else {
-    // n_blocks > 1
-    if (A_nrows == 0) {
-      // Degenerate case: A is an empty matrix
-      for (ordinal_type i = 0; i < n_blocks; i++) {
-        DiagBlk_v[i] = crsMat_t();
-      }
-    } else {
-      // A_nrows >= 1
-      if ((n_blocks < 1) || (A_nrows < n_blocks)) {
-        std::ostringstream os;
-        os << "The number of diagonal blocks (" << n_blocks
-           << ") should be >=1 and <= the number of rows of the matrix A (" << A_nrows << ")";
-        throw std::runtime_error(os.str());
-      }
-
-      if (static_cast<ordinal_type>(std::pow(2, static_cast<int>(std::log2(n_blocks)))) != n_blocks) {
-        std::ostringstream os;
-        os << "The number of diagonal blocks (" << n_blocks << ") must be a power of 2";
-        throw std::runtime_error(os.str());
-      }
-
-      if (static_cast<ordinal_type>(partition_sizes_rcb.size()) != n_blocks) {
-        std::ostringstream os;
-        os << "The number of diagonal blocks (" << n_blocks << ") must be equal to the number of partitions ("
-           << partition_sizes_rcb.size() << ')';
-        throw std::runtime_error(os.str());
-      }
-
-      if (static_cast<ordinal_type>(perm_rcb.extent(0)) != A_nrows) {
-        std::ostringstream os;
-        os << "The size of the permutation array (" << perm_rcb.extent(0)
-           << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
-        throw std::runtime_error(os.str());
-      }
-
-      if (static_cast<ordinal_type>(reverse_perm_rcb.extent(0)) != A_nrows) {
-        std::ostringstream os;
-        os << "The size of the reverse permutation array (" << reverse_perm_rcb.extent(0)
-           << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
-        throw std::runtime_error(os.str());
-      }
-
-      // Permute and extract
-gettimeofday( &begin, NULL );
-      auto h_perm_rcb         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_rcb);
-      auto h_reverse_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), reverse_perm_rcb);
-Kokkos::fence();
-gettimeofday( &end, NULL );
-t_copy += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
-
-      ordinal_type blk_row_start = 0;     // first row index of i-th diagonal block
-      ordinal_type blk_col_start = 0;     // first col index of i-th diagonal block
-      ordinal_type blk_nrows, blk_ncols;  // Nrows, Ncols of i-th diagonal block
-
-      for (ordinal_type i = 0; i < n_blocks; i++) {
-        blk_nrows     = partition_sizes_rcb[i];
-        blk_ncols     = blk_nrows;
-        blk_col_start = blk_row_start;
-
-        // First round: count non-zeros of block i, fill row map vector of block i, and store mapping from new column
-        // indices to locations on the original entries
-gettimeofday( &begin, NULL );
-        out_row_map_type row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map"), blk_nrows + 1);
-        auto row_map_h = Kokkos::create_mirror_view(row_map);
-        std::vector<std::map<ordinal_type, size_type>> colIdx_entryIdx_rcb(blk_nrows);
-        size_type blk_nnz = 0;
-        for (ordinal_type ii = 0; ii < blk_nrows; ii++) {  // ii: reordered index
-          row_map_h(ii) = blk_nnz;
-          ordinal_type origRow =
-              h_reverse_perm_rcb(blk_row_start + ii);  // get the original row idx of the reordered row idx ii
-          for (size_type j = A_row_map_h(origRow); j < A_row_map_h(origRow + 1); j++) {
-            ordinal_type origColId = A_entries_h(j);
-            ordinal_type newColId  = h_perm_rcb(origColId);  // get the reordered col idx of the original col idx
-            if ((newColId >= blk_col_start) && (newColId < (blk_col_start + blk_ncols))) {
-              colIdx_entryIdx_rcb[ii][newColId - blk_col_start] = j;
-              blk_nnz++;
-            }
-          }
-        }
-        row_map_h(blk_nrows) = blk_nnz;
-Kokkos::fence();
-gettimeofday( &end, NULL );
-t_first += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
-
-        // Second round: fill entries and values of block i
-gettimeofday( &begin, NULL );
-        out_entries_type entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"), blk_nnz);
-        out_values_type values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"), blk_nnz);
-        auto entries_h = Kokkos::create_mirror_view(entries);
-        auto values_h  = Kokkos::create_mirror_view(values);
-        blk_nnz        = 0;
-        for (ordinal_type ii = 0; ii < blk_nrows; ii++) {
-          for (typename std::map<ordinal_type, size_type>::iterator it = colIdx_entryIdx_rcb[ii].begin();
-               it != colIdx_entryIdx_rcb[ii].end(); ++it) {
-            entries_h(blk_nnz) = it->first;
-            values_h(blk_nnz)  = A_values_h(it->second);
-            blk_nnz++;
-          }
-        }
-Kokkos::fence();
-gettimeofday( &end, NULL );
-t_second += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
-
-        // Copy H->D
-gettimeofday( &begin, NULL );
-        Kokkos::deep_copy(row_map, row_map_h);
-        Kokkos::deep_copy(entries, entries_h);
-        Kokkos::deep_copy(values, values_h);
-Kokkos::fence();
-gettimeofday( &end, NULL );
-t_copy += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
-
-        // Create CRS matrix for this block
-        DiagBlk_v[i] = crsMat_t("CrsMatrix", blk_nrows, blk_ncols, blk_nnz, values, row_map, entries);
-
-        // Shift to the next diagonal block
-        blk_row_start += blk_nrows;
-      }  // for (ordinal_type i = 0; i < n_blocks; i++)
-printf("Extract time: first round %.6lf (s), copy %.6lf (s), second round %.6lf (s), total %.6lf (s)\n", t_first, t_copy, t_second, t_first + t_copy + t_second);
-    }    // A_nrows >= 1
-  }      // n_blocks > 1
-}
-
-template <typename crsMat_t, typename perm_view_type>
-void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential_(
-    const crsMat_t &A, const perm_view_type &perm_rcb, const perm_view_type &reverse_perm_rcb,
-    const std::vector<typename crsMat_t::non_const_ordinal_type> partition_sizes_rcb,
-    std::vector<crsMat_t> &DiagBlk_v) {
-  using row_map_type     = typename crsMat_t::row_map_type;
-  using entries_type     = typename crsMat_t::index_type;
-  using values_type      = typename crsMat_t::values_type;
-  using graph_t          = typename crsMat_t::StaticCrsGraphType;
-  using out_row_map_type = typename graph_t::row_map_type::non_const_type;
-  using out_entries_type = typename graph_t::entries_type::non_const_type;
-  using out_values_type  = typename crsMat_t::values_type::non_const_type;
-
-  using ordinal_type = typename crsMat_t::non_const_ordinal_type;
-  using size_type    = typename crsMat_t::non_const_size_type;
   using execution_space = typename row_map_type::device_type::execution_space;
-  using memory_space = typename row_map_type::device_type::memory_space;
-
-  using col_indices_type   = Kokkos::View<ordinal_type **, Kokkos::LayoutRight, memory_space>;
-  using entry_indices_type = Kokkos::View<size_type **, Kokkos::LayoutRight, memory_space>;
 
   static_assert(Kokkos::is_view_v<perm_view_type>,
                 "KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential: perm_view_type must be "
@@ -2857,230 +2541,26 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential_(
         throw std::runtime_error(os.str());
       }
 
-      struct timeval begin, end;
-      double t_first = 0.0;
-      double t_rowmap = 0.0;
-      double t_second = 0.0;
-      double t_test = 0;
-
-      gettimeofday( &begin, NULL );					   
-        out_row_map_type row_map_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map_rcb"), A_nrows + 1);
-        out_entries_type entries_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries_rcb"), A.nnz());
-        out_values_type values_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_rcb"), A.nnz());
-        Kokkos::Bitset<typename row_map_type::device_type> rowEndMarkersNonconst(A.nnz());
-
-        Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space, size_type>(0, static_cast<size_type>(A_nrows)), KOKKOS_LAMBDA(const size_type ii, size_type& update, const bool final_pass) {
-          if (final_pass) row_map_rcb(ii) = update;
-          size_type origRow = static_cast<size_type>(reverse_perm_rcb(ii));
-          update += A_row_map(origRow + 1) - A_row_map(origRow);
-          if (final_pass && (ii == A_nrows - 1)) row_map_rcb(A_nrows) = update;
-        });
-
-        Kokkos::parallel_for(Kokkos::RangePolicy<execution_space, size_type>(0, static_cast<size_type>(A_nrows + 1)), KokkosSparse::Impl::MarkFinalRowEntries(rowEndMarkersNonconst, row_map_rcb));
-
-        Kokkos::TeamPolicy<execution_space> policy0(A_nrows, Kokkos::AUTO);
-        KokkosSparse::Impl::PermuteSparseMatrixRCBFunctor functor0(A_row_map, A_entries, A_values, perm_rcb, reverse_perm_rcb, row_map_rcb, entries_rcb, values_rcb);
-        Kokkos::parallel_for("Permute_Sparse_Matrix_RCB", policy0, functor0);
-        auto row_map_rcb_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), row_map_rcb);
-      Kokkos::fence();
-      gettimeofday( &end, NULL );
-      t_test += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
-      printf("TEST -- permute the whole CSR matrix time: %.6lf (s)\n", t_test);
-
-      // Permute and extract
-//auto A_row_map_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_row_map);
-//auto h_reverse_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), reverse_perm_rcb);
-
-      ordinal_type blk_row_start = 0;     // first row index of i-th diagonal block
-      ordinal_type blk_col_start = 0;     // first col index of i-th diagonal block
-      ordinal_type blk_nrows, blk_ncols;  // Nrows, Ncols of i-th diagonal block
-	
-      for (ordinal_type i = 0; i < n_blocks; i++) {
-        blk_nrows     = partition_sizes_rcb[i];
-        blk_ncols     = blk_nrows;
-        blk_col_start = blk_row_start;
-
-        // First round: count non-zeros of block i, fill row map vector of block i, and store mapping from new column
-        // indices to locations on the original entries
-    gettimeofday( &begin, NULL );
-        out_row_map_type row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map"), blk_nrows + 1);
-        col_indices_type col_indices(Kokkos::view_alloc(Kokkos::WithoutInitializing, "col_indices"), blk_nrows, blk_ncols);
-        entry_indices_type entry_indices(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entry_indices"), blk_nrows, blk_ncols);
-        Kokkos::View<ordinal_type *, Kokkos::LayoutLeft, memory_space> nnz_rows(Kokkos::view_alloc(Kokkos::WithoutInitializing, "nnz_rows"), blk_nrows);
-
-        /*for (ordinal_type ii = 0; ii < blk_nrows; ii++) { // ii: reordered index
-          ordinal_type origRow = h_reverse_perm_rcb(blk_row_start + ii);  // get the original row idx of the reordered row idx ii
-          ordinal_type nnz_row_orig = A_row_map_h(origRow + 1) - A_row_map_h(origRow);
-          auto sub_col_indices = Kokkos::subview(col_indices, ii, Kokkos::ALL());
-          auto sub_entry_indices = Kokkos::subview(entry_indices, ii, Kokkos::ALL());
-          auto sub_nnz_rows = Kokkos::subview(nnz_rows, ii);
-          Kokkos::RangePolicy<execution_space, ordinal_type> policy1(0, nnz_row_orig);
-          KokkosSparse::Impl::ScanSparseRowRCBFunctor functor1(A_row_map, A_entries, perm_rcb, reverse_perm_rcb,
-                                                               sub_col_indices, sub_entry_indices, ii, blk_col_start, blk_ncols);
-          Kokkos::parallel_scan("Scan_SpareRow_RCB", policy1, functor1, sub_nnz_rows);
-        }*/
-        Kokkos::TeamPolicy<execution_space> policy1(blk_nrows, Kokkos::AUTO);
-        KokkosSparse::Impl::ScanSparseRowsRCBFunctor functor1(A_row_map, A_entries, perm_rcb, reverse_perm_rcb,
-                                                              col_indices, entry_indices, nnz_rows, blk_col_start, blk_ncols);
-        Kokkos::parallel_for("Scan_SparseRows_RCB", policy1, functor1);
-    Kokkos::fence();
-    gettimeofday( &end, NULL );
-    t_first += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
-
-        // count nnz of block i and fill row_map
-    gettimeofday( &begin, NULL );
-        size_type blk_nnz;
-        Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space, size_type>(0, static_cast<size_type>(blk_nrows)), KOKKOS_LAMBDA(const size_type ii, size_type& update, const bool final_pass) {
-          if (final_pass) row_map(ii) = update;
-          update += nnz_rows(ii);
-          if (final_pass && (ii == blk_nrows - 1)) row_map(blk_nrows) = update;
-        }, blk_nnz);
-    Kokkos::fence();
-    gettimeofday( &end, NULL );
-    t_rowmap += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
-
-        // Second round: fill entries and values of block i
-    gettimeofday( &begin, NULL );
-        out_entries_type entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"), blk_nnz);
-        out_values_type values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"), blk_nnz);        
-        Kokkos::TeamPolicy<execution_space> policy2(blk_nrows, Kokkos::AUTO);
-        KokkosSparse::Impl::CreateSparseDiagBlockRCBFunctor functor2(A_values, col_indices, entry_indices, row_map, entries, values);
-        Kokkos::parallel_for("Create_Sparse_DiagBlock_RCB", policy2, functor2);
-    Kokkos::fence();
-    gettimeofday( &end, NULL );
-    t_second += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
-
-        // Create CRS matrix for this block
-        DiagBlk_v[i] = crsMat_t("CrsMatrix", blk_nrows, blk_ncols, blk_nnz, values, row_map, entries);
-
-        // Shift to the next diagonal block
-        blk_row_start += blk_nrows;
-      }  // for (ordinal_type i = 0; i < n_blocks; i++)
-    printf("New_Extract time: first round %.6lf (s), make rowmap %.6lf (s), second round %.6lf (s), total %.6lf (s)\n", t_first, t_rowmap, t_second, t_first + t_rowmap + t_second);
-    }    // A_nrows >= 1
-  }      // n_blocks > 1
-}
-
-template <typename crsMat_t, typename perm_view_type>
-void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential__(
-    const crsMat_t &A, const perm_view_type &perm_rcb, const perm_view_type &reverse_perm_rcb,
-    const std::vector<typename crsMat_t::non_const_ordinal_type> partition_sizes_rcb,
-    std::vector<crsMat_t> &DiagBlk_v) {
-  using row_map_type     = typename crsMat_t::row_map_type;
-  using entries_type     = typename crsMat_t::index_type;
-  using values_type      = typename crsMat_t::values_type;
-  using graph_t          = typename crsMat_t::StaticCrsGraphType;
-  using out_row_map_type = typename graph_t::row_map_type::non_const_type;
-  using out_entries_type = typename graph_t::entries_type::non_const_type;
-  using out_values_type  = typename crsMat_t::values_type::non_const_type;
-
-  using ordinal_type = typename crsMat_t::non_const_ordinal_type;
-  using size_type    = typename crsMat_t::non_const_size_type;
-  using execution_space = typename row_map_type::device_type::execution_space;
-  using memory_space = typename row_map_type::device_type::memory_space;
-
-  using col_indices_type   = Kokkos::View<ordinal_type **, Kokkos::LayoutRight, memory_space>;
-  using entry_indices_type = Kokkos::View<size_type **, Kokkos::LayoutRight, memory_space>;
-
-  static_assert(Kokkos::is_view_v<perm_view_type>,
-                "KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential: perm_view_type must be "
-                "a Kokkos::View.");
-
-  static_assert(static_cast<int>(perm_view_type::rank()) == 1,
-                "KokkosSparse::Impl::recursive_coordinate_bisection: perm_view_type must have rank 1.");
-
-  row_map_type A_row_map = A.graph.row_map;
-  entries_type A_entries = A.graph.entries;
-  values_type A_values   = A.values;
-
-  ordinal_type A_nrows  = static_cast<ordinal_type>(A.numRows());
-  ordinal_type A_ncols  = static_cast<ordinal_type>(A.numCols());
-  ordinal_type n_blocks = static_cast<ordinal_type>(DiagBlk_v.size());
-
-  if (A_nrows != A_ncols) {
-    std::ostringstream os;
-    os << "The diagonal block extraction only works with square matrices -- "
-          "matrix A: "
-       << A_nrows << " x " << A_ncols;
-    throw std::runtime_error(os.str());
-  }
-
-  if (n_blocks == 1) {
-    // One block case: simply shallow copy A to DiagBlk_v[0]
-    DiagBlk_v[0] = crsMat_t(A);
-  } else {
-    // n_blocks > 1
-    if (A_nrows == 0) {
-      // Degenerate case: A is an empty matrix
-      for (ordinal_type i = 0; i < n_blocks; i++) {
-        DiagBlk_v[i] = crsMat_t();
-      }
-    } else {
-      // A_nrows >= 1
-      if ((n_blocks < 1) || (A_nrows < n_blocks)) {
-        std::ostringstream os;
-        os << "The number of diagonal blocks (" << n_blocks
-           << ") should be >=1 and <= the number of rows of the matrix A (" << A_nrows << ")";
-        throw std::runtime_error(os.str());
-      }
-
-      if (static_cast<ordinal_type>(std::pow(2, static_cast<int>(std::log2(n_blocks)))) != n_blocks) {
-        std::ostringstream os;
-        os << "The number of diagonal blocks (" << n_blocks << ") must be a power of 2";
-        throw std::runtime_error(os.str());
-      }
-
-      if (static_cast<ordinal_type>(partition_sizes_rcb.size()) != n_blocks) {
-        std::ostringstream os;
-        os << "The number of diagonal blocks (" << n_blocks << ") must be equal to the number of partitions ("
-           << partition_sizes_rcb.size() << ')';
-        throw std::runtime_error(os.str());
-      }
-
-      if (static_cast<ordinal_type>(perm_rcb.extent(0)) != A_nrows) {
-        std::ostringstream os;
-        os << "The size of the permutation array (" << perm_rcb.extent(0)
-           << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
-        throw std::runtime_error(os.str());
-      }
-
-      if (static_cast<ordinal_type>(reverse_perm_rcb.extent(0)) != A_nrows) {
-        std::ostringstream os;
-        os << "The size of the reverse permutation array (" << reverse_perm_rcb.extent(0)
-           << ") must be equal to the number of rows of the matrix A (" << A_nrows << ')';
-        throw std::runtime_error(os.str());
-      }
-
-      struct timeval begin, end;
-      double t_permute = 0.0;
-      double t_extract = 0.0;
-
-      // Permute the original matrix using RCB ordering
-    gettimeofday( &begin, NULL );
+      // 1. Permute the original matrix using RCB ordering
       out_row_map_type row_map_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map_rcb"), A_nrows + 1);
       out_entries_type entries_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries_rcb"), A.nnz());
       out_values_type values_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_rcb"), A.nnz());
       Kokkos::Bitset<typename row_map_type::device_type> rowEndMarkersNonconst(A.nnz());
 
-      // Create permuted row map
-      Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space, size_type>(0, static_cast<size_type>(A_nrows)), KOKKOS_LAMBDA(const size_type ii, size_type& update, const bool final_pass) {
-        if (final_pass) row_map_rcb(ii) = update;
-        size_type origRow = static_cast<size_type>(reverse_perm_rcb(ii));
-        update += A_row_map(origRow + 1) - A_row_map(origRow);
-        if (final_pass && (ii == A_nrows - 1)) row_map_rcb(A_nrows) = update;
-      });
-      // Mark final row entries (permuted matrix)
+      // 1.1. Create permuted row map
+      Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space>(0, A_nrows), KokkosSparse::Impl::CreatePermutedRowMapRCBFunctor(A_row_map, reverse_perm_rcb, row_map_rcb));
+
+      // 1.2. Mark final row entries (in permuted matrix)
       Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, A_nrows + 1), KokkosSparse::Impl::MarkFinalRowEntries(rowEndMarkersNonconst, row_map_rcb));
-      // Create permuted entries and values
+
+      // 1.3. Create permuted entries and values
       Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space>(A_nrows, Kokkos::AUTO), KokkosSparse::Impl::PermuteSparseMatrixRCBFunctor(A_row_map, A_entries, A_values, perm_rcb, reverse_perm_rcb, row_map_rcb, entries_rcb, values_rcb));
-      // Copy permuted row map to host memory
+
+      // 1.4. Copy permuted row map to host memory
       auto row_map_rcb_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), row_map_rcb);
       Kokkos::ConstBitset<typename row_map_type::device_type> rowEndMarkers(rowEndMarkersNonconst);
-    Kokkos::fence();
-    gettimeofday( &end, NULL );
-    t_permute += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
 
-      // Extract blocks
+      // 2. Extract diagonal blocks
       ordinal_type blk_row_start = 0;     // first row index of i-th diagonal block
       ordinal_type blk_col_start = 0;     // first col index of i-th diagonal block
       ordinal_type blk_nrows, blk_ncols;  // Nrows, Ncols of i-th diagonal block
@@ -3090,8 +2570,7 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential__(
         blk_ncols     = blk_nrows;
         blk_col_start = blk_row_start;
 
-    gettimeofday( &begin, NULL );
-        // First: count non-zeros of block i
+        // 2.1. Count non-zeros of block i
         out_row_map_type row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map"), blk_nrows + 1);
         size_type entry_rcb_begin = row_map_rcb_h(blk_row_start);
         size_type entry_rcb_end   = row_map_rcb_h(blk_row_start + blk_nrows);
@@ -3099,23 +2578,19 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential__(
         Kokkos::parallel_reduce(Kokkos::RangePolicy<execution_space>(entry_rcb_begin, entry_rcb_end),
                                 KokkosSparse::Impl::CountNnzDiagBlockRCBFunctor<out_entries_type, size_type>(entries_rcb, blk_col_start, blk_ncols),
                                 blk_nnz);
-        // Second: fil row map, entries and values of block i
+
+        // 2.2. Fill row map, entries and values of block i
         out_entries_type entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"), blk_nnz);
         out_values_type values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"), blk_nnz);
-         
         Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space>(entry_rcb_begin, entry_rcb_end),
-                              KokkosSparse::Impl::ExtractSparseDiagBlockRCBFunctor(rowEndMarkers, entries_rcb, values_rcb, row_map, entries, values, blk_col_start, blk_ncols, entry_rcb_begin));     
-    Kokkos::fence();
-    gettimeofday( &end, NULL );
-    t_extract += 1.0 * ( end.tv_sec  - begin.tv_sec  ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec );
+                              KokkosSparse::Impl::ExtractSparseDiagBlockRCBFunctor(rowEndMarkers, entries_rcb, values_rcb, row_map, entries, values, blk_col_start, blk_ncols, entry_rcb_begin));
 
-        // Create CRS matrix for this block
+        // 2.3. Create CRS matrix for this block
         DiagBlk_v[i] = crsMat_t("CrsMatrix", blk_nrows, blk_ncols, blk_nnz, values, row_map, entries);
 
-        // Shift to the next diagonal block
+        // 2.4 Shift to the next diagonal block
         blk_row_start += blk_nrows;
       }  // for (ordinal_type i = 0; i < n_blocks; i++)
-    printf("New_Extract time: permute %.6lf (s), extract %.6lf (s), total %.6lf (s)\n", t_permute, t_extract, t_permute + t_extract);
     }    // A_nrows >= 1
   }      // n_blocks > 1
 }
