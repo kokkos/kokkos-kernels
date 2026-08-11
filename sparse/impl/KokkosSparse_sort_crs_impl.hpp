@@ -389,10 +389,8 @@ Kokkos::View<uint64_t*, ExecSpace> generateBulkCrsKeys(const ExecSpace& exec, co
           keys(rowBegin) = uint64_t(i);
         }
       });
-  Kokkos::fence();
   Kokkos::parallel_scan("CRS bulk sorting: compute keys", Kokkos::RangePolicy<ExecSpace>(exec, 0, entries.extent(0)),
                         MaxScanFunctor<Offset, decltype(keys), Entries>(ncols, keys, entries));
-  Kokkos::fence();
   return keys;
 }
 
