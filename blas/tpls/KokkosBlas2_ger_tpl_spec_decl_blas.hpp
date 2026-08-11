@@ -17,31 +17,29 @@ namespace Impl {
   constexpr int one = 1;                                                     \
   const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);
 
-#define KOKKOSBLAS2_DGER_BLAS(LAYOUT, ETI_SPEC_AVAIL)                                                            \
-  template <typename ExecSpace>                                                                                  \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                \
-  struct GER<ExecSpace, Kokkos::View<const double*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-             Kokkos::View<const double*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,            \
-             Kokkos::View<double**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,           \
-             ETI_SPEC_AVAIL> {                                                                                   \
-    using SCALAR    = double;                                                                                    \
-    using XViewType = Kokkos::View<const SCALAR*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
-    using YViewType = Kokkos::View<const SCALAR*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
-    using AViewType = Kokkos::View<SCALAR**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;        \
-                                                                                                                 \
-    static void ger(const ExecSpace& /* space */                                                                 \
-                    ,                                                                                            \
-                    const char /*trans*/[], typename AViewType::const_value_type& alpha, const XViewType& X,     \
-                    const YViewType& Y, const AViewType& A) {                                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,double]");                                         \
-      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUT);                                                                    \
-      if (A_is_ll) {                                                                                             \
-        HostBlas<SCALAR>::ger(M, N, alpha, X.data(), one, Y.data(), one, A.data(), LDA);                         \
-      } else {                                                                                                   \
-        HostBlas<SCALAR>::ger(M, N, alpha, Y.data(), one, X.data(), one, A.data(), LDA);                         \
-      }                                                                                                          \
-      Kokkos::Profiling::popRegion();                                                                            \
-    }                                                                                                            \
+#define KOKKOSBLAS2_DGER_BLAS(LAYOUT, ETI_SPEC_AVAIL)                                                                  \
+  template <typename ExecSpace>                                                                                        \
+    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                      \
+  struct GER<ExecSpace, Kokkos::View<const double*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,       \
+             Kokkos::View<const double*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+             Kokkos::View<double**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,                 \
+             ETI_SPEC_AVAIL> {                                                                                         \
+    using SCALAR    = double;                                                                                          \
+    using XViewType = Kokkos::View<const SCALAR*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;         \
+    using YViewType = Kokkos::View<const SCALAR*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;         \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;              \
+                                                                                                                       \
+    static void ger(const ExecSpace& /* space */, const char /*trans*/[], typename AViewType::const_value_type& alpha, \
+                    const XViewType& X, const YViewType& Y, const AViewType& A) {                                      \
+      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,double]");                                               \
+      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUT);                                                                          \
+      if (A_is_ll) {                                                                                                   \
+        HostBlas<SCALAR>::ger(M, N, alpha, X.data(), one, Y.data(), one, A.data(), LDA);                               \
+      } else {                                                                                                         \
+        HostBlas<SCALAR>::ger(M, N, alpha, Y.data(), one, X.data(), one, A.data(), LDA);                               \
+      }                                                                                                                \
+      Kokkos::Profiling::popRegion();                                                                                  \
+    }                                                                                                                  \
   };
 
 #define KOKKOSBLAS2_SGER_BLAS(LAYOUT, ETI_SPEC_AVAIL)                                                           \

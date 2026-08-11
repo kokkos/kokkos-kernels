@@ -10,81 +10,77 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_XGEMM_BLAS(EXEC_SPACE, SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL) \
-  template <typename ExecSpace>                                                                                      \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                    \
-  struct GEMM<ExecSpace,                                                                                             \
-              Kokkos::View<const SCALAR_TYPE**, LAYOUTA, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
-              Kokkos::View<const SCALAR_TYPE**, LAYOUTB, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
-              Kokkos::View<SCALAR_TYPE**, LAYOUTC, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true,       \
-              ETI_SPEC_AVAIL> {                                                                                      \
-    using SCALAR    = SCALAR_TYPE;                                                                                   \
-    using AViewType = Kokkos::View<const SCALAR**, LAYOUTA, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;    \
-    using BViewType = Kokkos::View<const SCALAR**, LAYOUTB, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;    \
-    using CViewType = Kokkos::View<SCALAR**, LAYOUTC, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;          \
-                                                                                                                     \
-    static void gemm(const ExecSpace& /* space*/, const char transA[], const char transB[],                          \
-                     typename AViewType::const_value_type& alpha, const AViewType& A, const BViewType& B,            \
-                     typename CViewType::const_value_type& beta, const CViewType& C) {                               \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS," #SCALAR_TYPE "]");                                  \
-      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');                                                     \
-      const KK_INT M = C.extent(0);                                                                                  \
-      const KK_INT N = C.extent(1);                                                                                  \
-      const KK_INT K = A.extent(A_t ? 0 : 1);                                                                        \
-                                                                                                                     \
-      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;                                              \
-      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;                                              \
-      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;                                              \
-                                                                                                                     \
-      const KK_INT AST = A_is_lr ? A.stride(0) : A.stride(1), LDA = AST == 0 ? 1 : AST;                              \
-      const KK_INT BST = B_is_lr ? B.stride(0) : B.stride(1), LDB = BST == 0 ? 1 : BST;                              \
-      const KK_INT CST = C_is_lr ? C.stride(0) : C.stride(1), LDC = CST == 0 ? 1 : CST;                              \
-                                                                                                                     \
-      const BASE_SCALAR_TYPE alpha_val = alpha, beta_val = beta;                                                     \
-      if (!A_is_lr && !B_is_lr && !C_is_lr)                                                                          \
-        HostBlas<BASE_SCALAR_TYPE>::gemm(transA[0], transB[0], M, N, K, alpha_val,                                   \
-                                         reinterpret_cast<const BASE_SCALAR_TYPE*>(A.data()), LDA,                   \
-                                         reinterpret_cast<const BASE_SCALAR_TYPE*>(B.data()), LDB, beta_val,         \
-                                         reinterpret_cast<BASE_SCALAR_TYPE*>(C.data()), LDC);                        \
-      if (A_is_lr && B_is_lr && C_is_lr)                                                                             \
-        HostBlas<BASE_SCALAR_TYPE>::gemm(transB[0], transA[0], N, M, K, alpha_val,                                   \
-                                         reinterpret_cast<const BASE_SCALAR_TYPE*>(B.data()), LDB,                   \
-                                         reinterpret_cast<const BASE_SCALAR_TYPE*>(A.data()), LDA, beta_val,         \
-                                         reinterpret_cast<BASE_SCALAR_TYPE*>(C.data()), LDC);                        \
-      Kokkos::Profiling::popRegion();                                                                                \
-    }                                                                                                                \
+#define KOKKOSBLAS3_XGEMM_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUT, ETI_SPEC_AVAIL)                            \
+  template <typename ExecSpace>                                                                                  \
+    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                \
+  struct GEMM<ExecSpace,                                                                                         \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
+              Kokkos::View<SCALAR_TYPE**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true,    \
+              ETI_SPEC_AVAIL> {                                                                                  \
+    using SCALAR    = SCALAR_TYPE;                                                                               \
+    using AViewType = Kokkos::View<const SCALAR**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >; \
+    using BViewType = Kokkos::View<const SCALAR**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >; \
+    using CViewType = Kokkos::View<SCALAR**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;       \
+                                                                                                                 \
+    static void gemm(const ExecSpace& /* space*/, const char transA[], const char transB[],                      \
+                     typename AViewType::const_value_type& alpha, const AViewType& A, const BViewType& B,        \
+                     typename CViewType::const_value_type& beta, const CViewType& C) {                           \
+      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS," #SCALAR_TYPE "]");                              \
+      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');                                                 \
+      const KK_INT M = C.extent(0);                                                                              \
+      const KK_INT N = C.extent(1);                                                                              \
+      const KK_INT K = A.extent(A_t ? 0 : 1);                                                                    \
+                                                                                                                 \
+      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                           \
+      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                           \
+      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                           \
+                                                                                                                 \
+      const KK_INT AST = A_is_lr ? A.stride(0) : A.stride(1), LDA = AST == 0 ? 1 : AST;                          \
+      const KK_INT BST = B_is_lr ? B.stride(0) : B.stride(1), LDB = BST == 0 ? 1 : BST;                          \
+      const KK_INT CST = C_is_lr ? C.stride(0) : C.stride(1), LDC = CST == 0 ? 1 : CST;                          \
+                                                                                                                 \
+      const BASE_SCALAR_TYPE alpha_val = alpha, beta_val = beta;                                                 \
+      if (!A_is_lr && !B_is_lr && !C_is_lr)                                                                      \
+        HostBlas<BASE_SCALAR_TYPE>::gemm(transA[0], transB[0], M, N, K, alpha_val,                               \
+                                         reinterpret_cast<const BASE_SCALAR_TYPE*>(A.data()), LDA,               \
+                                         reinterpret_cast<const BASE_SCALAR_TYPE*>(B.data()), LDB, beta_val,     \
+                                         reinterpret_cast<BASE_SCALAR_TYPE*>(C.data()), LDC);                    \
+      if (A_is_lr && B_is_lr && C_is_lr)                                                                         \
+        HostBlas<BASE_SCALAR_TYPE>::gemm(transB[0], transA[0], N, M, K, alpha_val,                               \
+                                         reinterpret_cast<const BASE_SCALAR_TYPE*>(B.data()), LDB,               \
+                                         reinterpret_cast<const BASE_SCALAR_TYPE*>(A.data()), LDA, beta_val,     \
+                                         reinterpret_cast<BASE_SCALAR_TYPE*>(C.data()), LDC);                    \
+      Kokkos::Profiling::popRegion();                                                                            \
+    }                                                                                                            \
   };
 
-#define KOKKOSBLAS3_DGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::Serial, double, double, LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_DGEMM_BLAS(LAYOUT, ETI_SPEC_AVAIL) KOKKOSBLAS3_XGEMM_BLAS(double, double, LAYOUT, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS3_SGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::Serial, float, float, LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_SGEMM_BLAS(LAYOUT, ETI_SPEC_AVAIL) KOKKOSBLAS3_XGEMM_BLAS(float, float, LAYOUT, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS3_ZGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL)                                          \
-  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::Serial, Kokkos::complex<double>, std::complex<double>, LAYOUTA, LAYOUTB, LAYOUTC, \
-                         ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_ZGEMM_BLAS(LAYOUT, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::complex<double>, std::complex<double>, LAYOUT, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS3_CGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL)                                        \
-  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::Serial, Kokkos::complex<float>, std::complex<float>, LAYOUTA, LAYOUTB, LAYOUTC, \
-                         ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_CGEMM_BLAS(LAYOUT, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUT, ETI_SPEC_AVAIL)
 
-KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, false)
-KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, false)
-KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, false)
-KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutRight, true)
+KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutRight, true)
+KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutRight, true)
+KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight, true)
+KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight, false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -98,17 +94,17 @@ KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutR
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_XGEMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL) \
+#define KOKKOSBLAS3_XGEMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, LAYOUT, ETI_SPEC_AVAIL)                    \
   template <>                                                                                                         \
   struct GEMM<Kokkos::Cuda,                                                                                           \
-              Kokkos::View<const SCALAR_TYPE**, LAYOUTA, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
-              Kokkos::View<const SCALAR_TYPE**, LAYOUTB, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
-              Kokkos::View<SCALAR_TYPE**, LAYOUTC, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true,     \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+              Kokkos::View<SCALAR_TYPE**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true,      \
               ETI_SPEC_AVAIL> {                                                                                       \
     using SCALAR    = SCALAR_TYPE;                                                                                    \
-    using AViewType = Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;  \
-    using BViewType = Kokkos::View<const SCALAR**, LAYOUTB, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;  \
-    using CViewType = Kokkos::View<SCALAR**, LAYOUTC, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;        \
+    using AViewType = Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;   \
+    using BViewType = Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;   \
+    using CViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;         \
                                                                                                                       \
     static void gemm(const Kokkos::Cuda& space, const char transA[], const char transB[],                             \
                      typename AViewType::const_value_type& alpha, const AViewType& A, const BViewType& B,             \
@@ -119,9 +115,9 @@ namespace Impl {
       const int N    = static_cast<int>(C.extent(1));                                                                 \
       const int K    = static_cast<int>(A.extent(A_t ? 0 : 1));                                                       \
                                                                                                                       \
-      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;                                               \
-      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;                                               \
-      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;                                               \
+      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                                \
+      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                                \
+      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                                \
                                                                                                                       \
       const int AST = A_is_lr ? A.stride(0) : A.stride(1), LDA = AST == 0 ? 1 : AST;                                  \
       const int BST = B_is_lr ? B.stride(0) : B.stride(1), LDB = BST == 0 ? 1 : BST;                                  \
@@ -160,38 +156,37 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS3_DGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_CUBLAS(double, double, cublasDgemm, LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_DGEMM_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS3_XGEMM_CUBLAS(double, double, cublasDgemm, LAYOUT, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS3_SGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_CUBLAS(float, float, cublasSgemm, LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_SGEMM_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS3_XGEMM_CUBLAS(float, float, cublasSgemm, LAYOUT, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS3_ZGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL)                                  \
-  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZgemm, LAYOUTA, LAYOUTB, LAYOUTC, \
-                           ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_ZGEMM_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZgemm, LAYOUT, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS3_CGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCgemm, LAYOUTA, LAYOUTB, LAYOUTC, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_CGEMM_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCgemm, LAYOUT, ETI_SPEC_AVAIL)
 
-KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutRight, true)
+KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutRight, false)
 
-KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutRight, true)
+KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutRight, false)
 
-KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutRight, true)
+KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutRight, false)
 
-KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutLeft, true)
+KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutLeft, false)
+KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight, true)
+KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight, false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
