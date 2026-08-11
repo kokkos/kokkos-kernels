@@ -5,6 +5,7 @@
 
 ### Bug fixes
 
+- Remove raja submodule [\#3234](https://github.com/kokkos/kokkos-kernels/pull/3234)
 - Treat gtest includes as SYSTEM [\#3226](https://github.com/kokkos/kokkos-kernels/pull/3226)
 - Fixing spgemm due to hash spilling [\#3209](https://github.com/kokkos/kokkos-kernels/pull/3209)
 - Add ODE to list of valid entries for KokkosKernels_ENABLED_COMPONENTS [\#3198](https://github.com/kokkos/kokkos-kernels/pull/3198)
