@@ -130,7 +130,10 @@ void syr2(const ExecutionSpace& space, const char trans[], const char uplo[],
   using AVT = Kokkos::View<typename AViewType::non_const_value_type**, ALayout, ExecutionSpace,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  Impl::SYR2<ExecutionSpace, XVT, YVT, AVT>::syr2(space, trans, uplo, alpha, x, y, A);
+  XVT x_internal = KokkosKernels::Impl::unificationCast<XVT>(x);
+  YVT y_internal = KokkosKernels::Impl::unificationCast<YVT>(y);
+  AVT A_internal = KokkosKernels::Impl::unificationCast<AVT>(A);
+  Impl::SYR2<ExecutionSpace, XVT, YVT, AVT>::syr2(space, trans, uplo, alpha, x_internal, y_internal, A_internal);
 }
 
 /// \brief Rank-1 update (just lower portion or just upper portion) of a
