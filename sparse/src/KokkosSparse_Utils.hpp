@@ -1938,14 +1938,11 @@ struct CreatePermutedRowMapRCBFunctor {
   RowMapViewType row_map;
   size_type nrows;
 
-  CreatePermutedRowMapRCBFunctor(const RowMapInViewType &row_map_in_,
-                                 const PermViewType &reverse_perm_rcb_,
-                                       RowMapViewType &row_map_)
-      : row_map_in(row_map_in_),
-        reverse_perm_rcb(reverse_perm_rcb_),
-        row_map(row_map_) {
-      nrows = static_cast<size_type>(row_map_in.extent(0)) - 1;
-    }
+  CreatePermutedRowMapRCBFunctor(const RowMapInViewType &row_map_in_, const PermViewType &reverse_perm_rcb_,
+                                 RowMapViewType &row_map_)
+      : row_map_in(row_map_in_), reverse_perm_rcb(reverse_perm_rcb_), row_map(row_map_) {
+    nrows = static_cast<size_type>(row_map_in.extent(0)) - 1;
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type i, size_type &update, const bool final_pass) const {
@@ -1956,15 +1953,15 @@ struct CreatePermutedRowMapRCBFunctor {
   }
 };
 
-template <typename RowMapInViewType, typename EntriesInViewType, typename ValuesInViewType,
-          typename PermViewType, typename RowMapViewType, typename EntriesViewType, typename ValuesViewType>
+template <typename RowMapInViewType, typename EntriesInViewType, typename ValuesInViewType, typename PermViewType,
+          typename RowMapViewType, typename EntriesViewType, typename ValuesViewType>
 struct PermuteSparseMatrixRCBFunctor {
   using execution_space = typename RowMapViewType::execution_space;
-  using policy_type  = Kokkos::TeamPolicy<execution_space>;
-  using member_type  = typename policy_type::member_type;
-  using size_type    = typename RowMapViewType::non_const_value_type;
-  using ordinal_type = typename PermViewType::non_const_value_type;
-	  
+  using policy_type     = Kokkos::TeamPolicy<execution_space>;
+  using member_type     = typename policy_type::member_type;
+  using size_type       = typename RowMapViewType::non_const_value_type;
+  using ordinal_type    = typename PermViewType::non_const_value_type;
+
   RowMapInViewType row_map_in;
   EntriesInViewType entries_in;
   ValuesInViewType values_in;
@@ -1974,14 +1971,10 @@ struct PermuteSparseMatrixRCBFunctor {
   EntriesViewType entries;
   ValuesViewType values;
 
-  PermuteSparseMatrixRCBFunctor(const RowMapInViewType &row_map_in_,
-                                const EntriesInViewType &entries_in_,
-                                const ValuesInViewType &values_in_,
-                                const PermViewType &perm_rcb_,
-                                const PermViewType &reverse_perm_rcb_,
-                                const RowMapViewType &row_map_,
-                                      EntriesViewType &entries_,
-                                      ValuesViewType &values_)
+  PermuteSparseMatrixRCBFunctor(const RowMapInViewType &row_map_in_, const EntriesInViewType &entries_in_,
+                                const ValuesInViewType &values_in_, const PermViewType &perm_rcb_,
+                                const PermViewType &reverse_perm_rcb_, const RowMapViewType &row_map_,
+                                EntriesViewType &entries_, ValuesViewType &values_)
       : row_map_in(row_map_in_),
         entries_in(entries_in_),
         values_in(values_in_),
@@ -1993,18 +1986,18 @@ struct PermuteSparseMatrixRCBFunctor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type &team) const {
-    ordinal_type rowid   = static_cast<ordinal_type>(team.league_rank());
-    ordinal_type origRow = reverse_perm_rcb(rowid);
+    ordinal_type rowid       = static_cast<ordinal_type>(team.league_rank());
+    ordinal_type origRow     = reverse_perm_rcb(rowid);
     size_type row_begin      = row_map(rowid);
     size_type orig_row_begin = row_map_in(origRow);
     size_type orig_nnz_row   = row_map_in(origRow + 1) - orig_row_begin;
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, orig_nnz_row), [&](const size_type jj) {
-      size_type j      = row_begin + jj;
-      size_type orig_j = orig_row_begin + jj;
+      size_type j            = row_begin + jj;
+      size_type orig_j       = orig_row_begin + jj;
       ordinal_type origColId = entries_in(orig_j);
-      entries(j) = perm_rcb(origColId);
-      values(j)  = values_in(orig_j);
+      entries(j)             = perm_rcb(origColId);
+      values(j)              = values_in(orig_j);
     });
   }
 };
@@ -2015,21 +2008,20 @@ struct CountNnzDiagBlockRCBFunctor {
   EntriesViewType entries;
   ordinal_type blk_rowcol_start, blk_nrowscols;
 
-  CountNnzDiagBlockRCBFunctor(const EntriesViewType &entries_,
-                              const ordinal_type &blk_rowcol_start_,
+  CountNnzDiagBlockRCBFunctor(const EntriesViewType &entries_, const ordinal_type &blk_rowcol_start_,
                               const ordinal_type &blk_nrowscols_)
       : entries(entries_), blk_rowcol_start(blk_rowcol_start_), blk_nrowscols(blk_nrowscols_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type i, size_type &update) const {
     ordinal_type colId = entries(i);
-    bool is_contained = (colId >= blk_rowcol_start) && (colId < (blk_rowcol_start + blk_nrowscols));
+    bool is_contained  = (colId >= blk_rowcol_start) && (colId < (blk_rowcol_start + blk_nrowscols));
     if (is_contained) update++;
   }
 };
 
-template <typename BitSetType, typename EntriesInViewType, typename ValuesInViewType,
-          typename RowMapViewType, typename EntriesViewType, typename ValuesViewType>
+template <typename BitSetType, typename EntriesInViewType, typename ValuesInViewType, typename RowMapViewType,
+          typename EntriesViewType, typename ValuesViewType>
 struct ExtractSparseDiagBlockRCBFunctor {
   using size_type    = typename RowMapViewType::non_const_value_type;
   using ordinal_type = typename EntriesViewType::non_const_value_type;
@@ -2043,14 +2035,10 @@ struct ExtractSparseDiagBlockRCBFunctor {
 
   ordinal_type blk_rowcol_start, blk_nrowscols;
   size_type i_in_begin;
-  ExtractSparseDiagBlockRCBFunctor(const BitSetType &row_end_markers_,
-                                   const EntriesInViewType &entries_in_,
-                                   const ValuesInViewType &values_in_,
-                                         RowMapViewType &row_map_,
-                                         EntriesViewType &entries_,
-                                         ValuesViewType &values_,
-                                   const ordinal_type &blk_rowcol_start_,
-                                   const ordinal_type &blk_nrowscols_,
+  ExtractSparseDiagBlockRCBFunctor(const BitSetType &row_end_markers_, const EntriesInViewType &entries_in_,
+                                   const ValuesInViewType &values_in_, RowMapViewType &row_map_,
+                                         EntriesViewType &entries_, ValuesViewType &values_,
+                                   const ordinal_type &blk_rowcol_start_, const ordinal_type &blk_nrowscols_,
                                    const size_type &i_in_begin_)
       : row_end_markers(row_end_markers_),
         entries_in(entries_in_),
@@ -2060,17 +2048,17 @@ struct ExtractSparseDiagBlockRCBFunctor {
         values(values_),
         blk_rowcol_start(blk_rowcol_start_),
         blk_nrowscols(blk_nrowscols_),
-        i_in_begin (i_in_begin_) {}
+        i_in_begin(i_in_begin_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type i_in, DropEntriesScanner<size_type> &scan_update, const bool final_pass) const {
     ordinal_type colId = entries_in(i_in);
-    bool is_contained = (colId >= blk_rowcol_start) && (colId < (blk_rowcol_start + blk_nrowscols));
-    bool is_row_end = row_end_markers.test(i_in);
+    bool is_contained  = (colId >= blk_rowcol_start) && (colId < (blk_rowcol_start + blk_nrowscols));
+    bool is_row_end    = row_end_markers.test(i_in);
     if (final_pass) {
       if (is_contained) {
         entries(scan_update.i_out) = entries_in(i_in) - blk_rowcol_start;
-        values(scan_update.i_out) = values_in(i_in);
+        values(scan_update.i_out)  = values_in(i_in);
       }
       if (is_row_end) {
         row_map(scan_update.row + 1) = scan_update.i_out + (is_contained ? 1 : 0);
@@ -2639,8 +2627,8 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb(
   using out_entries_type = typename graph_t::entries_type::non_const_type;
   using out_values_type  = typename crsMat_t::values_type::non_const_type;
 
-  using ordinal_type = typename crsMat_t::non_const_ordinal_type;
-  using size_type    = typename crsMat_t::non_const_size_type;
+  using ordinal_type    = typename crsMat_t::non_const_ordinal_type;
+  using size_type       = typename crsMat_t::non_const_size_type;
   using execution_space = typename row_map_type::device_type::execution_space;
 
   static_assert(Kokkos::is_view_v<perm_view_type>,
@@ -2719,13 +2707,19 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb(
       Kokkos::Bitset<typename row_map_type::device_type> rowEndMarkersNonconst(A.nnz());
 
       // 1.1. Create permuted row map
-      Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space>(0, A_nrows), KokkosSparse::Impl::CreatePermutedRowMapRCBFunctor(A_row_map, reverse_perm_rcb, row_map_rcb));
+      Kokkos::parallel_scan(
+          Kokkos::RangePolicy<execution_space>(0, A_nrows),
+          KokkosSparse::Impl::CreatePermutedRowMapRCBFunctor(A_row_map, reverse_perm_rcb, row_map_rcb));
 
       // 1.2. Mark final row entries (in permuted matrix)
-      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, A_nrows + 1), KokkosSparse::Impl::MarkFinalRowEntries(rowEndMarkersNonconst, row_map_rcb));
+      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, A_nrows + 1),
+                           KokkosSparse::Impl::MarkFinalRowEntries(rowEndMarkersNonconst, row_map_rcb));
 
       // 1.3. Create permuted entries and values
-      Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space>(A_nrows, Kokkos::AUTO), KokkosSparse::Impl::PermuteSparseMatrixRCBFunctor(A_row_map, A_entries, A_values, perm_rcb, reverse_perm_rcb, row_map_rcb, entries_rcb, values_rcb));
+      Kokkos::parallel_for(
+          Kokkos::TeamPolicy<execution_space>(A_nrows, Kokkos::AUTO),
+          KokkosSparse::Impl::PermuteSparseMatrixRCBFunctor(A_row_map, A_entries, A_values, perm_rcb, reverse_perm_rcb,
+                                                            row_map_rcb, entries_rcb, values_rcb));
 
       // 1.4. Copy permuted row map to host memory
       auto row_map_rcb_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), row_map_rcb);
@@ -2735,7 +2729,7 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb(
       ordinal_type blk_row_start = 0;     // first row index of i-th diagonal block
       ordinal_type blk_col_start = 0;     // first col index of i-th diagonal block
       ordinal_type blk_nrows, blk_ncols;  // Nrows, Ncols of i-th diagonal block
-	
+
       for (ordinal_type i = 0; i < n_blocks; i++) {
         blk_nrows     = partition_sizes_rcb[i];
         blk_ncols     = blk_nrows;
@@ -2747,14 +2741,17 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb(
         size_type entry_rcb_end   = row_map_rcb_h(blk_row_start + blk_nrows);
         size_type blk_nnz;
         Kokkos::parallel_reduce(Kokkos::RangePolicy<execution_space>(entry_rcb_begin, entry_rcb_end),
-                                KokkosSparse::Impl::CountNnzDiagBlockRCBFunctor<out_entries_type, size_type>(entries_rcb, blk_col_start, blk_ncols),
+                                KokkosSparse::Impl::CountNnzDiagBlockRCBFunctor<out_entries_type, size_type>(
+                                    entries_rcb, blk_col_start, blk_ncols),
                                 blk_nnz);
 
         // 2.2. Fill row map, entries and values of block i
         out_entries_type entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"), blk_nnz);
         out_values_type values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"), blk_nnz);
         Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space>(entry_rcb_begin, entry_rcb_end),
-                              KokkosSparse::Impl::ExtractSparseDiagBlockRCBFunctor(rowEndMarkers, entries_rcb, values_rcb, row_map, entries, values, blk_col_start, blk_ncols, entry_rcb_begin));
+                              KokkosSparse::Impl::ExtractSparseDiagBlockRCBFunctor(
+                                  rowEndMarkers, entries_rcb, values_rcb, row_map, entries, values, blk_col_start,
+                                  blk_ncols, entry_rcb_begin));
 
         // 2.3. Create CRS matrix for this block
         DiagBlk_v[i] = crsMat_t("CrsMatrix", blk_nrows, blk_ncols, blk_nnz, values, row_map, entries);
