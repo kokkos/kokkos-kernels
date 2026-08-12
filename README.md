@@ -32,7 +32,7 @@ Computational kernels in this subpackage include the following:
 
 We organize this directory as follows:
 
-1. Public interfaces to computational kernels live in per-subsystem
+1. Public interfaces to computational kernels live in each component
      `src/` subdirectories (e.g., `blas/src/`, `sparse/src/`):
 
 *    KokkosSparse_CrsMatrix.hpp: Declaration and definition of
