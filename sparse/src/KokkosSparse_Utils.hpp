@@ -2037,7 +2037,7 @@ struct ExtractSparseDiagBlockRCBFunctor {
   size_type i_in_begin;
   ExtractSparseDiagBlockRCBFunctor(const BitSetType &row_end_markers_, const EntriesInViewType &entries_in_,
                                    const ValuesInViewType &values_in_, RowMapViewType &row_map_,
-                                         EntriesViewType &entries_, ValuesViewType &values_,
+                                   EntriesViewType &entries_, ValuesViewType &values_,
                                    const ordinal_type &blk_rowcol_start_, const ordinal_type &blk_nrowscols_,
                                    const size_type &i_in_begin_)
       : row_end_markers(row_end_markers_),
