@@ -30,20 +30,14 @@ struct gemm_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT(SCALAR, LAYOUTA, LAYOUTB, LAYOUTC, EXEC_SPACE)                  \
-  template <>                                                                                                  \
-  struct gemm_eti_spec_avail<                                                                                  \
-      EXEC_SPACE, Kokkos::View<const SCALAR**, LAYOUTA, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      Kokkos::View<const SCALAR**, LAYOUTB, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<SCALAR**, LAYOUTC, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                \
-    enum : bool { value = true };                                                                              \
-  };
-
 #define KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE)                                           \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT(SCALAR, Kokkos::LayoutLeft, Kokkos::LayoutLeft, LAYOUT, EXEC_SPACE)  \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT(SCALAR, Kokkos::LayoutLeft, Kokkos::LayoutRight, LAYOUT, EXEC_SPACE) \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT(SCALAR, Kokkos::LayoutRight, Kokkos::LayoutLeft, LAYOUT, EXEC_SPACE) \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT(SCALAR, Kokkos::LayoutRight, Kokkos::LayoutRight, LAYOUT, EXEC_SPACE)
+  template <>                                                                                                 \
+  struct gemm_eti_spec_avail<                                                                                 \
+      EXEC_SPACE, Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
+      Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                \
+    enum : bool { value = true };                                                                             \
+  };
 
 // Include the actual specialization declarations
 #include <KokkosBlas3_gemm_tpl_spec_avail.hpp>
@@ -210,29 +204,17 @@ struct GEMM {
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS3_GEMM_ETI_SPEC_DECL_LAYOUTS(SCALAR, LAYOUTA, LAYOUTB, LAYOUTC, EXEC_SPACE)                  \
-  extern template struct GEMM<                                                                                 \
-      EXEC_SPACE, Kokkos::View<const SCALAR**, LAYOUTA, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      Kokkos::View<const SCALAR**, LAYOUTB, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<SCALAR**, LAYOUTC, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, false, true>;
-
-#define KOKKOSBLAS3_GEMM_ETI_SPEC_INST_LAYOUTS(SCALAR, LAYOUTA, LAYOUTB, LAYOUTC, EXEC_SPACE)                  \
-  template struct GEMM<                                                                                        \
-      EXEC_SPACE, Kokkos::View<const SCALAR**, LAYOUTA, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      Kokkos::View<const SCALAR**, LAYOUTB, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<SCALAR**, LAYOUTC, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, false, true>;
-
 #define KOKKOSBLAS3_GEMM_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                                            \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_DECL_LAYOUTS(SCALAR, Kokkos::LayoutLeft, Kokkos::LayoutLeft, LAYOUT, EXEC_SPACE)  \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_DECL_LAYOUTS(SCALAR, Kokkos::LayoutLeft, Kokkos::LayoutRight, LAYOUT, EXEC_SPACE) \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_DECL_LAYOUTS(SCALAR, Kokkos::LayoutRight, Kokkos::LayoutLeft, LAYOUT, EXEC_SPACE) \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_DECL_LAYOUTS(SCALAR, Kokkos::LayoutRight, Kokkos::LayoutRight, LAYOUT, EXEC_SPACE)
+  extern template struct GEMM<                                                                                \
+      EXEC_SPACE, Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
+      Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, false, true>;
 
 #define KOKKOSBLAS3_GEMM_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                                            \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_INST_LAYOUTS(SCALAR, Kokkos::LayoutLeft, Kokkos::LayoutLeft, LAYOUT, EXEC_SPACE)  \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_INST_LAYOUTS(SCALAR, Kokkos::LayoutLeft, Kokkos::LayoutRight, LAYOUT, EXEC_SPACE) \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_INST_LAYOUTS(SCALAR, Kokkos::LayoutRight, Kokkos::LayoutLeft, LAYOUT, EXEC_SPACE) \
-  KOKKOSBLAS3_GEMM_ETI_SPEC_INST_LAYOUTS(SCALAR, Kokkos::LayoutRight, Kokkos::LayoutRight, LAYOUT, EXEC_SPACE)
+  template struct GEMM<                                                                                       \
+      EXEC_SPACE, Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
+      Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, false, true>;
 
 #include <KokkosBlas3_gemm_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosBlas3_gemm_eti_spec_decl.hpp>
