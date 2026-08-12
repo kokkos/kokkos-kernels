@@ -299,12 +299,16 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
                                                                                        partition_sizes, DiagBlks1);
 
   KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_with_rcb(A, perm_rcb, reverse_perm_rcb,
-                                                                                       partition_sizes, DiagBlks2);
+                                                                            partition_sizes, DiagBlks2);
 
   // Checking results
-  check_diagonal_blocks<decltype(h_row_map), decltype(h_entries), decltype(h_values), PermViewType, crsMat_t, scalar_t, lno_t, size_type>(h_row_map, h_entries, h_values, perm_rcb, reverse_perm_rcb, partition_sizes, DiagBlks1, nblocks, nrows);
+  check_diagonal_blocks<decltype(h_row_map), decltype(h_entries), decltype(h_values), PermViewType, crsMat_t, scalar_t,
+                        lno_t, size_type>(h_row_map, h_entries, h_values, perm_rcb, reverse_perm_rcb, partition_sizes,
+                                          DiagBlks1, nblocks, nrows);
 
-  check_diagonal_blocks<decltype(h_row_map), decltype(h_entries), decltype(h_values), PermViewType, crsMat_t, scalar_t, lno_t, size_type>(h_row_map, h_entries, h_values, perm_rcb, reverse_perm_rcb, partition_sizes, DiagBlks2, nblocks, nrows);
+  check_diagonal_blocks<decltype(h_row_map), decltype(h_entries), decltype(h_values), PermViewType, crsMat_t, scalar_t,
+                        lno_t, size_type>(h_row_map, h_entries, h_values, perm_rcb, reverse_perm_rcb, partition_sizes,
+                                          DiagBlks2, nblocks, nrows);
 }
 }  // namespace Test
 
