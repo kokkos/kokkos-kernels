@@ -180,8 +180,8 @@ void find_min_max(const view_type &A, minmax_view_type &minmax) {
 template <typename coors_view_type, typename dim_view_type, typename minmax_view_type, typename index_view_type,
           typename ordinal_type>
 inline void bisect(const coors_view_type &coors, const dim_view_type &partitioned_dim,
-                   const minmax_view_type &minmax_bisect, index_view_type &partition_dests,
-                   ordinal_type &p1_size, ordinal_type &p2_size, const int &max_bisection_steps) {
+                   const minmax_view_type &minmax_bisect, index_view_type &partition_dests, ordinal_type &p1_size,
+                   ordinal_type &p2_size, const int &max_bisection_steps) {
   using execution_space = typename coors_view_type::device_type::execution_space;
   using value_type      = typename coors_view_type::value_type;
 
