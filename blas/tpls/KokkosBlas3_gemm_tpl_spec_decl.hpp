@@ -10,8 +10,8 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_XGEMM_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUT, ETI_SPEC_AVAIL)                            \
-  template <typename ExecSpace>                                                                                  \
+#define KOKKOSBLAS3_XGEMM_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUT)                                            \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                             \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                \
   struct GEMM<ExecSpace,                                                                                         \
               Kokkos::View<const SCALAR_TYPE**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
@@ -55,32 +55,22 @@ namespace Impl {
     }                                                                                                            \
   };
 
-#define KOKKOSBLAS3_DGEMM_BLAS(LAYOUT, ETI_SPEC_AVAIL) KOKKOSBLAS3_XGEMM_BLAS(double, double, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_DGEMM_BLAS(LAYOUT) KOKKOSBLAS3_XGEMM_BLAS(double, double, LAYOUT)
 
-#define KOKKOSBLAS3_SGEMM_BLAS(LAYOUT, ETI_SPEC_AVAIL) KOKKOSBLAS3_XGEMM_BLAS(float, float, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_SGEMM_BLAS(LAYOUT) KOKKOSBLAS3_XGEMM_BLAS(float, float, LAYOUT)
 
-#define KOKKOSBLAS3_ZGEMM_BLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::complex<double>, std::complex<double>, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_ZGEMM_BLAS(LAYOUT) KOKKOSBLAS3_XGEMM_BLAS(Kokkos::complex<double>, std::complex<double>, LAYOUT)
 
-#define KOKKOSBLAS3_CGEMM_BLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_CGEMM_BLAS(LAYOUT) KOKKOSBLAS3_XGEMM_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUT)
 
-KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutRight, false)
-KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutRight, false)
-KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutRight, false)
-KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutRight)
+KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_SGEMM_BLAS(Kokkos::LayoutRight)
+KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_ZGEMM_BLAS(Kokkos::LayoutRight)
+KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -94,8 +84,8 @@ KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_XGEMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, LAYOUT, ETI_SPEC_AVAIL)                    \
-  template <>                                                                                                         \
+#define KOKKOSBLAS3_XGEMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, LAYOUT)                                    \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct GEMM<Kokkos::Cuda,                                                                                           \
               Kokkos::View<const SCALAR_TYPE**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
               Kokkos::View<const SCALAR_TYPE**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
@@ -156,37 +146,27 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS3_DGEMM_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_CUBLAS(double, double, cublasDgemm, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_DGEMM_CUBLAS(LAYOUT) KOKKOSBLAS3_XGEMM_CUBLAS(double, double, cublasDgemm, LAYOUT)
 
-#define KOKKOSBLAS3_SGEMM_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_CUBLAS(float, float, cublasSgemm, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_SGEMM_CUBLAS(LAYOUT) KOKKOSBLAS3_XGEMM_CUBLAS(float, float, cublasSgemm, LAYOUT)
 
-#define KOKKOSBLAS3_ZGEMM_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZgemm, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_ZGEMM_CUBLAS(LAYOUT) \
+  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZgemm, LAYOUT)
 
-#define KOKKOSBLAS3_CGEMM_CUBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCgemm, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_CGEMM_CUBLAS(LAYOUT) \
+  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCgemm, LAYOUT)
 
-KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_SGEMM_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -200,8 +180,8 @@ KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_XGEMM_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, LAYOUT, ETI_SPEC_AVAIL)             \
-  template <>                                                                                                       \
+#define KOKKOSBLAS3_XGEMM_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, LAYOUT)                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                    \
   struct GEMM<Kokkos::HIP,                                                                                          \
               Kokkos::View<const SCALAR_TYPE**, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
               Kokkos::View<const SCALAR_TYPE**, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
@@ -265,37 +245,27 @@ namespace Impl {
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS3_DGEMM_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_ROCBLAS(double, double, rocblas_dgemm, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_DGEMM_ROCBLAS(LAYOUT) KOKKOSBLAS3_XGEMM_ROCBLAS(double, double, rocblas_dgemm, LAYOUT)
 
-#define KOKKOSBLAS3_SGEMM_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_ROCBLAS(float, float, rocblas_sgemm, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_SGEMM_ROCBLAS(LAYOUT) KOKKOSBLAS3_XGEMM_ROCBLAS(float, float, rocblas_sgemm, LAYOUT)
 
-#define KOKKOSBLAS3_ZGEMM_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zgemm, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_ZGEMM_ROCBLAS(LAYOUT) \
+  KOKKOSBLAS3_XGEMM_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zgemm, LAYOUT)
 
-#define KOKKOSBLAS3_CGEMM_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_XGEMM_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cgemm, LAYOUT, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_CGEMM_ROCBLAS(LAYOUT) \
+  KOKKOSBLAS3_XGEMM_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cgemm, LAYOUT)
 
-KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

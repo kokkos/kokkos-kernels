@@ -10,8 +10,8 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_DTRSM_BLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)                                                     \
-  template <typename ExecSpace>                                                                                      \
+#define KOKKOSBLAS3_DTRSM_BLAS(LAYOUTA, LAYOUTB)                                                                     \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                 \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                    \
   struct TRSM<ExecSpace, Kokkos::View<const double**, LAYOUTA, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<double**, LAYOUTB, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true,            \
@@ -64,8 +64,8 @@ namespace Impl {
     }                                                                                                                \
   };
 
-#define KOKKOSBLAS3_STRSM_BLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)                                                    \
-  template <typename ExecSpace>                                                                                     \
+#define KOKKOSBLAS3_STRSM_BLAS(LAYOUTA, LAYOUTB)                                                                    \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                   \
   struct TRSM<ExecSpace, Kokkos::View<const float**, LAYOUTA, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<float**, LAYOUTB, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true,            \
@@ -118,8 +118,8 @@ namespace Impl {
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS3_ZTRSM_BLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)                                                   \
-  template <typename ExecSpace>                                                                                    \
+#define KOKKOSBLAS3_ZTRSM_BLAS(LAYOUTA, LAYOUTB)                                                                   \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                               \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                  \
   struct TRSM<                                                                                                     \
       ExecSpace,                                                                                                   \
@@ -179,8 +179,8 @@ namespace Impl {
     }                                                                                                              \
   };
 
-#define KOKKOSBLAS3_CTRSM_BLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)                                                  \
-  template <typename ExecSpace>                                                                                   \
+#define KOKKOSBLAS3_CTRSM_BLAS(LAYOUTA, LAYOUTB)                                                                  \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                              \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                 \
   struct TRSM<                                                                                                    \
       ExecSpace,                                                                                                  \
@@ -240,25 +240,17 @@ namespace Impl {
     }                                                                                                             \
   };
 
-KOKKOSBLAS3_DTRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_DTRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_DTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_DTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_DTRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_DTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_STRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_STRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_STRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_STRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_STRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_STRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_ZTRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_ZTRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_ZTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_ZTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_ZTRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_ZTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_CTRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_CTRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_CTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_CTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_CTRSM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_CTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -271,8 +263,8 @@ KOKKOSBLAS3_CTRSM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_DTRSM_CUBLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)                                                     \
-  template <>                                                                                                          \
+#define KOKKOSBLAS3_DTRSM_CUBLAS(LAYOUTA, LAYOUTB)                                                                     \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct TRSM<                                                                                                         \
       Kokkos::Cuda, Kokkos::View<const double**, LAYOUTA, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
       Kokkos::View<double**, LAYOUTB, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true, ETI_SPEC_AVAIL> { \
@@ -343,8 +335,8 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS3_STRSM_CUBLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)                                                    \
-  template <>                                                                                                         \
+#define KOKKOSBLAS3_STRSM_CUBLAS(LAYOUTA, LAYOUTB)                                                                    \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct TRSM<                                                                                                        \
       Kokkos::Cuda, Kokkos::View<const float**, LAYOUTA, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
       Kokkos::View<float**, LAYOUTB, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true, ETI_SPEC_AVAIL> { \
@@ -416,8 +408,8 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS3_ZTRSM_CUBLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)                                                    \
-  template <>                                                                                                         \
+#define KOKKOSBLAS3_ZTRSM_CUBLAS(LAYOUTA, LAYOUTB)                                                                    \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct TRSM<                                                                                                        \
       Kokkos::Cuda,                                                                                                   \
       Kokkos::View<const Kokkos::complex<double>**, LAYOUTA, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -495,8 +487,8 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS3_CTRSM_CUBLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)                                                   \
-  template <>                                                                                                        \
+#define KOKKOSBLAS3_CTRSM_CUBLAS(LAYOUTA, LAYOUTB)                                                                   \
+  template <bool ETI_SPEC_AVAIL>                                                                                     \
   struct TRSM<                                                                                                       \
       Kokkos::Cuda,                                                                                                  \
       Kokkos::View<const Kokkos::complex<float>**, LAYOUTA, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -572,25 +564,17 @@ namespace Impl {
     }                                                                                                                \
   };
 
-KOKKOSBLAS3_DTRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_DTRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_DTRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_DTRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_DTRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_DTRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_STRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_STRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_STRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_STRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_STRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_STRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_ZTRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_ZTRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_ZTRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_ZTRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_ZTRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_ZTRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_CTRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_CTRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_CTRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_CTRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_CTRSM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_CTRSM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

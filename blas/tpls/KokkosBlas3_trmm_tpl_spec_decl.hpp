@@ -11,8 +11,8 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_TRMM_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)                    \
-  template <typename ExecSpace>                                                                                   \
+#define KOKKOSBLAS3_TRMM_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, LAYOUTB)                                    \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                              \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                 \
   struct TRMM<ExecSpace,                                                                                          \
               Kokkos::View<const SCALAR_TYPE**, LAYOUTA, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
@@ -70,39 +70,29 @@ namespace Impl {
     }                                                                                                             \
   };
 
-#define KOKKOSBLAS3_DTRMM_BLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_TRMM_BLAS(double, double, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_DTRMM_BLAS(LAYOUTA, LAYOUTB) KOKKOSBLAS3_TRMM_BLAS(double, double, LAYOUTA, LAYOUTB)
 
-#define KOKKOSBLAS3_STRMM_BLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_TRMM_BLAS(float, float, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_STRMM_BLAS(LAYOUTA, LAYOUTB) KOKKOSBLAS3_TRMM_BLAS(float, float, LAYOUTA, LAYOUTB)
 
-#define KOKKOSBLAS3_ZTRMM_BLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_TRMM_BLAS(Kokkos::complex<double>, std::complex<double>, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_ZTRMM_BLAS(LAYOUTA, LAYOUTB) \
+  KOKKOSBLAS3_TRMM_BLAS(Kokkos::complex<double>, std::complex<double>, LAYOUTA, LAYOUTB)
 
-#define KOKKOSBLAS3_CTRMM_BLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_TRMM_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_CTRMM_BLAS(LAYOUTA, LAYOUTB) \
+  KOKKOSBLAS3_TRMM_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUTA, LAYOUTB)
 
 // Explicitly define the TRMM class for all permutations listed below
 
-KOKKOSBLAS3_DTRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_DTRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_DTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_DTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_DTRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_DTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_STRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_STRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_STRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_STRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_STRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_STRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_ZTRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_ZTRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_ZTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_ZTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_ZTRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_ZTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_CTRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_CTRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_CTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_CTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_CTRMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_CTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -115,8 +105,8 @@ KOKKOSBLAS3_CTRMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_TRMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)          \
-  template <>                                                                                                        \
+#define KOKKOSBLAS3_TRMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, LAYOUTA, LAYOUTB)                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                     \
   struct TRMM<Kokkos::Cuda,                                                                                          \
               Kokkos::View<const SCALAR_TYPE**, LAYOUTA, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
               Kokkos::View<SCALAR_TYPE**, LAYOUTB, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true,    \
@@ -192,39 +182,30 @@ namespace Impl {
     }                                                                                                                \
   };
 
-#define KOKKOSBLAS3_DTRMM_CUBLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_TRMM_CUBLAS(double, double, cublasDtrmm, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_DTRMM_CUBLAS(LAYOUTA, LAYOUTB) \
+  KOKKOSBLAS3_TRMM_CUBLAS(double, double, cublasDtrmm, LAYOUTA, LAYOUTB)
 
-#define KOKKOSBLAS3_STRMM_CUBLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_TRMM_CUBLAS(float, float, cublasStrmm, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_STRMM_CUBLAS(LAYOUTA, LAYOUTB) KOKKOSBLAS3_TRMM_CUBLAS(float, float, cublasStrmm, LAYOUTA, LAYOUTB)
 
-#define KOKKOSBLAS3_ZTRMM_CUBLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_TRMM_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZtrmm, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_ZTRMM_CUBLAS(LAYOUTA, LAYOUTB) \
+  KOKKOSBLAS3_TRMM_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZtrmm, LAYOUTA, LAYOUTB)
 
-#define KOKKOSBLAS3_CTRMM_CUBLAS(LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS3_TRMM_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCtrmm, LAYOUTA, LAYOUTB, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS3_CTRMM_CUBLAS(LAYOUTA, LAYOUTB) \
+  KOKKOSBLAS3_TRMM_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCtrmm, LAYOUTA, LAYOUTB)
 
 // Explicitly define the TRMM class for all permutations listed below
 
-KOKKOSBLAS3_DTRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_DTRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_DTRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_DTRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_DTRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_DTRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_STRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_STRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_STRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_STRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_STRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_STRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_ZTRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_ZTRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_ZTRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_ZTRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_ZTRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_ZTRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
-KOKKOSBLAS3_CTRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, true)
-KOKKOSBLAS3_CTRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft, false)
-KOKKOSBLAS3_CTRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
-KOKKOSBLAS3_CTRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, false)
+KOKKOSBLAS3_CTRMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft)
+KOKKOSBLAS3_CTRMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

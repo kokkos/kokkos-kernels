@@ -30,8 +30,8 @@ namespace Impl {
     transa = 'C';                                                            \
   }
 
-#define KOKKOSBLAS2_DGEMV_BLAS(LAYOUT, ETI_SPEC_AVAIL)                                                              \
-  template <typename ExecSpace>                                                                                     \
+#define KOKKOSBLAS2_DGEMV_BLAS(LAYOUT)                                                                              \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                   \
   struct GEMV<ExecSpace, Kokkos::View<const double**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<const double*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
@@ -52,8 +52,8 @@ namespace Impl {
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS2_SGEMV_BLAS(LAYOUT, ETI_SPEC_AVAIL)                                                              \
-  template <typename ExecSpace>                                                                                     \
+#define KOKKOSBLAS2_SGEMV_BLAS(LAYOUT)                                                                              \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                   \
   struct GEMV<ExecSpace, Kokkos::View<const float**, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,  \
               Kokkos::View<const float*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
@@ -74,8 +74,8 @@ namespace Impl {
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS2_ZGEMV_BLAS(LAYOUT, ETI_SPEC_AVAIL)                                                              \
-  template <typename ExecSpace>                                                                                     \
+#define KOKKOSBLAS2_ZGEMV_BLAS(LAYOUT)                                                                              \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                   \
   struct GEMV<                                                                                                      \
       ExecSpace,                                                                                                    \
@@ -102,8 +102,8 @@ namespace Impl {
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS2_CGEMV_BLAS(LAYOUT, ETI_SPEC_AVAIL)                                                              \
-  template <typename ExecSpace>                                                                                     \
+#define KOKKOSBLAS2_CGEMV_BLAS(LAYOUT)                                                                              \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                   \
   struct GEMV<                                                                                                      \
       ExecSpace,                                                                                                    \
@@ -130,25 +130,17 @@ namespace Impl {
     }                                                                                                               \
   };
 
-KOKKOSBLAS2_DGEMV_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_DGEMV_BLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_DGEMV_BLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_DGEMV_BLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_DGEMV_BLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_DGEMV_BLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS2_SGEMV_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_SGEMV_BLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_SGEMV_BLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_SGEMV_BLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_SGEMV_BLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_SGEMV_BLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS2_ZGEMV_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_ZGEMV_BLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_ZGEMV_BLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_ZGEMV_BLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_ZGEMV_BLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_ZGEMV_BLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS2_CGEMV_BLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_CGEMV_BLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_CGEMV_BLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_CGEMV_BLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_CGEMV_BLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_CGEMV_BLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -181,8 +173,8 @@ namespace Impl {
     transa = CUBLAS_OP_C;                                                    \
   }
 
-#define KOKKOSBLAS2_DGEMV_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                                             \
-  template <>                                                                                                        \
+#define KOKKOSBLAS2_DGEMV_CUBLAS(LAYOUT)                                                                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                     \
   struct GEMV<                                                                                                       \
       Kokkos::Cuda, Kokkos::View<const double**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
       Kokkos::View<const double*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                   \
@@ -206,8 +198,8 @@ namespace Impl {
     }                                                                                                                \
   };
 
-#define KOKKOSBLAS2_SGEMV_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                                            \
-  template <>                                                                                                       \
+#define KOKKOSBLAS2_SGEMV_CUBLAS(LAYOUT)                                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                    \
   struct GEMV<                                                                                                      \
       Kokkos::Cuda, Kokkos::View<const float**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
       Kokkos::View<const float*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                   \
@@ -231,8 +223,8 @@ namespace Impl {
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS2_ZGEMV_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                                               \
-  template <>                                                                                                          \
+#define KOKKOSBLAS2_ZGEMV_CUBLAS(LAYOUT)                                                                               \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GEMV<                                                                                                         \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<const Kokkos::complex<double>**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
@@ -260,8 +252,8 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS2_CGEMV_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                                               \
-  template <>                                                                                                          \
+#define KOKKOSBLAS2_CGEMV_CUBLAS(LAYOUT)                                                                               \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GEMV<                                                                                                         \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<const Kokkos::complex<float>**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
@@ -289,25 +281,17 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-KOKKOSBLAS2_DGEMV_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_DGEMV_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_DGEMV_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_DGEMV_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_DGEMV_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_DGEMV_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS2_SGEMV_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_SGEMV_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_SGEMV_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_SGEMV_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_SGEMV_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_SGEMV_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS2_ZGEMV_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_ZGEMV_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_ZGEMV_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_ZGEMV_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_ZGEMV_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_ZGEMV_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS2_CGEMV_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_CGEMV_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_CGEMV_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_CGEMV_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_CGEMV_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_CGEMV_CUBLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -340,8 +324,8 @@ namespace Impl {
     transa = rocblas_operation_conjugate_transpose;                          \
   }
 
-#define KOKKOSBLAS2_DGEMV_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                                           \
-  template <>                                                                                                       \
+#define KOKKOSBLAS2_DGEMV_ROCBLAS(LAYOUT)                                                                           \
+  template <bool ETI_SPEC_AVAIL>                                                                                    \
   struct GEMV<                                                                                                      \
       Kokkos::HIP, Kokkos::View<const double**, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
       Kokkos::View<const double*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                   \
@@ -365,8 +349,8 @@ namespace Impl {
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS2_SGEMV_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                                              \
-  template <>                                                                                                          \
+#define KOKKOSBLAS2_SGEMV_ROCBLAS(LAYOUT)                                                                              \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GEMV<Kokkos::HIP, Kokkos::View<const float**, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<const float*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
               Kokkos::View<float*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true,               \
@@ -390,8 +374,8 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS2_ZGEMV_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                                             \
-  template <>                                                                                                         \
+#define KOKKOSBLAS2_ZGEMV_ROCBLAS(LAYOUT)                                                                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct GEMV<                                                                                                        \
       Kokkos::HIP,                                                                                                    \
       Kokkos::View<const Kokkos::complex<double>**, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
@@ -421,8 +405,8 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS2_CGEMV_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                                            \
-  template <>                                                                                                        \
+#define KOKKOSBLAS2_CGEMV_ROCBLAS(LAYOUT)                                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                     \
   struct GEMV<                                                                                                       \
       Kokkos::HIP,                                                                                                   \
       Kokkos::View<const Kokkos::complex<float>**, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
@@ -452,25 +436,17 @@ namespace Impl {
     }                                                                                                                \
   };
 
-KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -485,8 +461,8 @@ KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS2_GEMV_ONEMKL(SCALAR, LAYOUT, ETI_SPEC_AVAIL)                                                         \
-  template <>                                                                                                           \
+#define KOKKOSBLAS2_GEMV_ONEMKL(SCALAR, LAYOUT)                                                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                        \
   struct GEMV<                                                                                                          \
       Kokkos::SYCL, Kokkos::View<const SCALAR**, LAYOUT, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                      \
@@ -524,14 +500,14 @@ namespace Impl {
     }                                                                                                                   \
   };
 
-KOKKOSBLAS2_GEMV_ONEMKL(float, Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_GEMV_ONEMKL(float, Kokkos::LayoutRight, true)
-KOKKOSBLAS2_GEMV_ONEMKL(double, Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_GEMV_ONEMKL(double, Kokkos::LayoutRight, true)
-KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutRight, true)
-KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutLeft, true)
-KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutRight, true)
+KOKKOSBLAS2_GEMV_ONEMKL(float, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_ONEMKL(float, Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_ONEMKL(double, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_ONEMKL(double, Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutRight)
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif
