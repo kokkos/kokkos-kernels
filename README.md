@@ -45,7 +45,7 @@ We organize this directory as follows:
 2. Implementations of computational kernels live in each component
      `impl/` subdirectories (e.g., `blas/impl/`, `sparse/impl/`)
 
-3. Correctness tests live in per-subsystem `unit_test/` subdirectories
+3. Correctness tests live in each component `unit_test/` subdirectories
      (e.g., `blas/unit_test/`, `sparse/unit_test/`), and
      performance tests live in the perf_test/ subdirectory
 
