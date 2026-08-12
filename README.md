@@ -35,8 +35,6 @@ We organize this directory as follows:
 1. Public interfaces to computational kernels live in per-subsystem
      `src/` subdirectories (e.g., `blas/src/`, `sparse/src/`):
 
-*    KokkosBlas1_*.hpp: (Multi)vector operations that
-       Tpetra::MultiVector uses
 *    KokkosSparse_CrsMatrix.hpp: Declaration and definition of
        KokkosSparse::CrsMatrix, the sparse matrix data structure used
        for the computational kernels below
