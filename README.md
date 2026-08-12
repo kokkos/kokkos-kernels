@@ -42,7 +42,7 @@ We organize this directory as follows:
        single vector, stored in a 1-D View + Sparse matrix-vector multiply with
        multiple vectors at a time (multivectors), stored in a 2-D View
 
-2. Implementations of computational kernels live in per-subsystem
+2. Implementations of computational kernels live in each component
      `impl/` subdirectories (e.g., `blas/impl/`, `sparse/impl/`)
 
 3. Correctness tests live in per-subsystem `unit_test/` subdirectories
