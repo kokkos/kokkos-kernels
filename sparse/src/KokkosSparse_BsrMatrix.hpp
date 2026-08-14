@@ -380,14 +380,12 @@ class BsrMatrix {
   //! Copy constructor (shallow copy).
   template <typename SType, typename OType, class DType, class MTType, typename IType>
   explicit BsrMatrix(const BsrMatrix<SType, OType, DType, MTType, IType>& B)
-      :
-        graph(B.graph),
+      : graph(B.graph),
 
         values(B.values),
         dev_config(B.dev_config),
         numCols_(B.numCols()),
-        blockDim_(B.blockDim()) {
-  }
+        blockDim_(B.blockDim()) {}
 
   /// \brief Construct with a graph that will be shared.
   ///
