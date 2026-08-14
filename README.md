@@ -128,7 +128,7 @@ Spack gives a mechanism for directly specifying Kokkos dependency options:
 ````
 spack install kokkos-kernels ^kokkos@5.0+cuda
 ````
-The carat `^` specifies an exact dependency configuration, which in this case activates CUDA and CUDA_UVM.
+The carat `^` specifies an exact dependency configuration, which in this case activates CUDA
 For a complete list of tunable Kokkos options, run
 ````
 spack info kokkos
