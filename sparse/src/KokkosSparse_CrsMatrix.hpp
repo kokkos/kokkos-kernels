@@ -401,17 +401,10 @@ class CrsMatrix {
   template <typename InScalar, typename InOrdinal, class InDevice, class InMemTraits, typename InSizeType>
   KOKKOS_INLINE_FUNCTION CrsMatrix(const CrsMatrix<InScalar, InOrdinal, InDevice, InMemTraits, InSizeType>& B)
       :
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-        graph(B.graph.entries, B.graph.row_map),
-#else
         graph(B.graph),
-#endif
         values(B.values),
         numCols_(B.numCols()),
         dev_config(B.dev_config) {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-    graph.row_block_offsets = B.graph.row_block_offsets;
-#endif
   }
 
   //! Deep copy constructor (can cross spaces)
@@ -442,11 +435,7 @@ class CrsMatrix {
             const StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_,
             const OrdinalType& ncols)
       :
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-        graph(graph_.entries, graph_.row_map),
-#else
         graph(graph_),
-#endif
         values(label, graph_.entries.extent(0)),
         numCols_(ncols) {
   }
@@ -463,12 +452,7 @@ class CrsMatrix {
   CrsMatrix(const std::string&, const OrdinalType& ncols, const values_type& vals,
             const StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_)
       :
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-        graph(graph_.entries, graph_.row_map),
-#else
         graph(graph_),
-#endif
-
         values(vals),
         numCols_(ncols) {
   }
