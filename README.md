@@ -126,7 +126,7 @@ spack info kokkos-kernels
 As discussed above in the CMake section, Kokkos Kernels inherits much of its configuration from the installed Kokkos.
 Spack gives a mechanism for directly specifying Kokkos dependency options:
 ````
-spack install kokkos-kernels ^kokkos@3.0+cuda+cuda_uvm
+spack install kokkos-kernels ^kokkos@5.0+cuda
 ````
 The carat `^` specifies an exact dependency configuration, which in this case activates CUDA and CUDA_UVM.
 For a complete list of tunable Kokkos options, run
