@@ -2645,6 +2645,7 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb(
   ordinal_type A_nrows  = static_cast<ordinal_type>(A.numRows());
   ordinal_type A_ncols  = static_cast<ordinal_type>(A.numCols());
   ordinal_type n_blocks = static_cast<ordinal_type>(DiagBlk_v.size());
+  size_type A_nnz       = static_cast<size_type>(A.nnz());
 
   if (A_nrows != A_ncols) {
     std::ostringstream os;
@@ -2673,7 +2674,7 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb(
         throw std::runtime_error(os.str());
       }
 
-      if (static_cast<ordinal_type>(std::pow(2, static_cast<int>(std::log2(n_blocks)))) != n_blocks) {
+      if (!Kokkos::has_single_bit(static_cast<unsigned int>(n_blocks))) {
         std::ostringstream os;
         os << "The number of diagonal blocks (" << n_blocks << ") must be a power of 2";
         throw std::runtime_error(os.str());
@@ -2702,9 +2703,9 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb(
 
       // 1. Permute the original matrix using RCB ordering
       out_row_map_type row_map_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map_rcb"), A_nrows + 1);
-      out_entries_type entries_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries_rcb"), A.nnz());
-      out_values_type values_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_rcb"), A.nnz());
-      Kokkos::Bitset<typename row_map_type::device_type> rowEndMarkersNonconst(A.nnz());
+      out_entries_type entries_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries_rcb"), A_nnz);
+      out_values_type values_rcb(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_rcb"), A_nnz);
+      Kokkos::Bitset<typename row_map_type::device_type> rowEndMarkersNonconst(A_nnz);
 
       // 1.1. Create permuted row map
       Kokkos::parallel_scan(
