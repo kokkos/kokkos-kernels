@@ -9,7 +9,7 @@ include(CMakeFindDependencyMacro)
 
 set(KokkosKernels_TPLS @KOKKOSKERNELS_TPL_LIST@)
 foreach(TPL ${KokkosKernels_TPLS})
-  set(KokkosKernels_TPL_ENABLE_${TPL} ON)
+  set(KokkosKernels_ENABLE_TPL_${TPL} ON)
 endforeach()
 
 if(NOT Kokkos_FOUND)
