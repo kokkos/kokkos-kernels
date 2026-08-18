@@ -2644,8 +2644,8 @@ void kk_extract_diagonal_blocks_crsmatrix_with_rcb(
 
   ordinal_type A_nrows  = static_cast<ordinal_type>(A.numRows());
   ordinal_type A_ncols  = static_cast<ordinal_type>(A.numCols());
-  ordinal_type n_blocks = static_cast<ordinal_type>(DiagBlk_v.size());
   size_type A_nnz       = static_cast<size_type>(A.nnz());
+  ordinal_type n_blocks = static_cast<ordinal_type>(DiagBlk_v.size());
 
   if (A_nrows != A_ncols) {
     std::ostringstream os;

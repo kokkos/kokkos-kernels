@@ -35,20 +35,21 @@ struct ColumnMinMaxFunctor {
   using device_type = typename view_type::device_type;
   using internal_view_type =
       Kokkos::View<const scalar_type **, layout_type, device_type, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
-  using value_type = MinMaxPair<scalar_type>[];
+  using minmax_type = MinMaxPair<scalar_type>[];
+  using value_type = minmax_type;
   internal_view_type A;
   ordinal_t value_count;
 
   ColumnMinMaxFunctor(const view_type &A_, const ordinal_t &num_cols_) : A(A_), value_count(num_cols_) {}
 
-  KOKKOS_INLINE_FUNCTION void init(value_type dst) const {
+  KOKKOS_INLINE_FUNCTION void init(minmax_type dst) const {
     for (ordinal_t c = 0; c < value_count; c++) {
-      dst[c].min_val = std::numeric_limits<scalar_type>::infinity();
-      dst[c].max_val = -std::numeric_limits<scalar_type>::infinity();
+      dst[c].min_val = Kokkos::reduction_identity<scalar_type>::min();
+      dst[c].max_val = Kokkos::reduction_identity<scalar_type>::max();
     }
   }
 
-  KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i, value_type dst) const {
+  KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i, minmax_type dst) const {
     for (ordinal_t c = 0; c < value_count; c++) {
       scalar_type val = A(i, c);
       if (val < dst[c].min_val) dst[c].min_val = val;
@@ -56,7 +57,7 @@ struct ColumnMinMaxFunctor {
     }
   }
 
-  KOKKOS_INLINE_FUNCTION void join(value_type dst, const value_type src) const {
+  KOKKOS_INLINE_FUNCTION void join(minmax_type dst, const minmax_type src) const {
     for (ordinal_t c = 0; c < value_count; c++) {
       if (src[c].min_val < dst[c].min_val) dst[c].min_val = src[c].min_val;
       if (src[c].max_val > dst[c].max_val) dst[c].max_val = src[c].max_val;
