@@ -12,6 +12,7 @@ Defined in header: :code:`KokkosKernels_SimpleUtils.hpp`
   void inclusive_parallel_prefix_sum(const view_t& arr);
 
 These functions perform an in-place inclusive parallel prefix sum on the rank-1 ``Kokkos::View`` ``arr``.
+That is, element i will be replaced with the sum of elements 0...i, including i itself.
 If ``exec`` is provided, the underlying parallel scan is executed on that instance.
 
 Parameters

@@ -738,8 +738,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
     MyExecSpace().fence();
   }
 
-  if (num_rows_to_symmetrize > 0)
-    exclusive_parallel_prefix_sum(MyExecSpace(), pre_pps_, num_symmetric_edges);
+  if (num_rows_to_symmetrize > 0) exclusive_parallel_prefix_sum(MyExecSpace(), pre_pps_, num_symmetric_edges);
 
   sym_srcs  = out_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_srcs"), num_symmetric_edges);
   sym_dsts_ = out_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_dsts_"), num_symmetric_edges);
@@ -806,8 +805,7 @@ void symmetrize_graph_symbolic_hashmap(typename in_lno_row_view_t::value_type nu
     MyExecSpace().fence();
   }
 
-  if (num_rows_to_symmetrize > 0)
-    exclusive_parallel_prefix_sum(MyExecSpace(), pre_pps_, num_symmetric_edges);
+  if (num_rows_to_symmetrize > 0) exclusive_parallel_prefix_sum(MyExecSpace(), pre_pps_, num_symmetric_edges);
 
   sym_adj = out_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_adj"), num_symmetric_edges);
   sym_xadj =

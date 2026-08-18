@@ -19,6 +19,7 @@ Defined in header: :code:`KokkosKernels_SimpleUtils.hpp`
   void exclusive_parallel_prefix_sum(const view_t& arr, typename view_t::non_const_value_type &finalSum);
 
 These functions perform an in-place exclusive parallel prefix sum on the rank-1 ``Kokkos::View`` ``arr``.
+That is, element i will be replaced with the sum of elements 0...i, excluding i itself.
 If ``exec`` is provided, the underlying parallel scan is executed on that instance.
 If ``finalSum`` (output parameter) is provided, the total sum of all elements of ``arr`` on input is computed and stored here.
 
