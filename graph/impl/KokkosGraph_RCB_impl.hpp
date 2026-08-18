@@ -36,7 +36,7 @@ struct ColumnMinMaxFunctor {
   using internal_view_type =
       Kokkos::View<const scalar_type **, layout_type, device_type, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
   using minmax_type = MinMaxPair<scalar_type>[];
-  using value_type = minmax_type;
+  using value_type  = minmax_type;
   internal_view_type A;
   ordinal_t value_count;
 
