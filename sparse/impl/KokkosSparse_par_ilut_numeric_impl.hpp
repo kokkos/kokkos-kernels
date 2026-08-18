@@ -51,7 +51,7 @@ struct IlutWrap {
   template <class RowMapType>
   static size_type prefix_sum(RowMapType& row_map) {
     size_type result = 0;
-    KokkosKernels::exclusive_parallel_prefix_sum(row_map, result);
+    KokkosKernels::exclusive_parallel_prefix_sum(execution_space(), row_map, result);
     return result;
   }
 
