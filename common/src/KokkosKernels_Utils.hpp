@@ -699,6 +699,8 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
                                                  in_lno_row_view_t xadj, in_lno_nnz_view_t adj,
                                                  out_lno_nnz_view_t &sym_srcs, out_lno_nnz_view_t &sym_dsts_) {
   typedef typename in_lno_row_view_t::non_const_value_type idx;
+  // Get an appropriate type to store the temporary offsets view pre_pps_
+  typedef Kokkos::View<idx *, MyExecSpace> out_lno_row_view_t;
 
   idx nnz = adj.extent(0);
 
@@ -713,14 +715,14 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
   // TODO: Should change this to temporary memory space?
   typedef Kokkos::UnorderedMap<Kokkos::pair<idx, idx>, void, MyExecSpace> hashmap_t;
 
-  out_lno_nnz_view_t pre_pps_("pre_pps", num_rows_to_symmetrize + 1);
+  out_lno_row_view_t pre_pps_("pre_pps", num_rows_to_symmetrize + 1);
 
   idx num_symmetric_edges = 0;
   {
     hashmap_t umap(nnz);
     umap.clear();
     umap.end_erase();
-    FillSymmetricLowerEdgesHashMap<in_lno_row_view_t, in_lno_nnz_view_t, hashmap_t, out_lno_nnz_view_t, team_member_t>
+    FillSymmetricLowerEdgesHashMap<in_lno_row_view_t, in_lno_nnz_view_t, hashmap_t, out_lno_row_view_t, team_member_t>
         fse(num_rows_to_symmetrize, xadj, adj, umap, pre_pps_);
 
     int teamSizeMax = 0;
@@ -747,7 +749,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
   {
     hashmap_t umap(nnz);
     FillSymmetricEdgeList_HashMap<in_lno_row_view_t, in_lno_nnz_view_t, hashmap_t, out_lno_nnz_view_t,
-                                  out_lno_nnz_view_t, team_member_t>
+                                  out_lno_row_view_t, team_member_t>
         FSCH(num_rows_to_symmetrize, xadj, adj, umap, sym_srcs, sym_dsts_, pre_pps_);
 
     int teamSizeMax = 0;
