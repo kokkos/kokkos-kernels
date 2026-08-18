@@ -485,39 +485,18 @@ KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, false)
 namespace KokkosBlas {
 namespace Impl {
 
-inline oneapi::mkl::transpose mode_kk_to_onemkl(char mode_kk) {
-  switch (toupper(mode_kk)) {
-    case 'N': return oneapi::mkl::transpose::nontrans;
-    case 'T': return oneapi::mkl::transpose::trans;
-    case 'C': return oneapi::mkl::transpose::conjtrans;
-    default:;
-  }
-  throw std::invalid_argument("Invalid mode for oneMKL (should be one of N, T, C)");
-}
-
-template <typename T, bool is_complex = false>
-struct kokkos_to_std_type_map {
-  using type = T;
-};
-
-// e.g., map Kokkos::complex<float> to std::complex<float>
-template <typename T>
-struct kokkos_to_std_type_map<T, true> {
-  using type = std::complex<typename KokkosKernels::ArithTraits<T>::mag_type>;
-};
-
 #define KOKKOSBLAS2_GEMV_ONEMKL(SCALAR, LAYOUT, ETI_SPEC_AVAIL)                                                         \
   template <>                                                                                                           \
   struct GEMV<                                                                                                          \
-      EXEC_SPACE, Kokkos::View<const SCALAR**, LAYOUT, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+      Kokkos::SYCL, Kokkos::View<const SCALAR**, LAYOUT, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                      \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, true, ETI_SPEC_AVAIL> {    \
     using mem_traits = Kokkos::MemoryTraits<Kokkos::Unmanaged>;                                                         \
-    using AViewType  = Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, mem_traits>;                                    \
-    using XViewType  = Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, mem_traits>;                                     \
-    using YViewType  = Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, mem_traits>;                                           \
+    using AViewType  = Kokkos::View<const SCALAR**, LAYOUT, Kokkos::SYCL, mem_traits>;                                  \
+    using XViewType  = Kokkos::View<const SCALAR*, LAYOUT, Kokkos::SYCL, mem_traits>;                                   \
+    using YViewType  = Kokkos::View<SCALAR*, LAYOUT, Kokkos::SYCL, mem_traits>;                                         \
                                                                                                                         \
-    static void gemv(const EXEC_SPACE& exec, const char kk_trans[], typename AViewType::const_value_type& alpha,        \
+    static void gemv(const Kokkos::SYCL& exec, const char kk_trans[], typename AViewType::const_value_type& alpha,      \
                      const AViewType& A, const XViewType& X, typename YViewType::const_value_type& beta,                \
                      const YViewType& Y) {                                                                              \
       if (beta == KokkosKernels::ArithTraits<SCALAR>::zero()) {                                                         \
