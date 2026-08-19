@@ -46,40 +46,35 @@
 #endif
 
 namespace TestUtils {
+
 namespace Impl {
-
 template <class Scalar1, class Scalar2, class Scalar3>
-::testing::AssertionResult kk_expect_near_pred_format(const char* expr1, const char* expr2, const char* expr3,
-                                                      const Scalar1& val1, const Scalar2& val2, const Scalar3& tol) {
-  using scalar1_type = typename std::remove_cv<typename std::remove_reference<Scalar1>::type>::type;
-  using scalar3_type = typename std::remove_cv<typename std::remove_reference<Scalar3>::type>::type;
-  using AT1          = KokkosKernels::ArithTraits<scalar1_type>;
-  using AT3          = KokkosKernels::ArithTraits<scalar3_type>;
+testing::AssertionResult ExpectNearKKImpl(
+    const char* expr1, const char* expr2, const char* expr_tol,
+    Scalar1 val1, Scalar2 val2, Scalar3 tol)
+{
+    typedef KokkosKernels::ArithTraits<Scalar1> AT1;
+    typedef KokkosKernels::ArithTraits<Scalar3> AT3;
 
-  const double abs_diff = static_cast<double>(AT1::abs(val1 - val2));
-  const double abs_tol  = static_cast<double>(AT3::abs(tol));
+    double abs_diff = (double)AT1::abs(val1 - val2);
+    double abs_tol  = (double)AT3::abs(tol);
 
-  if (abs_diff <= abs_tol) {
-    return ::testing::AssertionSuccess();
-  }
+    if (abs_diff <= abs_tol) {
+        return testing::AssertionSuccess();
+    }
 
-  return ::testing::AssertionFailure() << "The difference between " << expr1 << " and " << expr2 << " is " << abs_diff
-                                       << ", which exceeds " << expr3 << ", where\n"
-                                       << expr1 << " evaluates to " << ::testing::PrintToString(val1) << ",\n"
-                                       << expr2 << " evaluates to " << ::testing::PrintToString(val2) << ", and\n"
-                                       << expr3 << " evaluates to " << ::testing::PrintToString(tol) << ".";
+    // Return a failure result and format the default message cleanly
+    return testing::AssertionFailure()
+        << "Expected: " << expr1 << " is near " << expr2 << " (within " << expr_tol << ")\n"
+        << "  Actual: " << abs_diff << "\n"
+        << "Expected: " << abs_tol << "\n";
 }
-
-}  // namespace Impl
-
-#define KK_EXPECT_NEAR(val1, val2, tol) \
-  EXPECT_PRED_FORMAT3(::TestUtils::Impl::kk_expect_near_pred_format, val1, val2, tol)
+}
 
 // Checks |val1 - val2| <= |tol|.  Expands to a GTest expression so callers
 // can append a failure message: EXPECT_NEAR_KK(a, b, eps) << "context";
 #define EXPECT_NEAR_KK(val1, val2, tol)                                                             \
-  EXPECT_LE((double)KokkosKernels::ArithTraits<std::decay_t<decltype(val1)>>::abs((val1) - (val2)), \
-            (double)KokkosKernels::ArithTraits<std::decay_t<decltype(tol)>>::abs(tol))
+  EXPECT_TRUE(ExpectNearKKImpl(#val1, #val2, #tol, (val1), (val2), (tol)))
 
 // Checks |val1 - val2| <= tol * max(|val1|, |val2|).
 // Expands to a GTest expression; supports << for failure messages.
