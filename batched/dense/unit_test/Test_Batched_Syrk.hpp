@@ -30,7 +30,7 @@ struct Functor_BatchedSyrk {
   ScalarType m_alpha, m_beta;
 
   Functor_BatchedSyrk(const ScalarType alpha, const AViewType &A, const ScalarType beta, const CViewType &C)
-      : m_alpha(alpha), m_A(A), m_beta(beta), m_C(C) {}
+      : m_A(A), m_C(C), m_alpha(alpha), m_beta(beta) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type &member, int &info) const {
