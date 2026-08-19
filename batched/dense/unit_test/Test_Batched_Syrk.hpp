@@ -112,7 +112,6 @@ void impl_test_batched_syrk_analytical(const std::size_t Nb) {
   using StridedView3DType = Kokkos::View<ScalarType ***, Kokkos::LayoutStride, DeviceType>;
   using ArgUplo           = typename ParamTagType::uplo;
   using ArgTrans          = typename ParamTagType::trans;
-  using ArgMode           = typename ParamTagType::mode;
 
   const std::size_t BlkSize = 4;
   View3DType A("A", Nb, BlkSize, BlkSize);
@@ -279,7 +278,6 @@ void impl_test_batched_syrk(const std::size_t Nb, const std::size_t M, const std
   using RealType   = typename ats::mag_type;
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using ArgUplo    = typename ParamTagType::uplo;
-  using ArgTrans   = typename ParamTagType::trans;
 
   const bool is_trans = std::same_as<typename ParamTagType::trans, KokkosBatched::Trans::Transpose> ||
                         std::same_as<typename ParamTagType::trans, KokkosBatched::Trans::ConjTranspose>;
