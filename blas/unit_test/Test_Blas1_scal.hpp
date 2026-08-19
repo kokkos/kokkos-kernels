@@ -130,7 +130,7 @@ void impl_test_scal_rank0_view(int N) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    TestUtils::getRandomBounds(1.0, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   Kokkos::deep_copy(x.h_base, x.d_base);
@@ -169,7 +169,7 @@ void impl_test_scal_mv_rank0_view(int N, int K) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    TestUtils::getRandomBounds(1.0, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   Kokkos::deep_copy(x.h_base, x.d_base);
