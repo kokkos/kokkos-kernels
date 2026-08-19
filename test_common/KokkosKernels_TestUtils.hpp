@@ -51,135 +51,116 @@ namespace Impl {
 
 // Base case: scalar absolute comparison
 template <class Scalar1, class Scalar2, class Scalar3,
-          std::enable_if_t<!Kokkos::is_view_v<Scalar1> &&
-                           !KokkosBatched::is_vector<Scalar1>::value, int> = 0>
-testing::AssertionResult ExpectNearKKImpl(
-    const char* expr1, const char* expr2, const char* expr_tol,
-    Scalar1 val1, Scalar2 val2, Scalar3 tol)
-{
-    typedef KokkosKernels::ArithTraits<Scalar1> AT1;
-    typedef KokkosKernels::ArithTraits<Scalar3> AT3;
+          std::enable_if_t<!Kokkos::is_view_v<Scalar1> && !KokkosBatched::is_vector<Scalar1>::value, int> = 0>
+testing::AssertionResult ExpectNearKKImpl(const char* expr1, const char* expr2, const char* expr_tol, Scalar1 val1,
+                                          Scalar2 val2, Scalar3 tol) {
+  typedef KokkosKernels::ArithTraits<Scalar1> AT1;
+  typedef KokkosKernels::ArithTraits<Scalar3> AT3;
 
-    double abs_diff = (double)AT1::abs(val1 - val2);
-    double abs_tol  = (double)AT3::abs(tol);
+  double abs_diff = (double)AT1::abs(val1 - val2);
+  double abs_tol  = (double)AT3::abs(tol);
 
-    if (abs_diff <= abs_tol)
-        return testing::AssertionSuccess();
+  if (abs_diff <= abs_tol) return testing::AssertionSuccess();
 
-    return testing::AssertionFailure()
-        << "Expected: " << expr1 << " is near " << expr2 << " (within " << expr_tol << ")\n"
-        << "  Actual: " << abs_diff << "\n"
-        << "Expected: " << abs_tol << "\n";
+  return testing::AssertionFailure() << "Expected: " << expr1 << " is near " << expr2 << " (within " << expr_tol
+                                     << ")\n"
+                                     << "  Actual: " << abs_diff << "\n"
+                                     << "Expected: " << abs_tol << "\n";
 }
 
 // SIMD Vector specialization: element-wise absolute comparison across all lanes
 template <class T, int l, class Scalar3>
-testing::AssertionResult ExpectNearKKImpl(
-    const char* expr1, const char* expr2, const char* expr_tol,
-    const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val1,
-    const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val2,
-    Scalar3 tol)
-{
-    testing::AssertionResult overall = testing::AssertionSuccess();
-    for (int i = 0; i < l; ++i) {
-        auto r = ExpectNearKKImpl(expr1, expr2, expr_tol, val1[i], val2[i], tol);
-        if (!r) {
-            if (overall) overall = testing::AssertionFailure();
-            overall << "[lane " << i << "] " << r.message();
-        }
+testing::AssertionResult ExpectNearKKImpl(const char* expr1, const char* expr2, const char* expr_tol,
+                                          const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val1,
+                                          const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val2, Scalar3 tol) {
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  for (int i = 0; i < l; ++i) {
+    auto r = ExpectNearKKImpl(expr1, expr2, expr_tol, val1[i], val2[i], tol);
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      overall << "[lane " << i << "] " << r.message();
     }
-    return overall;
+  }
+  return overall;
 }
 
 // Kokkos View specialization: element-wise absolute comparison (rank-1 only)
 template <class View1, class View2, class Scalar3,
           std::enable_if_t<Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>, int> = 0>
-testing::AssertionResult ExpectNearKKImpl(
-    const char* expr1, const char* expr2, const char* expr_tol,
-    const View1& v1, const View2& v2, Scalar3 tol)
-{
-    static_assert(View1::rank == 1, "ExpectNearKKImpl: only rank-1 Views are supported");
-    const size_t v1_size = v1.extent(0);
-    if (v1_size != v2.extent(0)) {
-        return testing::AssertionFailure()
-            << expr1 << ".extent(0) (" << v1_size << ") != "
-            << expr2 << ".extent(0) (" << v2.extent(0) << ")";
+testing::AssertionResult ExpectNearKKImpl(const char* expr1, const char* expr2, const char* expr_tol, const View1& v1,
+                                          const View2& v2, Scalar3 tol) {
+  static_assert(View1::rank == 1, "ExpectNearKKImpl: only rank-1 Views are supported");
+  const size_t v1_size = v1.extent(0);
+  if (v1_size != v2.extent(0)) {
+    return testing::AssertionFailure() << expr1 << ".extent(0) (" << v1_size << ") != " << expr2 << ".extent(0) ("
+                                       << v2.extent(0) << ")";
+  }
+  auto h_v1 = Kokkos::create_mirror_view(v1);
+  auto h_v2 = Kokkos::create_mirror_view(v2);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v1, h_v1);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v2, h_v2);
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  for (size_t i = 0; i < v1_size; ++i) {
+    auto r = ExpectNearKKImpl(expr1, expr2, expr_tol, h_v1(i), h_v2(i), tol);
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      overall << "[" << i << "] " << r.message();
     }
-    auto h_v1 = Kokkos::create_mirror_view(v1);
-    auto h_v2 = Kokkos::create_mirror_view(v2);
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v1, h_v1);
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v2, h_v2);
-    testing::AssertionResult overall = testing::AssertionSuccess();
-    for (size_t i = 0; i < v1_size; ++i) {
-        auto r = ExpectNearKKImpl(expr1, expr2, expr_tol, h_v1(i), h_v2(i), tol);
-        if (!r) {
-            if (overall) overall = testing::AssertionFailure();
-            overall << "[" << i << "] " << r.message();
-        }
-    }
-    return overall;
+  }
+  return overall;
 }
 
 // Base case: scalar relative comparison — delegates to absolute with per-element tolerance
 template <class Scalar1, class Scalar2, class Scalar3,
-          std::enable_if_t<!Kokkos::is_view_v<Scalar1> &&
-                           !KokkosBatched::is_vector<Scalar1>::value, int> = 0>
-testing::AssertionResult ExpectNearKKRelImpl(
-    const char* expr1, const char* expr2, const char* expr_tol,
-    Scalar1 val1, Scalar2 val2, Scalar3 tol)
-{
-    using AT1 = KokkosKernels::ArithTraits<Scalar1>;
-    using AT2 = KokkosKernels::ArithTraits<Scalar2>;
-    return ExpectNearKKImpl(expr1, expr2, expr_tol, val1, val2,
-                            tol * Kokkos::max(AT1::abs(val1), AT2::abs(val2)));
+          std::enable_if_t<!Kokkos::is_view_v<Scalar1> && !KokkosBatched::is_vector<Scalar1>::value, int> = 0>
+testing::AssertionResult ExpectNearKKRelImpl(const char* expr1, const char* expr2, const char* expr_tol, Scalar1 val1,
+                                             Scalar2 val2, Scalar3 tol) {
+  using AT1 = KokkosKernels::ArithTraits<Scalar1>;
+  using AT2 = KokkosKernels::ArithTraits<Scalar2>;
+  return ExpectNearKKImpl(expr1, expr2, expr_tol, val1, val2, tol * Kokkos::max(AT1::abs(val1), AT2::abs(val2)));
 }
 
 // SIMD Vector specialization: element-wise relative comparison across all lanes
 template <class T, int l, class Scalar3>
-testing::AssertionResult ExpectNearKKRelImpl(
-    const char* expr1, const char* expr2, const char* expr_tol,
-    const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val1,
-    const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val2,
-    Scalar3 tol)
-{
-    testing::AssertionResult overall = testing::AssertionSuccess();
-    for (int i = 0; i < l; ++i) {
-        auto r = ExpectNearKKRelImpl(expr1, expr2, expr_tol, val1[i], val2[i], tol);
-        if (!r) {
-            if (overall) overall = testing::AssertionFailure();
-            overall << "[lane " << i << "] " << r.message();
-        }
+testing::AssertionResult ExpectNearKKRelImpl(const char* expr1, const char* expr2, const char* expr_tol,
+                                             const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val1,
+                                             const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val2,
+                                             Scalar3 tol) {
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  for (int i = 0; i < l; ++i) {
+    auto r = ExpectNearKKRelImpl(expr1, expr2, expr_tol, val1[i], val2[i], tol);
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      overall << "[lane " << i << "] " << r.message();
     }
-    return overall;
+  }
+  return overall;
 }
 
 // Kokkos View specialization: element-wise relative comparison (rank-1 only)
 template <class View1, class View2, class Scalar3,
           std::enable_if_t<Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>, int> = 0>
-testing::AssertionResult ExpectNearKKRelImpl(
-    const char* expr1, const char* expr2, const char* expr_tol,
-    const View1& v1, const View2& v2, Scalar3 tol)
-{
-    static_assert(View1::rank == 1, "ExpectNearKKRelImpl: only rank-1 Views are supported");
-    const size_t v1_size = v1.extent(0);
-    if (v1_size != v2.extent(0)) {
-        return testing::AssertionFailure()
-            << expr1 << ".extent(0) (" << v1_size << ") != "
-            << expr2 << ".extent(0) (" << v2.extent(0) << ")";
+testing::AssertionResult ExpectNearKKRelImpl(const char* expr1, const char* expr2, const char* expr_tol,
+                                             const View1& v1, const View2& v2, Scalar3 tol) {
+  static_assert(View1::rank == 1, "ExpectNearKKRelImpl: only rank-1 Views are supported");
+  const size_t v1_size = v1.extent(0);
+  if (v1_size != v2.extent(0)) {
+    return testing::AssertionFailure() << expr1 << ".extent(0) (" << v1_size << ") != " << expr2 << ".extent(0) ("
+                                       << v2.extent(0) << ")";
+  }
+  auto h_v1 = Kokkos::create_mirror_view(v1);
+  auto h_v2 = Kokkos::create_mirror_view(v2);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v1, h_v1);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v2, h_v2);
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  for (size_t i = 0; i < v1_size; ++i) {
+    auto r = ExpectNearKKRelImpl(expr1, expr2, expr_tol, h_v1(i), h_v2(i), tol);
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      overall << "[" << i << "] " << r.message();
     }
-    auto h_v1 = Kokkos::create_mirror_view(v1);
-    auto h_v2 = Kokkos::create_mirror_view(v2);
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v1, h_v1);
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v2, h_v2);
-    testing::AssertionResult overall = testing::AssertionSuccess();
-    for (size_t i = 0; i < v1_size; ++i) {
-        auto r = ExpectNearKKRelImpl(expr1, expr2, expr_tol, h_v1(i), h_v2(i), tol);
-        if (!r) {
-            if (overall) overall = testing::AssertionFailure();
-            overall << "[" << i << "] " << r.message();
-        }
-    }
-    return overall;
+  }
+  return overall;
 }
 
 }  // namespace Impl
