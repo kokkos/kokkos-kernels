@@ -84,8 +84,10 @@ testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const
   return overall;
 }
 
-// Helper: mirrors two rank-1 Views to host, then applies element_cmp(i, h_v1, h_v2) for each index,
-// collecting per-element failures into a single AssertionResult.
+static constexpr size_t ExpectNearMaxFailures = 10;
+
+// Helper: mirrors two rank-1 Views to host, then applies elem_cmp(h_v1(i), h_v2(i)) for each index,
+// collecting per-element failures into a single AssertionResult (capped at ExpectNearMaxFailures).
 template <class View1, class View2, class ElemCmp,
           std::enable_if_t<Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>, int> = 0>
 testing::AssertionResult expect_near_1dview_impl(const char* expr1, const char* expr2,
@@ -101,12 +103,21 @@ testing::AssertionResult expect_near_1dview_impl(const char* expr1, const char* 
   KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v1, h_v1);
   KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v2, h_v2);
   testing::AssertionResult overall = testing::AssertionSuccess();
+  size_t num_failures = 0;
   for (size_t i = 0; i < v1_size; ++i) {
     auto r = elem_cmp(h_v1(i), h_v2(i));
     if (!r) {
       if (overall) overall = testing::AssertionFailure();
-      overall << "[" << i << "] " << r.message();
+      if (num_failures < ExpectNearMaxFailures) {
+        overall << "[" << i << "] " << r.message();
+      } else if (num_failures == ExpectNearMaxFailures) {
+        overall << "(further failures suppressed)\n";
+      }
+      ++num_failures;
     }
+  }
+  if (num_failures > 0) {
+    overall << num_failures << " of " << v1_size << " element(s) failed.\n";
   }
   return overall;
 }
