@@ -58,8 +58,35 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // compute LHS
     sys.jacobian(y0, J);
 
-    // solve linear problem
-    int linSolverStat = KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(J, update, rhs, tmp);
+    // Solve the linear problem J*update = rhs using LU with partial
+    // (row) pivoting. The static pivoting implemented in
+    // KokkosBatched::SerialGesv uses a greedy row-to-column assignment
+    // that can fail spuriously on well-conditioned sparse systems
+    // (e.g. chemistry Jacobians with one dense row), so it is only kept
+    // as a fallback for systems larger than the stack pivot buffer.
+    int linSolverStat = 0;
+    constexpr int pivot_buffer_size = 32;
+    if (sys.neqs <= pivot_buffer_size) {
+      int pivot_buffer[pivot_buffer_size];
+      Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::AnonymousSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> piv(
+          pivot_buffer, sys.neqs);
+      for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
+      linSolverStat = KokkosBatched::SerialGetrf<KokkosBatched::Algo::Getrf::Unblocked>::invoke(J, piv);
+      if (linSolverStat == 0) {
+        linSolverStat =
+            KokkosBatched::SerialGetrs<KokkosBatched::Trans::NoTranspose, KokkosBatched::Algo::Getrs::Unblocked>::invoke(
+                J, piv, update);
+      }
+    } else {
+      linSolverStat = KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(J, update, rhs, tmp);
+    }
+
+    // Return before touching y0 if the linear solve failed: applying the
+    // (stale or partial) update would corrupt the iterate.
+    if (linSolverStat != 0) {
+      return newton_solver_status::LIN_SOLVE_FAIL;
+    }
+
     KokkosBlas::SerialScale::invoke(-1, update);
 
     // update solution // x = x + alpha*update
