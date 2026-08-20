@@ -11,6 +11,7 @@
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
 
+#include <concepts>
 #include <random>
 #include <algorithm>
 #include <type_traits>
