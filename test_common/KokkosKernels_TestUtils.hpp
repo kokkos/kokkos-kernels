@@ -84,12 +84,13 @@ testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const
   return overall;
 }
 
-// Kokkos View specialization: element-wise absolute comparison (rank-1 only)
-template <class View1, class View2, class Scalar3,
+// Helper: mirrors two rank-1 Views to host, then applies element_cmp(i, h_v1, h_v2) for each index,
+// collecting per-element failures into a single AssertionResult.
+template <class View1, class View2, class ElemCmp,
           std::enable_if_t<Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>, int> = 0>
-testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol, const View1& v1,
-                                          const View2& v2, Scalar3 tol) {
-  static_assert(View1::rank == 1, "expect_near_pred_format_scalar: only rank-1 Views are supported");
+testing::AssertionResult expect_near_1dview_impl(const char* expr1, const char* expr2,
+                                                 const View1& v1, const View2& v2, ElemCmp elem_cmp) {
+  static_assert(View1::rank == 1, "expect_near_1dview_impl: only rank-1 Views are supported");
   const size_t v1_size = v1.extent(0);
   if (v1_size != v2.extent(0)) {
     return testing::AssertionFailure() << expr1 << ".extent(0) (" << v1_size << ") != " << expr2 << ".extent(0) ("
@@ -101,13 +102,23 @@ testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const
   KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v2, h_v2);
   testing::AssertionResult overall = testing::AssertionSuccess();
   for (size_t i = 0; i < v1_size; ++i) {
-    auto r = expect_near_pred_format_scalar(expr1, expr2, expr_tol, h_v1(i), h_v2(i), tol);
+    auto r = elem_cmp(h_v1(i), h_v2(i));
     if (!r) {
       if (overall) overall = testing::AssertionFailure();
       overall << "[" << i << "] " << r.message();
     }
   }
   return overall;
+}
+
+// Kokkos View specialization: element-wise absolute comparison (rank-1 only)
+template <class View1, class View2, class Scalar3,
+          std::enable_if_t<Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>, int> = 0>
+testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol, const View1& v1,
+                                          const View2& v2, Scalar3 tol) {
+  return expect_near_1dview_impl(expr1, expr2, v1, v2, [&](auto e1, auto e2) {
+    return expect_near_pred_format_scalar(expr1, expr2, expr_tol, e1, e2, tol);
+  });
 }
 
 // Base case: scalar relative comparison — delegates to absolute with per-element tolerance
@@ -142,25 +153,9 @@ template <class View1, class View2, class Scalar3,
           std::enable_if_t<Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>, int> = 0>
 testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, const char* expr2, const char* expr_tol,
                                              const View1& v1, const View2& v2, Scalar3 tol) {
-  static_assert(View1::rank == 1, "expect_near_pred_format_scalar_rel: only rank-1 Views are supported");
-  const size_t v1_size = v1.extent(0);
-  if (v1_size != v2.extent(0)) {
-    return testing::AssertionFailure() << expr1 << ".extent(0) (" << v1_size << ") != " << expr2 << ".extent(0) ("
-                                       << v2.extent(0) << ")";
-  }
-  auto h_v1 = Kokkos::create_mirror_view(v1);
-  auto h_v2 = Kokkos::create_mirror_view(v2);
-  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v1, h_v1);
-  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v2, h_v2);
-  testing::AssertionResult overall = testing::AssertionSuccess();
-  for (size_t i = 0; i < v1_size; ++i) {
-    auto r = expect_near_pred_format_scalar_rel(expr1, expr2, expr_tol, h_v1(i), h_v2(i), tol);
-    if (!r) {
-      if (overall) overall = testing::AssertionFailure();
-      overall << "[" << i << "] " << r.message();
-    }
-  }
-  return overall;
+  return expect_near_1dview_impl(expr1, expr2, v1, v2, [&](auto e1, auto e2) {
+    return expect_near_pred_format_scalar_rel(expr1, expr2, expr_tol, e1, e2, tol);
+  });
 }
 
 }  // namespace Impl
