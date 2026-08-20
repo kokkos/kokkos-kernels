@@ -1,3 +1,6 @@
+variables:
+  FF_GIT_URLS_WITHOUT_TOKENS: 1
+
 stages:
   - test
 
