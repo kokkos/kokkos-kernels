@@ -174,13 +174,13 @@ testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, c
 // Checks |val1 - val2| <= |tol|. Works for scalars, rank-1 Kokkos Views, and SIMD vectors.
 // Expands to a GTest expression so callers can append a failure message.
 #define EXPECT_NEAR_KK(val1, val2, tol) \
-  EXPECT_TRUE(TestUtils::Impl::expect_near_pred_format_scalar(#val1, #val2, #tol, (val1), (val2), (tol)))
+  EXPECT_PRED_FORMAT3(TestUtils::Impl::expect_near_pred_format_scalar, val1, val2, tol)
 
 // Checks |val1 - val2| <= tol * max(|val1|, |val2|) per element.
 // Works for scalars, rank-1 Kokkos Views, and SIMD vectors.
 // Expands to a GTest expression; supports << for failure messages.
 #define EXPECT_NEAR_KK_REL(val1, val2, tol) \
-  EXPECT_TRUE(TestUtils::Impl::expect_near_pred_format_scalar_rel(#val1, #val2, #tol, (val1), (val2), (tol)))
+  EXPECT_PRED_FORMAT3(TestUtils::Impl::expect_near_pred_format_scalar_rel, val1, val2, tol)
 
 // Element-wise absolute comparison for rank-1 Kokkos Views.
 #define EXPECT_NEAR_KK_1DVIEW(v1, v2, tol) EXPECT_NEAR_KK(v1, v2, tol)
