@@ -19,31 +19,31 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  KOKKOS_VERSION: 5.2.0
+  KOKKOS_VERSION: 5.2.1
 
 jobs:
   h100_lychee:
     uses: ./.github/workflows/h100_lychee.yml
     with:
-      kokkos_version: 5.2.0
+      kokkos_version: 5.2.1
   v100_kumquat:
     uses: ./.github/workflows/v100_kumquat.yml
     with:
-      kokkos_version: 5.2.0
+      kokkos_version: 5.2.1
       kokkos_previous_version: 5.1.1
   host:
     uses: ./.github/workflows/host.yml
     with:
-      kokkos_version: 5.2.0
+      kokkos_version: 5.2.1
   mi210:
     uses: ./.github/workflows/mi210.yml
     with:
-      kokkos_version: 5.2.0
+      kokkos_version: 5.2.1
   pv:
     uses: ./.github/workflows/pv.yml
     with:
-      kokkos_version: 5.2.0
+      kokkos_version: 5.2.1
   gh200:
     uses: ./.github/workflows/gh200.yml
     with:
-      kokkos_version: 5.2.0
+      kokkos_version: 5.2.1
