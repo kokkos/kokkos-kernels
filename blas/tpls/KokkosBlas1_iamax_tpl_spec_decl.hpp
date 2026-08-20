@@ -30,8 +30,8 @@ inline void iamax_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, ETI_SPEC_AVAIL)                            \
-  template <typename ExecSpace>                                                                                         \
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE)                                            \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                    \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                       \
   struct Iamax<                                                                                                         \
       ExecSpace,                                                                                                        \
@@ -66,29 +66,11 @@ namespace Impl {
     }                                                                                                                   \
   };
 
-#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(double, double, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(double, double)
+KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(float, float)
+KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>)
+KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>)
 
-#define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(float, float, ETI_SPEC_AVAIL)
-
-#define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>, ETI_SPEC_AVAIL)
-
-#define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>, ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_BLAS(false)
 }  // namespace Impl
 }  // namespace KokkosBlas
 
@@ -104,9 +86,9 @@ namespace Impl {
 using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
 
 #define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, INDEX_TYPE,          \
-                                                        EXEC_SPACE, ETI_SPEC_AVAIL, RET_DEVICE_TYPE,                   \
-                                                        CUBLAS_PTR_MODE_1, CUBLAS_PTR_MODE_2)                          \
-  template <>                                                                                                          \
+                                                        EXEC_SPACE, RET_DEVICE_TYPE, CUBLAS_PTR_MODE_1,                \
+                                                        CUBLAS_PTR_MODE_2)                                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Iamax<                                                                                                        \
       EXEC_SPACE,                                                                                                      \
       Kokkos::View<INDEX_TYPE, Kokkos::LayoutLeft, RET_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
@@ -151,50 +133,41 @@ using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, INDEX_TYPE, ETI_SPEC_AVAIL) \
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, INDEX_TYPE)                 \
   KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, INDEX_TYPE, Kokkos::Cuda, \
-                                                  ETI_SPEC_AVAIL, Kokkos::HostSpace, CUBLAS_POINTER_MODE_HOST,        \
+                                                  Kokkos::HostSpace, CUBLAS_POINTER_MODE_HOST,                        \
                                                   CUBLAS_POINTER_MODE_DEVICE)                                         \
   KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, INDEX_TYPE, Kokkos::Cuda, \
-                                                  ETI_SPEC_AVAIL, CUBLAS_DEVICE_TYPE, CUBLAS_POINTER_MODE_DEVICE,     \
+                                                  CUBLAS_DEVICE_TYPE, CUBLAS_POINTER_MODE_DEVICE,                     \
                                                   CUBLAS_POINTER_MODE_HOST)
 
-#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(double, double, cublasIdamax, INDEX_TYPE, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(double, double, cublasIdamax, INDEX_TYPE)
 
-#define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(float, float, cublasIsamax, INDEX_TYPE, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(float, float, cublasIsamax, INDEX_TYPE)
 
-#define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE, ETI_SPEC_AVAIL)                                   \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasIzamax, INDEX_TYPE, \
-                                          ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasIzamax, INDEX_TYPE)
 
-#define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasIcamax, INDEX_TYPE, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasIcamax, INDEX_TYPE)
 
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long, true)
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long, false)
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long)
 
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long, true)
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long, false)
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long)
 
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long, true)
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long, false)
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long)
 
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long, true)
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long, false)
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long)
 
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int, true)
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int, false)
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
 
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int, true)
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int, false)
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
 
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int, true)
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int, false)
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
 
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int, true)
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int, false)
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -211,9 +184,8 @@ namespace Impl {
 using ROCBLAS_DEVICE_TYPE = Kokkos::HIP;
 
 #define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS_WRAPPER(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, INDEX_TYPE,    \
-                                                         ETI_SPEC_AVAIL, RET_DEVICE_TYPE, ROCBLAS_PTR_MODE_1,         \
-                                                         ROCBLAS_PTR_MODE_2)                                          \
-  template <>                                                                                                         \
+                                                         RET_DEVICE_TYPE, ROCBLAS_PTR_MODE_1, ROCBLAS_PTR_MODE_2)     \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct Iamax<                                                                                                       \
       Kokkos::HIP,                                                                                                    \
       Kokkos::View<INDEX_TYPE, Kokkos::LayoutLeft, RET_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
@@ -260,52 +232,41 @@ using ROCBLAS_DEVICE_TYPE = Kokkos::HIP;
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, INDEX_TYPE,           \
-                                                 ETI_SPEC_AVAIL)                                                     \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS_WRAPPER(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, INDEX_TYPE,         \
-                                                   ETI_SPEC_AVAIL, Kokkos::HostSpace, rocblas_pointer_mode_host,     \
-                                                   rocblas_pointer_mode_device)                                      \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS_WRAPPER(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, INDEX_TYPE,         \
-                                                   ETI_SPEC_AVAIL, ROCBLAS_DEVICE_TYPE, rocblas_pointer_mode_device, \
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, INDEX_TYPE)   \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS_WRAPPER(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, INDEX_TYPE, \
+                                                   Kokkos::HostSpace, rocblas_pointer_mode_host,             \
+                                                   rocblas_pointer_mode_device)                              \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS_WRAPPER(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, INDEX_TYPE, \
+                                                   ROCBLAS_DEVICE_TYPE, rocblas_pointer_mode_device,         \
                                                    rocblas_pointer_mode_host)
 
-#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_idamax, INDEX_TYPE, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_idamax, INDEX_TYPE)
 
-#define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_isamax, INDEX_TYPE, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_isamax, INDEX_TYPE)
 
-#define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE, ETI_SPEC_AVAIL)                                \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_izamax, \
-                                           INDEX_TYPE, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_izamax, INDEX_TYPE)
 
-#define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE, ETI_SPEC_AVAIL)                                          \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_icamax, INDEX_TYPE, \
-                                           ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_icamax, INDEX_TYPE)
 
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long, true)
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long, false)
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long)
 
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long, true)
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long, false)
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long)
 
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long, true)
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long, false)
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long)
 
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long, true)
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long, false)
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long)
 
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int, true)
-KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int, false)
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int)
 
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int, true)
-KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int, false)
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int)
 
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int, true)
-KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int, false)
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int)
 
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int, true)
-KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int, false)
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned int)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

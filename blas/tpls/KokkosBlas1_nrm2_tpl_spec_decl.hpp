@@ -25,130 +25,116 @@ inline void nrm2_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DNRM2_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                           \
-  template <typename ExecSpace>                                                                                        \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                      \
-  struct Nrm2<ExecSpace,                                                                                               \
-              Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
-              Kokkos::View<const double*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, \
-              true, ETI_SPEC_AVAIL> {                                                                                  \
-    typedef Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;  \
-    typedef Kokkos::View<const double*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;   \
-    typedef typename XV::size_type size_type;                                                                          \
-                                                                                                                       \
-    static void nrm2(const ExecSpace& space, RV& R, const XV& X, const bool& take_sqrt) {                              \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,double]");                                              \
-      const size_type numElems = X.extent(0);                                                                          \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                                \
-        nrm2_print_specialization<RV, XV>();                                                                           \
-        int N       = numElems;                                                                                        \
-        int int_one = 1;                                                                                               \
-        R()         = HostBlas<double>::nrm2(N, X.data(), int_one);                                                    \
-        if (!take_sqrt) R() = R() * R();                                                                               \
-      } else {                                                                                                         \
-        Nrm2<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);                               \
-      }                                                                                                                \
-      Kokkos::Profiling::popRegion();                                                                                  \
-    }                                                                                                                  \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Nrm2<ExecSpace,
+            Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+            Kokkos::View<const double*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1,
+            true, ETI_SPEC_AVAIL> {
+  typedef Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;
+  typedef Kokkos::View<const double*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;
+  typedef typename XV::size_type size_type;
 
-#define KOKKOSBLAS1_SNRM2_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                          \
-  template <typename ExecSpace>                                                                                       \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                     \
-  struct Nrm2<ExecSpace,                                                                                              \
-              Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
-              Kokkos::View<const float*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, \
-              true, ETI_SPEC_AVAIL> {                                                                                 \
-    typedef Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;  \
-    typedef Kokkos::View<const float*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;   \
-    typedef typename XV::size_type size_type;                                                                         \
-                                                                                                                      \
-    static void nrm2(const ExecSpace& space, RV& R, const XV& X, const bool& take_sqrt) {                             \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,float]");                                              \
-      const size_type numElems = X.extent(0);                                                                         \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                               \
-        nrm2_print_specialization<RV, XV>();                                                                          \
-        int N       = numElems;                                                                                       \
-        int int_one = 1;                                                                                              \
-        R()         = HostBlas<float>::nrm2(N, X.data(), int_one);                                                    \
-        if (!take_sqrt) R() = R() * R();                                                                              \
-      } else {                                                                                                        \
-        Nrm2<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);                              \
-      }                                                                                                               \
-      Kokkos::Profiling::popRegion();                                                                                 \
-    }                                                                                                                 \
-  };
+  static void nrm2(const ExecSpace& space, RV& R, const XV& X, const bool& take_sqrt) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,double]");
+    const size_type numElems = X.extent(0);
+    if (numElems < static_cast<size_type>(INT_MAX)) {
+      nrm2_print_specialization<RV, XV>();
+      int N       = numElems;
+      int int_one = 1;
+      R()         = HostBlas<double>::nrm2(N, X.data(), int_one);
+      if (!take_sqrt) R() = R() * R();
+    } else {
+      Nrm2<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-#define KOKKOSBLAS1_ZNRM2_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                            \
-  template <typename ExecSpace>                                                                                         \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                       \
-  struct Nrm2<ExecSpace,                                                                                                \
-              Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
-              Kokkos::View<const Kokkos::complex<double>*, Kokkos::LayoutLeft, ExecSpace,                               \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                   \
-              1, true, ETI_SPEC_AVAIL> {                                                                                \
-    typedef Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;   \
-    typedef Kokkos::View<const Kokkos::complex<double>*, Kokkos::LayoutLeft, ExecSpace,                                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                      \
-        XV;                                                                                                             \
-    typedef typename XV::size_type size_type;                                                                           \
-                                                                                                                        \
-    static void nrm2(const ExecSpace& space, RV& R, const XV& X, const bool& take_sqrt) {                               \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,complex<double>]");                                      \
-      const size_type numElems = X.extent(0);                                                                           \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                                 \
-        nrm2_print_specialization<RV, XV>();                                                                            \
-        int N       = numElems;                                                                                         \
-        int int_one = 1;                                                                                                \
-        R()         = HostBlas<std::complex<double> >::nrm2(N, reinterpret_cast<const std::complex<double>*>(X.data()), \
-                                                            int_one);                                                   \
-        if (!take_sqrt) R() = R() * R();                                                                                \
-      } else {                                                                                                          \
-        Nrm2<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);                                \
-      }                                                                                                                 \
-      Kokkos::Profiling::popRegion();                                                                                   \
-    }                                                                                                                   \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Nrm2<ExecSpace,
+            Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+            Kokkos::View<const float*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1,
+            true, ETI_SPEC_AVAIL> {
+  typedef Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;
+  typedef Kokkos::View<const float*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV;
+  typedef typename XV::size_type size_type;
 
-#define KOKKOSBLAS1_CNRM2_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                          \
-  template <typename ExecSpace>                                                                                       \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                     \
-  struct Nrm2<ExecSpace,                                                                                              \
-              Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
-              Kokkos::View<const Kokkos::complex<float>*, Kokkos::LayoutLeft, ExecSpace,                              \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                 \
-              1, true, ETI_SPEC_AVAIL> {                                                                              \
-    typedef Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;  \
-    typedef Kokkos::View<const Kokkos::complex<float>*, Kokkos::LayoutLeft, ExecSpace,                                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                    \
-        XV;                                                                                                           \
-    typedef typename XV::size_type size_type;                                                                         \
-                                                                                                                      \
-    static void nrm2(const ExecSpace& space, RV& R, const XV& X, const bool& take_sqrt) {                             \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,complex<float>]");                                     \
-      const size_type numElems = X.extent(0);                                                                         \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                               \
-        nrm2_print_specialization<RV, XV>();                                                                          \
-        int N       = numElems;                                                                                       \
-        int int_one = 1;                                                                                              \
-        R() =                                                                                                         \
-            HostBlas<std::complex<float> >::nrm2(N, reinterpret_cast<const std::complex<float>*>(X.data()), int_one); \
-        if (!take_sqrt) R() = R() * R();                                                                              \
-      } else {                                                                                                        \
-        Nrm2<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);                              \
-      }                                                                                                               \
-      Kokkos::Profiling::popRegion();                                                                                 \
-    }                                                                                                                 \
-  };
+  static void nrm2(const ExecSpace& space, RV& R, const XV& X, const bool& take_sqrt) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,float]");
+    const size_type numElems = X.extent(0);
+    if (numElems < static_cast<size_type>(INT_MAX)) {
+      nrm2_print_specialization<RV, XV>();
+      int N       = numElems;
+      int int_one = 1;
+      R()         = HostBlas<float>::nrm2(N, X.data(), int_one);
+      if (!take_sqrt) R() = R() * R();
+    } else {
+      Nrm2<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-KOKKOSBLAS1_DNRM2_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_DNRM2_TPL_SPEC_DECL_BLAS(false)
-KOKKOSBLAS1_SNRM2_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_SNRM2_TPL_SPEC_DECL_BLAS(false)
-KOKKOSBLAS1_ZNRM2_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_ZNRM2_TPL_SPEC_DECL_BLAS(false)
-KOKKOSBLAS1_CNRM2_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_CNRM2_TPL_SPEC_DECL_BLAS(false)
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Nrm2<ExecSpace,
+            Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+            Kokkos::View<const Kokkos::complex<double>*, Kokkos::LayoutLeft, ExecSpace,
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+            1, true, ETI_SPEC_AVAIL> {
+  typedef Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;
+  typedef Kokkos::View<const Kokkos::complex<double>*, Kokkos::LayoutLeft, ExecSpace,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      XV;
+  typedef typename XV::size_type size_type;
+
+  static void nrm2(const ExecSpace& space, RV& R, const XV& X, const bool& take_sqrt) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,complex<double>]");
+    const size_type numElems = X.extent(0);
+    if (numElems < static_cast<size_type>(INT_MAX)) {
+      nrm2_print_specialization<RV, XV>();
+      int N       = numElems;
+      int int_one = 1;
+      R() = HostBlas<std::complex<double> >::nrm2(N, reinterpret_cast<const std::complex<double>*>(X.data()), int_one);
+      if (!take_sqrt) R() = R() * R();
+    } else {
+      Nrm2<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+};
+
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Nrm2<ExecSpace,
+            Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+            Kokkos::View<const Kokkos::complex<float>*, Kokkos::LayoutLeft, ExecSpace,
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+            1, true, ETI_SPEC_AVAIL> {
+  typedef Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;
+  typedef Kokkos::View<const Kokkos::complex<float>*, Kokkos::LayoutLeft, ExecSpace,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      XV;
+  typedef typename XV::size_type size_type;
+
+  static void nrm2(const ExecSpace& space, RV& R, const XV& X, const bool& take_sqrt) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,complex<float>]");
+    const size_type numElems = X.extent(0);
+    if (numElems < static_cast<size_type>(INT_MAX)) {
+      nrm2_print_specialization<RV, XV>();
+      int N       = numElems;
+      int int_one = 1;
+      R() = HostBlas<std::complex<float> >::nrm2(N, reinterpret_cast<const std::complex<float>*>(X.data()), int_one);
+      if (!take_sqrt) R() = R() * R();
+    } else {
+      Nrm2<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+};
+
 }  // namespace Impl
 }  // namespace KokkosBlas
 
@@ -160,8 +146,8 @@ KOKKOSBLAS1_CNRM2_TPL_SPEC_DECL_BLAS(false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_NRM2, ETI_SPEC_AVAIL)                         \
-  template <>                                                                                                          \
+#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_NRM2)                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Nrm2<                                                                                                         \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<KokkosKernels::ArithTraits<KOKKOS_TYPE>::mag_type, Kokkos::LayoutLeft, Kokkos::HostSpace,           \
@@ -193,14 +179,10 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS_EXT(ETI_SPEC_AVAIL)                                        \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(float, float, cublasSnrm2, ETI_SPEC_AVAIL)                       \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(double, double, cublasDnrm2, ETI_SPEC_AVAIL)                     \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasScnrm2, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasDznrm2, ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS_EXT(true)
-KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS_EXT(false)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(float, float, cublasSnrm2)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(double, double, cublasDnrm2)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasScnrm2)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasDznrm2)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -213,8 +195,8 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_CUBLAS_EXT(false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_NRM2, ETI_SPEC_AVAIL)                       \
-  template <>                                                                                                         \
+#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_NRM2)                                       \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct Nrm2<                                                                                                        \
       Kokkos::HIP,                                                                                                    \
       Kokkos::View<KokkosKernels::ArithTraits<KOKKOS_TYPE>::mag_type, Kokkos::LayoutLeft, Kokkos::HostSpace,          \
@@ -247,16 +229,10 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS_EXT(ETI_SPEC_AVAIL)                                        \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_snrm2, ETI_SPEC_AVAIL)                     \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dnrm2, ETI_SPEC_AVAIL)                   \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_scnrm2,   \
-                                         ETI_SPEC_AVAIL)                                                  \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_dznrm2, \
-                                         ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS_EXT(true)
-KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS_EXT(false)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_snrm2)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dnrm2)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_scnrm2)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_dznrm2)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -271,8 +247,8 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS_EXT(false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(KOKKOS_TYPE, TPL_TYPE, TPL_NRM2, ETI_SPEC_AVAIL)                         \
-  template <>                                                                                                          \
+#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(KOKKOS_TYPE, TPL_TYPE, TPL_NRM2)                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Nrm2<                                                                                                         \
       Kokkos::SYCL,                                                                                                    \
       Kokkos::View<KokkosKernels::ArithTraits<KOKKOS_TYPE>::mag_type, Kokkos::LayoutLeft, Kokkos::HostSpace,           \
@@ -303,16 +279,10 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL_EXT(ETI_SPEC_AVAIL)                                           \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(float, float, oneapi::mkl::blas::row_major::nrm2, ETI_SPEC_AVAIL)   \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(double, double, oneapi::mkl::blas::row_major::nrm2, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<float>, std::complex<float>,                        \
-                                        oneapi::mkl::blas::row_major::nrm2, ETI_SPEC_AVAIL)                 \
-  KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<double>, std::complex<double>,                      \
-                                        oneapi::mkl::blas::row_major::nrm2, ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL_EXT(true)
-KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL_EXT(false)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(float, float, oneapi::mkl::blas::row_major::nrm2)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(double, double, oneapi::mkl::blas::row_major::nrm2)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<float>, std::complex<float>, oneapi::mkl::blas::row_major::nrm2)
+KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<double>, std::complex<double>, oneapi::mkl::blas::row_major::nrm2)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

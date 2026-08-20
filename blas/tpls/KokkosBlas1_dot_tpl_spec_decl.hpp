@@ -26,8 +26,8 @@ inline void dot_print_specialization() {
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(KOKKOS_TYPE, TPL_TYPE, ETI_SPEC_AVAIL)                                      \
-  template <typename ExecSpace>                                                                                        \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(KOKKOS_TYPE, TPL_TYPE)                                                      \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                   \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                      \
   struct Dot<                                                                                                          \
       ExecSpace,                                                                                                       \
@@ -58,14 +58,11 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(ETI_SPEC_AVAIL)                                    \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(float, float, ETI_SPEC_AVAIL)                                \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(double, double, ETI_SPEC_AVAIL)                              \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(float, float)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(double, double)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>)
 
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(true)
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(false)
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif
@@ -79,8 +76,8 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(false)
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_DOT, ETI_SPEC_AVAIL)                           \
-  template <>                                                                                                          \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_DOT)                                           \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Dot<                                                                                                          \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<KOKKOS_TYPE, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
@@ -115,16 +112,11 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(ETI_SPEC_AVAIL)                                                  \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, float, float, cublasSdot, ETI_SPEC_AVAIL)              \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, double, double, cublasDdot, ETI_SPEC_AVAIL)            \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::complex<float>, cuComplex, cublasCdotc,        \
-                                       ETI_SPEC_AVAIL)                                                            \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::complex<double>, cuDoubleComplex, cublasZdotc, \
-                                       ETI_SPEC_AVAIL)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(float, float, cublasSdot)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(double, double, cublasDdot)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCdotc)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZdotc)
 
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(true)
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(false)
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif
@@ -136,8 +128,8 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(false)
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_DOT, ETI_SPEC_AVAIL)                          \
-  template <>                                                                                                          \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(KOKKOS_TYPE, TPL_TYPE, TPL_DOT)                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Dot<                                                                                                          \
       Kokkos::HIP,                                                                                                     \
       Kokkos::View<KOKKOS_TYPE, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
@@ -171,14 +163,11 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(ETI_SPEC_AVAIL)                                                     \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sdot, ETI_SPEC_AVAIL)                                   \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_ddot, ETI_SPEC_AVAIL)                                 \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cdotc, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zdotc, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sdot)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_ddot)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cdotc)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zdotc)
 
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(true)
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(false)
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif
@@ -191,8 +180,8 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ROCBLAS_EXT(false)
 
 namespace KokkosBlas {
 namespace Impl {
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(KOKKOS_TYPE, TPL_TYPE, TPL_DOT, ETI_SPEC_AVAIL)                           \
-  template <>                                                                                                          \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(KOKKOS_TYPE, TPL_TYPE, TPL_DOT)                                           \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Dot<                                                                                                          \
       Kokkos::SYCL,                                                                                                    \
       Kokkos::View<KOKKOS_TYPE, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
@@ -224,16 +213,11 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(ETI_SPEC_AVAIL)                                          \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(float, float, oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL)   \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(double, double, oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<float>, std::complex<float>,                       \
-                                       oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL)                \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<double>, std::complex<double>,                     \
-                                       oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(float, float, oneapi::mkl::blas::row_major::dot)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(double, double, oneapi::mkl::blas::row_major::dot)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<float>, std::complex<float>, oneapi::mkl::blas::row_major::dotc)
+KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::complex<double>, std::complex<double>, oneapi::mkl::blas::row_major::dotc)
 
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(true)
-KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(false)
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif

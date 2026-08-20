@@ -53,19 +53,13 @@ void lapackGetrfWrapper(const AViewType& A, const IpivView& Ipiv, const InfoView
 }
 
 #define KOKKOSLAPACK_GETRF_LAPACK(SCALAR, LAYOUT, EXECSPACE, MEM_SPACE)                                                \
-  template <>                                                                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GETRF<                                                                                                        \
       EXECSPACE,                                                                                                       \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,       \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true, \
-      getrf_eti_spec_avail<                                                                                            \
-          EXECSPACE,                                                                                                   \
-          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                                         \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
-          Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
-          Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                                             \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                                             \
+      ETI_SPEC_AVAIL> {                                                                                                \
     using AViewType =                                                                                                  \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     using IpivView =                                                                                                   \
@@ -168,21 +162,14 @@ void cusolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, const
 }
 
 #define KOKKOSLAPACK_GETRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                        \
-  template <>                                                                                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct GETRF<                                                                                                       \
       Kokkos::Cuda,                                                                                                   \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                         \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
-      true,                                                                                                           \
-      getrf_eti_spec_avail<Kokkos::Cuda,                                                                              \
-                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                    \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                        \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                     \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                        \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                           \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
     using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
     using IpivViewType =                                                                                              \
@@ -257,20 +244,13 @@ void rocsolverGetrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
 }
 
 #define KOKKOSLAPACK_GETRF_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                        \
-  template <>                                                                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GETRF<                                                                                                        \
       Kokkos::HIP,                                                                                                     \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
-      true,                                                                                                            \
-      getrf_eti_spec_avail<                                                                                            \
-          Kokkos::HIP,                                                                                                 \
-          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                                       \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
-          Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-          Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                                           \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                                             \
+      true, ETI_SPEC_AVAIL> {                                                                                          \
     using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                           \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
     using IpivViewType =                                                                                               \

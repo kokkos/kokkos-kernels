@@ -25,8 +25,8 @@ inline void scal_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, ETI_SPEC_AVAIL)                           \
-  template <typename ExecSpace>                                                                                       \
+#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE)                                           \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                  \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                     \
   struct Scal<                                                                                                        \
       ExecSpace, Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -55,29 +55,13 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(double, double, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(double, double)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(float, float, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(float, float)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>, ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(false)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -91,8 +75,8 @@ KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, ETI_SPEC_AVAIL)               \
-  template <>                                                                                                          \
+#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN)                               \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Scal<                                                                                                         \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
@@ -125,29 +109,13 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(double, double, cublasDscal, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(double, double, cublasDscal)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(float, float, cublasSscal, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(float, float, cublasSscal)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZscal, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZscal)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCscal, ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(false)
-
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(false)
-
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(false)
-
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(false)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCscal)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -161,8 +129,8 @@ KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, ETI_SPEC_AVAIL)         \
-  template <>                                                                                                         \
+#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN)                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct Scal<                                                                                                        \
       Kokkos::HIP,                                                                                                    \
       Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
@@ -199,30 +167,13 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dscal, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dscal)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sscal, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sscal)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL)                                           \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zscal, \
-                                          ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zscal)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cscal, ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(false)
-
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(false)
-
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(false)
-
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(false)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cscal)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

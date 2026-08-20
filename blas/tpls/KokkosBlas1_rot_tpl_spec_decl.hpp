@@ -26,113 +26,97 @@ inline void rot_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROT_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                         \
-  template <typename ExecSpace>                                                                                     \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                   \
-  struct Rot<ExecSpace,                                                                                             \
-             Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-             Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
-             Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
-             true, ETI_SPEC_AVAIL> {                                                                                \
-    using VectorView =                                                                                              \
-        Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;      \
-    using MagnitudeView =                                                                                           \
-        Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    using ScalarView =                                                                                              \
-        Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    static void rot(ExecSpace const& /*space*/, VectorView const& X, VectorView const& Y, MagnitudeView const& c,   \
-                    ScalarView const& s) {                                                                          \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_BLAS,double]");                                            \
-      HostBlas<double>::rot(X.extent_int(0), X.data(), 1, Y.data(), 1, c.data(), s.data());                         \
-      Kokkos::Profiling::popRegion();                                                                               \
-    }                                                                                                               \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Rot<ExecSpace,
+           Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,
+           ETI_SPEC_AVAIL> {
+  using VectorView =
+      Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using MagnitudeView =
+      Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using ScalarView =
+      Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  static void rot(ExecSpace const& /*space*/, VectorView const& X, VectorView const& Y, MagnitudeView const& c,
+                  ScalarView const& s) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_BLAS,double]");
+    HostBlas<double>::rot(X.extent_int(0), X.data(), 1, Y.data(), 1, c.data(), s.data());
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-#define KOKKOSBLAS1_SROT_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                        \
-  template <typename ExecSpace>                                                                                    \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                  \
-  struct Rot<ExecSpace,                                                                                            \
-             Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-             Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
-             Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
-             true, ETI_SPEC_AVAIL> {                                                                               \
-    using VectorView =                                                                                             \
-        Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;      \
-    using MagnitudeView =                                                                                          \
-        Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    using ScalarView =                                                                                             \
-        Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    static void rot(ExecSpace const& /*space*/, VectorView const& X, VectorView const& Y, MagnitudeView const& c,  \
-                    ScalarView const& s) {                                                                         \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_BLAS,float]");                                            \
-      HostBlas<float>::rot(X.extent_int(0), X.data(), 1, Y.data(), 1, c.data(), s.data());                         \
-      Kokkos::Profiling::popRegion();                                                                              \
-    }                                                                                                              \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Rot<ExecSpace,
+           Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,
+           ETI_SPEC_AVAIL> {
+  using VectorView =
+      Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using MagnitudeView =
+      Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using ScalarView =
+      Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  static void rot(ExecSpace const& /*space*/, VectorView const& X, VectorView const& Y, MagnitudeView const& c,
+                  ScalarView const& s) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_BLAS,float]");
+    HostBlas<float>::rot(X.extent_int(0), X.data(), 1, Y.data(), 1, c.data(), s.data());
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-#define KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                        \
-  template <typename ExecSpace>                                                                                    \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                  \
-  struct Rot<ExecSpace,                                                                                            \
-             Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                         \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                \
-             Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-             Kokkos::View<Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace,                          \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                \
-             true, ETI_SPEC_AVAIL> {                                                                               \
-    using VectorView = Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,               \
-                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                      \
-    using MagnitudeView =                                                                                          \
-        Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;      \
-    using ScalarView = Kokkos::View<Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace,                \
-                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                      \
-    static void rot(ExecSpace const& /*space*/, VectorView const& X, VectorView const& Y, MagnitudeView const& c,  \
-                    ScalarView const& s) {                                                                         \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_BLAS,complex<double>]");                                  \
-      HostBlas<std::complex<double>>::rot(X.extent_int(0), reinterpret_cast<std::complex<double>*>(X.data()), 1,   \
-                                          reinterpret_cast<std::complex<double>*>(Y.data()), 1, c.data(),          \
-                                          reinterpret_cast<std::complex<double>*>(s.data()));                      \
-      Kokkos::Profiling::popRegion();                                                                              \
-    }                                                                                                              \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Rot<ExecSpace,
+           Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           Kokkos::View<Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           true, ETI_SPEC_AVAIL> {
+  using VectorView = Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using MagnitudeView =
+      Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using ScalarView = Kokkos::View<Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  static void rot(ExecSpace const& /*space*/, VectorView const& X, VectorView const& Y, MagnitudeView const& c,
+                  ScalarView const& s) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_BLAS,complex<double>]");
+    HostBlas<std::complex<double>>::rot(X.extent_int(0), reinterpret_cast<std::complex<double>*>(X.data()), 1,
+                                        reinterpret_cast<std::complex<double>*>(Y.data()), 1, c.data(),
+                                        reinterpret_cast<std::complex<double>*>(s.data()));
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-#define KOKKOSBLAS1_CROT_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                       \
-  template <typename ExecSpace>                                                                                   \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                 \
-  struct Rot<ExecSpace,                                                                                           \
-             Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                         \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                               \
-             Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-             Kokkos::View<Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HostSpace,                          \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                               \
-             true, ETI_SPEC_AVAIL> {                                                                              \
-    using VectorView = Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,               \
-                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                     \
-    using MagnitudeView =                                                                                         \
-        Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;      \
-    using ScalarView = Kokkos::View<Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HostSpace,                \
-                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                     \
-    static void rot(ExecSpace const& /*space*/, VectorView const& X, VectorView const& Y, MagnitudeView const& c, \
-                    ScalarView const& s) {                                                                        \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_BLAS,complex<float>]");                                  \
-      HostBlas<std::complex<float>>::rot(X.extent_int(0), reinterpret_cast<std::complex<float>*>(X.data()), 1,    \
-                                         reinterpret_cast<std::complex<float>*>(Y.data()), 1, c.data(),           \
-                                         reinterpret_cast<std::complex<float>*>(s.data()));                       \
-      Kokkos::Profiling::popRegion();                                                                             \
-    }                                                                                                             \
-  };
-
-KOKKOSBLAS1_DROT_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_DROT_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_SROT_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_SROT_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_CROT_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_CROT_TPL_SPEC_DECL_BLAS(false)
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Rot<ExecSpace,
+           Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           Kokkos::View<Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+           true, ETI_SPEC_AVAIL> {
+  using VectorView = Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using MagnitudeView =
+      Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using ScalarView = Kokkos::View<Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  static void rot(ExecSpace const& /*space*/, VectorView const& X, VectorView const& Y, MagnitudeView const& c,
+                  ScalarView const& s) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::rot[TPL_BLAS,complex<float>]");
+    HostBlas<std::complex<float>>::rot(X.extent_int(0), reinterpret_cast<std::complex<float>*>(X.data()), 1,
+                                       reinterpret_cast<std::complex<float>*>(Y.data()), 1, c.data(),
+                                       reinterpret_cast<std::complex<float>*>(s.data()));
+    Kokkos::Profiling::popRegion();
+  }
+};
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -145,8 +129,8 @@ KOKKOSBLAS1_CROT_TPL_SPEC_DECL_BLAS(false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROT_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                            \
-  template <>                                                                                                    \
+#define KOKKOSBLAS1_DROT_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                 \
   struct Rot<Kokkos::Cuda, Kokkos::View<double*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
              Kokkos::View<double, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
              Kokkos::View<double, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,          \
@@ -169,8 +153,8 @@ namespace Impl {
     }                                                                                                            \
   };
 
-#define KOKKOSBLAS1_SROT_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                            \
-  template <>                                                                                                    \
+#define KOKKOSBLAS1_SROT_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                 \
   struct Rot<Kokkos::Cuda, Kokkos::View<float*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
              Kokkos::View<float, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
              Kokkos::View<float, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,           \
@@ -193,8 +177,8 @@ namespace Impl {
     }                                                                                                            \
   };
 
-#define KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                               \
-  template <>                                                                                                       \
+#define KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                               \
+  template <bool ETI_SPEC_AVAIL>                                                                                    \
   struct Rot<Kokkos::Cuda,                                                                                          \
              Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
              Kokkos::View<double, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
@@ -222,8 +206,8 @@ namespace Impl {
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS1_CROT_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                              \
-  template <>                                                                                                      \
+#define KOKKOSBLAS1_CROT_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                              \
+  template <bool ETI_SPEC_AVAIL>                                                                                   \
   struct Rot<Kokkos::Cuda,                                                                                         \
              Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
              Kokkos::View<float, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
@@ -250,25 +234,17 @@ namespace Impl {
     }                                                                                                              \
   };
 
-KOKKOSBLAS1_DROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_DROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_DROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_DROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_DROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_DROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS1_SROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_SROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_SROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_SROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_SROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_SROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_ZROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS1_CROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_CROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_CROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_CROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_CROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_CROT_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS

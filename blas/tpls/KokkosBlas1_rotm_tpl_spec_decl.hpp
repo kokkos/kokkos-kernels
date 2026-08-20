@@ -25,8 +25,8 @@ inline void rotm_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(SCALAR, LAYOUT, ETI_SPEC_AVAIL)                                       \
-  template <typename ExecSpace>                                                                                   \
+#define KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(SCALAR, LAYOUT)                                                       \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                              \
     requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                 \
   struct Rotm<ExecSpace, Kokkos::View<SCALAR*, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,       \
               Kokkos::View<const SCALAR[5], LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,    \
@@ -40,14 +40,10 @@ namespace Impl {
     }                                                                                                             \
   };
 
-KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutRight, true)
-KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutRight, false)
-KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight, true)
-KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight, false)
+KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft)
+KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutRight)
+KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft)
+KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -61,8 +57,8 @@ KOKKOSBLAS1_ROTM_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                               \
-  template <>                                                                                                        \
+#define KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                               \
+  template <bool ETI_SPEC_AVAIL>                                                                                     \
   struct Rotm<Kokkos::Cuda, Kokkos::View<double*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
               Kokkos::View<const double[5], LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,    \
               ETI_SPEC_AVAIL> {                                                                                      \
@@ -83,13 +79,11 @@ namespace Impl {
     }                                                                                                                \
   };
 
-KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
-#define KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                              \
-  template <>                                                                                                       \
+#define KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                              \
+  template <bool ETI_SPEC_AVAIL>                                                                                    \
   struct Rotm<Kokkos::Cuda, Kokkos::View<float*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
               Kokkos::View<const float[5], LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,    \
               ETI_SPEC_AVAIL> {                                                                                     \
@@ -110,10 +104,8 @@ KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
     }                                                                                                               \
   };
 
-KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -127,8 +119,8 @@ KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                             \
-  template <>                                                                                                       \
+#define KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(LAYOUT)                                                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                    \
   struct Rotm<Kokkos::HIP, Kokkos::View<double*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
               Kokkos::View<const double[5], LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,    \
               ETI_SPEC_AVAIL> {                                                                                     \
@@ -150,13 +142,11 @@ namespace Impl {
     }                                                                                                               \
   };
 
-KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight)
 
-#define KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                            \
-  template <>                                                                                                      \
+#define KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_ROCBLAS(LAYOUT)                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                   \
   struct Rotm<Kokkos::HIP, Kokkos::View<float*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
               Kokkos::View<const float[5], LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,    \
               ETI_SPEC_AVAIL> {                                                                                    \
@@ -178,10 +168,8 @@ KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, false)
     }                                                                                                              \
   };
 
-KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_SROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

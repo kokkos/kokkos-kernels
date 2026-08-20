@@ -26,95 +26,75 @@ inline void swap_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                         \
-  template <typename ExecSpace>                                                                                      \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                    \
-  struct Swap<ExecSpace,                                                                                             \
-              Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-              Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-              true, ETI_SPEC_AVAIL> {                                                                                \
-    using XVector =                                                                                                  \
-        Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    using YVector =                                                                                                  \
-        Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    static void swap(ExecSpace const& /*space*/, XVector const& X, YVector const& Y) {                               \
-      Kokkos::Profiling::pushRegion("KokkosBlas::swap[TPL_BLAS,double]");                                            \
-      HostBlas<double>::swap(X.extent_int(0), X.data(), 1, Y.data(), 1);                                             \
-      Kokkos::Profiling::popRegion();                                                                                \
-    }                                                                                                                \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Swap<ExecSpace,
+            Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+            Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,
+            ETI_SPEC_AVAIL> {
+  using XVector = Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using YVector = Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  static void swap(ExecSpace const& /*space*/, XVector const& X, YVector const& Y) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::swap[TPL_BLAS,double]");
+    HostBlas<double>::swap(X.extent_int(0), X.data(), 1, Y.data(), 1);
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-#define KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                        \
-  template <typename ExecSpace>                                                                                     \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                   \
-  struct Swap<ExecSpace,                                                                                            \
-              Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-              Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-              true, ETI_SPEC_AVAIL> {                                                                               \
-    using XVector =                                                                                                 \
-        Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    using YVector =                                                                                                 \
-        Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    static void swap(ExecSpace const& /*space*/, XVector const& X, YVector const& Y) {                              \
-      Kokkos::Profiling::pushRegion("KokkosBlas::swap[TPL_BLAS,float]");                                            \
-      HostBlas<float>::swap(X.extent_int(0), X.data(), 1, Y.data(), 1);                                             \
-      Kokkos::Profiling::popRegion();                                                                               \
-    }                                                                                                               \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Swap<ExecSpace,
+            Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+            Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,
+            ETI_SPEC_AVAIL> {
+  using XVector = Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using YVector = Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  static void swap(ExecSpace const& /*space*/, XVector const& X, YVector const& Y) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::swap[TPL_BLAS,float]");
+    HostBlas<float>::swap(X.extent_int(0), X.data(), 1, Y.data(), 1);
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-#define KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                      \
-  template <typename ExecSpace>                                                                                   \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                 \
-  struct Swap<ExecSpace,                                                                                          \
-              Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                       \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                              \
-              Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                       \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                              \
-              true, ETI_SPEC_AVAIL> {                                                                             \
-    using XVector = Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                 \
-                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                        \
-    using YVector = Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                 \
-                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                        \
-    static void swap(ExecSpace const& /*space*/, XVector const& X, YVector const& Y) {                            \
-      Kokkos::Profiling::pushRegion("KokkosBlas::swap[TPL_BLAS,complex<double>]");                                \
-      HostBlas<std::complex<double>>::swap(X.extent_int(0), reinterpret_cast<std::complex<double>*>(X.data()), 1, \
-                                           reinterpret_cast<std::complex<double>*>(Y.data()), 1);                 \
-      Kokkos::Profiling::popRegion();                                                                             \
-    }                                                                                                             \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Swap<ExecSpace,
+            Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+            Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+            true, ETI_SPEC_AVAIL> {
+  using XVector = Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using YVector = Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  static void swap(ExecSpace const& /*space*/, XVector const& X, YVector const& Y) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::swap[TPL_BLAS,complex<double>]");
+    HostBlas<std::complex<double>>::swap(X.extent_int(0), reinterpret_cast<std::complex<double>*>(X.data()), 1,
+                                         reinterpret_cast<std::complex<double>*>(Y.data()), 1);
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-#define KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                                                    \
-  template <typename ExecSpace>                                                                                 \
-    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                               \
-  struct Swap<ExecSpace,                                                                                        \
-              Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                      \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                            \
-              Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                      \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                            \
-              true, ETI_SPEC_AVAIL> {                                                                           \
-    using XVector = Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                \
-                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                      \
-    using YVector = Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,                \
-                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                      \
-    static void swap(ExecSpace const& /*space*/, XVector const& X, YVector const& Y) {                          \
-      Kokkos::Profiling::pushRegion("KokkosBlas::swap[TPL_BLAS,complex<float>]");                               \
-      HostBlas<std::complex<float>>::swap(X.extent_int(0), reinterpret_cast<std::complex<float>*>(X.data()), 1, \
-                                          reinterpret_cast<std::complex<float>*>(Y.data()), 1);                 \
-      Kokkos::Profiling::popRegion();                                                                           \
-    }                                                                                                           \
-  };
-
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_BLAS(false)
-
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_BLAS(true)
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_BLAS(false)
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct Swap<ExecSpace,
+            Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+            Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+            true, ETI_SPEC_AVAIL> {
+  using XVector = Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using YVector = Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::HostSpace,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  static void swap(ExecSpace const& /*space*/, XVector const& X, YVector const& Y) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::swap[TPL_BLAS,complex<float>]");
+    HostBlas<std::complex<float>>::swap(X.extent_int(0), reinterpret_cast<std::complex<float>*>(X.data()), 1,
+                                        reinterpret_cast<std::complex<float>*>(Y.data()), 1);
+    Kokkos::Profiling::popRegion();
+  }
+};
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -128,8 +108,8 @@ KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_BLAS(false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                            \
-  template <>                                                                                                     \
+#define KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                  \
   struct Swap<Kokkos::Cuda, Kokkos::View<double*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
               Kokkos::View<double*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,         \
               ETI_SPEC_AVAIL> {                                                                                   \
@@ -145,8 +125,8 @@ namespace Impl {
     }                                                                                                             \
   };
 
-#define KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                            \
-  template <>                                                                                                     \
+#define KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                  \
   struct Swap<Kokkos::Cuda, Kokkos::View<float*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
               Kokkos::View<float*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,          \
               ETI_SPEC_AVAIL> {                                                                                   \
@@ -162,8 +142,8 @@ namespace Impl {
     }                                                                                                             \
   };
 
-#define KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                               \
-  template <>                                                                                                        \
+#define KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                               \
+  template <bool ETI_SPEC_AVAIL>                                                                                     \
   struct Swap<Kokkos::Cuda,                                                                                          \
               Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
               Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
@@ -184,8 +164,8 @@ namespace Impl {
     }                                                                                                                \
   };
 
-#define KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_CUBLAS(LAYOUT, ETI_SPEC_AVAIL)                                              \
-  template <>                                                                                                       \
+#define KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                              \
+  template <bool ETI_SPEC_AVAIL>                                                                                    \
   struct Swap<Kokkos::Cuda,                                                                                         \
               Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
               Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
@@ -206,25 +186,17 @@ namespace Impl {
     }                                                                                                               \
   };
 
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
@@ -236,8 +208,8 @@ KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                              \
-  template <>                                                                                                        \
+#define KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_ROCBLAS(LAYOUT)                                                              \
+  template <bool ETI_SPEC_AVAIL>                                                                                     \
   struct Swap<Kokkos::HIP, Kokkos::View<double*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,      \
               Kokkos::View<double*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,             \
               ETI_SPEC_AVAIL> {                                                                                      \
@@ -253,8 +225,8 @@ namespace Impl {
     }                                                                                                                \
   };
 
-#define KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                              \
-  template <>                                                                                                        \
+#define KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_ROCBLAS(LAYOUT)                                                              \
+  template <bool ETI_SPEC_AVAIL>                                                                                     \
   struct Swap<Kokkos::HIP, Kokkos::View<float*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,       \
               Kokkos::View<float*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,              \
               ETI_SPEC_AVAIL> {                                                                                      \
@@ -270,8 +242,8 @@ namespace Impl {
     }                                                                                                                \
   };
 
-#define KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                             \
-  template <>                                                                                                       \
+#define KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_ROCBLAS(LAYOUT)                                                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                    \
   struct Swap<Kokkos::HIP,                                                                                          \
               Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
               Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
@@ -292,8 +264,8 @@ namespace Impl {
     }                                                                                                               \
   };
 
-#define KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_ROCBLAS(LAYOUT, ETI_SPEC_AVAIL)                                            \
-  template <>                                                                                                      \
+#define KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_ROCBLAS(LAYOUT)                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                   \
   struct Swap<Kokkos::HIP,                                                                                         \
               Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
               Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
@@ -314,25 +286,17 @@ namespace Impl {
     }                                                                                                              \
   };
 
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_DSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_SSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_ZSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight)
 
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, true)
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, false)
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, true)
-KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, false)
+KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_CSWAP_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight)
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS

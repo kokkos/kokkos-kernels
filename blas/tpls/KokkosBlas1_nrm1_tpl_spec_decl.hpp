@@ -26,12 +26,12 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(SCALAR, EXECSPACE)                                                         \
-  template <>                                                                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Nrm1<EXECSPACE,                                                                                               \
               Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,                  \
                            Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                \
               Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, 1,  \
-              true> {                                                                                                  \
+              true, ETI_SPEC_AVAIL> {                                                                                  \
     using mag_type = typename KokkosKernels::ArithTraits<SCALAR>::mag_type;                                            \
     using RV = Kokkos::View<mag_type, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     using XV = Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;    \
@@ -51,7 +51,7 @@ namespace Impl {
           R() = HostBlas<SCALAR>::asum(N, X.data(), one);                                                              \
         }                                                                                                              \
       } else {                                                                                                         \
-        Nrm1<EXECSPACE, RV, XV, 1, false, nrm1_eti_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R, X);           \
+        Nrm1<EXECSPACE, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);                                          \
       }                                                                                                                \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
@@ -118,17 +118,12 @@ void cublasAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTyp
 }
 
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(SCALAR)                                                                  \
-  template <>                                                                                                          \
-  struct Nrm1<                                                                                                         \
-      Kokkos::Cuda,                                                                                                    \
-      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft, Kokkos::HostSpace,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, 1, true, \
-      nrm1_eti_spec_avail<Kokkos::Cuda,                                                                                \
-                          Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,      \
-                                       Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                    \
-                          Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Cuda,                                \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
+  struct Nrm1<Kokkos::Cuda,                                                                                            \
+              Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,                  \
+                           Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                \
+              Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
+              1, true, ETI_SPEC_AVAIL> {                                                                               \
     using execution_space = Kokkos::Cuda;                                                                              \
     using RV              = Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,    \
                             Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                  \
@@ -141,7 +136,7 @@ void cublasAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTyp
       if (numElems < static_cast<size_type>(INT_MAX)) {                                                                \
         cublasAsumWrapper(space, R, X);                                                                                \
       } else {                                                                                                         \
-        Nrm1<execution_space, RV, XV, 1, false, nrm1_eti_spec_avail<Kokkos::Cuda, RV, XV>::value>::nrm1(space, R, X);  \
+        Nrm1<execution_space, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);                                    \
       }                                                                                                                \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
@@ -191,17 +186,12 @@ void rocblasAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTy
 }
 
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(SCALAR)                                                                \
-  template <>                                                                                                         \
-  struct Nrm1<                                                                                                        \
-      Kokkos::HIP,                                                                                                    \
-      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft, Kokkos::HostSpace,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, 1, true, \
-      nrm1_eti_spec_avail<Kokkos::HIP,                                                                                \
-                          Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,     \
-                                       Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-                          Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::HIP,                                \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
+  struct Nrm1<Kokkos::HIP,                                                                                            \
+              Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,                 \
+                           Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                               \
+              Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
+              1, true, ETI_SPEC_AVAIL> {                                                                              \
     using RV = Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,                \
                             Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                              \
     using XV = Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
@@ -213,7 +203,7 @@ void rocblasAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTy
       if (numElems < static_cast<size_type>(INT_MAX)) {                                                               \
         rocblasAsumWrapper(space, R, X);                                                                              \
       } else {                                                                                                        \
-        Nrm1<Kokkos::HIP, RV, XV, 1, false, nrm1_eti_spec_avail<Kokkos::HIP, RV, XV>::value>::nrm1(space, R, X);      \
+        Nrm1<Kokkos::HIP, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);                                       \
       }                                                                                                               \
       Kokkos::Profiling::popRegion();                                                                                 \
     }                                                                                                                 \
@@ -275,17 +265,12 @@ void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTyp
 }
 
 #define KOKKOSBLAS1_NRM1_ONEMKL(SCALAR)                                                                                \
-  template <>                                                                                                          \
-  struct Nrm1<                                                                                                         \
-      Kokkos::SYCL,                                                                                                    \
-      Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft, Kokkos::HostSpace,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, 1, true, \
-      nrm1_eti_spec_avail<Kokkos::SYCL,                                                                                \
-                          Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,      \
-                                       Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                    \
-                          Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::SYCL,                                \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
+  struct Nrm1<Kokkos::SYCL,                                                                                            \
+              Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,                  \
+                           Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                \
+              Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::SYCL, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
+              1, true, ETI_SPEC_AVAIL> {                                                                               \
     using execution_space = Kokkos::SYCL;                                                                              \
     using RV              = Kokkos::View<typename KokkosKernels::ArithTraits<SCALAR>::mag_type, Kokkos::LayoutLeft,    \
                             Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                  \
@@ -298,7 +283,7 @@ void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R, const XViewTyp
       if (numElems < static_cast<size_type>(INT_MAX)) {                                                                \
         onemklAsumWrapper(space, R, X);                                                                                \
       } else {                                                                                                         \
-        Nrm1<execution_space, RV, XV, 1, false, nrm1_eti_spec_avail<Kokkos::SYCL, RV, XV>::value>::nrm1(space, R, X);  \
+        Nrm1<execution_space, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);                                    \
       }                                                                                                                \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
