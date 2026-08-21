@@ -51,22 +51,24 @@ namespace TestUtils {
 namespace Impl {
 
 // Base case: scalar absolute comparison
-template <class Scalar1, class Scalar2, class Scalar3,
-          std::enable_if_t<!Kokkos::is_view_v<Scalar1> && !KokkosBatched::is_vector<Scalar1>::value, int> = 0>
+template <class Scalar1, class Scalar2, class Scalar3>
+  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value && !KokkosBatched::is_vector<Scalar2>::value)
 testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol,
                                                         Scalar1 val1, Scalar2 val2, Scalar3 tol) {
-  typedef KokkosKernels::ArithTraits<Scalar1> AT1;
-  typedef KokkosKernels::ArithTraits<Scalar3> AT3;
+  using AT1 = KokkosKernels::ArithTraits<Scalar1>;
+  using AT3 = KokkosKernels::ArithTraits<Scalar3>;
 
   double abs_diff = (double)AT1::abs(val1 - val2);
   double abs_tol  = (double)AT3::abs(tol);
 
   if (abs_diff <= abs_tol) return testing::AssertionSuccess();
 
-  return testing::AssertionFailure() << "Expected: " << expr1 << " is near " << expr2 << " (within " << expr_tol
-                                     << ")\n"
-                                     << "  Actual: " << abs_diff << "\n"
-                                     << "Expected: " << abs_tol << "\n";
+return testing::AssertionFailure()
+<< "Expected: " << expr1 << " is near " << expr2 << " (within " << expr_tol << ")\n"
+<< "  " << expr1 << " evaluates to " << testing::PrintToString(val1) << "\n"
+<< "  " << expr2 << " evaluates to " << testing::PrintToString(val2) << "\n"
+<< "  Difference: " << abs_diff << "\n"
+<< "  Tolerance: " << abs_tol << "\n";
 }
 
 // SIMD Vector specialization: element-wise absolute comparison across all lanes
@@ -90,11 +92,12 @@ static constexpr size_t ExpectNearMaxFailures = 10;
 
 // Helper: mirrors two rank-1 Views to host, then applies elem_cmp(h_v1(i), h_v2(i)) for each index,
 // collecting per-element failures into a single AssertionResult (capped at ExpectNearMaxFailures).
-template <class View1, class View2, class ElemCmp,
-          std::enable_if_t<Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>, int> = 0>
+template <class View1, class View2, class ElemCmp>
+  requires(Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>)
 testing::AssertionResult expect_near_1dview_impl(const char* expr1, const char* expr2, const View1& v1, const View2& v2,
                                                  ElemCmp elem_cmp) {
-  static_assert(View1::rank == 1, "expect_near_1dview_impl: only rank-1 Views are supported");
+  static_assert(View1::rank == 1, "expect_near_1dview_impl: View1 must have rank 1.");
+  static_assert(View2::rank == 1, "expect_near_1dview_impl: View2 must have rank 1.");
   const size_t v1_size = v1.extent(0);
   if (v1_size != v2.extent(0)) {
     return testing::AssertionFailure() << expr1 << ".extent(0) (" << v1_size << ") != " << expr2 << ".extent(0) ("
@@ -125,8 +128,8 @@ testing::AssertionResult expect_near_1dview_impl(const char* expr1, const char* 
 }
 
 // Kokkos View specialization: element-wise absolute comparison (rank-1 only)
-template <class View1, class View2, class Scalar3,
-          std::enable_if_t<Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>, int> = 0>
+template <class View1, class View2, class Scalar3>
+  requires(Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>)
 testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol,
                                                         const View1& v1, const View2& v2, Scalar3 tol) {
   return expect_near_1dview_impl(expr1, expr2, v1, v2, [&](auto e1, auto e2) {
@@ -135,8 +138,8 @@ testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const
 }
 
 // Base case: scalar relative comparison — delegates to absolute with per-element tolerance
-template <class Scalar1, class Scalar2, class Scalar3,
-          std::enable_if_t<!Kokkos::is_view_v<Scalar1> && !KokkosBatched::is_vector<Scalar1>::value, int> = 0>
+template <class Scalar1, class Scalar2, class Scalar3>
+  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value && !KokkosBatched::is_vector<Scalar2>::value)
 testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, const char* expr2, const char* expr_tol,
                                                             Scalar1 val1, Scalar2 val2, Scalar3 tol) {
   using AT1 = KokkosKernels::ArithTraits<Scalar1>;
@@ -163,8 +166,8 @@ testing::AssertionResult expect_near_pred_format_scalar_rel(
 }
 
 // Kokkos View specialization: element-wise relative comparison (rank-1 only)
-template <class View1, class View2, class Scalar3,
-          std::enable_if_t<Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>, int> = 0>
+template <class View1, class View2, class Scalar3>
+  requires(Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>)
 testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, const char* expr2, const char* expr_tol,
                                                             const View1& v1, const View2& v2, Scalar3 tol) {
   return expect_near_1dview_impl(expr1, expr2, v1, v2, [&](auto e1, auto e2) {
