@@ -13,6 +13,8 @@
 #include "KokkosBlas1_axpby.hpp"
 #include "KokkosKernels_InnerProductSpaceTraits.hpp"
 
+#include "KokkosBatched_Getrf.hpp"
+#include "KokkosBatched_Getrs.hpp"
 #include "KokkosODE_Types.hpp"
 
 namespace KokkosODE {
