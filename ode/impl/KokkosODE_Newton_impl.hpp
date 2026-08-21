@@ -67,12 +67,11 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // (e.g. chemistry Jacobians with one dense row), so it is only kept
     // as a fallback for systems larger than the stack pivot buffer.
     int linSolverStat = 0;
-    constexpr int pivot_buffer_size = 32;
-    if (sys.neqs <= pivot_buffer_size) {
-      int pivot_buffer[pivot_buffer_size];
+    using mat_value_type = typename mat_type::non_const_value_type;
+    if (sys.neqs * sizeof(int) <= tmp.size() * sizeof(mat_value_type)) {
       Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::AnonymousSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> piv(
-          pivot_buffer, sys.neqs);
-      for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
+        reinterpret_cast<int *>(tmp.data()), sys.neqs);
+    for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
       linSolverStat = KokkosBatched::SerialGetrf<KokkosBatched::Algo::Getrf::Unblocked>::invoke(J, piv);
       if (linSolverStat == 0) {
         linSolverStat =
