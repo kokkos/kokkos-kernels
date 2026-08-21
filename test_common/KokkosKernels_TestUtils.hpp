@@ -52,7 +52,8 @@ namespace Impl {
 
 // Base case: scalar absolute comparison
 template <class Scalar1, class Scalar2, class Scalar3>
-  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value && !KokkosBatched::is_vector<Scalar2>::value)
+  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value &&
+           !KokkosBatched::is_vector<Scalar2>::value)
 testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol,
                                                         Scalar1 val1, Scalar2 val2, Scalar3 tol) {
   using AT1 = KokkosKernels::ArithTraits<Scalar1>;
@@ -63,12 +64,12 @@ testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const
 
   if (abs_diff <= abs_tol) return testing::AssertionSuccess();
 
-return testing::AssertionFailure()
-<< "Expected: " << expr1 << " is near " << expr2 << " (within " << expr_tol << ")\n"
-<< "  " << expr1 << " evaluates to " << testing::PrintToString(val1) << "\n"
-<< "  " << expr2 << " evaluates to " << testing::PrintToString(val2) << "\n"
-<< "  Difference: " << abs_diff << "\n"
-<< "  Tolerance: " << abs_tol << "\n";
+  return testing::AssertionFailure() << "Expected: " << expr1 << " is near " << expr2 << " (within " << expr_tol
+                                     << ")\n"
+                                     << "  " << expr1 << " evaluates to " << testing::PrintToString(val1) << "\n"
+                                     << "  " << expr2 << " evaluates to " << testing::PrintToString(val2) << "\n"
+                                     << "  Difference: " << abs_diff << "\n"
+                                     << "  Tolerance: " << abs_tol << "\n";
 }
 
 // SIMD Vector specialization: element-wise absolute comparison across all lanes
@@ -139,7 +140,8 @@ testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const
 
 // Base case: scalar relative comparison — delegates to absolute with per-element tolerance
 template <class Scalar1, class Scalar2, class Scalar3>
-  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value && !KokkosBatched::is_vector<Scalar2>::value)
+  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value &&
+           !KokkosBatched::is_vector<Scalar2>::value)
 testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, const char* expr2, const char* expr_tol,
                                                             Scalar1 val1, Scalar2 val2, Scalar3 tol) {
   using AT1 = KokkosKernels::ArithTraits<Scalar1>;
