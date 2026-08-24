@@ -12,14 +12,15 @@ Defined in header: :code:`KokkosKernels_SimpleUtils.hpp`
   void exclusive_parallel_prefix_sum(const view_t& arr);
 
   template <typename ExecSpace, typename view_t>
-  void exclusive_parallel_prefix_sum(const ExecSpace &exec,
-                                               const view_t& arr, typename view_t::non_const_value_type &finalSum);
+  void exclusive_parallel_prefix_sum(const ExecSpace &exec, const view_t& arr,
+                                     typename view_t::non_const_value_type &finalSum);
 
   template <typename view_t>
-  void exclusive_parallel_prefix_sum(const view_t& arr, typename view_t::non_const_value_type &finalSum);
+  void exclusive_parallel_prefix_sum(const view_t& arr,
+                                     typename view_t::non_const_value_type &finalSum);
 
 These functions perform an in-place exclusive parallel prefix sum on the rank-1 ``Kokkos::View`` ``arr``.
-That is, element i will be replaced with the sum of elements 0...i, excluding i itself.
+That is, element i will be replaced with the sum of elements 0...i-1 (not including i itself in the sum).
 If ``exec`` is provided, the underlying parallel scan is executed on that instance.
 If ``finalSum`` (output parameter) is provided, the total sum of all elements of ``arr`` on input is computed and stored here.
 

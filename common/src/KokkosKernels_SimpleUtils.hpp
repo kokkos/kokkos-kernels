@@ -333,21 +333,21 @@ void sequential_fill(const V &v, typename V::non_const_value_type start = 0) {
 
 /***
  * \brief Perform an in-place exclusive parallel prefix sum. That is, element
- * i will be replaced with the sum of elements 0...i, excluding i itself.
+ * i will be replaced with the sum of elements 0...i-1 (excluding i itself).
  * \param exec: the execution space instance on which to run
  * \param arr: the array for which the prefix sum will be performed.
  */
 template <typename ExecSpace, typename view_t>
   requires(Kokkos::is_execution_space_v<ExecSpace>)
 void exclusive_parallel_prefix_sum(const ExecSpace &exec, const view_t &arr) {
-  typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
-  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum", my_exec_space(exec, 0, arr.extent(0)),
+  using policy_t = Kokkos::RangePolicy<ExecSpace>;
+  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum", policy_t(exec, 0, arr.extent(0)),
                         Impl::ExclusiveParallelPrefixSum<view_t>(arr));
 }
 
 /***
  * \brief Perform an in-place exclusive parallel prefix sum. That is, element
- * i will be replaced with the sum of elements 0...i, excluding i itself.
+ * i will be replaced with the sum of elements 0...i-1 (excluding i itself).
  * \param arr: the array for which the prefix sum will be performed.
  */
 template <typename view_t>
@@ -357,7 +357,7 @@ void exclusive_parallel_prefix_sum(const view_t &arr) {
 
 /***
  * \brief Perform an in-place exclusive parallel prefix sum. That is, element
- * i will be replaced with the sum of elements 0...i, excluding i itself.
+ * i will be replaced with the sum of elements 0...i-1 (excluding i itself).
  * This version also returns the final sum
  * equivalent to the sum-reduction of arr before doing the scan.
  * \param exec: the execution space instance on which to run
@@ -367,14 +367,14 @@ void exclusive_parallel_prefix_sum(const view_t &arr) {
 template <typename ExecSpace, typename view_t>
 void exclusive_parallel_prefix_sum(const ExecSpace &exec, const view_t &arr,
                                    typename view_t::non_const_value_type &finalSum) {
-  typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
-  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum", my_exec_space(exec, 0, arr.extent(0)),
+  using policy_t = Kokkos::RangePolicy<ExecSpace>;
+  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum", policy_t(exec, 0, arr.extent(0)),
                         Impl::ExclusiveParallelPrefixSum<view_t>(arr), finalSum);
 }
 
 /***
  * \brief Perform an in-place exclusive parallel prefix sum. That is, element
- * i will be replaced with the sum of elements 0...i, excluding i itself. This version also returns the final sum
+ * i will be replaced with the sum of elements 0...i-1 (excluding i itself). This version also returns the final sum
  * equivalent to the sum-reduction of arr before doing the scan.
  * \param arr: the array for which the prefix sum will be performed.
  * \param finalSum: will be set to the sum of arr's elements on input.
@@ -385,22 +385,24 @@ void exclusive_parallel_prefix_sum(const view_t &arr, typename view_t::non_const
   exclusive_parallel_prefix_sum(typename view_t::execution_space(), arr, finalSum);
 }
 
-///
-/// \brief Perform an in-place inclusive parallel prefix sum. That is, element i will be replaced with the sum of
-/// elements 0...i, including i itself. \param my_exec_space: The execution space instance \param arr: the array for
-/// which the prefix sum will be performed.
-///
+/***
+ *  \brief Perform an in-place inclusive parallel prefix sum. That is, element i will be replaced with the sum of
+ *  elements 0...i (including i itself).
+ *  \param my_exec_space: The execution space instance
+ *  \param arr: the array for which the prefix sum will be performed.
+ */
 template <typename ExecSpace, typename view_t>
 void inclusive_parallel_prefix_sum(const ExecSpace &exec, const view_t &arr) {
-  typedef Kokkos::RangePolicy<ExecSpace> range_policy_t;
-  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum", range_policy_t(exec, 0, arr.extent(0)),
+  using policy_t = Kokkos::RangePolicy<ExecSpace>;
+  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum", policy_t(exec, 0, arr.extent(0)),
                         Impl::InclusiveParallelPrefixSum<view_t>(arr));
 }
 
-///
-/// \brief Perform an in-place inclusive parallel prefix sum. That is, element i will be replaced with the sum of
-/// elements 0...i, including i itself. \param arr: the array for which the prefix sum will be performed.
-///
+/***
+ *  \brief Perform an in-place inclusive parallel prefix sum. That is, element i will be replaced with the sum of
+ *  elements 0...i (including i itself).
+ *  \param arr: the array for which the prefix sum will be performed.
+ */
 template <typename view_t>
 void inclusive_parallel_prefix_sum(const view_t &arr) {
   return inclusive_parallel_prefix_sum(typename view_t::execution_space(), arr);
