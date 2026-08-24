@@ -193,13 +193,13 @@ void impl_test_batched_swap_analytical(const std::size_t Nb) {
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      KK_EXPECT_NEAR(h_x0(ib, i), h_x0_ref(ib, i), eps);
-      KK_EXPECT_NEAR(h_y0(ib, i), h_y0_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_x0(ib, i), h_x0_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_y0(ib, i), h_y0_ref(ib, i), eps);
     }
     for (std::size_t i = 0; i < M; i++) {
       for (std::size_t j = 0; j < N; j++) {
-        KK_EXPECT_NEAR(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
-        KK_EXPECT_NEAR(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
       }
     }
   }
@@ -215,13 +215,13 @@ void impl_test_batched_swap_analytical(const std::size_t Nb) {
   Kokkos::deep_copy(h_y1, y1);
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      KK_EXPECT_NEAR(h_x0(ib, i), h_x0_ref(ib, i), eps);
-      KK_EXPECT_NEAR(h_y0(ib, i), h_y0_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_x0(ib, i), h_x0_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_y0(ib, i), h_y0_ref(ib, i), eps);
     }
     for (std::size_t i = 0; i < M; i++) {
       for (std::size_t j = 0; j < N; j++) {
-        KK_EXPECT_NEAR(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
-        KK_EXPECT_NEAR(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
       }
     }
   }
@@ -308,13 +308,13 @@ void impl_test_batched_swap(const std::size_t Nb, const std::size_t M, const std
   // Check if swap is correct
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      KK_EXPECT_NEAR(h_x0(ib, i), h_x0_ref(ib, i), eps);
-      KK_EXPECT_NEAR(h_y0(ib, i), h_y0_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_x0(ib, i), h_x0_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_y0(ib, i), h_y0_ref(ib, i), eps);
     }
     for (std::size_t i = 0; i < M; i++) {
       for (std::size_t j = 0; j < N; j++) {
-        KK_EXPECT_NEAR(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
-        KK_EXPECT_NEAR(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
       }
     }
   }
@@ -330,13 +330,13 @@ void impl_test_batched_swap(const std::size_t Nb, const std::size_t M, const std
   Kokkos::deep_copy(h_y1, y1);
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < N; i++) {
-      KK_EXPECT_NEAR(h_x0(ib, i), h_x0_ref(ib, i), eps);
-      KK_EXPECT_NEAR(h_y0(ib, i), h_y0_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_x0(ib, i), h_x0_ref(ib, i), eps);
+      EXPECT_NEAR_KK(h_y0(ib, i), h_y0_ref(ib, i), eps);
     }
     for (std::size_t i = 0; i < M; i++) {
       for (std::size_t j = 0; j < N; j++) {
-        KK_EXPECT_NEAR(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
-        KK_EXPECT_NEAR(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_x1(ib, i, j), h_x1_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_y1(ib, i, j), h_y1_ref(ib, i, j), eps);
       }
     }
   }

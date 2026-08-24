@@ -11,6 +11,7 @@
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
 
+#include <concepts>
 #include <random>
 #include <algorithm>
 #include <type_traits>
@@ -46,71 +47,154 @@
 #endif
 
 namespace TestUtils {
+
 namespace Impl {
 
+// Base case: scalar absolute comparison
 template <class Scalar1, class Scalar2, class Scalar3>
-::testing::AssertionResult kk_expect_near_pred_format(const char* expr1, const char* expr2, const char* expr3,
-                                                      const Scalar1& val1, const Scalar2& val2, const Scalar3& tol) {
-  using scalar1_type = typename std::remove_cv<typename std::remove_reference<Scalar1>::type>::type;
-  using scalar3_type = typename std::remove_cv<typename std::remove_reference<Scalar3>::type>::type;
-  using AT1          = KokkosKernels::ArithTraits<scalar1_type>;
-  using AT3          = KokkosKernels::ArithTraits<scalar3_type>;
+  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value &&
+           !KokkosBatched::is_vector<Scalar2>::value)
+testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol,
+                                                        Scalar1 val1, Scalar2 val2, Scalar3 tol) {
+  using AT1 = KokkosKernels::ArithTraits<Scalar1>;
+  using AT3 = KokkosKernels::ArithTraits<Scalar3>;
 
-  const double abs_diff = static_cast<double>(AT1::abs(val1 - val2));
-  const double abs_tol  = static_cast<double>(AT3::abs(tol));
+  double abs_diff = (double)AT1::abs(val1 - val2);
+  double abs_tol  = (double)AT3::abs(tol);
 
-  if (abs_diff <= abs_tol) {
-    return ::testing::AssertionSuccess();
+  if (abs_diff <= abs_tol) return testing::AssertionSuccess();
+
+  return testing::AssertionFailure() << "Expected: " << expr1 << " is near " << expr2 << " (within " << expr_tol
+                                     << ")\n"
+                                     << "  " << expr1 << " evaluates to " << testing::PrintToString(val1) << "\n"
+                                     << "  " << expr2 << " evaluates to " << testing::PrintToString(val2) << "\n"
+                                     << "  Difference: " << abs_diff << "\n"
+                                     << "  Tolerance: " << abs_tol << "\n";
+}
+
+// SIMD Vector specialization: element-wise absolute comparison across all lanes
+template <class T, int l, class Scalar3>
+testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol,
+                                                        const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val1,
+                                                        const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val2,
+                                                        Scalar3 tol) {
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  for (int i = 0; i < l; ++i) {
+    auto r = expect_near_pred_format_scalar(expr1, expr2, expr_tol, val1[i], val2[i], tol);
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      overall << "[lane " << i << "] " << r.message();
+    }
   }
+  return overall;
+}
 
-  return ::testing::AssertionFailure() << "The difference between " << expr1 << " and " << expr2 << " is " << abs_diff
-                                       << ", which exceeds " << expr3 << ", where\n"
-                                       << expr1 << " evaluates to " << ::testing::PrintToString(val1) << ",\n"
-                                       << expr2 << " evaluates to " << ::testing::PrintToString(val2) << ", and\n"
-                                       << expr3 << " evaluates to " << ::testing::PrintToString(tol) << ".";
+static constexpr size_t ExpectNearMaxFailures = 10;
+
+// Helper: mirrors two rank-1 Views to host, then applies elem_cmp(h_v1(i), h_v2(i)) for each index,
+// collecting per-element failures into a single AssertionResult (capped at ExpectNearMaxFailures).
+template <class View1, class View2, class ElemCmp>
+  requires(Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>)
+testing::AssertionResult expect_near_1dview_impl(const char* expr1, const char* expr2, const View1& v1, const View2& v2,
+                                                 ElemCmp elem_cmp) {
+  static_assert(View1::rank == 1, "expect_near_1dview_impl: View1 must have rank 1.");
+  static_assert(View2::rank == 1, "expect_near_1dview_impl: View2 must have rank 1.");
+  const size_t v1_size = v1.extent(0);
+  if (v1_size != v2.extent(0)) {
+    return testing::AssertionFailure() << expr1 << ".extent(0) (" << v1_size << ") != " << expr2 << ".extent(0) ("
+                                       << v2.extent(0) << ")";
+  }
+  auto h_v1 = Kokkos::create_mirror_view(v1);
+  auto h_v2 = Kokkos::create_mirror_view(v2);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v1, h_v1);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v2, h_v2);
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  size_t num_failures              = 0;
+  for (size_t i = 0; i < v1_size; ++i) {
+    auto r = elem_cmp(h_v1(i), h_v2(i));
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      if (num_failures < ExpectNearMaxFailures) {
+        overall << "[" << i << "] " << r.message();
+      } else if (num_failures == ExpectNearMaxFailures) {
+        overall << "(further failures suppressed)\n";
+      }
+      ++num_failures;
+    }
+  }
+  if (num_failures > 0) {
+    overall << num_failures << " of " << v1_size << " element(s) failed.\n";
+  }
+  return overall;
+}
+
+// Kokkos View specialization: element-wise absolute comparison (rank-1 only)
+template <class View1, class View2, class Scalar3>
+  requires(Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>)
+testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol,
+                                                        const View1& v1, const View2& v2, Scalar3 tol) {
+  return expect_near_1dview_impl(expr1, expr2, v1, v2, [&](auto e1, auto e2) {
+    return expect_near_pred_format_scalar(expr1, expr2, expr_tol, e1, e2, tol);
+  });
+}
+
+// Base case: scalar relative comparison — delegates to absolute with per-element tolerance
+template <class Scalar1, class Scalar2, class Scalar3>
+  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value &&
+           !KokkosBatched::is_vector<Scalar2>::value)
+testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, const char* expr2, const char* expr_tol,
+                                                            Scalar1 val1, Scalar2 val2, Scalar3 tol) {
+  using AT1 = KokkosKernels::ArithTraits<Scalar1>;
+  using AT2 = KokkosKernels::ArithTraits<Scalar2>;
+  return expect_near_pred_format_scalar(expr1, expr2, expr_tol, val1, val2,
+                                        tol * Kokkos::max(AT1::abs(val1), AT2::abs(val2)));
+}
+
+// SIMD Vector specialization: element-wise relative comparison across all lanes
+template <class T, int l, class Scalar3>
+testing::AssertionResult expect_near_pred_format_scalar_rel(
+    const char* expr1, const char* expr2, const char* expr_tol,
+    const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val1,
+    const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val2, Scalar3 tol) {
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  for (int i = 0; i < l; ++i) {
+    auto r = expect_near_pred_format_scalar_rel(expr1, expr2, expr_tol, val1[i], val2[i], tol);
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      overall << "[lane " << i << "] " << r.message();
+    }
+  }
+  return overall;
+}
+
+// Kokkos View specialization: element-wise relative comparison (rank-1 only)
+template <class View1, class View2, class Scalar3>
+  requires(Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>)
+testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, const char* expr2, const char* expr_tol,
+                                                            const View1& v1, const View2& v2, Scalar3 tol) {
+  return expect_near_1dview_impl(expr1, expr2, v1, v2, [&](auto e1, auto e2) {
+    return expect_near_pred_format_scalar_rel(expr1, expr2, expr_tol, e1, e2, tol);
+  });
 }
 
 }  // namespace Impl
 
-#define KK_EXPECT_NEAR(val1, val2, tol) \
-  EXPECT_PRED_FORMAT3(::TestUtils::Impl::kk_expect_near_pred_format, val1, val2, tol)
+// Checks |val1 - val2| <= |tol|. Works for scalars, rank-1 Kokkos Views, and SIMD vectors.
+// Expands to a GTest expression so callers can append a failure message.
+#define EXPECT_NEAR_KK(val1, val2, tol) \
+  EXPECT_PRED_FORMAT3(TestUtils::Impl::expect_near_pred_format_scalar, val1, val2, tol)
 
-// Checks |val1 - val2| <= |tol|.  Expands to a GTest expression so callers
-// can append a failure message: EXPECT_NEAR_KK(a, b, eps) << "context";
-#define EXPECT_NEAR_KK(val1, val2, tol)                                                             \
-  EXPECT_LE((double)KokkosKernels::ArithTraits<std::decay_t<decltype(val1)>>::abs((val1) - (val2)), \
-            (double)KokkosKernels::ArithTraits<std::decay_t<decltype(tol)>>::abs(tol))
-
-// Checks |val1 - val2| <= tol * max(|val1|, |val2|).
+// Checks |val1 - val2| <= tol * max(|val1|, |val2|) per element.
+// Works for scalars, rank-1 Kokkos Views, and SIMD vectors.
 // Expands to a GTest expression; supports << for failure messages.
-#define EXPECT_NEAR_KK_REL(val1, val2, tol)                                                             \
-  EXPECT_NEAR_KK(val1, val2,                                                                            \
-                 (tol)*Kokkos::max(KokkosKernels::ArithTraits<std::decay_t<decltype(val1)>>::abs(val1), \
-                                   KokkosKernels::ArithTraits<std::decay_t<decltype(val2)>>::abs(val2)))
+#define EXPECT_NEAR_KK_REL(val1, val2, tol) \
+  EXPECT_PRED_FORMAT3(TestUtils::Impl::expect_near_pred_format_scalar_rel, val1, val2, tol)
 
-// Checks element-wise |v1(i) - v2(i)| <= |tol| for every index i.
-#define EXPECT_NEAR_KK_1DVIEW(v1, v2, tol)                                                                      \
-  do {                                                                                                          \
-    const size_t _kk_v1_size = (v1).extent(0);                                                                  \
-    EXPECT_EQ(_kk_v1_size, (v2).extent(0));                                                                     \
-    auto _kk_h_v1 = Kokkos::create_mirror_view(v1);                                                             \
-    auto _kk_h_v2 = Kokkos::create_mirror_view(v2);                                                             \
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v1, _kk_h_v1);                              \
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v2, _kk_h_v2);                              \
-    for (size_t _kk_i = 0; _kk_i < _kk_v1_size; ++_kk_i) EXPECT_NEAR_KK(_kk_h_v1(_kk_i), _kk_h_v2(_kk_i), tol); \
-  } while (false)
+// Element-wise absolute comparison for rank-1 Kokkos Views.
+#define EXPECT_NEAR_KK_1DVIEW(v1, v2, tol) EXPECT_NEAR_KK(v1, v2, tol)
 
-// Checks element-wise relative tolerance for every index i.
-#define EXPECT_NEAR_KK_REL_1DVIEW(v1, v2, tol)                                                                      \
-  do {                                                                                                              \
-    const size_t _kk_v1_size = (v1).extent(0);                                                                      \
-    EXPECT_EQ(_kk_v1_size, (v2).extent(0));                                                                         \
-    auto _kk_h_v1 = Kokkos::create_mirror_view(v1);                                                                 \
-    auto _kk_h_v2 = Kokkos::create_mirror_view(v2);                                                                 \
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v1, _kk_h_v1);                                  \
-    KokkosKernels::Impl::safe_device_to_host_deep_copy(_kk_v1_size, v2, _kk_h_v2);                                  \
-    for (size_t _kk_i = 0; _kk_i < _kk_v1_size; ++_kk_i) EXPECT_NEAR_KK_REL(_kk_h_v1(_kk_i), _kk_h_v2(_kk_i), tol); \
-  } while (false)
+// Element-wise relative comparison for rank-1 Kokkos Views.
+#define EXPECT_NEAR_KK_REL_1DVIEW(v1, v2, tol) EXPECT_NEAR_KK_REL(v1, v2, tol)
 
 // Utility class for testing kernels with rank-1 and rank-2 views that may be
 // LayoutStride. Simplifies making a LayoutStride view of a given size that is

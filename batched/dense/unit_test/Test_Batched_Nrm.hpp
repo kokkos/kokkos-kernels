@@ -137,8 +137,8 @@ void impl_test_batched_nrm_analytical(const std::size_t Nb) {
   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    KK_EXPECT_NEAR(h_norm(ib), h_norm_ref(ib), eps);
-    KK_EXPECT_NEAR(h_norm_s(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm_s(ib), h_norm_ref(ib), eps);
   }
 }
 
@@ -219,8 +219,8 @@ void impl_test_batched_nrm_overflow(const std::size_t Nb) {
   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    KK_EXPECT_NEAR(h_norm(ib), h_norm_ref(ib), eps);
-    KK_EXPECT_NEAR(h_norm_s(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm_s(ib), h_norm_ref(ib), eps);
   }
 }
 
@@ -316,8 +316,8 @@ void impl_test_batched_nrm(const std::size_t Nb, const std::size_t N) {
 
   // Check if norm is correct
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    KK_EXPECT_NEAR(h_norm(ib), h_norm_ref(ib), eps);
-    KK_EXPECT_NEAR(h_norm_s(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm_s(ib), h_norm_ref(ib), eps);
   }
 }
 
