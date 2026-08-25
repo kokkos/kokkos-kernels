@@ -248,7 +248,7 @@ void impl_test_batched_syrk_analytical(const std::size_t Nb) {
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < BlkSize; i++) {
       for (std::size_t j = 0; j < BlkSize; j++) {
-        KK_EXPECT_NEAR(h_C(ib, i, j), h_C_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_C(ib, i, j), h_C_ref(ib, i, j), eps);
       }
     }
   }
@@ -261,7 +261,7 @@ void impl_test_batched_syrk_analytical(const std::size_t Nb) {
   for (std::size_t ib = 0; ib < Nb; ib++) {
     for (std::size_t i = 0; i < BlkSize; i++) {
       for (std::size_t j = 0; j < BlkSize; j++) {
-        KK_EXPECT_NEAR(h_C(ib, i, j), h_C_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_C(ib, i, j), h_C_ref(ib, i, j), eps);
       }
     }
   }
@@ -444,32 +444,12 @@ void impl_test_batched_syrk(const std::size_t Nb, const std::size_t M, const std
   auto h_C_alpha0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_alpha0);
   auto h_C_beta0  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_beta0);
 
-  // Check if A:= alpha * x * y**T + A or A:= alpha * x * y**H + A
-  // std::cout << "Nb: " << Nb << ", M: " << M << ", N: " << N << std::endl;
-
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    // std::cout << "ib: " << ib << std::endl;
-    // std::cout << "h_A ( " << h_A.extent(0) << ", " << h_A.extent(1) << ", " << h_A.extent(2) << " ): " << std::endl;
-    // for (std::size_t i = 0; i < h_A.extent(1); i++) {
-    //   for (std::size_t j = 0; j < h_A.extent(2); j++) {
-    //     std::cout << h_A(ib, i, j) << " ";
-    //   }
-    //   std::cout << std::endl;
-    // }
     for (std::size_t i = 0; i < N; i++) {
       for (std::size_t j = 0; j < N; j++) {
-        // if (std::abs(h_C(ib, i, j) - h_C_ref(ib, i, j)) > eps || std::abs(h_C_alpha0(ib, i, j) - h_C_alpha0_ref(ib,
-        // i, j)) > eps ||
-        //     std::abs(h_C_beta0(ib, i, j) - h_C_beta0_ref(ib, i, j)) > eps) {
-        //   std::cout << "i: " << i << ", j: " << j << ", h_C: " << h_C(ib, i, j)
-        //             << ", h_C_ref: " << h_C_ref(ib, i, j) << ", h_C_alpha0: " << h_C_alpha0(ib, i, j) << ",
-        //             h_C_alpha0_ref: " << h_C_alpha0_ref(ib, i, j)
-        //             << ", h_C_beta0: " << h_C_beta0(ib, i, j) << ", h_C_beta0_ref: " << h_C_beta0_ref(ib, i, j) <<
-        //             std::endl;
-        // }
-        KK_EXPECT_NEAR(h_C(ib, i, j), h_C_ref(ib, i, j), eps);
-        KK_EXPECT_NEAR(h_C_alpha0(ib, i, j), h_C_alpha0_ref(ib, i, j), eps);
-        KK_EXPECT_NEAR(h_C_beta0(ib, i, j), h_C_beta0_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_C(ib, i, j), h_C_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_C_alpha0(ib, i, j), h_C_alpha0_ref(ib, i, j), eps);
+        EXPECT_NEAR_KK(h_C_beta0(ib, i, j), h_C_beta0_ref(ib, i, j), eps);
       }
     }
   }
