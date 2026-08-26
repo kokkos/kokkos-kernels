@@ -129,7 +129,7 @@ Matrix spgemm_noreuse_cusparse(KokkosSparse::SPGEMMAlgorithm algo, const MatrixC
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;               \
     static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int> spgemm_noreuse( \
-        KokkosSparse::SPGEMMAlgorithm algo, const ConstMatrix &A, bool, const ConstMatrix &B, bool) {              \
+        KokkosSparse::SPGEMMAlgorithm algo, const ConstMatrix &A, bool, const ConstMatrix &B, bool, bool, bool) {  \
       std::string label =                                                                                          \
           "KokkosSparse::spgemm_noreuse[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";         \
       Kokkos::Profiling::pushRegion(label);                                                                        \
@@ -215,7 +215,8 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>;              \
     static KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>           \
-    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool) {           \
+    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool, bool,       \
+                   bool) {                                                                                            \
       std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                           \
       Matrix C = spgemm_noreuse_mkl<Matrix>(A, B);                                                                    \
