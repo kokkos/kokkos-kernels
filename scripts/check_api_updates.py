@@ -65,6 +65,9 @@ SRC_DOC_MAPPING = dict([
     ('blas/src/KokkosBlas3_trsm.hpp', ['docs/source/API/blas/blas3_trsm.rst']),
     ('common/src/KokkosKernels_LowerBound.hpp', ['docs/source/API/common/lower_bound.rst']),
     ('common/src/KokkosKernels_UpperBound.hpp', ['docs/source/API/common/upper_bound.rst']),
+    ('common/src/KokkosKernels_SimpleUtils.hpp', [
+        'docs/source/API/common/exclusive_parallel_prefix_sum.rst',
+        'docs/source/API/common/inclusive_parallel_prefix_sum.rst']),
     ('lapack/src/KokkosLapack_geqrf.hpp', ['docs/source/API/lapack/geqrf.rst']),
     ('lapack/src/KokkosLapack_gemqr.hpp', ['docs/source/API/lapack/gemqr.rst']),
     ('lapack/src/KokkosLapack_gegqr.hpp', ['docs/source/API/lapack/gegqr.rst']),
