@@ -5,6 +5,7 @@
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Sort.hpp"
+#include "KokkosKernels_SimpleUtils.hpp"  // for sequential_fill
 #include "KokkosKernels_Sorting.hpp"
 
 namespace KokkosSparse {
