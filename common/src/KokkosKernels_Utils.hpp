@@ -717,7 +717,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
 
   out_lno_row_view_t pre_pps_("pre_pps", num_rows_to_symmetrize + 1);
 
-  typename out_lno_row_view_t::non_const_value_type num_symmetric_edges = 0;
+  idx num_symmetric_edges = 0;
   {
     hashmap_t umap(nnz);
     umap.clear();
