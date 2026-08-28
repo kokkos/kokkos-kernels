@@ -1,21 +1,62 @@
-# Standard ignores
-*~
+# Files specific to this repo #
+##############################
+docs/generated_docs/
+build/
+compile_commands.json
+
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.mod
+*.a
+a.out
+*.dSYM
+*.gch
+__pycache__
 *.pyc
+*.prof
+**/target/
+
+# Packages & Archives#
+######################
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+
+# Editor/IDE/Tooling Files #
+############################
+*~
 \#*#
 .#*
 .*.swp
 .cproject
 .project
-*.o
 TAGS
-
-#Clangd indexing
-compile_commands.json
 .cache/
 .vscode/
 
-#MacOS hidden files
+# OS generated files #
+######################
 .DS_Store
-
-#Documentation build
-docs/generated_docs/
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
