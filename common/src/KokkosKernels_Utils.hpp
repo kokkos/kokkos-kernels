@@ -787,7 +787,7 @@ void symmetrize_graph_symbolic_hashmap(typename in_lno_row_view_t::value_type nu
 
   out_lno_row_view_t pre_pps_("pre_pps", num_rows_to_symmetrize + 1);
 
-  idx num_symmetric_edges = 0;
+  typename out_lno_row_view_t::non_const_value_type num_symmetric_edges = 0;
   {
     hashmap_t umap(nnz);
     umap.clear();
