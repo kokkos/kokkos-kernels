@@ -122,6 +122,18 @@ struct qrFunctor {
       }
     }
 
+    // Applying Q and Q^H from the right should recover the identity matrix
+    for (int idx = 0; idx < w.extent_int(0); ++idx) {
+      w(idx) = 0.0;
+    }
+    KokkosBatched::SerialApplyQ<Side::Right, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, tau, Q, w);
+    for (int rowIdx = 0; rowIdx < Q.extent_int(0); ++rowIdx) {
+      for (int colIdx = 0; colIdx < Q.extent_int(1); ++colIdx) {
+        const Scalar expected = rowIdx == colIdx ? SC_one : KAT::zero();
+        if (Kokkos::abs(Q(rowIdx, colIdx) - expected) > tol) ++error_lcl;
+      }
+    }
+
     // Apply Q' to B which holds a copy of the orginal A
     // Afterwards B should hold a copy of R and be zero below its diagonal
     for (int idx = 0; idx < w.extent_int(0); ++idx) {
