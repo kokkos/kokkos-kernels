@@ -50,7 +50,7 @@ Parameters
    For all parameters that are shared with ``spgemm_symbolic`` (dimensions, row maps, entries and matrices), the parameters to ``spgemm_numeric`` must match what was previously passed into ``spgemm_symbolic``
    with the same handle. For example, it is not valid to call ``spgemm_symbolic`` with one version of ``entriesA``, and then call ``spgemm_numeric`` with a different ``entriesA`` but the same handle.
 
-:handle: KokkosKernelsHandle with an active spgemm subhandle (i.e. `create_spgem_handle(...)` was previously called on it). Must be the same handle that was previously passed into ``spgemm_symbolic`` with the same input matrices.
+:handle: KokkosKernelsHandle with an active spgemm subhandle (i.e. `create_spgemm_handle(...)` was previously called on it). Must be the same handle that was previously passed into ``spgemm_symbolic`` with the same input matrices.
 
 :m, n, k: dimensions of the matrices. **m** is the number of rows in ``A`` and ``C``. **n** is the number of columns in ``A`` and the number of rows in ``B``. **k** is the number of columns in ``B`` and ``C``.
 

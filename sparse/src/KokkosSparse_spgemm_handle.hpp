@@ -518,8 +518,7 @@ class SPGEMMHandle {
    * \param alg the SpGEMM algorithm to use.
    * \param input_sorted_ whether inputs A and B are sorted.
    *   Defaults to false for backwards compatibility.
-   * \param result_sorted_ whether the output matrix C are required to
-   *   be sorted (ascending by column index).
+   * \param result_sorted_ whether the output matrix C is required to be sorted.
    *   Defaults to true to maintain backwards compatibility.
    */
   SPGEMMHandle(SPGEMMAlgorithm alg = SPGEMM_DEFAULT, bool input_sorted_ = false, bool result_sorted_ = true)

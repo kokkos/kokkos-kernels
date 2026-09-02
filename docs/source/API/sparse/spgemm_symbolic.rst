@@ -44,7 +44,7 @@ After ``spgemm_symbolic`` returns, the number of non-zeros in C is available thr
 Parameters
 ==========
 
-:handle: KokkosKernelsHandle with an active spgemm subhandle (i.e. `create_spgem_handle(...)` was previously called on it).
+:handle: KokkosKernelsHandle with an active spgemm subhandle (i.e. `create_spgemm_handle(...)` was previously called on it).
 
 :m, n, k: dimensions of the matrices. **m** is the number of rows in ``A`` and ``C``. **n** is the number of columns in ``A`` and the number of rows in ``B``. **k** is the number of columns in ``B`` and ``C``.
 
