@@ -60,13 +60,18 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
 
     // solve linear problem
     int linSolverStat = KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(J, update, rhs, tmp);
+
+    // Return before touching y0 if the linear solve failed: applying the
+    // (stale or partial) update would corrupt the iterate.
+    if (linSolverStat != 0) {
+      return newton_solver_status::LIN_SOLVE_FAIL;
+    }
+
     KokkosBlas::SerialScale::invoke(-1, update);
 
-    // update solution // x = x + alpha*update
-    KokkosBlas::serial_axpy(alpha, update, y0);
-    norm = KokkosBlas::serial_nrm2(rhs);
-
-    // Compute rms norm of the scaled update
+    // Compute the rms norm of the scaled update and check for divergence
+    // before applying the update to y0
+    norm_new = KokkosKernels::ArithTraits<norm_type>::zero();
     for (int idx = 0; idx < sys.neqs; ++idx) {
       norm_new = (update(idx) * update(idx)) / (scale(idx) * scale(idx));
     }
@@ -75,13 +80,16 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
       rate = norm_new / norm_old;
       if ((rate >= 1) || Kokkos::pow(rate, params.max_iters - it) / (1 - rate) * norm_new > tol) {
         return newton_solver_status::NLS_DIVERGENCE;
-      } else if ((norm_new == 0) || ((rate / (1 - rate)) * norm_new < tol)) {
-        return newton_solver_status::NLS_SUCCESS;
       }
     }
 
-    if (linSolverStat == 1) {
-      return newton_solver_status::LIN_SOLVE_FAIL;
+    // update solution // x = x + alpha*update
+    KokkosBlas::serial_axpy(alpha, update, y0);
+    norm = KokkosBlas::serial_nrm2(rhs);
+
+    if ((it > 0) && norm_old > KokkosKernels::ArithTraits<norm_type>::zero() &&
+        ((norm_new == 0) || ((rate / (1 - rate)) * norm_new < tol))) {
+      return newton_solver_status::NLS_SUCCESS;
     }
 
     if ((norm < (params.rel_tol * norm0)) || (it > 0 ? KokkosBlas::serial_nrm2(update) < params.abs_tol : false)) {
