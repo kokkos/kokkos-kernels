@@ -129,7 +129,7 @@ Matrix spgemm_noreuse_cusparse(KokkosSparse::SPGEMMAlgorithm algo, const MatrixC
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;               \
     static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int> spgemm_noreuse( \
-        KokkosSparse::SPGEMMAlgorithm algo, const ConstMatrix &A, bool, const ConstMatrix &B, bool) {              \
+        KokkosSparse::SPGEMMAlgorithm algo, const ConstMatrix &A, bool, const ConstMatrix &B, bool, bool, bool) {  \
       std::string label =                                                                                          \
           "KokkosSparse::spgemm_noreuse[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";         \
       Kokkos::Profiling::pushRegion(label);                                                                        \
@@ -152,7 +152,7 @@ SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>)
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 template <typename Matrix, typename MatrixConst>
-Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
+Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B, bool result_sorted) {
   using size_type   = typename Matrix::non_const_size_type;
   using index_type  = typename Matrix::non_const_ordinal_type;
   using scalar_type = typename Matrix::non_const_value_type;
@@ -171,7 +171,9 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
   generalDescr.mode = SPARSE_FILL_MODE_FULL;
   generalDescr.diag = SPARSE_DIAG_NON_UNIT;
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, Amkl, Bmkl, &C));
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_order(C));
+  if (result_sorted) {
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_order(C));
+  }
   MKLMatrix wrappedC(C);
   MKL_INT nrows = 0, ncols = 0;
   MKL_INT *rowmapRaw     = nullptr;
@@ -215,10 +217,11 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>;              \
     static KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>           \
-    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool) {           \
+    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool, bool,       \
+                   bool result_sorted) {                                                                              \
       std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                           \
-      Matrix C = spgemm_noreuse_mkl<Matrix>(A, B);                                                                    \
+      Matrix C = spgemm_noreuse_mkl<Matrix>(A, B, result_sorted);                                                     \
       Kokkos::Profiling::popRegion();                                                                                 \
       return C;                                                                                                       \
     }                                                                                                                 \
