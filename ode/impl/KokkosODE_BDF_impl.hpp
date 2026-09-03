@@ -154,7 +154,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table, scalar_type
     y_new(eqIdx) = y_old(eqIdx);
   }
 
-  // solver the nonlinear problem
+  // solve the nonlinear problem
   { KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs, update, scale); }
 
 }  // BDFStep
