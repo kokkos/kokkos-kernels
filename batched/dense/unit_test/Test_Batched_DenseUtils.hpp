@@ -396,7 +396,7 @@ void dense_to_packed(InViewType& in, OutViewType& out) {
   Kokkos::deep_copy(h_in, in);
   assert(in.extent(0) == out.extent(0));
   assert(in.extent(1) == in.extent(2));
-  assert(out.extent(1) == (BlkSize * (BlkSize + 1)) / 2);
+  assert(out.extent_int(1) == (BlkSize * (BlkSize + 1)) / 2);
   if constexpr (std::same_as<UploType, KokkosBatched::Uplo::Upper>) {
     for (int i0 = 0; i0 < N; i0++) {
       int k = 0;
@@ -516,7 +516,7 @@ void packed_to_dense(InViewType& in, OutViewType& out) {
 
   Kokkos::deep_copy(h_in, in);
   assert(in.extent(0) == out.extent(0));
-  assert(in.extent(1) == (BlkSize * (BlkSize + 1)) / 2);
+  assert(in.extent_int(1) == (BlkSize * (BlkSize + 1)) / 2);
   assert(out.extent(1) == out.extent(2));
 
   if constexpr (std::same_as<UploType, KokkosBatched::Uplo::Upper>) {
