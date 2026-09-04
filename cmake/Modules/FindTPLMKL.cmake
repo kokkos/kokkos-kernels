@@ -7,22 +7,35 @@ if(TARGET MKL::MKL)
       message(FATAL_ERROR "KOKKOS_ENABLE_SYCL activated but the target MKL_DPCPP wasn't found")
     endif()
   endif()
-  set(TPL_MKL_IMPORTED_NAME MKL::MKL)
-  set(TPL_IMPORTED_NAME MKL::MKL)
-  add_library(MKL INTERFACE)
+
+  set(kk_mkl_libraries "${MKL_LIBRARIES}")
+  set(kk_mkl_include_paths "${MKL_INCLUDES}")
   if(KOKKOS_ENABLE_SYCL)
-    target_link_libraries(MKL INTERFACE MKL::MKL MKL::MKL_DPCPP)
-  else()
-    target_link_libraries(MKL INTERFACE MKL::MKL)
+    list(APPEND kk_mkl_libraries ${MKL_SYCL_LIBRARIES})
   endif()
-  add_library(KokkosKernels::MKL ALIAS MKL)
-  get_target_property(LIB_TYPE ${TPL_IMPORTED_NAME} TYPE)
-  message("LIB_TYPE: ${LIB_TYPE}")
-  # kokkoskernels_export_imported_tpl install MKL with target name MKL instead of
-  # MKL::MKL or KokkosKernels::MKL, so we need to install a specific ALIAS one
-  if(TARGET MKL)
-    message("TARGET MKL CREATED")
-  endif()
+
+  get_target_property(kk_mkl_includes MKL::MKL INTERFACE_INCLUDE_DIRECTORIES)
+  get_target_property(kk_mkl_libs MKL::MKL INTERFACE_LINK_LIBRARIES)
+  set(kk_mkl_library_dir "")
+  foreach(_dep ${kk_mkl_libs})
+    if(TARGET "${_dep}")
+      get_target_property(_type ${_dep} TYPE)
+      message("Found MKL lib ${_dep}: ${_type}")
+      if("${_type}" STREQUAL "SHARED_LIBRARY" OR "${_type}" STREQUAL "UNKNOWN_LIBRARY")
+        get_target_property(_location ${_dep} LOCATION)
+        get_filename_component(kk_mkl_library_dir ${_location} DIRECTORY)
+        break()
+      endif()
+    endif()
+  endforeach(_dep)
+
+  kokkoskernels_find_imported(MKL INTERFACE
+    LIBRARIES ${kk_mkl_libraries}
+    LIBRARY_PATHS ${kk_mkl_library_dir}
+    HEADER mkl.h
+    HEADER_PATHS ${kk_mkl_include_paths}
+  )
+
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   # Regular way with MKL version < 2021 (Where MKL doesn't provide cmake module file)
   try_compile(
