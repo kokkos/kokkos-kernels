@@ -212,6 +212,24 @@ struct Algo {
 };
 
 template <class T>
+struct is_level3 : std::false_type {};
+
+template <>
+struct is_level3<Algo::Level3::Unblocked> : std::true_type {};
+
+template <>
+struct is_level3<Algo::Level3::Blocked> : std::true_type {};
+
+template <>
+struct is_level3<Algo::Level3::MKL> : std::true_type {};
+
+template <>
+struct is_level3<Algo::Level3::CompactMKL> : std::true_type {};
+
+template <class T>
+static constexpr bool is_level3_v = is_level3<T>::value;
+
+template <class T>
 struct is_level2 : std::false_type {};
 
 template <>
