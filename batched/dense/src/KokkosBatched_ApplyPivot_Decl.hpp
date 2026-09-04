@@ -10,6 +10,18 @@
 namespace KokkosBatched {
 
 ///
+/// Serial
+/// ==========
+template <typename ArgSide, typename ArgDirect>
+struct SerialApplyPivot {
+  template <typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const int piv, const AViewType &A);
+
+  template <typename PivViewType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const PivViewType piv, const AViewType &A);
+};
+
+///
 /// TeamVector
 /// ==========
 template <typename MemberType, typename ArgSide, typename ArgDirect>
