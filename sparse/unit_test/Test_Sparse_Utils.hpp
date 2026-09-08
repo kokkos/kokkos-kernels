@@ -23,6 +23,8 @@ vector_t create_random_y_vector_mv(crsMat_t crsMat, vector_t x_vector) {
   return y_vector;
 }
 
+// Test whether two CRS matrices are identical (shape, #nonzeros, entries, and values to within tolerance),
+// including the order of entries within each row.
 template <typename crsMat_t, typename device>
 bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
