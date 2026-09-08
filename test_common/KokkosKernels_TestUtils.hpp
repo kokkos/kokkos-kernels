@@ -59,8 +59,8 @@ namespace TestUtils {
 inline uint64_t getTestSeed() {
   static uint64_t seed = []() -> uint64_t {
     uint64_t s;
-    //std::int32_t flag_seed = testing::GTEST_FLAG(random_seed);
-    // For now, use a fixed seed! This is only temporary
+    // std::int32_t flag_seed = testing::GTEST_FLAG(random_seed);
+    //  For now, use a fixed seed! This is only temporary
     std::int32_t flag_seed = 13718;
     if (flag_seed > 0) {
       s = static_cast<uint64_t>(flag_seed);

@@ -1182,8 +1182,7 @@ void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_
   Kokkos::fill_random(h_view, pool, min, max);
 
   // Create a flattened view of the original view and copy
-  auto view_flat = Kokkos::View<typename ViewT::non_const_value_type *, Kokkos::Serial>(
-      view.data(), total_size);
+  auto view_flat = Kokkos::View<typename ViewT::non_const_value_type *, Kokkos::Serial>(view.data(), total_size);
   Kokkos::deep_copy(view_flat, h_view);
 }
 
