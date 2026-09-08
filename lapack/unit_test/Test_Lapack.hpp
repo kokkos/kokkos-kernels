@@ -12,5 +12,6 @@
 #include "Test_Lapack_potrf.hpp"
 #include "Test_Lapack_potrs.hpp"
 #include "Test_Lapack_getrf.hpp"
+#include "Test_Lapack_getrs.hpp"
 
 #endif  // TEST_LAPACK_HPP

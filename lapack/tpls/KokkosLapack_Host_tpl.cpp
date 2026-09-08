@@ -123,6 +123,15 @@ void F77_BLAS_MANGLE(sgetrf, SGETRF)(const int*, const int*, float*, const int*,
 void F77_BLAS_MANGLE(dgetrf, DGETRF)(const int*, const int*, double*, const int*, int*, int*);
 void F77_BLAS_MANGLE(cgetrf, CGETRF)(const int*, const int*, std::complex<float>*, const int*, int*, int*);
 void F77_BLAS_MANGLE(zgetrf, ZGETRF)(const int*, const int*, std::complex<double>*, const int*, int*, int*);
+// Solve with existing LU factors.
+void F77_BLAS_MANGLE(sgetrs, SGETRS)(const char*, const int*, const int*, const float*,
+    const int*, const int*, float*, const int*, int*);
+void F77_BLAS_MANGLE(dgetrs, DGETRS)(const char*, const int*, const int*, const double*,
+    const int*, const int*, double*, const int*, int*);
+void F77_BLAS_MANGLE(cgetrs, CGETRS)(const char*, const int*, const int*, const std::complex<float>*,
+    const int*, const int*, std::complex<float>*, const int*, int*);
+void F77_BLAS_MANGLE(zgetrs, ZGETRS)(const char*, const int*, const int*, const std::complex<double>*,
+    const int*, const int*, std::complex<double>*, const int*, int*);
 }
 
 #define F77_FUNC_SGESV F77_BLAS_MANGLE(sgesv, SGESV)
@@ -169,6 +178,11 @@ void F77_BLAS_MANGLE(zgetrf, ZGETRF)(const int*, const int*, std::complex<double
 #define F77_FUNC_DGETRF F77_BLAS_MANGLE(dgetrf, DGETRF)
 #define F77_FUNC_CGETRF F77_BLAS_MANGLE(cgetrf, CGETRF)
 #define F77_FUNC_ZGETRF F77_BLAS_MANGLE(zgetrf, ZGETRF)
+
+#define F77_FUNC_SGETRS F77_BLAS_MANGLE(sgetrs, SGETRS)
+#define F77_FUNC_DGETRS F77_BLAS_MANGLE(dgetrs, DGETRS)
+#define F77_FUNC_CGETRS F77_BLAS_MANGLE(cgetrs, CGETRS)
+#define F77_FUNC_ZGETRS F77_BLAS_MANGLE(zgetrs, ZGETRS)
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
@@ -563,6 +577,46 @@ void HostLapack<std::complex<double>>::getrf(const int m, const int n, std::comp
   zgetrf_(&m, &n, a, &lda, ipiv, info);
 #else
   F77_FUNC_ZGETRF(&m, &n, a, &lda, ipiv, info);
+#endif
+}
+
+template <>
+void HostLapack<float>::getrs(const char trans, const int n, const int nrhs, const float* a,
+                               const int lda, const int* ipiv, float* b, const int ldb, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  sgetrs_(&trans, &n, &nrhs, const_cast<float*>(a), &lda, const_cast<int*>(ipiv), b, &ldb, info);
+#else
+  F77_FUNC_SGETRS(&trans, &n, &nrhs, a, &lda, ipiv, b, &ldb, info);
+#endif
+}
+
+template <>
+void HostLapack<double>::getrs(const char trans, const int n, const int nrhs, const double* a,
+                               const int lda, const int* ipiv, double* b, const int ldb, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  dgetrs_(&trans, &n, &nrhs, const_cast<double*>(a), &lda, const_cast<int*>(ipiv), b, &ldb, info);
+#else
+  F77_FUNC_DGETRS(&trans, &n, &nrhs, a, &lda, ipiv, b, &ldb, info);
+#endif
+}
+
+template <>
+void HostLapack<std::complex<float>>::getrs(const char trans, const int n, const int nrhs, const std::complex<float>* a,
+                               const int lda, const int* ipiv, std::complex<float>* b, const int ldb, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  cgetrs_(&trans, &n, &nrhs, const_cast<std::complex<float>*>(a), &lda, const_cast<int*>(ipiv), b, &ldb, info);
+#else
+  F77_FUNC_CGETRS(&trans, &n, &nrhs, a, &lda, ipiv, b, &ldb, info);
+#endif
+}
+
+template <>
+void HostLapack<std::complex<double>>::getrs(const char trans, const int n, const int nrhs, const std::complex<double>* a,
+                               const int lda, const int* ipiv, std::complex<double>* b, const int ldb, int* info) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
+  zgetrs_(&trans, &n, &nrhs, const_cast<std::complex<double>*>(a), &lda, const_cast<int*>(ipiv), b, &ldb, info);
+#else
+  F77_FUNC_ZGETRS(&trans, &n, &nrhs, a, &lda, ipiv, b, &ldb, info);
 #endif
 }
 
