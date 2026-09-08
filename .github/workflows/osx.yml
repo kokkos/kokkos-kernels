@@ -147,8 +147,7 @@ jobs:
           -D CMAKE_INSTALL_PREFIX=$PWD/../install \
           -D Kokkos_ENABLE_SERIAL=ON \
           -D Kokkos_ENABLE_COMPILER_WARNINGS=ON \
-          -D Kokkos_ENABLE_TESTS=OFF \
-          -D Kokkos_ENABLE_DEPRECATED_CODE_4=OFF
+          -D Kokkos_ENABLE_TESTS=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build
