@@ -359,6 +359,8 @@ void testLongArray(bool& /*success*/, std::ostream& out) {
 
 template <typename lno_t, typename device_t>
 void test_findRelOffset() {
+  using namespace Test;
+
   class NullBuffer : public std::streambuf {
    public:
     int overflow(int c) override { return c; }
@@ -366,14 +368,14 @@ void test_findRelOffset() {
   NullBuffer null_buffer;
   // std::ostream &out = std::cout;
   std::ostream out(&null_buffer);
-  out << "Test KokkosSparse::findRelOffset" << std::endl;
+  out << "Test KokkosSparse::findRelOffset" << endl;
 
   bool success = true;
   // host test
-  Test::generalTest<lno_t, device_t>(success, out);
+  generalTest<lno_t, device_t>(success, out);
   EXPECT_TRUE(success);
   // host test
-  Test::testLongArray<lno_t, device_t>(success, out);
+  testLongArray<lno_t, device_t>(success, out);
   EXPECT_TRUE(success);
 }
 

@@ -1170,15 +1170,21 @@ KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr *p) {
 template <class ViewT>
 void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_type min,
                      typename ViewT::non_const_value_type max) {
-  static_assert(ViewT::rank == 1, "det_fill_random: only rank-1 views supported");
+  static_assert(!std::is_same_v<typename ViewT::array_layout, Kokkos::LayoutStride>,
+                "det_fill_random: LayoutStride views are not supported");
 
   using pool_t  = Kokkos::Random_XorShift64_Pool<Kokkos::Serial>;
   using sview_t = Kokkos::View<typename ViewT::non_const_value_type *, Kokkos::Serial>;
 
-  sview_t h_view("fill_random_tmp", view.extent(0));
+  size_t total_size = view.size();
+  sview_t h_view("fill_random_tmp", total_size);
   pool_t pool(seed);
   Kokkos::fill_random(h_view, pool, min, max);
-  Kokkos::deep_copy(view, h_view);
+
+  // Create a flattened view of the original view and copy
+  auto view_flat = Kokkos::View<typename ViewT::non_const_value_type *, Kokkos::Serial>(
+      view.data(), total_size);
+  Kokkos::deep_copy(view_flat, h_view);
 }
 
 template <class ViewT>
