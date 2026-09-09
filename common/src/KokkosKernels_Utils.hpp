@@ -1175,9 +1175,11 @@ void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_
   using serial_t = Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>;
 
   // Do fill_random on Serial in order to ensure determinism
-  auto view_mirror = Kokkos::create_mirror_view(serial_t(), view);
+
+  // Force a decoupled allocation to avoid no-op alias traps
+  auto view_mirror = Kokkos::create_mirror(serial_t(), view);
   pool_t pool(seed);
-  Kokkos::fill_random(view_mirror, pool, min, max);
+  Kokkos::fill_random(Kokkos::Serial(), view_mirror, pool, min, max);
   Kokkos::deep_copy(view, view_mirror);
 #else
   static_assert(false, "det_fill_random: Serial backend must be available for det_fill_random");
