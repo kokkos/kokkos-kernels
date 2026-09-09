@@ -1172,15 +1172,17 @@ void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_
                      typename ViewT::non_const_value_type max) {
 #ifdef KOKKOS_ENABLE_SERIAL
   using pool_t   = Kokkos::Random_XorShift64_Pool<Kokkos::Serial>;
+  using layout_t = typename ViewT::array_layout;
   using serial_t = Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>;
+  using hview_t  = Kokkos::View<typename ViewT::data_type, layout_t, serial_t>;
 
   // Do fill_random on Serial in order to ensure determinism
-
-  // Force a decoupled allocation to avoid no-op alias traps
-  auto view_mirror = Kokkos::create_mirror(serial_t(), view);
+  hview_t view_host(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A_deterministic_host"), view.layout());
   pool_t pool(seed);
-  Kokkos::fill_random(Kokkos::Serial(), view_mirror, pool, min, max);
-  Kokkos::deep_copy(view, view_mirror);
+  Kokkos::fill_random(Kokkos::Serial(), view_host, pool, min, max);
+  typename ViewT::execution_space exec_space{};
+  Kokkos::deep_copy(exec_space, view, view_host);
+  exec_space.fence();
 #else
   static_assert(false, "det_fill_random: Serial backend must be available for det_fill_random");
 #endif
