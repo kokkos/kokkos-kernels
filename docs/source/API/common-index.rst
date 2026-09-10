@@ -46,7 +46,7 @@ Second, all other versions (those not computing the final sum) are non-blocking.
 - :doc:`KokkosKernels::inclusive_parallel_prefix_sum <common/inclusive_parallel_prefix_sum>`
 
 Deterministic Fill Random
-===========
+=========================
 
 A deterministic random value fill for any View. Kokkos::fill_random is not deterministic
 except for Serial backend, so tests that use it may not produce repeatable results even

@@ -107,7 +107,7 @@ Utility Functions
   - :doc:`extract_diagonal_blocks_rcb <sparse/extract_diagonal_blocks_rcb>`
 
 Random matrix generation
-=================
+========================
 
 - Generating large random matrices is useful for testing.
 
