@@ -59,6 +59,13 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutRight)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutRight)
 
+// bhalf_t (bfloat16): available when CUDA provides a real __nv_bfloat16 type.
+// Uses cublasGemmEx internally.
+#if !defined(KOKKOS_BHALF_T_IS_FLOAT)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::Experimental::bhalf_t, Kokkos::LayoutLeft)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::Experimental::bhalf_t, Kokkos::LayoutRight)
+#endif
+
 #endif
 
 // rocBLAS

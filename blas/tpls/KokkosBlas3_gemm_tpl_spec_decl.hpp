@@ -168,6 +168,76 @@ KOKKOSBLAS3_ZGEMM_CUBLAS(Kokkos::LayoutRight)
 KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutLeft)
 KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight)
 
+// bhalf_t (bfloat16) GEMM via cublasGemmEx.
+// Storage type: CUDA_R_16BF (__nv_bfloat16).  Compute type: CUBLAS_COMPUTE_32F.
+// alpha and beta must be float when using CUBLAS_COMPUTE_32F with bf16 I/O.
+#if !defined(KOKKOS_BHALF_T_IS_FLOAT)
+#define KOKKOSBLAS3_BHGEMM_CUBLAS(LAYOUT)                                                                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
+  struct GEMM<Kokkos::Cuda,                                                                                           \
+              Kokkos::View<const Kokkos::Experimental::bhalf_t**, LAYOUT, Kokkos::Cuda,                               \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                 \
+              Kokkos::View<const Kokkos::Experimental::bhalf_t**, LAYOUT, Kokkos::Cuda,                               \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                 \
+              Kokkos::View<Kokkos::Experimental::bhalf_t**, LAYOUT, Kokkos::Cuda,                                     \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                 \
+              true, ETI_SPEC_AVAIL> {                                                                                 \
+    using SCALAR    = Kokkos::Experimental::bhalf_t;                                                                  \
+    using AViewType = Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;   \
+    using BViewType = Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;   \
+    using CViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;         \
+                                                                                                                      \
+    static void gemm(const Kokkos::Cuda& space, const char transA[], const char transB[],                             \
+                     typename AViewType::const_value_type& alpha, const AViewType& A, const BViewType& B,             \
+                     typename CViewType::const_value_type& beta, const CViewType& C) {                                \
+      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_CUBLAS,bhalf_t]");                                          \
+      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');                                                     \
+      const int M    = static_cast<int>(C.extent(0));                                                                 \
+      const int N    = static_cast<int>(C.extent(1));                                                                 \
+      const int K    = static_cast<int>(A.extent(A_t ? 0 : 1));                                                       \
+                                                                                                                      \
+      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                                \
+      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                                \
+      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;                                                \
+                                                                                                                      \
+      const int AST = A_is_lr ? A.stride(0) : A.stride(1), LDA = AST == 0 ? 1 : AST;                                 \
+      const int BST = B_is_lr ? B.stride(0) : B.stride(1), LDB = BST == 0 ? 1 : BST;                                 \
+      const int CST = C_is_lr ? C.stride(0) : C.stride(1), LDC = CST == 0 ? 1 : CST;                                 \
+                                                                                                                      \
+      cublasOperation_t transa = trans_mode_kk_to_cublas(transA);                                                     \
+      cublasOperation_t transb = trans_mode_kk_to_cublas(transB);                                                     \
+                                                                                                                      \
+      /* cublasGemmEx with CUBLAS_COMPUTE_32F requires float alpha/beta */                                            \
+      const float alpha_f = static_cast<float>(alpha);                                                                \
+      const float beta_f  = static_cast<float>(beta);                                                                 \
+                                                                                                                      \
+      KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                      \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                               \
+      if (!A_is_lr && !B_is_lr && !C_is_lr)                                                                           \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(                                                                             \
+            cublasGemmEx(s.handle, transa, transb, M, N, K, &alpha_f,                                                 \
+                         A.data(), CUDA_R_16BF, LDA,                                                                  \
+                         B.data(), CUDA_R_16BF, LDB,                                                                  \
+                         &beta_f,                                                                                      \
+                         C.data(), CUDA_R_16BF, LDC,                                                                  \
+                         CUBLAS_COMPUTE_32F, CUBLAS_GEMM_DEFAULT));                                                    \
+      if (A_is_lr && B_is_lr && C_is_lr)                                                                              \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(                                                                             \
+            cublasGemmEx(s.handle, transb, transa, N, M, K, &alpha_f,                                                 \
+                         B.data(), CUDA_R_16BF, LDB,                                                                  \
+                         A.data(), CUDA_R_16BF, LDA,                                                                  \
+                         &beta_f,                                                                                      \
+                         C.data(), CUDA_R_16BF, LDC,                                                                  \
+                         CUBLAS_COMPUTE_32F, CUBLAS_GEMM_DEFAULT));                                                    \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                              \
+      Kokkos::Profiling::popRegion();                                                                                  \
+    }                                                                                                                  \
+  };
+
+KOKKOSBLAS3_BHGEMM_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS3_BHGEMM_CUBLAS(Kokkos::LayoutRight)
+#endif  // !KOKKOS_BHALF_T_IS_FLOAT
+
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
