@@ -1169,18 +1169,17 @@ KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr *p) {
 namespace Detail {
 // Internal helper that performs the actual variadic expansion
 template <class ViewT, std::size_t... Is>
-KOKKOS_INLINE_FUNCTION
-auto& access_view_with_array_impl(ViewT view, const Kokkos::Array<int, ViewT::rank>& arr, std::index_sequence<Is...>) {
+KOKKOS_INLINE_FUNCTION auto &access_view_with_array_impl(ViewT view, const Kokkos::Array<int, ViewT::rank> &arr,
+                                                         std::index_sequence<Is...>) {
   // Expands Is... into exactly ViewT::rank arguments matching the indices
   return view(arr[Is]...);
 }
 
-}
+}  // namespace Detail
 
 // The clean user-facing inline function
 template <class ViewT>
-KOKKOS_INLINE_FUNCTION
-auto& access_view_with_array(ViewT view, const Kokkos::Array<int, ViewT::rank>& arr) {
+KOKKOS_INLINE_FUNCTION auto &access_view_with_array(ViewT view, const Kokkos::Array<int, ViewT::rank> &arr) {
   // Generates a compile-time sequence: 0, 1, 2, ..., (Rank - 1)
   return Detail::access_view_with_array_impl(view, arr, std::make_index_sequence<ViewT::rank>{});
 }
@@ -1195,18 +1194,18 @@ void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_
   using exec_space_t = typename ViewT::execution_space;
   using mem_space_t  = typename ViewT::memory_space;
 
-  const size_t total_elements = view.size(); // Logical size, ignores padding
-  constexpr int Rank = ViewT::rank;
+  const size_t total_elements = view.size();  // Logical size, ignores padding
+  constexpr int Rank          = ViewT::rank;
 
   // 1. Allocate a flat, 1D contiguous view on the Host
-  Kokkos::View<scalar_t*, Kokkos::HostSpace> host_flat("host_flat", total_elements);
+  Kokkos::View<scalar_t *, Kokkos::HostSpace> host_flat("host_flat", total_elements);
 
   // 2. Fill the flat host view deterministically
   pool_t pool(seed);
   Kokkos::fill_random(Kokkos::Serial(), host_flat, pool, min, max);
 
   // 3. Allocate a flat, 1D contiguous view on the Device
-  Kokkos::View<scalar_t*, mem_space_t> device_flat("device_flat", total_elements);
+  Kokkos::View<scalar_t *, mem_space_t> device_flat("device_flat", total_elements);
 
   // 4. Safe Cross-Space Copy: 1D contiguous to 1D contiguous always succeeds
   exec_space_t exec{};
@@ -1214,30 +1213,30 @@ void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_
 
   // 5. Device-Side Unpacking: Remap flat elements into the arbitrary multi-dim view layout
   using LayoutType = typename ViewT::array_layout;
-  Kokkos::parallel_for("UnpackRandomToArbitraryLayout",
-                       Kokkos::RangePolicy<exec_space_t>(exec, 0, total_elements),
-                       KOKKOS_LAMBDA(const size_t flat_idx) {
-    Kokkos::Array<int, Rank> coords{};
-    size_t temp_idx = flat_idx;
+  Kokkos::parallel_for(
+      "UnpackRandomToArbitraryLayout", Kokkos::RangePolicy<exec_space_t>(exec, 0, total_elements),
+      KOKKOS_LAMBDA(const size_t flat_idx) {
+        Kokkos::Array<int, Rank> coords{};
+        size_t temp_idx = flat_idx;
 
-    // Unroll the flat index into multi-dimensional coordinates based on layout
-    if (std::is_same_v<LayoutType, Kokkos::LayoutRight>) {
-      // Row-major: right-most dimension changes fastest
-      for (int r = Rank - 1; r >= 0; --r) {
-        coords[r] = temp_idx % view.extent(r);
-        temp_idx /= view.extent(r);
-      }
-    } else {
-      // Column-major or LayoutStride: left-most dimension changes fastest
-      for (int r = 0; r < Rank; ++r) {
-        coords[r] = temp_idx % view.extent(r);
-        temp_idx /= view.extent(r);
-      }
-    }
+        // Unroll the flat index into multi-dimensional coordinates based on layout
+        if (std::is_same_v<LayoutType, Kokkos::LayoutRight>) {
+          // Row-major: right-most dimension changes fastest
+          for (int r = Rank - 1; r >= 0; --r) {
+            coords[r] = temp_idx % view.extent(r);
+            temp_idx /= view.extent(r);
+          }
+        } else {
+          // Column-major or LayoutStride: left-most dimension changes fastest
+          for (int r = 0; r < Rank; ++r) {
+            coords[r] = temp_idx % view.extent(r);
+            temp_idx /= view.extent(r);
+          }
+        }
 
-    // Safely write to the view; layout mapping and padding are handled automatically
-    access_view_with_array(view, coords) = device_flat(flat_idx);
-  });
+        // Safely write to the view; layout mapping and padding are handled automatically
+        access_view_with_array(view, coords) = device_flat(flat_idx);
+      });
 
   // 6. Fence to ensure the GPU completes unpacking before returning
   exec.fence();
