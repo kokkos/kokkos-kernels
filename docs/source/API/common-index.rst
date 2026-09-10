@@ -9,6 +9,7 @@ API: Common
    common/upper_bound
    common/exclusive_parallel_prefix_sum
    common/inclusive_parallel_prefix_sum
+   common/det_fill_random
 
 Common
 ======
@@ -43,3 +44,12 @@ Second, all other versions (those not computing the final sum) are non-blocking.
 
 - :doc:`KokkosKernels::exclusive_parallel_prefix_sum <common/exclusive_parallel_prefix_sum>`
 - :doc:`KokkosKernels::inclusive_parallel_prefix_sum <common/inclusive_parallel_prefix_sum>`
+
+Deterministic Fill Random
+===========
+
+A deterministic random value fill for any View. Kokkos::fill_random is not deterministic
+except for Serial backend, so tests that use it may not produce repeatable results even
+with the same seed/pool.
+
+- :doc:`KokkosKernels::det_fill_random <common/det_fill_random>`
