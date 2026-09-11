@@ -1242,7 +1242,7 @@ void det_fill_random(const ViewT &view, uint64_t seed, typename ViewT::non_const
   exec.fence();
 #else
   using exe_space_t = typename ViewT::execution_space;
-  using pool_t      = Kokkos::Random_XorShift64_Pool<Kokkos::Serial>;
+  using pool_t      = Kokkos::Random_XorShift64_Pool<exe_space_t>;
 
   // We cannot do a deterministic fill, so do a normal one
   pool_t pool(seed);
