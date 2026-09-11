@@ -114,6 +114,31 @@ struct StiffChemistry {
   }
 };
 
+// Simple quadratic ODE
+// used to check the root of the
+// corrector equation solved by the
+// adaptive BDF (NDF) time stepper.
+//
+// Equation: y'(t) = y(t)**2
+// Jacobian: df/dy = 2*y
+struct Quadratic {
+  static constexpr int neqs = 1;
+
+  Quadratic() {}
+
+  template <class vec_type1, class vec_type2>
+  KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
+                                         const vec_type2& f) const {
+    f(0) = y(0) * y(0);
+  }
+
+  template <class vec_type, class mat_type>
+  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/, const double /*dt*/, const vec_type& y,
+                                         const mat_type& jac) const {
+    jac(0, 0) = 2.0 * y(0);
+  }
+};  // Quadratic
+
 template <class ode_type, KokkosODE::Experimental::BDF_type bdf_type, class vec_type, class mv_type, class mat_type,
           class scalar_type>
 struct BDFSolve_wrapper {
@@ -171,6 +196,42 @@ struct BDF_Solve_wrapper {
 
   KOKKOS_FUNCTION void operator()(const int) const {
     KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt, max_step, y0, y_new, temp, temp2);
+  }
+};
+
+template <class ode_type, class vec_type, class mat_type, class status_view_type, class scalar_type>
+struct BDFCorrectorSolve_wrapper {
+  ode_type my_ode;
+  scalar_type t, dt, c;
+  vec_type y, y_predict, psi, rhs, update, scale;
+  mat_type jac, tmp;
+  KokkosODE::Experimental::Newton_params params;
+  status_view_type status;
+
+  BDFCorrectorSolve_wrapper(const ode_type& my_ode_, const scalar_type t_, const scalar_type dt_, const scalar_type c_,
+                            const vec_type& y_, const vec_type& y_predict_, const vec_type& psi_, const vec_type& rhs_,
+                            const vec_type& update_, const vec_type& scale_, const mat_type& jac_, const mat_type& tmp_,
+                            const KokkosODE::Experimental::Newton_params& params_, const status_view_type& status_)
+      : my_ode(my_ode_),
+        t(t_),
+        dt(dt_),
+        c(c_),
+        y(y_),
+        y_predict(y_predict_),
+        psi(psi_),
+        rhs(rhs_),
+        update(update_),
+        scale(scale_),
+        jac(jac_),
+        tmp(tmp_),
+        params(params_),
+        status(status_) {}
+
+  KOKKOS_FUNCTION
+  void operator()(const int /*idx*/) const {
+    KokkosODE::Impl::BDF_system_wrapper2 sys(my_ode, psi, y_predict, t, dt);
+    sys.c     = c;
+    status(0) = KokkosODE::Experimental::Newton::Solve(sys, params, jac, tmp, y, rhs, update, scale);
   }
 };
 
@@ -388,6 +449,64 @@ void test_BDF_StiffChemistry() {
       solve_wrapper(mySys, t_start, t_end, 110000, y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
   Kokkos::parallel_for(myPolicy, solve_wrapper);
 }
+
+// Solve the corrector equation of the adaptive BDF (NDF) time stepper,
+//   0 = psi + (y - y_predict) - c * f(t+dt, y),
+// through BDF_system_wrapper2 the same way BDFStep does: the Newton
+// iteration starts from y = y_predict with a zeroed update vector.
+// For the quadratic ODE f(y) = y**2 with psi = 7, y_predict = 3 and
+// c = dt = 1/2 the equation reads 0 = y**2 - 2*y - 8 and Newton
+// converges to its root y = 4 in a handful of iterations (c = dt makes
+// the modified Newton Jacobian I - dt*df/dy exact here).
+//
+// This guards against a regression where the correction y - y_predict
+// was read from the Newton solver's update vector: that vector only
+// holds the last Newton step, which vanishes as the iteration
+// converges, so the corrector root degenerates to the root of
+// 0 = psi - c * f(t+dt, y), i.e. y = sqrt(14) ~ 3.742, and the solve
+// either converges to that wrong root or is flagged as divergent.
+// The bug only shows from the third Newton iteration on -- after a
+// single step the update still equals the full correction -- which is
+// why y_predict is placed far enough from the root to require several
+// iterations.
+template <class device_type, class scalar_type>
+void test_BDF_corrector_equation() {
+  using execution_space      = typename device_type::execution_space;
+  using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
+  using vec_type             = Kokkos::View<scalar_type*, execution_space>;
+  using mat_type             = Kokkos::View<scalar_type**, execution_space>;
+
+  Quadratic mySys{};
+
+  const scalar_type t = 0.0, dt = 0.5, c = 0.5;
+
+  vec_type y("solution", mySys.neqs), y_predict("predictor", mySys.neqs), psi("higher order terms", mySys.neqs);
+  vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs), scale("scaling factors", mySys.neqs);
+  mat_type jac("jacobian", mySys.neqs, mySys.neqs), tmp("temp mem", mySys.neqs, mySys.neqs + 4);
+  Kokkos::View<newton_solver_status*, execution_space> status("newton status", 1);
+
+  Kokkos::deep_copy(psi, 7.0);
+  Kokkos::deep_copy(y_predict, 3.0);
+  Kokkos::deep_copy(y, 3.0);
+  Kokkos::deep_copy(update, 0.0);
+  Kokkos::deep_copy(scale, 1.0);
+
+  const KokkosODE::Experimental::Newton_params params(50, 1e-12, 1e-8);
+
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+  BDFCorrectorSolve_wrapper solve_wrapper(mySys, t, dt, c, y, y_predict, psi, rhs, update, scale, jac, tmp, params,
+                                          status);
+  Kokkos::parallel_for(my_policy, solve_wrapper);
+  Kokkos::fence();
+
+  auto status_h = Kokkos::create_mirror_view(status);
+  auto y_h      = Kokkos::create_mirror_view(y);
+  Kokkos::deep_copy(status_h, status);
+  Kokkos::deep_copy(y_h, y);
+
+  EXPECT_TRUE(status_h(0) == newton_solver_status::NLS_SUCCESS);
+  EXPECT_NEAR_KK_REL(y_h(0), static_cast<scalar_type>(4.0), static_cast<scalar_type>(1.0e-5));
+}  // test_BDF_corrector_equation
 
 // template <class ode_type, KokkosODE::Experimental::BDF_type bdf_type,
 //           class vec_type, class mv_type, class mat_type, class scalar_type>
@@ -720,6 +839,7 @@ void test_BDF_adaptive_stiff() {
 TEST_F(TestCategory, BDF_Logistic_serial) { ::Test::test_BDF_Logistic<TestDevice, double>(); }
 TEST_F(TestCategory, BDF_LotkaVolterra_serial) { ::Test::test_BDF_LotkaVolterra<TestDevice, double>(); }
 TEST_F(TestCategory, BDF_StiffChemistry_serial) { ::Test::test_BDF_StiffChemistry<TestDevice, double>(); }
+TEST_F(TestCategory, BDF_corrector_equation) { ::Test::test_BDF_corrector_equation<TestDevice, double>(); }
 // TEST_F(TestCategory, BDF_parallel_serial) {
 //   ::Test::test_BDF_parallel<TestDevice, double>();
 // }
