@@ -51,7 +51,10 @@ struct NewtonSolve_wrapper {
         Kokkos::ALL());
 
     // Run Newton nonlinear solver
-    status(idx) = KokkosODE::Experimental::Newton::Solve(my_nls, params, local_J, local_tmp, local_x, local_rhs,
+    // Solve takes a non-const Newton_params to record the iteration
+    // count, so hand it a thread-local copy.
+    newton_params local_params = params;
+    status(idx) = KokkosODE::Experimental::Newton::Solve(my_nls, local_params, local_J, local_tmp, local_x, local_rhs,
                                                          local_update, scale);
   }
 };
@@ -475,6 +478,104 @@ void test_newton_on_device() {
   }
 }
 
+////////////////////////////////////////////
+// Check that Newton::Solve reports the   //
+// number of iterations it performed in   //
+// params.iters.                          //
+////////////////////////////////////////////
+
+template <class system_type, class mat_type, class vec_type, class status_view, class iters_view, class scale_type>
+struct NewtonSolve_iters_wrapper {
+  using newton_params = KokkosODE::Experimental::Newton_params;
+
+  system_type my_nls;
+  newton_params params;
+
+  vec_type x, rhs, update;
+  mat_type J, tmp;
+  status_view status;
+  iters_view iters;
+
+  scale_type scale;
+
+  NewtonSolve_iters_wrapper(const system_type& my_nls_, const newton_params& params_, const vec_type& x_,
+                            const vec_type& rhs_, const vec_type& update_, const mat_type& J_, const mat_type& tmp_,
+                            const status_view& status_, const iters_view& iters_, const scale_type& scale_)
+      : my_nls(my_nls_),
+        params(params_),
+        x(x_),
+        rhs(rhs_),
+        update(update_),
+        J(J_),
+        tmp(tmp_),
+        status(status_),
+        iters(iters_),
+        scale(scale_) {}
+
+  KOKKOS_FUNCTION
+  void operator()(const int idx) const {
+    newton_params local_params = params;
+    status(idx) = KokkosODE::Experimental::Newton::Solve(my_nls, local_params, J, tmp, x, rhs, update, scale);
+    iters(idx)  = local_params.iters;
+  }
+};
+
+// Solve a problem that requires multiple Newton iterations
+// and check that the iteration count performed by the solver
+// is reported in params.iters. If Solve runs on an internal
+// copy of params instead, the count seen by the caller stays
+// at zero; the BDF integrator relies on this count to compute
+// its step size safety factor.
+template <class Device, class scalar_type>
+void test_newton_iteration_count() {
+  using execution_space      = typename Device::execution_space;
+  using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
+  using vec_type             = typename Kokkos::View<scalar_type*, Device>;
+  using mat_type             = typename Kokkos::View<scalar_type**, Device>;
+  using system_type          = QuadraticEquation<Device, scalar_type>;
+
+  double abs_tol, rel_tol;
+  if (std::is_same_v<scalar_type, float>) {
+    rel_tol = 10e-5;
+    abs_tol = 10e-7;
+  } else if (std::is_same_v<scalar_type, double>) {
+    rel_tol = 10e-8;
+    abs_tol = 10e-15;
+  } else {
+    throw std::runtime_error("scalar_type is neither float, nor double!");
+  }
+  KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
+
+  system_type mySys{};
+
+  vec_type scale("scaling factors", mySys.neqs);
+  Kokkos::deep_copy(scale, 1);
+
+  vec_type x("solution vector", mySys.neqs), rhs("right hand side vector", mySys.neqs);
+  vec_type update("update", mySys.neqs);
+  mat_type J("jacobian", mySys.neqs, mySys.neqs), tmp("temp mem", mySys.neqs, mySys.neqs + 4);
+
+  Kokkos::View<newton_solver_status*, Device> status("Newton status", 1);
+  Kokkos::View<int*, Device> iters("Newton iteration count", 1);
+
+  // Initial guess 1.0 converges to the root x=2
+  // after a few Newton iterations.
+  Kokkos::deep_copy(x, 1.0);
+
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+  NewtonSolve_iters_wrapper solve_wrapper(mySys, params, x, rhs, update, J, tmp, status, iters, scale);
+  Kokkos::parallel_for(my_policy, solve_wrapper);
+
+  auto status_h = Kokkos::create_mirror_view(status);
+  Kokkos::deep_copy(status_h, status);
+  auto iters_h = Kokkos::create_mirror_view(iters);
+  Kokkos::deep_copy(iters_h, iters);
+
+  EXPECT_TRUE(status_h(0) == newton_solver_status::NLS_SUCCESS);
+  EXPECT_LT(1, iters_h(0)) << "Newton::Solve did not report the number of iterations performed in params.iters!";
+  EXPECT_LE(iters_h(0), params.max_iters);
+}
+
 }  // namespace Test
 
 // No ETI is performed for these device routines
@@ -490,3 +591,6 @@ TEST_F(TestCategory, Newton_system_double) { ::Test::test_simple_systems<TestDev
 
 TEST_F(TestCategory, Newton_parallel_float) { ::Test::test_newton_on_device<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_parallel_double) { ::Test::test_newton_on_device<TestDevice, double>(); }
+
+TEST_F(TestCategory, Newton_iteration_count_float) { ::Test::test_newton_iteration_count<TestDevice, float>(); }
+TEST_F(TestCategory, Newton_iteration_count_double) { ::Test::test_newton_iteration_count<TestDevice, double>(); }
