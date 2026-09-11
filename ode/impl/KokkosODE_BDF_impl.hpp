@@ -255,12 +255,13 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
 }  // initial_step_size
 
 template <class ode_type, class vec_type, class res_type, class mat_type, class scalar_type>
-KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, scalar_type t_end,
-                             const scalar_type max_step, int& order, int& num_equal_steps, const int max_newton_iters,
-                             const scalar_type atol, const scalar_type rtol, const scalar_type min_factor,
-                             const vec_type& y_old, const vec_type& y_new, const res_type& rhs, const res_type& update,
-                             const mat_type& temp, const mat_type& temp2) {
-  using newton_params = KokkosODE::Experimental::Newton_params;
+[[nodiscard]] KOKKOS_FUNCTION KokkosODE::Experimental::ode_solver_status BDFStep(
+    ode_type& ode, scalar_type& t, scalar_type& dt, scalar_type t_end, const scalar_type max_step, int& order,
+    int& num_equal_steps, const int max_newton_iters, const scalar_type atol, const scalar_type rtol,
+    const scalar_type min_factor, const vec_type& y_old, const vec_type& y_new, const res_type& rhs,
+    const res_type& update, const mat_type& temp, const mat_type& temp2) {
+  using newton_params     = KokkosODE::Experimental::Newton_params;
+  using ode_solver_status = KokkosODE::Experimental::ode_solver_status;
 
   constexpr int max_order = 5;
 
@@ -311,7 +312,11 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   BDF_system_wrapper2 sys(ode, psi, y_predict, t, dt);
   const newton_params param(max_newton_iters, atol, rtol);
 
-  scalar_type min_step = KokkosKernels::ArithTraits<scalar_type>::min();
+  // Smallest step that can still advance t in floating point
+  // arithmetic (same floor as SciPy's BDF): once dt shrinks below
+  // this, the step is treated as failed instead of retried forever.
+  const scalar_type min_step =
+      10 * Kokkos::abs(Kokkos::nextafter(t, KokkosKernels::ArithTraits<scalar_type>::max()) - t);
   scalar_type safety = 0.675, error_norm = 0.0;
   if (dt > max_step) {
     update_D(order, max_step / dt, coeffs, tempD, D);
@@ -332,7 +337,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   bool step_accepted = false;
   while (!step_accepted) {
     if (dt < min_step) {
-      return;
+      return ode_solver_status::MIN_SIZE;
     }
     t_new = t + dt;
 
@@ -423,7 +428,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   // attempt order adaptation.
   double error_low = 0, error_high = 0;
   if (num_equal_steps < order + 1) {
-    return;
+    return ode_solver_status::SUCCESS;
   }
 
   if (1 < order) {
@@ -467,6 +472,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   update_D(order, factor, coeffs, tempD, D);
   num_equal_steps = 0;
 
+  return ode_solver_status::SUCCESS;
 }  // BDFStep
 
 }  // namespace Impl
