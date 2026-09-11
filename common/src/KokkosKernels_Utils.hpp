@@ -1186,7 +1186,7 @@ KOKKOS_INLINE_FUNCTION auto &access_view_with_array(ViewT view, const Kokkos::Ar
 
 // Deterministic fill_random
 template <class ViewT>
-void det_fill_random(const ViewT& view, uint64_t seed, typename ViewT::non_const_value_type min,
+void det_fill_random(const ViewT &view, uint64_t seed, typename ViewT::non_const_value_type min,
                      typename ViewT::non_const_value_type max) {
 #ifdef KOKKOS_ENABLE_SERIAL
   using scalar_t     = typename ViewT::non_const_value_type;
