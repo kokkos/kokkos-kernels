@@ -366,7 +366,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
       update(eqIdx) = y_new(eqIdx) - y_predict(eqIdx);
     }
 
-    if (newton_status == KokkosODE::Experimental::newton_solver_status::MAX_ITER) {
+    // Reject the step on any status that isn't a converged solve
+    if (newton_status != KokkosODE::Experimental::newton_solver_status::NLS_SUCCESS) {
       dt = 0.5 * dt;
       update_D(order, 0.5, coeffs, tempD, D);
       num_equal_steps = 0;
