@@ -1186,7 +1186,7 @@ KOKKOS_INLINE_FUNCTION auto &access_view_with_array(ViewT view, const Kokkos::Ar
 
 // Deterministic fill_random
 template <class ViewT>
-void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_type min,
+void det_fill_random(const ViewT& view, uint64_t seed, typename ViewT::non_const_value_type min,
                      typename ViewT::non_const_value_type max) {
 #ifdef KOKKOS_ENABLE_SERIAL
   using scalar_t     = typename ViewT::non_const_value_type;
@@ -1241,7 +1241,12 @@ void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_
   // 6. Fence to ensure the GPU completes unpacking before returning
   exec.fence();
 #else
-  static_assert(false, "det_fill_random: Serial backend must be available for det_fill_random");
+  using exe_space_t = typename ViewT::execution_space;
+  using pool_t      = Kokkos::Random_XorShift64_Pool<Kokkos::Serial>;
+
+  // We cannot do a deterministic fill, so do a normal one
+  pool_t pool(seed);
+  Kokkos::fill_random(view, pool, min, max);
 #endif
 }
 
