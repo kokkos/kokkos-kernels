@@ -711,8 +711,19 @@ void test_BDF_adaptive_stiff() {
 
   auto y_new_h = Kokkos::create_mirror_view(y_new);
   Kokkos::deep_copy(y_new_h, y_new);
-  std::cout << "Stiff Chemistry solution at t=500: {" << y_new_h(0) << ", " << y_new_h(1) << ", " << y_new_h(2) << "}"
+  std::cout << "Stiff Chemistry solution at t=350: {" << y_new_h(0) << ", " << y_new_h(1) << ", " << y_new_h(2) << "}"
             << std::endl;
+
+  // Reference solution at t=350 computed with SciPy's Radau integrator
+  // using rtol=1e-12 and atol=1e-14. BDFSolve integrates with rtol=1e-3
+  // so we check the solution with a relative tolerance of 5e-3.
+  // Scaling the Jacobian of the corrector residual with dt instead of
+  // c=dt/alpha[order] leads to relative errors around 9e-3 which this
+  // test would catch, see issue #5.
+  const scalar_type y_ref[3] = {4.6713854e-01, 3.4400401e-06, 5.3285802e-01};
+  EXPECT_NEAR_KK_REL(y_new_h(0), y_ref[0], 5.0e-3);
+  EXPECT_NEAR_KK_REL(y_new_h(1), y_ref[1], 5.0e-3);
+  EXPECT_NEAR_KK_REL(y_new_h(2), y_ref[2], 5.0e-3);
 }
 
 }  // namespace Test
