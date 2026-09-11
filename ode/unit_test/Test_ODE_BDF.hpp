@@ -114,6 +114,34 @@ struct StiffChemistry {
   }
 };
 
+// Non-autonomous polynomial ODE
+// Since its right hand side depends explicitly
+// on time it detects implicit stages evaluated
+// at the wrong time: BDF2 reproduces the degree
+// two polynomial solution exactly only when f
+// is evaluated at t+dt.
+//
+// Equation: y'(t) = t + 1
+// Jacobian: df/dy = 0
+// Solution: y = 0.5*t^2 + t + y0
+struct TimeDependentPoly {
+  static constexpr int neqs = 1;
+
+  TimeDependentPoly() {}
+
+  template <class vec_type1, class vec_type2>
+  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& /*y*/,
+                                         const vec_type2& f) const {
+    f(0) = t + 1.0;
+  }
+
+  template <class vec_type, class mat_type>
+  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/, const double /*dt*/, const vec_type& /*y*/,
+                                         const mat_type& jac) const {
+    jac(0, 0) = 0.0;
+  }
+};
+
 template <class ode_type, KokkosODE::Experimental::BDF_type bdf_type, class vec_type, class mv_type, class mat_type,
           class scalar_type>
 struct BDFSolve_wrapper {
@@ -715,6 +743,72 @@ void test_BDF_adaptive_stiff() {
             << std::endl;
 }
 
+// Integrate a non-autonomous ODE, y' = t + 1, with both the fixed
+// order and the adaptive BDF solvers. The implicit stage of BDF is
+// taken at the end of the step so f and its Jacobian have to be
+// evaluated at t+dt: evaluating them at t instead leaves an O(dt)
+// error in the solution which both checks below detect.
+template <class device_type, class scalar_type>
+void test_BDF_time_dependence() {
+  using execution_space = typename device_type::execution_space;
+  using vec_type        = Kokkos::View<scalar_type*, execution_space>;
+  using mv_type         = Kokkos::View<scalar_type**, execution_space>;
+  using mat_type        = Kokkos::View<scalar_type**, execution_space>;
+
+  TimeDependentPoly mySys{};
+  Kokkos::RangePolicy<execution_space> myPolicy(0, 1);
+
+  const scalar_type t_start = 0.0, t_end = 1.0;
+  const scalar_type exact_val = 0.5 * t_end * t_end + t_end + 1.0;
+
+  // Fixed order: BDF2 integrates the degree two polynomial solution
+  // exactly so any error beyond round-off comes from evaluating the
+  // implicit stage at the wrong time.
+  {
+    constexpr int num_steps = 10;
+    vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
+    vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
+    vec_type scale("scaling factors", mySys.neqs);
+    mat_type jac("jacobian", mySys.neqs, mySys.neqs), temp("temp storage", mySys.neqs, mySys.neqs + 4);
+    mv_type kstack("Startup RK vectors", 6, mySys.neqs);
+    mv_type y_vecs("history vectors", mySys.neqs, 2);
+
+    Kokkos::deep_copy(scale, 1);
+    Kokkos::deep_copy(y0, 1.0);
+
+    BDFSolve_wrapper<TimeDependentPoly, KokkosODE::Experimental::BDF_type::BDF2, vec_type, mv_type, mat_type,
+                     scalar_type>
+        solve_wrapper(mySys, t_start, t_end, num_steps, y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
+    Kokkos::parallel_for(myPolicy, solve_wrapper);
+    Kokkos::fence();
+
+    auto y_new_h = Kokkos::create_mirror_view(y_new);
+    Kokkos::deep_copy(y_new_h, y_new);
+
+    EXPECT_NEAR_KK(y_new_h(0), exact_val, 1e-10);
+  }
+
+  // Adaptive: with f evaluated at t instead of t+dt the error at
+  // t_end is ~1e-1, two orders of magnitude above the tolerance
+  // used here (the solver targets atol=1e-6, rtol=1e-3).
+  {
+    vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
+    mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
+
+    Kokkos::deep_copy(y0, 1.0);
+
+    const scalar_type dt = (t_end - t_start) / 100;
+    BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt, (t_end - t_start) / 10, y0, y_new, temp, temp2);
+    Kokkos::parallel_for(myPolicy, bdf_wrapper);
+    Kokkos::fence();
+
+    auto y_new_h = Kokkos::create_mirror_view(y_new);
+    Kokkos::deep_copy(y_new_h, y_new);
+
+    EXPECT_NEAR_KK(y_new_h(0), exact_val, 1e-3);
+  }
+}  // test_BDF_time_dependence
+
 }  // namespace Test
 
 TEST_F(TestCategory, BDF_Logistic_serial) { ::Test::test_BDF_Logistic<TestDevice, double>(); }
@@ -729,3 +823,4 @@ TEST_F(TestCategory, BDF_Nordsieck) { ::Test::test_Nordsieck<TestDevice, double>
 //   ::Test::test_adaptive_BDF_v2<TestDevice, double>();
 // }
 TEST_F(TestCategory, BDF_StiffChemistry_adaptive) { ::Test::test_BDF_adaptive_stiff<TestDevice, double>(); }
+TEST_F(TestCategory, BDF_time_dependence) { ::Test::test_BDF_time_dependence<TestDevice, double>(); }
