@@ -32,9 +32,6 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
       typename Device::memory_space>
       KernelHandle;
 
-  // Make the test deterministic on a given machine+compiler
-  srand((numRows << 1) ^ numCols);
-
   KernelHandle handle;
   // If maxNNZ <= numCols, the generated A, B have unique column indices in each
   // row

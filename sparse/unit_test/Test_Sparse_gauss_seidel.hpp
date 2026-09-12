@@ -170,7 +170,6 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
-  srand(245);
   lno_t numCols      = numRows;
   crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, row_size_variance, bandwidth);
@@ -241,7 +240,6 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, lno_t numVecs,
                              bool symmetric) {
   using namespace Test;
-  srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, device> scalar_view2d_t;
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
@@ -350,7 +348,6 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
   const scalar_t zero = KokkosKernels::ArithTraits<scalar_t>::zero();
   const scalar_t one  = KokkosKernels::ArithTraits<scalar_t>::one();
-  srand(245);
   typedef typename device::execution_space exec_space;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   lno_t numCols      = numRows;
@@ -416,7 +413,6 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth
   typedef KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
                               typename device::memory_space, typename device::memory_space>
       KernelHandle;
-  srand(245);
   size_type nnzTotal = nnzPerRow * numRows;
   lno_t nnzVariance  = nnzPerRow / 4;
   crsMat_t A =
@@ -499,7 +495,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   const scalar_t one = KokkosKernels::ArithTraits<scalar_t>::one();
   // Host matrix generation: avoid MSVC's RAND_MAX==32767 and rand()%N, which skew
   // off-diagonals and break diagonal dominance vs POSIX rand(). Use a portable RNG.
-  std::mt19937 rng(245u);
+  std::mt19937 rng(static_cast<long unsigned int>(rand()));
   std::vector<size_type> rowmap = {0};
   std::vector<lno_t> entries;
   std::vector<scalar_t> values;
@@ -621,8 +617,7 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
   using const_scalar_t  = const scalar_t;
   using KernelHandle    = KokkosKernelsHandle<const_size_type, const_lno_t, const_scalar_t, execution_space,
                                            typename device::memory_space, typename device::memory_space>;
-  srand(245);
-  lno_t numCols                         = numRows;
+  lno_t numCols         = numRows;
   typename crsMat_t::value_type m_omega = omega;
 
 #ifdef KOKKOS_ENABLE_OPENMP

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Random.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include <iostream>
@@ -1163,6 +1164,95 @@ KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr *p) {
   const std::uintptr_t ptrValNew = (ptrVal + alignof(T) - 1) & (~(alignof(T) - 1));
   return reinterpret_cast<T *>(reinterpret_cast<char *>(const_cast<std::remove_cv_t<InPtr> *>(p)) +
                                (ptrValNew - ptrVal));
+}
+
+namespace Detail {
+// Internal helper that performs the actual variadic expansion
+template <class ViewT, std::size_t... Is>
+KOKKOS_INLINE_FUNCTION auto &access_view_with_array_impl(ViewT view, const Kokkos::Array<int, ViewT::rank> &arr,
+                                                         std::index_sequence<Is...>) {
+  // Expands Is... into exactly ViewT::rank arguments matching the indices
+  return view(arr[Is]...);
+}
+
+}  // namespace Detail
+
+// The clean user-facing inline function
+template <class ViewT>
+KOKKOS_INLINE_FUNCTION auto &access_view_with_array(ViewT view, const Kokkos::Array<int, ViewT::rank> &arr) {
+  // Generates a compile-time sequence: 0, 1, 2, ..., (Rank - 1)
+  return Detail::access_view_with_array_impl(view, arr, std::make_index_sequence<ViewT::rank>{});
+}
+
+// Deterministic fill_random
+template <class ViewT>
+void det_fill_random(const ViewT &view, uint64_t seed, typename ViewT::non_const_value_type min,
+                     typename ViewT::non_const_value_type max) {
+#ifdef KOKKOS_ENABLE_SERIAL
+  using scalar_t     = typename ViewT::non_const_value_type;
+  using pool_t       = Kokkos::Random_XorShift64_Pool<Kokkos::Serial>;
+  using exec_space_t = typename ViewT::execution_space;
+  using mem_space_t  = typename ViewT::memory_space;
+
+  const size_t total_elements = view.size();  // Logical size, ignores padding
+  constexpr int Rank          = ViewT::rank;
+
+  // 1. Allocate a flat, 1D contiguous view on the Host
+  Kokkos::View<scalar_t *, Kokkos::HostSpace> host_flat("host_flat", total_elements);
+
+  // 2. Fill the flat host view deterministically
+  pool_t pool(seed);
+  Kokkos::fill_random(Kokkos::Serial(), host_flat, pool, min, max);
+
+  // 3. Allocate a flat, 1D contiguous view on the Device
+  Kokkos::View<scalar_t *, mem_space_t> device_flat("device_flat", total_elements);
+
+  // 4. Safe Cross-Space Copy: 1D contiguous to 1D contiguous always succeeds
+  exec_space_t exec{};
+  Kokkos::deep_copy(exec, device_flat, host_flat);
+
+  // 5. Device-Side Unpacking: Remap flat elements into the arbitrary multi-dim view layout
+  using LayoutType = typename ViewT::array_layout;
+  Kokkos::parallel_for(
+      "UnpackRandomToArbitraryLayout", Kokkos::RangePolicy<exec_space_t>(exec, 0, total_elements),
+      KOKKOS_LAMBDA(const size_t flat_idx) {
+        Kokkos::Array<int, Rank> coords{};
+        size_t temp_idx = flat_idx;
+
+        // Unroll the flat index into multi-dimensional coordinates based on layout
+        if (std::is_same_v<LayoutType, Kokkos::LayoutRight>) {
+          // Row-major: right-most dimension changes fastest
+          for (int r = Rank - 1; r >= 0; --r) {
+            coords[r] = temp_idx % view.extent(r);
+            temp_idx /= view.extent(r);
+          }
+        } else {
+          // Column-major or LayoutStride: left-most dimension changes fastest
+          for (int r = 0; r < Rank; ++r) {
+            coords[r] = temp_idx % view.extent(r);
+            temp_idx /= view.extent(r);
+          }
+        }
+
+        // Safely write to the view; layout mapping and padding are handled automatically
+        access_view_with_array(view, coords) = device_flat(flat_idx);
+      });
+
+  // 6. Fence to ensure the GPU completes unpacking before returning
+  exec.fence();
+#else
+  using exe_space_t = typename ViewT::execution_space;
+  using pool_t      = Kokkos::Random_XorShift64_Pool<exe_space_t>;
+
+  // We cannot do a deterministic fill, so do a normal one
+  pool_t pool(seed);
+  Kokkos::fill_random(view, pool, min, max);
+#endif
+}
+
+template <class ViewT>
+void det_fill_random(ViewT view, uint64_t seed, typename ViewT::non_const_value_type max) {
+  det_fill_random(view, seed, 0, max);
 }
 
 }  // namespace Impl

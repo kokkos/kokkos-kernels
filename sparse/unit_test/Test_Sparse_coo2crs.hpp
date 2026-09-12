@@ -208,9 +208,6 @@ TEST_F(TestCategory, sparse_coo2crs) {
   }
 #endif
 
-  uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
-  std::srand(ticks);
-
   doAllCoo2Crs<TestDevice>(0, 0);
 
   // Square cases

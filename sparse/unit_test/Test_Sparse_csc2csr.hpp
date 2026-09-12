@@ -94,9 +94,6 @@ void doAllCsc2csr(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_csc2csr) {
-  uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
-  std::srand(ticks);
-
   // Empty cases
   doCsc2Csr<float, Kokkos::LayoutLeft, TestDevice>(1, 0, 1, 10);
   doCsc2Csr<float, Kokkos::LayoutLeft, TestDevice>(0, 1, 1, 10);

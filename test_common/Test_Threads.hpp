@@ -7,16 +7,13 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
 
+#include "Test_Base_Common.hpp"
+
 #if defined(KOKKOSKERNELS_TEST_ETI_ONLY) && !defined(KOKKOSKERNELS_ETI_ONLY)
 #define KOKKOSKERNELS_ETI_ONLY
 #endif
 
-class threads : public ::testing::Test {
- protected:
-  static void SetUpTestCase() {}
-
-  static void TearDownTestCase() {}
-};
+class threads : public CommonParent {};
 
 #define TestCategory threads
 #define TestDevice Kokkos::Threads
