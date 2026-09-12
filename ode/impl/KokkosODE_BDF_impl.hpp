@@ -71,8 +71,8 @@ struct BDF_system_wrapper {
 
   template <class vec_type>
   KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const {
-    // f = f(t+dt, y)
-    mySys.evaluate_function(t, dt, y, f);
+    // The implicit BDF stage is evaluated at the end of the step,
+    mySys.evaluate_function(t + dt, dt, y, f);
 
     for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
       f(eqIdx) = y(eqIdx) - table.coefficients[order] * dt * f(eqIdx);
@@ -84,7 +84,7 @@ struct BDF_system_wrapper {
 
   template <class vec_type, class mat_type>
   KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
-    mySys.evaluate_jacobian(t, dt, y, jac);
+    mySys.evaluate_jacobian(t + dt, dt, y, jac);
 
     for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
       for (int colIdx = 0; colIdx < neqs; ++colIdx) {
@@ -112,8 +112,8 @@ struct BDF_system_wrapper2 {
 
   template <class YVectorType, class FVectorType>
   KOKKOS_FUNCTION void residual(const YVectorType& y, const FVectorType& f) const {
-    // f = f(t+dt, y)
-    mySys.evaluate_function(t, dt, y, f);
+    // The implicit stage is evaluated at the end of the step,
+    mySys.evaluate_function(t + dt, dt, y, f);
 
     // std::cout << "f = psi + d - c * f = " << psi(0) << " + " << d(0) << " - "
     // << c << " * " << f(0) << std::endl;
@@ -127,7 +127,7 @@ struct BDF_system_wrapper2 {
   template <class vec_type, class mat_type>
   KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
     if (compute_jac) {
-      mySys.evaluate_jacobian(t, dt, y, jac);
+      mySys.evaluate_jacobian(t + dt, dt, y, jac);
 
       // J = I - dt*(df/dy)
       for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
@@ -354,7 +354,10 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
     KokkosBlas::Experimental::serial_gemv('N', 1.0 / alpha[order], subD, subGamma, 0.0, psi);
 
     sys.compute_jac = true;
-    sys.c           = dt / alpha[order];
+    // dt may have been halved or clamped since the last attempt: refresh
+    // the wrapper so the residual and Jacobian see the current step.
+    sys.dt = dt;
+    sys.c  = dt / alpha[order];
     sys.jacobian(y_new, jac);
     sys.compute_jac = true;
     Kokkos::Experimental::local_deep_copy(y_new, y_predict);
