@@ -19,10 +19,12 @@ namespace Experimental {
 struct Newton {
   template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_type, class update_type,
             class scale_type>
-  KOKKOS_FUNCTION static newton_solver_status Solve(const system_type& sys, const Newton_params& params,
-                                                    const mat_type& J, const mat_type& tmp, const ini_vec_type& y0,
+  KOKKOS_FUNCTION static newton_solver_status Solve(const system_type& sys, Newton_params& params, const mat_type& J,
+                                                    const mat_type& tmp, const ini_vec_type& y0,
                                                     const rhs_vec_type& rhs, const update_type& update,
                                                     const scale_type& scale) {
+    // params is non-const: the number of iterations performed
+    // is recorded in params.iters on output.
     return KokkosODE::Impl::NewtonSolve(sys, params, J, tmp, y0, rhs, update, scale);
   }
 };
