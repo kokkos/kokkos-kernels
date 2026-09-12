@@ -56,7 +56,7 @@ struct IlutWrap {
   }
 
   /**
-   * Just a convenience wrapper around spgemm
+   * Just a convenience wrapper around spgemm. Test
    */
   template <class KHandle, class LRowMapType, class LEntriesType, class LValuesType, class URowMapType,
             class UEntriesType, class UValuesType, class LURowMapType, class LUEntriesType, class LUValuesType>
