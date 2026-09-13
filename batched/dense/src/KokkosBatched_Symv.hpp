@@ -11,13 +11,12 @@ namespace KokkosBatched {
 /// \brief Serial Batched Symv:
 ///
 /// performs one of the matrix-vector operations
-///   y := alpha*op( A )*x + beta*y,
-/// where op( A ) is one of
-///   op( A ) = A   or   op( A ) = A**T   or   op( A ) = A**H,
-///   alpha and beta are scalars, x and y are n element vectors, and A is an n by n symmetric matrix.
+///   y := alpha*A*x + beta*y,
+///   alpha and beta are scalars, x and y are n element vectors, and A is an n by n symmetric or hermitian matrix.
 ///
 /// \tparam ArgUplo: Type indicating whether the A is upper (Uplo::Upper) or lower (Uplo::Lower) triangular.
-/// \tparam ArgTrans: Type indicating whether the A**T (Trans::Transpose) or A**H (Trans::ConjTranspose) is used.
+/// \tparam ArgTrans: Type indicating whether A is symmetric (Trans::Transpose) or hermitian (Trans::ConjTranspose)
+/// matrix.
 template <typename ArgUplo, typename ArgTrans>
 struct SerialSymv {
   static_assert(std::same_as<ArgUplo, Uplo::Upper> || std::same_as<ArgUplo, Uplo::Lower>,
@@ -32,12 +31,14 @@ struct SerialSymv {
   ///
   /// \param[in] alpha: Scalar alpha
   /// \param[in] A: A is a dimension ( lda, n ) matrix. Before entry with uplo = Uplo::Upper, the leading n by n upper
-  /// triangular part of the array A must contain the upper triangular part of the symmetric matrix and the strictly
-  /// lower triangular part of A is not referenced. Before entry with uplo = Uplo::Lower, the leading n by n lower
-  /// triangular part of the array A must contain the lower triangular part of the symmetric matrix and the strictly
-  /// upper triangular part of A is not referenced. \param[in] x: x is a dimension ( n ) vector \param[in] beta: Scalar
-  /// beta \param[in,out] y: y is a dimension ( n ) vector. Before entry, y must contain the vector y. On exit, y is
-  /// overwritten by the result ( alpha*op( A )*x + beta*y )
+  /// triangular part of the array A must contain the upper triangular part of the symmetric (hermitian) matrix and the
+  /// strictly lower triangular part of A is not referenced. Before entry with uplo = Uplo::Lower, the leading n by n
+  /// lower triangular part of the array A must contain the lower triangular part of the symmetric (hermitian) matrix
+  /// and the strictly upper triangular part of A is not referenced.
+  /// \param[in] x: x is a dimension ( n ) vector
+  /// \param[in] beta: Scalar beta
+  /// \param[in,out] y: y is a dimension ( n ) vector. Before entry, y must contain the vector y. On exit, y is
+  /// overwritten by the result ( alpha*A*x + beta*y )
   ///
   /// No nested parallel_for is used inside of the function.
   ///
@@ -49,14 +50,13 @@ struct SerialSymv {
 /// \brief Team Batched Symv:
 ///
 /// performs one of the matrix-vector operations
-///   y := alpha*op( A )*x + beta*y,
-/// where op( A ) is one of
-///   op( A ) = A   or   op( A ) = A**T   or   op( A ) = A**H,
-///   alpha and beta are scalars, x and y are n element vectors, and A is an n by n symmetric matrix.
+///   y := alpha*A*x + beta*y,
+///   alpha and beta are scalars, x and y are n element vectors, and A is an n by n symmetric or hermitian matrix.
 ///
 /// \tparam MemberType: Member type of the Kokkos team policy
 /// \tparam ArgUplo: Type indicating whether the A is upper (Uplo::Upper) or lower (Uplo::Lower) triangular.
-/// \tparam ArgTrans: Type indicating whether the A**T (Trans::Transpose) or A**H (Trans::ConjTranspose) is used.
+/// \tparam ArgTrans: Type indicating whether A is symmetric (Trans::Transpose) or hermitian (Trans::ConjTranspose)
+/// matrix.
 template <typename MemberType, typename ArgUplo, typename ArgTrans>
 struct TeamSymv {
   static_assert(std::same_as<ArgUplo, Uplo::Upper> || std::same_as<ArgUplo, Uplo::Lower>,
@@ -71,14 +71,16 @@ struct TeamSymv {
   ///
   /// \param[in] alpha: Scalar alpha
   /// \param[in] A: A is a dimension ( lda, n ) matrix. Before entry with uplo = Uplo::Upper, the leading n by n upper
-  /// triangular part of the array A must contain the upper triangular part of the symmetric matrix and the strictly
-  /// lower triangular part of A is not referenced. Before entry with uplo = Uplo::Lower, the leading n by n lower
-  /// triangular part of the array A must contain the lower triangular part of the symmetric matrix and the strictly
-  /// upper triangular part of A is not referenced. \param[in] x: x is a dimension ( n ) vector \param[in] beta: Scalar
-  /// beta \param[in,out] y: y is a dimension ( n ) vector. Before entry, y must contain the vector y. On exit, y is
-  /// overwritten by the result ( alpha*op( A )*x + beta*y )
+  /// triangular part of the array A must contain the upper triangular part of the symmetric (hermitian) matrix and the
+  /// strictly lower triangular part of A is not referenced. Before entry with uplo = Uplo::Lower, the leading n by n
+  /// lower triangular part of the array A must contain the lower triangular part of the symmetric (hermitian) matrix
+  /// and the strictly upper triangular part of A is not referenced.
+  /// \param[in] x: x is a dimension ( n ) vector
+  /// \param[in] beta: Scalar beta
+  /// \param[in,out] y: y is a dimension ( n ) vector. Before entry, y must contain the vector y. On exit, y is
+  /// overwritten by the result ( alpha*A*x + beta*y )
   ///
-  /// No nested parallel_for is used inside of the function.
+  /// Team thread parallelization is used inside of the function.
   ///
   template <typename ScalarType, typename AViewType, typename XViewType, typename YViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
@@ -88,14 +90,13 @@ struct TeamSymv {
 /// \brief TeamVector Batched Symv:
 ///
 /// performs one of the matrix-vector operations
-///   y := alpha*op( A )*x + beta*y,
-/// where op( A ) is one of
-///   op( A ) = A   or   op( A ) = A**T   or   op( A ) = A**H,
-///   alpha and beta are scalars, x and y are n element vectors, and A is an n by n symmetric matrix.
+///   y := alpha*A*x + beta*y,
+///   alpha and beta are scalars, x and y are n element vectors, and A is an n by n symmetric or hermitian matrix.
 ///
 /// \tparam MemberType: Member type of the Kokkos team policy
 /// \tparam ArgUplo: Type indicating whether the A is upper (Uplo::Upper) or lower (Uplo::Lower) triangular.
-/// \tparam ArgTrans: Type indicating whether the A**T (Trans::Transpose) or A**H (Trans::ConjTranspose) is used.
+/// \tparam ArgTrans: Type indicating whether A is symmetric (Trans::Transpose) or hermitian (Trans::ConjTranspose)
+/// matrix.
 template <typename MemberType, typename ArgUplo, typename ArgTrans>
 struct TeamVectorSymv {
   static_assert(std::same_as<ArgUplo, Uplo::Upper> || std::same_as<ArgUplo, Uplo::Lower>,
@@ -110,14 +111,16 @@ struct TeamVectorSymv {
   ///
   /// \param[in] alpha: Scalar alpha
   /// \param[in] A: A is a dimension ( lda, n ) matrix. Before entry with uplo = Uplo::Upper, the leading n by n upper
-  /// triangular part of the array A must contain the upper triangular part of the symmetric matrix and the strictly
-  /// lower triangular part of A is not referenced. Before entry with uplo = Uplo::Lower, the leading n by n lower
-  /// triangular part of the array A must contain the lower triangular part of the symmetric matrix and the strictly
-  /// upper triangular part of A is not referenced. \param[in] x: x is a dimension ( n ) vector \param[in] beta: Scalar
-  /// beta \param[in,out] y: y is a dimension ( n ) vector. Before entry, y must contain the vector y. On exit, y is
-  /// overwritten by the result ( alpha*op( A )*x + beta*y )
+  /// triangular part of the array A must contain the upper triangular part of the symmetric (hermitian) matrix and the
+  /// strictly lower triangular part of A is not referenced. Before entry with uplo = Uplo::Lower, the leading n by n
+  /// lower triangular part of the array A must contain the lower triangular part of the symmetric (hermitian) matrix
+  /// and the strictly upper triangular part of A is not referenced.
+  /// \param[in] x: x is a dimension ( n ) vector
+  /// \param[in] beta: Scalar beta
+  /// \param[in,out] y: y is a dimension ( n ) vector. Before entry, y must contain the vector y. On exit, y is
+  /// overwritten by the result ( alpha*A*x + beta*y )
   ///
-  /// No nested parallel_for is used inside of the function.
+  /// Team vector parallelization is used inside of the function.
   ///
   template <typename ScalarType, typename AViewType, typename XViewType, typename YViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
