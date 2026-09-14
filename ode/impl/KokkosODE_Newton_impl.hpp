@@ -22,7 +22,7 @@ template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_t
           class scale_type>
 KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     system_type& sys, const KokkosODE::Experimental::Newton_params& params, mat_type& J, mat_type& tmp,
-    ini_vec_type& y0, rhs_vec_type& rhs, update_type& update, const scale_type& scale) {
+    ini_vec_type& y0, rhs_vec_type& rhs, update_type& update, const scale_type& scale, int& newton_iterations) {
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
   using value_type           = typename ini_vec_type::non_const_value_type;
 
@@ -46,7 +46,10 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   const value_type alpha = KokkosKernels::ArithTraits<value_type>::one();
 
   // Iterate until maxIts or the tolerance is reached
+  newton_iterations = 0;
   for (int it = 0; it < params.max_iters; ++it) {  // handle.maxIters; ++it) {
+    newton_iterations++;
+
     // compute initial rhs
     sys.residual(y0, rhs);
 
