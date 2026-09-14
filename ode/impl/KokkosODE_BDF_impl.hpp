@@ -154,8 +154,11 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table, scalar_type
     y_new(eqIdx) = y_old(eqIdx);
   }
 
-  // solve the nonlinear problem
-  { KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs, update, scale); }
+  // solver the nonlinear problem
+  {
+    int newton_iterations;
+    KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs, update, scale, newton_iterations);
+  }
 
 }  // BDFStep
 
@@ -358,8 +361,9 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
     sys.compute_jac = true;
     Kokkos::Experimental::local_deep_copy(y_new, y_predict);
     Kokkos::Experimental::local_deep_copy(update, 0);
+    int newton_iterations;
     KokkosODE::Experimental::newton_solver_status newton_status =
-        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs, update, scale);
+        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs, update, scale, newton_iterations);
 
     for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
       update(eqIdx) = y_new(eqIdx) - y_predict(eqIdx);
@@ -373,7 +377,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
 
     } else {
       // Estimate the solution error
-      safety     = 0.9 * (2 * max_newton_iters + 1) / (2 * max_newton_iters + param.iters);
+      safety     = 0.9 * (2 * max_newton_iters + 1) / (2 * max_newton_iters + newton_iterations);
       error_norm = 0;
       for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
         scale(eqIdx) = atol + rtol * Kokkos::abs(y_new(eqIdx));
