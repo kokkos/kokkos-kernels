@@ -140,8 +140,8 @@ struct BDF {
 /// \param y0 [in/out]: vector of initial conditions, set to the solution
 /// at the end of the integration
 /// \param y_new [out]: vector of solution at t_end
-/// \param temp [in]: vectors for temporary storage
-/// \param temp2 [in]: vectors for temporary storage
+/// \param temp [in]: temporary storage, at least neqs x (26 + 2*neqs)
+/// \param temp2 [in]: temporary storage, at least 6 x 7
 ///
 /// \return SUCCESS if the integration reached t_end, MIN_SIZE if a step
 /// could not be completed with dt above the smallest meaningful step
