@@ -161,7 +161,11 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table, scalar_type
 
 template <class mat_type, class scalar_type>
 KOKKOS_FUNCTION void compute_coeffs(const int order, const scalar_type factor, const mat_type& coeffs) {
+  // initialize coeffs
   coeffs(0, 0) = 1.0;
+  for (int rowIdx = 0; rowIdx < order; ++rowIdx) {
+    coeffs(rowIdx + 1, 0) = 0.0;
+  }
   for (int colIdx = 0; colIdx < order; ++colIdx) {
     coeffs(0, colIdx + 1) = 1.0;
     for (int rowIdx = 0; rowIdx < order; ++rowIdx) {
