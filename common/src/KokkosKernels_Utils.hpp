@@ -565,8 +565,12 @@ struct PermuteVector {
   void operator()(const idx &ii) const {
     idx mapping = ii;
     if (ii < mapping_size) mapping = old_to_new_mapping[ii];
-    for (idx j = 0; j < static_cast<idx>(new_vector.extent(1)); j++) {
-      new_vector.access(mapping, j) = old_vector.access(ii, j);
+    if constexpr (out_value_array_type::rank == 2) {
+      for (idx j = 0; j < static_cast<idx>(new_vector.extent(1)); j++) {
+        new_vector.access(mapping, j) = old_vector.access(ii, j);
+      }
+    } else {
+      new_vector(mapping) = old_vector(ii);
     }
   }
 };
