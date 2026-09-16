@@ -29,8 +29,10 @@ API: Sparse
    sparse/spiluk_numeric
    sparse/par_ilut
 
-   sparse/extract_diagonal_blocks_rcb_deprecated.rst
-   sparse/extract_diagonal_blocks_rcb.rst
+   sparse/extract_diagonal_blocks_rcb_deprecated
+   sparse/extract_diagonal_blocks_rcb
+
+   sparse/sparse_matrix_io_utils
 
 Containers
 ==========
@@ -103,3 +105,10 @@ Utility Functions
 - Extract the diagonal blocks corresponding to the RCB partitions from a crs matrix (this function must be called after applying RCB to the coordinates associated with the rows/columns of the crs matrix)
 
   - :doc:`extract_diagonal_blocks_rcb <sparse/extract_diagonal_blocks_rcb>`
+
+Random matrix generation
+========================
+
+- Generating large random matrices is useful for testing.
+
+  - :doc:`kk_sparseMatrix_generate <sparse/sparse_matrix_io_utils>`

@@ -11,7 +11,9 @@
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
 
+#include <cstdint>
 #include <concepts>
+#include <chrono>
 #include <random>
 #include <algorithm>
 #include <type_traits>
@@ -47,6 +49,48 @@
 #endif
 
 namespace TestUtils {
+
+/// Returns a reproducible test seed.
+///
+/// If --gtest_random_seed=N is passed on the command line with N > 0, that
+/// value is used. Otherwise a time-based seed is generated. Failed tests
+/// report the seed via SCOPED_TRACE or assertion messages so it can be
+/// reproduced by re-running with --gtest_random_seed set to that value.
+inline uint64_t getTestSeed() {
+  static uint64_t seed = []() -> uint64_t {
+    uint64_t s;
+    // std::int32_t flag_seed = testing::GTEST_FLAG(random_seed);
+    //  For now, use a fixed seed! This is only temporary
+    std::int32_t flag_seed = 13718;
+    if (flag_seed > 0) {
+      s = static_cast<uint64_t>(flag_seed);
+    } else {
+      s = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
+    }
+    return s;
+  }();
+
+  return seed;
+}
+
+namespace Impl {
+/// Returns a reference to the seed last set via initRandSeed(), or 0 if never called.
+inline uint64_t& randSeedState() {
+  static uint64_t s = 0;
+  return s;
+}
+}  // namespace Impl
+
+/// Seeds std::rand with the reproducible test seed and records it.
+/// Must be called at the start of any test that uses create_random_x_vector,
+/// shuffleMatrixEntries, or RandCsMatrix (which uses std::rand internally).
+/// The random-generation helpers assert this has been called so that
+/// uninitialized tests are caught early.
+inline void initRandSeed() {
+  uint64_t seed = getTestSeed();
+  std::srand(static_cast<unsigned int>(seed));
+  Impl::randSeedState() = seed;
+}
 
 namespace Impl {
 
@@ -304,6 +348,8 @@ using KokkosKernels::Impl::getRandomBounds;
 template <typename vec_t>
 vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
   typedef typename vec_t::value_type scalar_t;
+  EXPECT_EQ(Impl::randSeedState(), getTestSeed())
+      << "Call TestUtils::initRandSeed() before using create_random_x_vector";
   auto h_x = Kokkos::create_mirror_view(kok_x);
   if constexpr (vec_t::rank == 2) {
     for (size_t j = 0; j < h_x.extent(1); ++j) {
@@ -401,21 +447,16 @@ class RandCooMat {
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
   RandCooMat(int64_t m, int64_t n, int64_t n_tuples, ScalarType min_val, ScalarType max_val) {
-    uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
-
-    info = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
-                       ", " + typeid(ExeSpaceType).name() + std::to_string(n) +
-                       "...): rand seed: " + std::to_string(ticks) + "\n");
-    Kokkos::Random_XorShift64_Pool<ExeSpaceType> random(ticks);
-
+    info   = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
+                         ", " + typeid(ExeSpaceType).name() + std::to_string(n) + "\n");
     row_d_ = RowViewTypeD("RandCooMat.RowViewType", n_tuples);
-    Kokkos::fill_random(row_d_, random, -m, m);
+    KokkosKernels::Impl::det_fill_random(row_d_, rand(), -m, m);
 
     col_d_ = ColViewTypeD("RandCooMat.ColViewType", n_tuples);
-    Kokkos::fill_random(col_d_, random, -n, n);
+    KokkosKernels::Impl::det_fill_random(col_d_, rand(), -n, n);
 
     data_d_ = DataViewTypeD("RandCooMat.DataViewType", n_tuples);
-    Kokkos::fill_random(data_d_, random, min_val, max_val);
+    KokkosKernels::Impl::det_fill_random(data_d_, rand(), min_val, max_val);
 
     ExeSpaceType().fence();
   }
@@ -467,8 +508,8 @@ class RandCsMatrix {
   ///  2. map_(i) > col_map(i - 1) for i > 1
   ///  3. map_(i) == col_map(j) iff map_(i) == col_map(j) == nullptr
   ///  4. map_(i) - col_map(i - 1) is in [0, m]
-  void populate_random_cs_mat(uint64_t ticks) {
-    std::srand(ticks);
+  void populate_random_cs_mat() {
+    std::mt19937 mtrand(rand());
     for (Ordinal col_idx = 0; col_idx < dim1_; col_idx++) {
       Ordinal r = std::rand() % (dim2_ + 1);
       if (r == 0 || fully_sparse_) {  // 100% sparse vector
@@ -479,7 +520,7 @@ class RandCsMatrix {
 
         for (Ordinal i = 0; i < r; i++) v.at(i) = i;
 
-        std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
+        std::shuffle(v.begin(), v.end(), mtrand);
 
         for (Ordinal i = 0; i < r; i++) ids_(i + nnz_) = v.at(i);
 
@@ -523,18 +564,14 @@ class RandCsMatrix {
                                 dim2 * dim1 + 1);  // over-allocated
     ids_          = Kokkos::create_mirror_view(ids_d_);
 
-    uint64_t ticks = std::chrono::high_resolution_clock::now().time_since_epoch().count() % UINT32_MAX;
-
     info = std::string(std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " + typeid(LayoutType).name() +
                        ", " + execution_space().name() + ">(" + std::to_string(dim2) + ", " + std::to_string(dim1) +
-                       "...): rand seed: " + std::to_string(ticks) +
                        ", fully sparse: " + (fully_sparse_ ? "true" : "false") + "\n");
-    Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(ticks);
-    populate_random_cs_mat(ticks);
+    populate_random_cs_mat();
 
     vals_d_ = ValViewTypeD("RandCsMatrix.ValViewType", nnz_);
     vals_   = Kokkos::create_mirror_view(vals_d_);
-    Kokkos::fill_random(vals_, random, min_val, max_val);  // random scalars
+    KokkosKernels::Impl::det_fill_random(vals_, rand(), min_val, max_val);  // random scalars
     Kokkos::fence();
 
     // Copy to device
@@ -558,6 +595,7 @@ class RandCsMatrix {
 /// matrix.
 template <typename Rowptrs, typename Entries, typename Values>
 void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values, const size_t block_size = 1) {
+  EXPECT_EQ(Impl::randSeedState(), getTestSeed()) << "Call TestUtils::initRandSeed() before using shuffleMatrixEntries";
   using size_type          = typename Rowptrs::non_const_value_type;
   using ordinal_type       = typename Entries::value_type;
   auto rowptrsHost         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowptrs);
