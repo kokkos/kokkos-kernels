@@ -272,18 +272,22 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   // temp.extent_int(1); std::cout << "numRows: " << numRows << ", numCols: " <<
   // numCols << std::endl; std::cout << "Extract subview from temp" <<
   // std::endl;
+  // Column layout of temp: [0] rhs, [1] update, [2, 10) D,
+  // [10, 18) tempD, [18] scale, [19] y_predict, [20] psi, [21] error,
+  // [22, 22 + neqs) jac, [22 + neqs, 26 + 2 * neqs) gesv buffer.
+  // Callers must provide at least 26 + 2 * neqs columns.
   int offset = 2;
   auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + 8));  // y and its derivatives
   offset += 8;
   auto tempD = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + 8));
   offset += 8;
-  auto scale = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
+  auto scale = Kokkos::subview(temp, Kokkos::ALL(), offset);
   ++offset;  // Scaling coefficients for error calculation
-  auto y_predict = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
+  auto y_predict = Kokkos::subview(temp, Kokkos::ALL(), offset);
   ++offset;  // Initial guess for y_{n+1}
-  auto psi = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
+  auto psi = Kokkos::subview(temp, Kokkos::ALL(), offset);
   ++offset;  // Higher order terms contribution to rhs
-  auto error = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
+  auto error = Kokkos::subview(temp, Kokkos::ALL(), offset);
   ++offset;  // Error estimate
   auto jac =
       Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + ode.neqs));  // Jacobian matrix
