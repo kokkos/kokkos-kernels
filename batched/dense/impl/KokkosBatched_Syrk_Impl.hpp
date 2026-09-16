@@ -64,15 +64,15 @@ KOKKOS_INLINE_FUNCTION int SerialSyrk<ArgUplo, ArgTrans>::invoke(const ScalarTyp
   if (alpha == ScalarType(0) || k == 0) {
     if constexpr (std::same_as<ArgUplo, Uplo::Lower>) {
       for (int colIdx = 0; colIdx < n; ++colIdx) {
-	for (int rowIdx = colIdx; rowIdx < n; ++rowIdx) {
-	  C(rowIdx, colIdx) = beta * C(rowIdx, colIdx);
-	}
+        for (int rowIdx = colIdx; rowIdx < n; ++rowIdx) {
+          C(rowIdx, colIdx) = beta * C(rowIdx, colIdx);
+        }
       }
     } else {
       for (int colIdx = 0; colIdx < n; ++colIdx) {
-	for (int rowIdx = 0; rowIdx < colIdx + 1; ++rowIdx) {
-	  C(rowIdx, colIdx) = beta * C(rowIdx, colIdx);
-	}
+        for (int rowIdx = 0; rowIdx < colIdx + 1; ++rowIdx) {
+          C(rowIdx, colIdx) = beta * C(rowIdx, colIdx);
+        }
       }
     }
     return 0;
@@ -124,13 +124,13 @@ KOKKOS_INLINE_FUNCTION int TeamSyrk<MemberType, ArgUplo, ArgTrans>::invoke(const
   if (alpha == ScalarType(0) || k == 0) {
     if constexpr (std::same_as<ArgUplo, Uplo::Lower>) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int colIdx) {
-	Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, colIdx, n),
-			     [&](const int rowIdx) { C(rowIdx, colIdx) *= beta; });
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, colIdx, n),
+                             [&](const int rowIdx) { C(rowIdx, colIdx) *= beta; });
       });
     } else {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int colIdx) {
-	Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, 0, colIdx + 1),
-			     [&](const int rowIdx) { C(rowIdx, colIdx) *= beta; });
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, 0, colIdx + 1),
+                             [&](const int rowIdx) { C(rowIdx, colIdx) *= beta; });
       });
     }
     return 0;
@@ -183,15 +183,15 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSyrk<MemberType, ArgUplo, ArgTrans>::invoke
   if (alpha == ScalarType(0) || k == 0) {
     if constexpr (std::same_as<ArgUplo, Uplo::Lower>) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int colIdx) {
-	for (int rowIdx = colIdx; rowIdx < n; ++rowIdx) {
-	  C(rowIdx, colIdx) *= beta;
-	}
+        for (int rowIdx = colIdx; rowIdx < n; ++rowIdx) {
+          C(rowIdx, colIdx) *= beta;
+        }
       });
     } else {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int colIdx) {
-	for (int rowIdx = 0; i < colIdx + 1; ++rowIdx) {
-	  C(rowIdx, colIdx) *= beta;
-	}
+        for (int rowIdx = 0; i < colIdx + 1; ++rowIdx) {
+          C(rowIdx, colIdx) *= beta;
+        }
       });
     }
     return 0;
