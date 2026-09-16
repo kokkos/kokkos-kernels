@@ -126,7 +126,7 @@ void nrm2w_squared(const execution_space& space, const RV& R, const XMV& X, cons
     if (X.extent(1) != R.extent(0)) {
       std::ostringstream os;
       os << "KokkosBlas::nrm2w (MV): Dimensions of R and X do not match: "
-	 << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
+         << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
