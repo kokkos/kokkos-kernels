@@ -193,20 +193,17 @@ void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
     }
     if constexpr (RV::rank == 1) {
       const auto maxNumCols = X.extent(1) > Y.extent(1) ? X.extent(1) : Y.extent(1);
-      if (RV::rank == 1 && R.extent(0) != maxNumCols) {
+      if (R.extent(0) != maxNumCols) {
         dimsMatch = false;
       }
       if (!dimsMatch) {
         std::ostringstream os;
         os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
-        if (RV::rank == 1) {
-          os << "R: " << R.extent(0) << " x " << X.extent(1) << ", ";
-        }
+        os << "R: " << R.extent(0) << " x " << X.extent(1) << ", ";
         os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
-    }
-    else {
+    } else {
       if (!dimsMatch) {
         std::ostringstream os;
         os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
