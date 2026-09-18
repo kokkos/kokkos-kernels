@@ -103,11 +103,13 @@ void sum(const execution_space& space, const RV& R, const XMV& X,
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
   // Check compatibility of dimensions at run time.
-  if (X.extent(1) != R.extent(0)) {
-    std::ostringstream os;
-    os << "KokkosBlas::sum (MV): Dimensions of R and X do not match: "
-       << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (XMV::rank == 2) {
+    if (X.extent(1) != R.extent(0)) {
+      std::ostringstream os;
+      os << "KokkosBlas::sum (MV): Dimensions of R and X do not match: "
+         << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   using UnifiedXLayout  = typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;

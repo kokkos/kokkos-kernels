@@ -16,7 +16,7 @@ jobs:
   PR_VEGA90A_ROCM621_HIP_SERIAL_LEFT:
     name: PR_VEGA90A_ROCM621_HIP_SERIAL_LEFT
     runs-on: [rocm-6.2.1_openblas-0.3.28_zen3_gfx90a-latest-latest]
-    
+
     steps:
       - name: checkout_kokkos_kernels
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -87,9 +87,9 @@ jobs:
         working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
 
-  PR_VEGA90A_ROCM621_HIP_SERIAL_LEFT_TPLS:
-    name: PR_VEGA90A_ROCM621_HIP_SERIAL_LEFT_TPLS
-    runs-on: [rocm-6.2.1_openblas-0.3.28_zen3_gfx90a-latest-latest]
+  PR_VEGA90A_ROCM721_HIP_SERIAL_LEFT_TPLS:
+    name: PR_VEGA90A_ROCM721_HIP_SERIAL_LEFT_TPLS
+    runs-on: [rocm-7.2.1_openblas-0.3.28_zen3_gfx90a-latest-latest]
     
     steps:
       - name: checkout_kokkos_kernels

@@ -217,8 +217,7 @@ jobs:
             -DKokkos_ENABLE_TESTS=OFF \
             -DKokkos_ENABLE_EXAMPLES=OFF \
             -DCMAKE_CXX_EXTENSIONS=OFF \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF
+            -DBUILD_SHARED_LIBS=OFF
 
       - name: build_and_install_kokkos
         working-directory: kokkos/build

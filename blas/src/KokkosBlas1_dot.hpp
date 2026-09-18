@@ -184,25 +184,43 @@ void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
 
   // Regardless of ranks of X and Y, their numbers of rows must match.
   bool dimsMatch = true;
-  if (X.extent(0) != Y.extent(0)) {
-    dimsMatch = false;
-  } else if (X.extent(1) != Y.extent(1) && X.extent(1) != 1 && Y.extent(1) != 1) {
-    // Numbers of columns don't match, and neither X nor Y have one column.
-    dimsMatch = false;
-  }
-  const auto maxNumCols = X.extent(1) > Y.extent(1) ? X.extent(1) : Y.extent(1);
-  if (RV::rank == 1 && R.extent(0) != maxNumCols) {
-    dimsMatch = false;
-  }
-
-  if (!dimsMatch) {
-    std::ostringstream os;
-    os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
-    if (RV::rank == 1) {
-      os << "R: " << R.extent(0) << " x " << X.extent(1) << ", ";
+  if constexpr (XMV::rank == 2 && YMV::rank == 2) {
+    if (X.extent(0) != Y.extent(0)) {
+      dimsMatch = false;
+    } else if (X.extent(1) != Y.extent(1) && X.extent(1) != 1 && Y.extent(1) != 1) {
+      // Numbers of columns don't match, and neither X nor Y have one column.
+      dimsMatch = false;
     }
-    os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+    if constexpr (RV::rank == 1) {
+      const auto maxNumCols = X.extent(1) > Y.extent(1) ? X.extent(1) : Y.extent(1);
+      if (R.extent(0) != maxNumCols) {
+        dimsMatch = false;
+      }
+      if (!dimsMatch) {
+        std::ostringstream os;
+        os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
+        os << "R: " << R.extent(0) << " x " << X.extent(1) << ", ";
+        os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else {
+      if (!dimsMatch) {
+        std::ostringstream os;
+        os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
+        os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    }
+  } else {
+    if (X.extent(0) != Y.extent(0)) {
+      dimsMatch = false;
+    }
+    if (!dimsMatch) {
+      std::ostringstream os;
+      os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
+      os << "X: " << X.extent(0) << ", Y: " << Y.extent(0);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   // Create unmanaged versions of the input Views.

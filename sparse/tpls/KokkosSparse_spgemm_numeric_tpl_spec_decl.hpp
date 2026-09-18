@@ -356,7 +356,11 @@ void spgemm_numeric_mkl(KernelHandle *handle, typename KernelHandle::nnz_lno_t m
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_sp2m(SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, A,
                                               SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, B,
                                               SPARSE_STAGE_FINALIZE_MULT, &mklSpgemmHandle->C));
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_order(mklSpgemmHandle->C));
+  // mkl_sparse_sp2m does not produce sorted output, so sort C now if the user
+  // requires sorted output. If the user opted out of sorted output, skip to save the cost of sorting.
+  if (handle->get_result_sorted()) {
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_order(mklSpgemmHandle->C));
+  }
   MKLMatrix wrappedC(mklSpgemmHandle->C);
   MKL_INT nrows = 0, ncols = 0;
   MKL_INT *rowptrRaw     = nullptr;
