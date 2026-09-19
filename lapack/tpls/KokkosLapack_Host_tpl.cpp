@@ -123,15 +123,19 @@ void F77_BLAS_MANGLE(sgetrf, SGETRF)(const int*, const int*, float*, const int*,
 void F77_BLAS_MANGLE(dgetrf, DGETRF)(const int*, const int*, double*, const int*, int*, int*);
 void F77_BLAS_MANGLE(cgetrf, CGETRF)(const int*, const int*, std::complex<float>*, const int*, int*, int*);
 void F77_BLAS_MANGLE(zgetrf, ZGETRF)(const int*, const int*, std::complex<double>*, const int*, int*, int*);
-// Solve with existing LU factors.
-void F77_BLAS_MANGLE(sgetrs, SGETRS)(const char*, const int*, const int*, const float*,
-    const int*, const int*, float*, const int*, int*);
-void F77_BLAS_MANGLE(dgetrs, DGETRS)(const char*, const int*, const int*, const double*,
-    const int*, const int*, double*, const int*, int*);
-void F77_BLAS_MANGLE(cgetrs, CGETRS)(const char*, const int*, const int*, const std::complex<float>*,
-    const int*, const int*, std::complex<float>*, const int*, int*);
-void F77_BLAS_MANGLE(zgetrs, ZGETRS)(const char*, const int*, const int*, const std::complex<double>*,
-    const int*, const int*, std::complex<double>*, const int*, int*);
+
+///
+/// Getrs
+///
+
+void F77_BLAS_MANGLE(sgetrs, SGETRS)(const char*, const int*, const int*, const float*, const int*, const int*, float*,
+				     const int*, int*);
+void F77_BLAS_MANGLE(dgetrs, DGETRS)(const char*, const int*, const int*, const double*, const int*, const int*, double*,
+				     const int*, int*);
+void F77_BLAS_MANGLE(cgetrs, CGETRS)(const char*, const int*, const int*, const std::complex<float>*, const int*,
+				     const int*, std::complex<float>*, const int*, int*);
+void F77_BLAS_MANGLE(zgetrs, ZGETRS)(const char*, const int*, const int*, const std::complex<double>*, const int*,
+				     const int*, std::complex<double>*, const int*, int*);
 }
 
 #define F77_FUNC_SGESV F77_BLAS_MANGLE(sgesv, SGESV)

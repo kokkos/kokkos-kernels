@@ -59,14 +59,13 @@ void getrs(const ExecutionSpace& space, const char trans[], const AMatrix& A, co
                 "KokkosLapack::getrs: A must have LayoutLeft.");
   static_assert(std::is_same_v<typename BMatrix::array_layout, Kokkos::LayoutLeft>,
                 "KokkosLapack::getrs: B must have LayoutLeft.");
-  static_assert(std::is_same_v<typename AMatrix::non_const_value_type, typename BMatrix::non_const_value_type>,
-                "KokkosLapack::getrs: A and B must have the same scalar type.");
   static_assert(!std::is_const_v<typename BMatrix::value_type>, "KokkosLapack::getrs: B must be writable.");
-  static_assert(std::is_integral_v<typename IpivView::non_const_value_type> &&
-                    std::is_signed_v<typename IpivView::non_const_value_type>,
-                "KokkosLapack::getrs: Ipiv must contain signed integers.");
+
+  static_assert(std::is_integral_v<typename IpivView::non_const_value_type>,
+                "KokkosLapack::getrs: Ipiv must contain integers.");
   static_assert(std::is_same_v<typename InfoView::value_type, int>,
                 "KokkosLapack::getrs: Info must contain writable int elements.");
+
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AMatrix::memory_space>::accessible);
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename IpivView::memory_space>::accessible);
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename BMatrix::memory_space>::accessible);
@@ -90,11 +89,14 @@ void getrs(const ExecutionSpace& space, const char trans[], const AMatrix& A, co
     KokkosKernels::Impl::throw_runtime_exception("KokkosLapack::getrs: Info must have at least one element.");
   }
 
+  // Check for possiblity of a quick return
   if (A.extent(0) == 0 || B.extent(1) == 0) {
     Kokkos::deep_copy(space, Kokkos::subview(Info, 0), 0);
     return;
   }
 
+  // Perform some type unification on the views
+  // to hit more ETI and TPL paths
   using ALayout = typename AMatrix::array_layout;
   using AMatrixInternal =
       Kokkos::View<typename AMatrix::const_data_type, ALayout, Kokkos::Device<ExecutionSpace, typename AMatrix::memory_space>,

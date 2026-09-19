@@ -30,18 +30,14 @@ struct getrs_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSLAPACK_GETRS_ETI_SPEC_AVAIL(SCALAR_TYPE, ORDINAL_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)  \
+#define KOKKOSLAPACK_GETRS_ETI_SPEC_AVAIL(SCALAR_TYPE, ORDINAL_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE)                  \
   template <>                                                                                                       \
   struct getrs_eti_spec_avail<                                                                                      \
       EXEC_SPACE_TYPE,                                                                                              \
-      Kokkos::View<const SCALAR_TYPE**, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,               \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
-      Kokkos::View<const ORDINAL_TYPE*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,               \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
-      Kokkos::View<SCALAR_TYPE**, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
-      Kokkos::View<int*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                              \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                      \
+      Kokkos::View<const SCALAR_TYPE**, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
+      Kokkos::View<const ORDINAL_TYPE*, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
+      Kokkos::View<SCALAR_TYPE**, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+      Kokkos::View<int*, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                  \
     enum : bool { value = true };                                                                                   \
   };
 
@@ -65,10 +61,13 @@ struct GETRS {
 // Unification layer
 template <class ExecutionSpace, class AMatrix, class IpivView, class BMatrix, class InfoView>
 struct GETRS<ExecutionSpace, AMatrix, IpivView, BMatrix, InfoView, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void getrs(const ExecutionSpace & /* space */, const char /* trans */[], const AMatrix & /* A */,
-                    const IpivView & /* Ipiv */, const BMatrix & /* B */, const InfoView & /* Info */) {
-    KokkosKernels::Impl::throw_runtime_exception(
-        "KokkosLapack::getrs: no implementation is available for these view types and execution space.");
+  static void getrs(const ExecutionSpace & space, const char trans[], const AMatrix & A,
+                    const IpivView & Ipiv, const BMatrix & B, const InfoView & Info) {
+    std::string label = "KokkosLapack::getrs[NATIVE,"
+      + KokkosKernels::ArithTraits<typename AMatrix::non_const_value_type>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
+    getrs_impl(space, trans, A, Ipiv, B, Info);
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -83,30 +82,21 @@ struct GETRS<ExecutionSpace, AMatrix, IpivView, BMatrix, InfoView, false, KOKKOS
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSLAPACK_GETRS_ETI_SPEC_DECL(SCALAR_TYPE, ORDINAL_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)   \
+#define KOKKOSLAPACK_GETRS_ETI_SPEC_DECL(SCALAR_TYPE, ORDINAL_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE)                   \
   extern template struct GETRS<                                                                                     \
       EXEC_SPACE_TYPE,                                                                                              \
-      Kokkos::View<const SCALAR_TYPE**, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,               \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
-      Kokkos::View<const ORDINAL_TYPE*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,               \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
-      Kokkos::View<SCALAR_TYPE**, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
-      Kokkos::View<int*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                              \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
-      false, true>;
+      Kokkos::View<const SCALAR_TYPE**, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
+      Kokkos::View<const ORDINAL_TYPE*, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
+      Kokkos::View<SCALAR_TYPE**, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+      Kokkos::View<int*, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, false, true>;
 
-#define KOKKOSLAPACK_GETRS_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)   \
-  template struct GETRS<EXEC_SPACE_TYPE,                                                                            \
-                        Kokkos::View<const SCALAR_TYPE**, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                        Kokkos::View<const ORDINAL_TYPE*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                        Kokkos::View<SCALAR_TYPE**, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,   \
-                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                        Kokkos::View<int*, LAYOUT_TYPE, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
-                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                        false, true>;
+#define KOKKOSLAPACK_GETRS_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE)                   \
+  template struct GETRS<                                                                                            \
+      EXEC_SPACE_TYPE,							                                            \
+      Kokkos::View<const SCALAR_TYPE**, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
+      Kokkos::View<const ORDINAL_TYPE*, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
+      Kokkos::View<SCALAR_TYPE**, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+      Kokkos::View<int*, LAYOUT_TYPE, EXEC_SPACE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, false, true>;
 
 #include <KokkosLapack_getrs_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosLapack_getrs_eti_spec_decl.hpp>
