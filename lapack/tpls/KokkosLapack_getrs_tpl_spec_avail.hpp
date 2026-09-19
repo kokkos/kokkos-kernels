@@ -13,13 +13,19 @@ struct getrs_tpl_spec_avail {
 };
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
-#define KOKKOSLAPACK_GETRS_TPL_SPEC_AVAIL_HOST(SCALAR, EXEC)                                                             \
-  template <> struct getrs_tpl_spec_avail<EXEC,                                                                          \
-    Kokkos::View<const SCALAR**, Kokkos::LayoutLeft, Kokkos::Device<EXEC, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-    Kokkos::View<const int*, Kokkos::LayoutLeft, Kokkos::Device<EXEC, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-    Kokkos::View<SCALAR**, Kokkos::LayoutLeft, Kokkos::Device<EXEC, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::Device<EXEC, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
-    enum : bool { value = true };                                                                                        \
+#define KOKKOSLAPACK_GETRS_TPL_SPEC_AVAIL_HOST(SCALAR, EXEC)                                    \
+  template <>                                                                                   \
+  struct getrs_tpl_spec_avail<                                                                  \
+      EXEC,                                                                                     \
+      Kokkos::View<const SCALAR**, Kokkos::LayoutLeft, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                    \
+      Kokkos::View<const int*, Kokkos::LayoutLeft, Kokkos::Device<EXEC, Kokkos::HostSpace>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                    \
+      Kokkos::View<SCALAR**, Kokkos::LayoutLeft, Kokkos::Device<EXEC, Kokkos::HostSpace>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                    \
+      Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::Device<EXEC, Kokkos::HostSpace>,           \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                  \
+    enum : bool { value = true };                                                               \
   };
 #ifdef KOKKOS_ENABLE_SERIAL
 KOKKOSLAPACK_GETRS_TPL_SPEC_AVAIL_HOST(float, Kokkos::Serial)
