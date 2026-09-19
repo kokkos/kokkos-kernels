@@ -129,13 +129,13 @@ void F77_BLAS_MANGLE(zgetrf, ZGETRF)(const int*, const int*, std::complex<double
 ///
 
 void F77_BLAS_MANGLE(sgetrs, SGETRS)(const char*, const int*, const int*, const float*, const int*, const int*, float*,
-				     const int*, int*);
-void F77_BLAS_MANGLE(dgetrs, DGETRS)(const char*, const int*, const int*, const double*, const int*, const int*, double*,
-				     const int*, int*);
+                                     const int*, int*);
+void F77_BLAS_MANGLE(dgetrs, DGETRS)(const char*, const int*, const int*, const double*, const int*, const int*,
+                                     double*, const int*, int*);
 void F77_BLAS_MANGLE(cgetrs, CGETRS)(const char*, const int*, const int*, const std::complex<float>*, const int*,
-				     const int*, std::complex<float>*, const int*, int*);
+                                     const int*, std::complex<float>*, const int*, int*);
 void F77_BLAS_MANGLE(zgetrs, ZGETRS)(const char*, const int*, const int*, const std::complex<double>*, const int*,
-				     const int*, std::complex<double>*, const int*, int*);
+                                     const int*, std::complex<double>*, const int*, int*);
 }
 
 #define F77_FUNC_SGESV F77_BLAS_MANGLE(sgesv, SGESV)
@@ -585,8 +585,8 @@ void HostLapack<std::complex<double>>::getrf(const int m, const int n, std::comp
 }
 
 template <>
-void HostLapack<float>::getrs(const char trans, const int n, const int nrhs, const float* a,
-                               const int lda, const int* ipiv, float* b, const int ldb, int* info) {
+void HostLapack<float>::getrs(const char trans, const int n, const int nrhs, const float* a, const int lda,
+                              const int* ipiv, float* b, const int ldb, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   sgetrs_(&trans, &n, &nrhs, const_cast<float*>(a), &lda, const_cast<int*>(ipiv), b, &ldb, info);
 #else
@@ -595,8 +595,8 @@ void HostLapack<float>::getrs(const char trans, const int n, const int nrhs, con
 }
 
 template <>
-void HostLapack<double>::getrs(const char trans, const int n, const int nrhs, const double* a,
-                               const int lda, const int* ipiv, double* b, const int ldb, int* info) {
+void HostLapack<double>::getrs(const char trans, const int n, const int nrhs, const double* a, const int lda,
+                               const int* ipiv, double* b, const int ldb, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   dgetrs_(&trans, &n, &nrhs, const_cast<double*>(a), &lda, const_cast<int*>(ipiv), b, &ldb, info);
 #else
@@ -606,7 +606,8 @@ void HostLapack<double>::getrs(const char trans, const int n, const int nrhs, co
 
 template <>
 void HostLapack<std::complex<float>>::getrs(const char trans, const int n, const int nrhs, const std::complex<float>* a,
-                               const int lda, const int* ipiv, std::complex<float>* b, const int ldb, int* info) {
+                                            const int lda, const int* ipiv, std::complex<float>* b, const int ldb,
+                                            int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   cgetrs_(&trans, &n, &nrhs, const_cast<std::complex<float>*>(a), &lda, const_cast<int*>(ipiv), b, &ldb, info);
 #else
@@ -615,8 +616,9 @@ void HostLapack<std::complex<float>>::getrs(const char trans, const int n, const
 }
 
 template <>
-void HostLapack<std::complex<double>>::getrs(const char trans, const int n, const int nrhs, const std::complex<double>* a,
-                               const int lda, const int* ipiv, std::complex<double>* b, const int ldb, int* info) {
+void HostLapack<std::complex<double>>::getrs(const char trans, const int n, const int nrhs,
+                                             const std::complex<double>* a, const int lda, const int* ipiv,
+                                             std::complex<double>* b, const int ldb, int* info) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
   zgetrs_(&trans, &n, &nrhs, const_cast<std::complex<double>*>(a), &lda, const_cast<int*>(ipiv), b, &ldb, info);
 #else

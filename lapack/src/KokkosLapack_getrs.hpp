@@ -43,8 +43,8 @@ namespace KokkosLapack {
 ///       with int pivots in HostSpace on Serial, OpenMP, and Threads.
 ///       Unsupported combinations report a missing implementation.
 template <class ExecutionSpace, class AMatrix, class IpivView, class BMatrix, class InfoView>
-void getrs(const ExecutionSpace& space, const char trans[], const AMatrix& A, const IpivView& Ipiv,
-           const BMatrix& B, const InfoView& Info) {
+void getrs(const ExecutionSpace& space, const char trans[], const AMatrix& A, const IpivView& Ipiv, const BMatrix& B,
+           const InfoView& Info) {
   static_assert(Kokkos::is_execution_space_v<ExecutionSpace>,
                 "KokkosLapack::getrs: ExecutionSpace must be a Kokkos execution space.");
   static_assert(Kokkos::is_view_v<AMatrix>, "KokkosLapack::getrs: A must be a Kokkos::View.");
@@ -97,21 +97,23 @@ void getrs(const ExecutionSpace& space, const char trans[], const AMatrix& A, co
 
   // Perform some type unification on the views
   // to hit more ETI and TPL paths
-  using ALayout = typename AMatrix::array_layout;
-  using AMatrixInternal =
-      Kokkos::View<typename AMatrix::const_data_type, ALayout, Kokkos::Device<ExecutionSpace, typename AMatrix::memory_space>,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using ALayout         = typename AMatrix::array_layout;
+  using AMatrixInternal = Kokkos::View<typename AMatrix::const_data_type, ALayout,
+                                       Kokkos::Device<ExecutionSpace, typename AMatrix::memory_space>,
+                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using IpivViewInternal =
       Kokkos::View<typename IpivView::const_data_type,
                    typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<IpivView, ALayout>::array_layout,
-                   Kokkos::Device<ExecutionSpace, typename IpivView::memory_space>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using BMatrixInternal =
-      Kokkos::View<typename BMatrix::non_const_data_type, typename BMatrix::array_layout,
-                   Kokkos::Device<ExecutionSpace, typename BMatrix::memory_space>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   Kokkos::Device<ExecutionSpace, typename IpivView::memory_space>,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using BMatrixInternal = Kokkos::View<typename BMatrix::non_const_data_type, typename BMatrix::array_layout,
+                                       Kokkos::Device<ExecutionSpace, typename BMatrix::memory_space>,
+                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using InfoViewInternal =
       Kokkos::View<typename InfoView::non_const_data_type,
                    typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<InfoView, ALayout>::array_layout,
-                   Kokkos::Device<ExecutionSpace, typename InfoView::memory_space>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   Kokkos::Device<ExecutionSpace, typename InfoView::memory_space>,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   AMatrixInternal A_i(A);
   IpivViewInternal Ipiv_i(Ipiv);

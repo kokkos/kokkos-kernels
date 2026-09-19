@@ -63,10 +63,13 @@ void impl_test_getrs_sym() {
   // Single rhs
   MatrixType b1("b1", n, 1);
   auto b1_h = Kokkos::create_mirror_view(b1);
-  auto tol = min_mn * m * n * KokkosKernels::ArithTraits<scalar_type>::eps();
+  auto tol  = min_mn * m * n * KokkosKernels::ArithTraits<scalar_type>::eps();
 
   for (auto mode : {"N", "T", "C"}) {
-    b1_h(0, 0) = one; b1_h(1, 0) = zero; b1_h(2, 0) = zero; b1_h(3, 0) = one;
+    b1_h(0, 0) = one;
+    b1_h(1, 0) = zero;
+    b1_h(2, 0) = zero;
+    b1_h(3, 0) = one;
     Kokkos::deep_copy(b1, b1_h);
 
     KokkosLapack::getrs(ExecutionSpace(), mode, A, ipiv, b1, info);
@@ -83,10 +86,18 @@ void impl_test_getrs_sym() {
   auto b3_h = Kokkos::create_mirror_view(b3);
 
   for (auto mode : {"N", "T", "C"}) {
-    b3_h(0, 0) =  one; b3_h(0, 1) = zero; b3_h(0, 2) = -two;
-    b3_h(1, 0) = zero; b3_h(1, 1) = zero; b3_h(1, 2) = -two;
-    b3_h(2, 0) = zero; b3_h(2, 1) = zero; b3_h(2, 2) = -two;
-    b3_h(3, 0) =  one; b3_h(3, 1) = 5 * one; b3_h(3, 2) = 23 * one;
+    b3_h(0, 0) = one;
+    b3_h(0, 1) = zero;
+    b3_h(0, 2) = -two;
+    b3_h(1, 0) = zero;
+    b3_h(1, 1) = zero;
+    b3_h(1, 2) = -two;
+    b3_h(2, 0) = zero;
+    b3_h(2, 1) = zero;
+    b3_h(2, 2) = -two;
+    b3_h(3, 0) = one;
+    b3_h(3, 1) = 5 * one;
+    b3_h(3, 2) = 23 * one;
     Kokkos::deep_copy(b3, b3_h);
 
     KokkosLapack::getrs(ExecutionSpace(), mode, A, ipiv, b3, info);
@@ -97,12 +108,12 @@ void impl_test_getrs_sym() {
     EXPECT_NEAR_KK_REL(b3_h(1, 0), one, tol);
     EXPECT_NEAR_KK_REL(b3_h(2, 0), one, tol);
     EXPECT_NEAR_KK_REL(b3_h(3, 0), one, tol);
-    
-    EXPECT_NEAR_KK_REL(b3_h(0, 1),   one, tol);
-    EXPECT_NEAR_KK_REL(b3_h(1, 1),   two, tol);
+
+    EXPECT_NEAR_KK_REL(b3_h(0, 1), one, tol);
+    EXPECT_NEAR_KK_REL(b3_h(1, 1), two, tol);
     EXPECT_NEAR_KK_REL(b3_h(2, 1), three, tol);
-    EXPECT_NEAR_KK_REL(b3_h(3, 1),  four, tol);
-    
+    EXPECT_NEAR_KK_REL(b3_h(3, 1), four, tol);
+
     EXPECT_NEAR_KK_REL(b3_h(0, 2), one * one, tol);
     EXPECT_NEAR_KK_REL(b3_h(1, 2), two * two, tol);
     EXPECT_NEAR_KK_REL(b3_h(2, 2), three * three, tol);
@@ -159,48 +170,56 @@ void impl_test_getrs_unsym() {
   auto b2_h = Kokkos::create_mirror_view(b2);
 
   {
-    b2_h(0, 0) =  -6 * one; b2_h(0, 1) =      zero;
-    b2_h(1, 0) = -14 * one; b2_h(1, 1) = -10 * one;
-    b2_h(2, 0) =   6 * one; b2_h(2, 1) = -41 * one;
-    b2_h(3, 0) = -45 * one; b2_h(3, 1) = -14 * one;
+    b2_h(0, 0) = -6 * one;
+    b2_h(0, 1) = zero;
+    b2_h(1, 0) = -14 * one;
+    b2_h(1, 1) = -10 * one;
+    b2_h(2, 0) = 6 * one;
+    b2_h(2, 1) = -41 * one;
+    b2_h(3, 0) = -45 * one;
+    b2_h(3, 1) = -14 * one;
     Kokkos::deep_copy(b2, b2_h);
 
     KokkosLapack::getrs(ExecutionSpace(), "N", A, ipiv, b2, info);
     Kokkos::fence();
 
     Kokkos::deep_copy(b2_h, b2);
-    EXPECT_NEAR_KK_REL(b2_h(0, 0),   -one, tol);
-    EXPECT_NEAR_KK_REL(b2_h(1, 0),  three, tol);
-    EXPECT_NEAR_KK_REL(b2_h(2, 0),    two, tol);
+    EXPECT_NEAR_KK_REL(b2_h(0, 0), -one, tol);
+    EXPECT_NEAR_KK_REL(b2_h(1, 0), three, tol);
+    EXPECT_NEAR_KK_REL(b2_h(2, 0), two, tol);
     EXPECT_NEAR_KK_REL(b2_h(3, 0), -three, tol);
-    
-    EXPECT_NEAR_KK_REL(b2_h(0, 1),    two, tol);
-    EXPECT_NEAR_KK_REL(b2_h(1, 1),   -two, tol);
+
+    EXPECT_NEAR_KK_REL(b2_h(0, 1), two, tol);
+    EXPECT_NEAR_KK_REL(b2_h(1, 1), -two, tol);
     EXPECT_NEAR_KK_REL(b2_h(2, 1), -three, tol);
-    EXPECT_NEAR_KK_REL(b2_h(3, 1),    one, tol);
+    EXPECT_NEAR_KK_REL(b2_h(3, 1), one, tol);
   }
 
   // Test transpose modes
   for (auto mode : {"T", "C"}) {
-    b2_h(0, 0) =  8 * one; b2_h(0, 1) = -10 * one;
-    b2_h(1, 0) = 44 * one; b2_h(1, 1) = -67 * one;
-    b2_h(2, 0) =  1 * one; b2_h(2, 1) = -27 * one;
-    b2_h(3, 0) =  5 * one; b2_h(3, 1) = -66 * one;
+    b2_h(0, 0) = 8 * one;
+    b2_h(0, 1) = -10 * one;
+    b2_h(1, 0) = 44 * one;
+    b2_h(1, 1) = -67 * one;
+    b2_h(2, 0) = 1 * one;
+    b2_h(2, 1) = -27 * one;
+    b2_h(3, 0) = 5 * one;
+    b2_h(3, 1) = -66 * one;
     Kokkos::deep_copy(b2, b2_h);
 
     KokkosLapack::getrs(ExecutionSpace(), mode, A, ipiv, b2, info);
     Kokkos::fence();
 
     Kokkos::deep_copy(b2_h, b2);
-    EXPECT_NEAR_KK_REL(b2_h(0, 0),   -one, tol);
-    EXPECT_NEAR_KK_REL(b2_h(1, 0),  three, tol);
-    EXPECT_NEAR_KK_REL(b2_h(2, 0),    two, tol);
+    EXPECT_NEAR_KK_REL(b2_h(0, 0), -one, tol);
+    EXPECT_NEAR_KK_REL(b2_h(1, 0), three, tol);
+    EXPECT_NEAR_KK_REL(b2_h(2, 0), two, tol);
     EXPECT_NEAR_KK_REL(b2_h(3, 0), -three, tol);
-    
-    EXPECT_NEAR_KK_REL(b2_h(0, 1),    two, tol);
-    EXPECT_NEAR_KK_REL(b2_h(1, 1),   -two, tol);
+
+    EXPECT_NEAR_KK_REL(b2_h(0, 1), two, tol);
+    EXPECT_NEAR_KK_REL(b2_h(1, 1), -two, tol);
     EXPECT_NEAR_KK_REL(b2_h(2, 1), -three, tol);
-    EXPECT_NEAR_KK_REL(b2_h(3, 1),    one, tol);
+    EXPECT_NEAR_KK_REL(b2_h(3, 1), one, tol);
   }
 }
 
@@ -214,7 +233,7 @@ void impl_test_getrs(const int n) {
 
   ExecutionSpace space{};
 
-  const auto tol   = 100 * n * n * n * KokkosKernels::ArithTraits<scalar_type>::eps();
+  const auto tol = 100 * n * n * n * KokkosKernels::ArithTraits<scalar_type>::eps();
 
   AMatrixType A("matrix A", n, n);
 
@@ -245,7 +264,7 @@ void impl_test_getrs(const int n) {
 
     for (int rowIdx = 0; rowIdx < b.extent_int(0); ++rowIdx) {
       for (int colIdx = 0; colIdx < b.extent_int(1); ++colIdx) {
-	EXPECT_NEAR_KK_REL(b_h(rowIdx, colIdx), x_h(rowIdx, colIdx), tol);
+        EXPECT_NEAR_KK_REL(b_h(rowIdx, colIdx), x_h(rowIdx, colIdx), tol);
       }
     }
   }
