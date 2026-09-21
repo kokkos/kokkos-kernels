@@ -58,4 +58,4 @@ keywords:
   - Performance portability
   - High Performance Computing
   - Mathematics Library
-license: Apache-2.0
+license: Apache-2.0 WITH LLVM Exception
