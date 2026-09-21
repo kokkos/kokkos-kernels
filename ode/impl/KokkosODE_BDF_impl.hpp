@@ -302,9 +302,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   gamma(5)    = 2.28333333;
 
   BDF_system_wrapper2 sys(ode, psi, update, t, dt);
-  const newton_params param(
-      max_newton_iters, atol,
-      Kokkos::max(10 * KokkosKernels::ArithTraits<scalar_type>::eps() / rtol, Kokkos::min(0.03, Kokkos::sqrt(rtol))));
+  newton_params param(max_newton_iters, atol, rtol);
 
   scalar_type min_step = KokkosKernels::ArithTraits<scalar_type>::min();
   scalar_type safety = 0.675, error_norm = 0.0;
