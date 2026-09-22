@@ -97,7 +97,16 @@ inline bool is_spgemm_algorithm_native(SPGEMMAlgorithm a) {
 /// This is used at runtime to decide whether to fall back to native when
 /// the user has told us the input matrices are unsorted
 /// (native never requires sorted input).
-template <typename ExecSpace>
+///
+/// \tparam NonReuse Whether this query is made on behalf of the non-reuse
+///   KokkosSparse::spgemm interface (as opposed to the reuse-based
+///   symbolic/numeric interface). This matters because the reuse and non-reuse
+///   interfaces can be backed by different TPL entry points with different
+///   input-sortedness requirements. For example, on some cuSPARSE versions the
+///   reuse interface uses cusparseSpGEMMreuse (which requires sorted input)
+///   while the non-reuse interface uses the generic cusparseSpGEMM API (which
+///   does not).
+template <typename ExecSpace, bool NonReuse = false>
 bool algorithm_may_require_sorted_input(SPGEMMAlgorithm algo) {
   if (is_spgemm_algorithm_native(algo)) {
     // All native algos never require sorted input.
@@ -119,16 +128,23 @@ bool algorithm_may_require_sorted_input(SPGEMMAlgorithm algo) {
         default:;
       }
     } else if (algo == SPGEMM_DEFAULT) {
-      // Conservatively assume this spgemm will take the TPL path
+      if constexpr (NonReuse) {
+        // The non-reuse KokkosSparse::spgemm interface is backed by the generic
+        // cusparseSpGEMM API (see KokkosSparse_spgemm_noreuse_tpl_spec_decl.hpp),
+        // which does not require sorted inputs on any supported cuSPARSE version.
+        return false;
+      } else {
+        // Conservatively assume this spgemm will take the TPL path
 #if (CUSPARSE_VERSION < 12710)
-      // These cuSPARSE versions use the SpGEMMreuse path, which requires sorted
-      // inputs.
-      return true;
+        // These cuSPARSE versions use the SpGEMMreuse path, which requires sorted
+        // inputs.
+        return true;
 #else
-      // Newer cuSPARSE versions use the non-reuse SpGEMM path, which does not
-      // require sorted inputs.
-      return false;
+        // Newer cuSPARSE versions use the non-reuse SpGEMM path, which does not
+        // require sorted inputs.
+        return false;
 #endif
+      }
     }
   }
 #endif

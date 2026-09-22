@@ -212,9 +212,12 @@ CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool 
   }
   // Use the native path if the algorithm is natively implemented, or if the
   // user has declared inputs are unsorted and the otherwise-selected TPL
-  // would require sorted inputs.
+  // would require sorted inputs. Because this is the non-reuse interface, query
+  // algorithm_may_require_sorted_input with NonReuse=true so that TPLs whose
+  // non-reuse entry point accepts unsorted input (e.g. the generic cusparseSpGEMM
+  // API) are not needlessly rejected in favor of the native fallback.
   if (Impl::is_spgemm_algorithm_native(algo) ||
-      (!input_sorted && Impl::algorithm_may_require_sorted_input<ExecSpace>(algo))) {
+      (!input_sorted && Impl::algorithm_may_require_sorted_input<ExecSpace, /* NonReuse */ true>(algo))) {
     return CMatrix(
         KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal, false>::spgemm_noreuse(
             algo, A_internal, Amode, B_internal, Bmode, input_sorted, result_sorted));
