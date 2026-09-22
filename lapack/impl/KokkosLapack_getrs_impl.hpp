@@ -35,17 +35,17 @@ struct laswp_functor {
 template <class ExecutionSpace, class AMatrix, class IpivView, class BMatrix, class InfoView>
 void getrs_impl(const ExecutionSpace& space, const char trans[], const AMatrix& A, const IpivView& Ipiv,
                 const BMatrix& B, const InfoView& /* Info */) {
-  auto one = KokkosKernels::ArithTraits<typename AMatrix::value_type>::one();
+  auto one = KokkosKernels::ArithTraits<typename AMatrix::non_const_value_type>::one();
 
-  laswp_functor swaper(Ipiv, B);
+  laswp_functor swapper(Ipiv, B);
   if (trans[0] == 'N' || trans[0] == 'n') {
-    Kokkos::parallel_for(Kokkos::RangePolicy(space, 0, B.extent(0)), swaper);
+    Kokkos::parallel_for(Kokkos::RangePolicy(space, 0, B.extent(0)), swapper);
     KokkosBlas::trsm(space, "L", "L", "N", "U", one, A, B);
     KokkosBlas::trsm(space, "L", "U", "N", "N", one, A, B);
   } else {
     KokkosBlas::trsm(space, "L", "U", trans, "N", one, A, B);
     KokkosBlas::trsm(space, "L", "L", trans, "U", one, A, B);
-    Kokkos::parallel_for(Kokkos::RangePolicy(space, 0, B.extent(0)), swaper);
+    Kokkos::parallel_for(Kokkos::RangePolicy(space, 0, B.extent(0)), swapper);
   }
 }
 
