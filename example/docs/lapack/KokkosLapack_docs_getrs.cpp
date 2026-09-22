@@ -31,7 +31,7 @@ int main(void) {
       Kokkos::deep_copy(A, h_A);
     }
 
-    auto h_B = Kokkos::create_mirror_view(B);
+    auto h_B  = Kokkos::create_mirror_view(B);
     h_B(0, 0) = 0;
     h_B(0, 1) = 0;
     h_B(1, 0) = 4;
@@ -47,13 +47,24 @@ int main(void) {
     auto h_Ipiv = Kokkos::create_mirror_view(Ipiv);
     Kokkos::deep_copy(h_Ipiv, Ipiv);
 
-
-    if (KAT::abs(h_B(0, 0) - 1) > 10 * KAT::epsilon()) { correct = false; }
-    if (KAT::abs(h_B(1, 0) - 2) / 2 > 10 * KAT::epsilon()) { correct = false; }
-    if (KAT::abs(h_B(2, 0) - 3) / 3 > 10 * KAT::epsilon()) { correct = false; }
-    if (KAT::abs(h_B(0, 1) - 3) / 3 > 10 * KAT::epsilon()) { correct = false; }
-    if (KAT::abs(h_B(1, 1) - 2) / 2 > 10 * KAT::epsilon()) { correct = false; }
-    if (KAT::abs(h_B(2, 1) - 3) / 3 > 10 * KAT::epsilon()) { correct = false; }
+    if (KAT::abs(h_B(0, 0) - 1) > 10 * KAT::epsilon()) {
+      correct = false;
+    }
+    if (KAT::abs(h_B(1, 0) - 2) / 2 > 10 * KAT::epsilon()) {
+      correct = false;
+    }
+    if (KAT::abs(h_B(2, 0) - 3) / 3 > 10 * KAT::epsilon()) {
+      correct = false;
+    }
+    if (KAT::abs(h_B(0, 1) - 3) / 3 > 10 * KAT::epsilon()) {
+      correct = false;
+    }
+    if (KAT::abs(h_B(1, 1) - 2) / 2 > 10 * KAT::epsilon()) {
+      correct = false;
+    }
+    if (KAT::abs(h_B(2, 1) - 3) / 3 > 10 * KAT::epsilon()) {
+      correct = false;
+    }
     if (correct) std::cout << "KokkosLapack::getrs() returned correct results!" << std::endl;
   }
   Kokkos::finalize();
