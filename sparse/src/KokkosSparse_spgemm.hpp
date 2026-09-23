@@ -210,17 +210,11 @@ CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool 
     typename CMatrix::values_type valuesC;
     return CMatrix("C", Crows, Ccols, 0, valuesC, row_mapC, entriesC);
   }
-  // Use the native path if the algorithm is natively implemented, or if the
-  // user has declared inputs are unsorted and the otherwise-selected TPL
-  // would require sorted inputs. Because this is the non-reuse interface, query
-  // algorithm_may_require_sorted_input with NonReuse=true so that TPLs whose
-  // non-reuse entry point accepts unsorted input (e.g. the generic cusparseSpGEMM
-  // API) are not needlessly rejected in favor of the native fallback.
+  // Decide at runtime whether to fallback to native. In general, we fall back if the TPL for
+  // this algo/exec space requires sorted inputs, and the user has not told us that the inputs are sorted.
   bool useNativeFallback = !input_sorted && Impl::algorithm_may_require_sorted_input<ExecSpace, /* NonReuse */ true>(algo);
-  // rocSPARSE can handle unsorted inputs when certain per-row size limits are
-  // satisfied.  Check the actual matrices to avoid an unnecessary fallback.
-  // Skip the check entirely when the types don't match a rocsparse TPL
-  // specialisation -- the native path will be taken anyway.
+  // rocSPARSE can handle unsorted inputs when certain nnz/row and intermediate product
+  // limits are satisfied.  Check the actual matrices to avoid an unnecessary fallback.
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
   if (useNativeFallback &&
       Impl::spgemm_noreuse_tpl_spec_avail<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal>::value) {

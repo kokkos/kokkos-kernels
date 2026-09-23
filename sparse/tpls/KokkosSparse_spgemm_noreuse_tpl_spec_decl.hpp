@@ -261,7 +261,7 @@ Matrix spgemm_noreuse_rocsparse(const MatrixConst &A, const MatrixConst &B) {
       nnz_B, B.graph.row_map.data(), B.graph.entries.data(), descr_D, 0, nullptr, nullptr, descr_C, row_mapC.data(),
       &nnz_C, info_C, buffer));
 
-  // Handle empty C (zero rows)
+  // If C has zero rows, its rowptrs are not populated by rocsparse_csrgemm_nnz
   if (m == 0) {
     KOKKOS_IMPL_HIP_SAFE_CALL(
         hipMemset(row_mapC.data(), 0, row_mapC.extent(0) * sizeof(typename Matrix::non_const_ordinal_type)));

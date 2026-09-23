@@ -97,16 +97,7 @@ inline bool is_spgemm_algorithm_native(SPGEMMAlgorithm a) {
 /// This is used at runtime to decide whether to fall back to native when
 /// the user has told us the input matrices are unsorted
 /// (native never requires sorted input).
-///
-/// \tparam NonReuse Whether this query is made on behalf of the non-reuse
-///   KokkosSparse::spgemm interface (as opposed to the reuse-based
-///   symbolic/numeric interface). This matters because the reuse and non-reuse
-///   interfaces can be backed by different TPL entry points with different
-///   input-sortedness requirements. For example, on some cuSPARSE versions the
-///   reuse interface uses cusparseSpGEMMreuse (which requires sorted input)
-///   while the non-reuse interface uses the generic cusparseSpGEMM API (which
-///   does not).
-template <typename ExecSpace, bool NonReuse = false>
+template <typename ExecSpace, bool NonReuse>
 bool algorithm_may_require_sorted_input(SPGEMMAlgorithm algo) {
   if (is_spgemm_algorithm_native(algo)) {
     // All native algos never require sorted input.
@@ -129,19 +120,15 @@ bool algorithm_may_require_sorted_input(SPGEMMAlgorithm algo) {
       }
     } else if (algo == SPGEMM_DEFAULT) {
       if constexpr (NonReuse) {
-        // The non-reuse KokkosSparse::spgemm interface is backed by the generic
-        // cusparseSpGEMM API (see KokkosSparse_spgemm_noreuse_tpl_spec_decl.hpp),
-        // which does not require sorted inputs on any supported cuSPARSE version.
+        // cusparseSpGEMM_* API does NOT require sorted inputs.
         return false;
       } else {
-        // Conservatively assume this spgemm will take the TPL path
 #if (CUSPARSE_VERSION < 12710)
-        // These cuSPARSE versions use the SpGEMMreuse path, which requires sorted
-        // inputs.
+        // cusparseSpGEMMreuse_* API requires sorted inputs.
         return true;
 #else
-        // Newer cuSPARSE versions use the non-reuse SpGEMM path, which does not
-        // require sorted inputs.
+        // Newer cuSPARSE versions deprecate the cusparseSpGEMMreuse_* API
+        // in favor of cusparseSpGEMM_*, so we use the latter in both reuse and non-reuse cases.
         return false;
 #endif
       }
@@ -162,29 +149,15 @@ bool algorithm_may_require_sorted_input(SPGEMMAlgorithm algo) {
   return false;
 }
 
-/// \brief Check whether rocSPARSE can handle unsorted inputs for this
-/// particular pair of matrices A and B.
+/// \brief Check whether rocSPARSE can handle unsorted inputs for a particular A and B.
 ///
 /// rocSPARSE's csrgemm can handle unsorted inputs as long as:
 ///   1. B has at most 4096 entries per row, and
 ///   2. The product A*B does not produce more than 8192 intermediate products
 ///      in any row of C.
 ///
-/// Condition 2 is expensive to compute exactly (roughly as expensive as an
-/// SpMV), but an inexpensive upper bound is max_nnz_per_row(A) *
-/// max_nnz_per_row(B), since the true count for any row of C can never exceed
-/// the product of the widest row in A with the widest row in B.  We already
-/// need max_nnz_per_row(B) for condition 1, so the extra cost is just one more
-/// graph_max_degree call for A.
-///
-/// Only meaningful when KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE is defined;
-/// callers should guard invocations with that macro.
-///
-/// \tparam ExecSpace  The execution space.
-/// \param exec         An instance of the execution space.
-/// \param row_mapA     Row-offset view of A (length numRowsA + 1).
-/// \param row_mapB     Row-offset view of B (length numRowsB + 1).
-/// \return true if rocSPARSE can safely process the unsorted inputs.
+/// Calculating condition 2 exactly is about as expensive as a SpMV with A,
+/// so we use an inexpensive upper bound: max_nnz_per_row(A) * max_nnz_per_row(B).
 template <typename ExecSpace, typename ARowMapView, typename BRowMapView>
 bool rocsparse_can_handle_unsorted_inputs(const ExecSpace &exec, const ARowMapView &row_mapA,
                                           const BRowMapView &row_mapB) {
