@@ -216,8 +216,18 @@ CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool 
   // algorithm_may_require_sorted_input with NonReuse=true so that TPLs whose
   // non-reuse entry point accepts unsorted input (e.g. the generic cusparseSpGEMM
   // API) are not needlessly rejected in favor of the native fallback.
-  if (Impl::is_spgemm_algorithm_native(algo) ||
-      (!input_sorted && Impl::algorithm_may_require_sorted_input<ExecSpace, /* NonReuse */ true>(algo))) {
+  bool useNativeFallback = !input_sorted && Impl::algorithm_may_require_sorted_input<ExecSpace, /* NonReuse */ true>(algo);
+  // rocSPARSE can handle unsorted inputs when certain per-row size limits are
+  // satisfied.  Check the actual matrices to avoid an unnecessary fallback.
+  // Skip the check entirely when the types don't match a rocsparse TPL
+  // specialisation -- the native path will be taken anyway.
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  if (useNativeFallback &&
+      Impl::spgemm_noreuse_tpl_spec_avail<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal>::value) {
+    if (Impl::rocsparse_can_handle_unsorted_inputs(ExecSpace(), A.graph.row_map, B.graph.row_map)) useNativeFallback = false;
+  }
+#endif
+  if (Impl::is_spgemm_algorithm_native(algo) || useNativeFallback) {
     return CMatrix(
         KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal, false>::spgemm_noreuse(
             algo, A_internal, Amode, B_internal, Bmode, input_sorted, result_sorted));

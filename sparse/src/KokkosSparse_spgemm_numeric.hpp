@@ -218,8 +218,22 @@ void spgemm_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t
     return;
   }
 
-  const bool useFallback =
+  bool useFallback =
       !spgemmHandle->get_input_sorted() && Impl::algorithm_may_require_sorted_input<c_exec_t>(algo);
+  // rocSPARSE can handle unsorted inputs when certain per-row size limits are
+  // satisfied.  Check the actual matrices to avoid an unnecessary fallback.
+  // Skip the check entirely when the types don't match a rocsparse TPL
+  // specialisation -- the native path will be taken anyway.
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  if (useFallback &&
+      Impl::spgemm_numeric_tpl_spec_avail<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+                                           Internal_ascalar_nnz_view_t_, Internal_blno_row_view_t_,
+                                           Internal_blno_nnz_view_t_, Internal_bscalar_nnz_view_t_,
+                                           Internal_clno_row_view_t_, Internal_clno_nnz_view_t_,
+                                           Internal_cscalar_nnz_view_t_>::value) {
+    if (Impl::rocsparse_can_handle_unsorted_inputs(c_exec_t(), const_a_r, const_b_r)) useFallback = false;
+  }
+#endif
   if (Impl::is_spgemm_algorithm_native(algo) || useFallback) {
     KokkosSparse::Impl::SPGEMM_NUMERIC<
         const_handle_type,  // KernelHandle,

@@ -162,6 +162,48 @@ bool algorithm_may_require_sorted_input(SPGEMMAlgorithm algo) {
   return false;
 }
 
+/// \brief Check whether rocSPARSE can handle unsorted inputs for this
+/// particular pair of matrices A and B.
+///
+/// rocSPARSE's csrgemm can handle unsorted inputs as long as:
+///   1. B has at most 4096 entries per row, and
+///   2. The product A*B does not produce more than 8192 intermediate products
+///      in any row of C.
+///
+/// Condition 2 is expensive to compute exactly (roughly as expensive as an
+/// SpMV), but an inexpensive upper bound is max_nnz_per_row(A) *
+/// max_nnz_per_row(B), since the true count for any row of C can never exceed
+/// the product of the widest row in A with the widest row in B.  We already
+/// need max_nnz_per_row(B) for condition 1, so the extra cost is just one more
+/// graph_max_degree call for A.
+///
+/// Only meaningful when KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE is defined;
+/// callers should guard invocations with that macro.
+///
+/// \tparam ExecSpace  The execution space.
+/// \param exec         An instance of the execution space.
+/// \param row_mapA     Row-offset view of A (length numRowsA + 1).
+/// \param row_mapB     Row-offset view of B (length numRowsB + 1).
+/// \return true if rocSPARSE can safely process the unsorted inputs.
+template <typename ExecSpace, typename ARowMapView, typename BRowMapView>
+bool rocsparse_can_handle_unsorted_inputs(const ExecSpace &exec, const ARowMapView &row_mapA,
+                                          const BRowMapView &row_mapB) {
+  // rocSPARSE limit: B may have at most 4096 entries per row.
+  constexpr size_t rocsparse_max_b_degree          = 4096;
+  // rocSPARSE limit: at most 8192 intermediate products per row of C.
+  constexpr size_t rocsparse_max_intermediate_prods = 8192;
+
+  using b_offset_t = typename BRowMapView::non_const_value_type;
+  b_offset_t maxDegB = graph_max_degree(exec, row_mapB);
+  if (static_cast<size_t>(maxDegB) > rocsparse_max_b_degree) return false;
+
+  using a_offset_t = typename ARowMapView::non_const_value_type;
+  a_offset_t maxDegA = graph_max_degree(exec, row_mapA);
+  if (static_cast<size_t>(maxDegA) * static_cast<size_t>(maxDegB) > rocsparse_max_intermediate_prods) return false;
+
+  return true;
+}
+
 }  // namespace Impl
 
 enum SPGEMMAccumulator {
