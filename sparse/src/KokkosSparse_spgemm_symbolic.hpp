@@ -125,10 +125,20 @@ void spgemm_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_
 
   auto algo = spgemmHandle->get_algorithm_type();
 
-  // Decide at runtime whether to fallback to native. Required if the TPL for this algo/exec space
-  // requires sorted inputs, but the user has told us that the inputs are not sorted.
-  const bool useFallback =
-      !spgemmHandle->get_input_sorted() && Impl::algorithm_may_require_sorted_input<c_exec_t>(algo);
+  // Decide at runtime whether to fallback to native. In general, we fall back if the TPL for
+  // this algo/exec space requires sorted inputs, and the user has not told us that the inputs are sorted.
+  bool useFallback = !spgemmHandle->get_input_sorted() &&
+                     Impl::algorithm_may_require_sorted_input<c_exec_t, /* NonReuse */ false>(algo);
+  // rocSPARSE can handle unsorted inputs when certain nnz/row and intermediate product
+  // limits are satisfied. Check the actual matrices to avoid an unnecessary fallback.
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  if (useFallback &&
+      Impl::spgemm_symbolic_tpl_spec_avail<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+                                           Internal_blno_row_view_t_, Internal_blno_nnz_view_t_,
+                                           Internal_clno_row_view_t_>::value) {
+    if (Impl::rocsparse_can_handle_unsorted_inputs(c_exec_t(), const_a_r, const_b_r)) useFallback = false;
+  }
+#endif
 
   if (Impl::is_spgemm_algorithm_native(algo) || useFallback) {
     KokkosSparse::Impl::SPGEMM_SYMBOLIC<const_handle_type,  // KernelHandle,
