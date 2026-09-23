@@ -160,15 +160,15 @@ SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>)
 //=============================================================================
 // Overload rocsparse_Xcsrgemm_buffer_size() over scalar types
 #define SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM_BUFFER_SIZE(scalar_type, TOKEN)                                       \
-  inline rocsparse_status rocsparse_Xcsrgemm_buffer_size_noreuse(                                                \
-      rocsparse_handle handle, rocsparse_operation trans_A, rocsparse_operation trans_B, rocsparse_int m,        \
-      rocsparse_int n, rocsparse_int k, const scalar_type *alpha, const rocsparse_mat_descr descr_A,             \
-      rocsparse_int nnz_A, const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A,               \
-      const rocsparse_mat_descr descr_B, rocsparse_int nnz_B, const rocsparse_int *csr_row_ptr_B,                \
-      const rocsparse_int *csr_col_ind_B, const scalar_type *beta, const rocsparse_mat_descr descr_D,            \
-      rocsparse_int nnz_D, const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D,               \
-      rocsparse_mat_info info_C, size_t *buffer_size) {                                                          \
-    return rocsparse_##TOKEN##csrgemm_buffer_size(                                                               \
+  inline rocsparse_status rocsparse_Xcsrgemm_buffer_size_noreuse(                                               \
+      rocsparse_handle handle, rocsparse_operation trans_A, rocsparse_operation trans_B, rocsparse_int m,       \
+      rocsparse_int n, rocsparse_int k, const scalar_type *alpha, const rocsparse_mat_descr descr_A,            \
+      rocsparse_int nnz_A, const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A,              \
+      const rocsparse_mat_descr descr_B, rocsparse_int nnz_B, const rocsparse_int *csr_row_ptr_B,               \
+      const rocsparse_int *csr_col_ind_B, const scalar_type *beta, const rocsparse_mat_descr descr_D,           \
+      rocsparse_int nnz_D, const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D,              \
+      rocsparse_mat_info info_C, size_t *buffer_size) {                                                         \
+    return rocsparse_##TOKEN##csrgemm_buffer_size(                                                              \
         handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, \
         csr_row_ptr_B, csr_col_ind_B, beta, descr_D, nnz_D, csr_row_ptr_D, csr_col_ind_D, info_C, buffer_size); \
   }
@@ -180,21 +180,21 @@ SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM_BUFFER_SIZE(rocsparse_double_complex, z)
 
 //=============================================================================
 // Overload rocsparse_Xcsrgemm() (full compute) over scalar types
-#define SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM(scalar_type, TOKEN)                                                          \
-  inline rocsparse_status rocsparse_Xcsrgemm_noreuse(                                                                   \
-      rocsparse_handle handle, rocsparse_operation trans_A, rocsparse_operation trans_B, rocsparse_int m,               \
-      rocsparse_int n, rocsparse_int k, const scalar_type *alpha, const rocsparse_mat_descr descr_A,                    \
-      rocsparse_int nnz_A, const scalar_type *csr_val_A, const rocsparse_int *csr_row_ptr_A,                            \
-      const rocsparse_int *csr_col_ind_A, const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,                       \
-      const scalar_type *csr_val_B, const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B,             \
-      const scalar_type *beta, const rocsparse_mat_descr descr_D, rocsparse_int nnz_D,                                  \
-      const scalar_type *csr_val_D, const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D,             \
-      const rocsparse_mat_descr descr_C, scalar_type *csr_val_C, const rocsparse_int *csr_row_ptr_C,                    \
-      rocsparse_int *csr_col_ind_C, const rocsparse_mat_info info_C, void *buffer) {                                    \
-    return rocsparse_##TOKEN##csrgemm(                                                                                  \
-        handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_val_A, csr_row_ptr_A, csr_col_ind_A, descr_B,    \
-        nnz_B, csr_val_B, csr_row_ptr_B, csr_col_ind_B, beta, descr_D, nnz_D, csr_val_D, csr_row_ptr_D, csr_col_ind_D, \
-        descr_C, csr_val_C, csr_row_ptr_C, csr_col_ind_C, info_C, buffer);                                              \
+#define SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM(scalar_type, TOKEN)                                                        \
+  inline rocsparse_status rocsparse_Xcsrgemm_noreuse(                                                                \
+      rocsparse_handle handle, rocsparse_operation trans_A, rocsparse_operation trans_B, rocsparse_int m,            \
+      rocsparse_int n, rocsparse_int k, const scalar_type *alpha, const rocsparse_mat_descr descr_A,                 \
+      rocsparse_int nnz_A, const scalar_type *csr_val_A, const rocsparse_int *csr_row_ptr_A,                         \
+      const rocsparse_int *csr_col_ind_A, const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,                    \
+      const scalar_type *csr_val_B, const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B,          \
+      const scalar_type *beta, const rocsparse_mat_descr descr_D, rocsparse_int nnz_D, const scalar_type *csr_val_D, \
+      const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D, const rocsparse_mat_descr descr_C,     \
+      scalar_type *csr_val_C, const rocsparse_int *csr_row_ptr_C, rocsparse_int *csr_col_ind_C,                      \
+      const rocsparse_mat_info info_C, void *buffer) {                                                               \
+    return rocsparse_##TOKEN##csrgemm(handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_val_A,           \
+                                      csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, csr_val_B, csr_row_ptr_B,        \
+                                      csr_col_ind_B, beta, descr_D, nnz_D, csr_val_D, csr_row_ptr_D, csr_col_ind_D,  \
+                                      descr_C, csr_val_C, csr_row_ptr_C, csr_col_ind_C, info_C, buffer);             \
   }
 
 SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM(float, s)
@@ -243,9 +243,8 @@ Matrix spgemm_noreuse_rocsparse(const MatrixConst &A, const MatrixConst &B) {
   // C = alpha * A * B + beta * D, with D empty (nnz_D = 0)
   size_t bufferSize = 0;
   KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_Xcsrgemm_buffer_size_noreuse(
-      rocsparseHandle, opA, opB, m, k, n,
-      reinterpret_cast<const rocsparse_scalar_type *>(&alpha), descr_A, nnz_A, A.graph.row_map.data(),
-      A.graph.entries.data(), descr_B, nnz_B, B.graph.row_map.data(), B.graph.entries.data(),
+      rocsparseHandle, opA, opB, m, k, n, reinterpret_cast<const rocsparse_scalar_type *>(&alpha), descr_A, nnz_A,
+      A.graph.row_map.data(), A.graph.entries.data(), descr_B, nnz_B, B.graph.row_map.data(), B.graph.entries.data(),
       reinterpret_cast<const rocsparse_scalar_type *>(&beta), descr_D, 0, nullptr, nullptr, info_C, &bufferSize));
 
   // Allocate buffer
@@ -256,10 +255,10 @@ Matrix spgemm_noreuse_rocsparse(const MatrixConst &A, const MatrixConst &B) {
   typename Matrix::row_map_type::non_const_type row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C rowmap"),
                                                          m + 1);
   rocsparse_int nnz_C = 0;
-  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_csrgemm_nnz(
-      rocsparseHandle, opA, opB, m, k, n, descr_A, nnz_A, A.graph.row_map.data(), A.graph.entries.data(), descr_B,
-      nnz_B, B.graph.row_map.data(), B.graph.entries.data(), descr_D, 0, nullptr, nullptr, descr_C, row_mapC.data(),
-      &nnz_C, info_C, buffer));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
+      rocsparse_csrgemm_nnz(rocsparseHandle, opA, opB, m, k, n, descr_A, nnz_A, A.graph.row_map.data(),
+                            A.graph.entries.data(), descr_B, nnz_B, B.graph.row_map.data(), B.graph.entries.data(),
+                            descr_D, 0, nullptr, nullptr, descr_C, row_mapC.data(), &nnz_C, info_C, buffer));
 
   // If C has zero rows, its rowptrs are not populated by rocsparse_csrgemm_nnz
   if (m == 0) {
@@ -278,11 +277,10 @@ Matrix spgemm_noreuse_rocsparse(const MatrixConst &A, const MatrixConst &B) {
     KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_Xcsrgemm_noreuse(
         rocsparseHandle, opA, opB, m, k, n, reinterpret_cast<const rocsparse_scalar_type *>(&alpha), descr_A, nnz_A,
         reinterpret_cast<const rocsparse_scalar_type *>(A.values.data()), A.graph.row_map.data(),
-        A.graph.entries.data(), descr_B, nnz_B,
-        reinterpret_cast<const rocsparse_scalar_type *>(B.values.data()), B.graph.row_map.data(),
-        B.graph.entries.data(), reinterpret_cast<const rocsparse_scalar_type *>(&beta), descr_D, 0, nullptr, nullptr,
-        nullptr, descr_C, reinterpret_cast<rocsparse_scalar_type *>(valuesC.data()), row_mapC.data(), entriesC.data(),
-        info_C, buffer));
+        A.graph.entries.data(), descr_B, nnz_B, reinterpret_cast<const rocsparse_scalar_type *>(B.values.data()),
+        B.graph.row_map.data(), B.graph.entries.data(), reinterpret_cast<const rocsparse_scalar_type *>(&beta), descr_D,
+        0, nullptr, nullptr, nullptr, descr_C, reinterpret_cast<rocsparse_scalar_type *>(valuesC.data()),
+        row_mapC.data(), entriesC.data(), info_C, buffer));
   }
 
   // Restore pointer mode
@@ -299,29 +297,29 @@ Matrix spgemm_noreuse_rocsparse(const MatrixConst &A, const MatrixConst &B) {
   return Matrix("C", m, k, nnz_C, valuesC, row_mapC, entriesC);
 }
 
-#define SPGEMM_NOREUSE_DECL_ROCSPARSE(SCALAR)                                                                       \
-  template <bool ETI_SPEC_AVAIL>                                                                                     \
-  struct SPGEMM_NOREUSE<                                                                                             \
-      KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>,               \
-      KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,               \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                                   \
-      KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,               \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                                   \
-      true, ETI_SPEC_AVAIL> {                                                                                        \
-    using Matrix = KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>;  \
-    using ConstMatrix =                                                                                              \
-        KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
-                                Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;                                 \
-    static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>           \
-    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool, bool,     \
-                   bool) {                                                                                           \
-      std::string label =                                                                                            \
-          "KokkosSparse::spgemm_noreuse[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";          \
-      Kokkos::Profiling::pushRegion(label);                                                                          \
-      Matrix C = spgemm_noreuse_rocsparse<Matrix>(A, B);                                                             \
-      Kokkos::Profiling::popRegion();                                                                                \
-      return C;                                                                                                      \
-    }                                                                                                                \
+#define SPGEMM_NOREUSE_DECL_ROCSPARSE(SCALAR)                                                                      \
+  template <bool ETI_SPEC_AVAIL>                                                                                   \
+  struct SPGEMM_NOREUSE<                                                                                           \
+      KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>,              \
+      KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,              \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                                 \
+      KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,              \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                                 \
+      true, ETI_SPEC_AVAIL> {                                                                                      \
+    using Matrix = KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>; \
+    using ConstMatrix =                                                                                            \
+        KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,            \
+                                Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;                               \
+    static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>          \
+    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool, bool,    \
+                   bool) {                                                                                         \
+      std::string label =                                                                                          \
+          "KokkosSparse::spgemm_noreuse[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";        \
+      Kokkos::Profiling::pushRegion(label);                                                                        \
+      Matrix C = spgemm_noreuse_rocsparse<Matrix>(A, B);                                                           \
+      Kokkos::Profiling::popRegion();                                                                              \
+      return C;                                                                                                    \
+    }                                                                                                              \
   };
 
 SPGEMM_NOREUSE_DECL_ROCSPARSE(float)

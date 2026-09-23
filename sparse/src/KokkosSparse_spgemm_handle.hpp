@@ -162,15 +162,15 @@ template <typename ExecSpace, typename ARowMapView, typename BRowMapView>
 bool rocsparse_can_handle_unsorted_inputs(const ExecSpace &exec, const ARowMapView &row_mapA,
                                           const BRowMapView &row_mapB) {
   // rocSPARSE limit: B may have at most 4096 entries per row.
-  constexpr size_t rocsparse_max_b_degree          = 4096;
+  constexpr size_t rocsparse_max_b_degree = 4096;
   // rocSPARSE limit: at most 8192 intermediate products per row of C.
   constexpr size_t rocsparse_max_intermediate_prods = 8192;
 
-  using b_offset_t = typename BRowMapView::non_const_value_type;
+  using b_offset_t   = typename BRowMapView::non_const_value_type;
   b_offset_t maxDegB = graph_max_degree(exec, row_mapB);
   if (static_cast<size_t>(maxDegB) > rocsparse_max_b_degree) return false;
 
-  using a_offset_t = typename ARowMapView::non_const_value_type;
+  using a_offset_t   = typename ARowMapView::non_const_value_type;
   a_offset_t maxDegA = graph_max_degree(exec, row_mapA);
   if (static_cast<size_t>(maxDegA) * static_cast<size_t>(maxDegB) > rocsparse_max_intermediate_prods) return false;
 

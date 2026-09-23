@@ -212,13 +212,15 @@ CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool 
   }
   // Decide at runtime whether to fallback to native. In general, we fall back if the TPL for
   // this algo/exec space requires sorted inputs, and the user has not told us that the inputs are sorted.
-  bool useNativeFallback = !input_sorted && Impl::algorithm_may_require_sorted_input<ExecSpace, /* NonReuse */ true>(algo);
+  bool useNativeFallback =
+      !input_sorted && Impl::algorithm_may_require_sorted_input<ExecSpace, /* NonReuse */ true>(algo);
   // rocSPARSE can handle unsorted inputs when certain nnz/row and intermediate product
   // limits are satisfied.  Check the actual matrices to avoid an unnecessary fallback.
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
   if (useNativeFallback &&
       Impl::spgemm_noreuse_tpl_spec_avail<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal>::value) {
-    if (Impl::rocsparse_can_handle_unsorted_inputs(ExecSpace(), A.graph.row_map, B.graph.row_map)) useNativeFallback = false;
+    if (Impl::rocsparse_can_handle_unsorted_inputs(ExecSpace(), A.graph.row_map, B.graph.row_map))
+      useNativeFallback = false;
   }
 #endif
   if (Impl::is_spgemm_algorithm_native(algo) || useNativeFallback) {

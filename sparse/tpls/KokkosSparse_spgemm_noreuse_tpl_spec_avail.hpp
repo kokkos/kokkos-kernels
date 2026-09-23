@@ -46,18 +46,15 @@ SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(Kokkos::complex<double>)
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 
-#define SPGEMM_NOREUSE_AVAIL_ROCSPARSE(SCALAR)                                                      \
-  template <>                                                                                        \
-  struct spgemm_noreuse_tpl_spec_avail<                                                              \
-      KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void,     \
-                              int>,                                                                  \
-      KokkosSparse::CrsMatrix<const SCALAR, const int,                                               \
-                              Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,                         \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                   \
-      KokkosSparse::CrsMatrix<const SCALAR, const int,                                               \
-                              Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,                         \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>> {                 \
-    enum : bool { value = true };                                                                    \
+#define SPGEMM_NOREUSE_AVAIL_ROCSPARSE(SCALAR)                                                        \
+  template <>                                                                                         \
+  struct spgemm_noreuse_tpl_spec_avail<                                                               \
+      KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>, \
+      KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                    \
+      KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>> {                  \
+    enum : bool { value = true };                                                                     \
   };
 
 SPGEMM_NOREUSE_AVAIL_ROCSPARSE(float)
