@@ -3,6 +3,9 @@
 #ifndef TEST_BLAS_HPP
 #define TEST_BLAS_HPP
 
+// Blas concepts
+#include "Test_Blas_Concepts.hpp"
+
 // Blas 1
 #include "Test_Blas1_abs.hpp"
 #include "Test_Blas1_asum.hpp"
