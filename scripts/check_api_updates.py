@@ -68,6 +68,7 @@ SRC_DOC_MAPPING = dict([
     ('common/src/KokkosKernels_SimpleUtils.hpp', [
         'docs/source/API/common/exclusive_parallel_prefix_sum.rst',
         'docs/source/API/common/inclusive_parallel_prefix_sum.rst']),
+    ('common/src/KokkosKernels_Utils.hpp', ['docs/source/API/common/det_fill_random.rst']),
     ('lapack/src/KokkosLapack_geqrf.hpp', ['docs/source/API/lapack/geqrf.rst']),
     ('lapack/src/KokkosLapack_gemqr.hpp', ['docs/source/API/lapack/gemqr.rst']),
     ('lapack/src/KokkosLapack_gegqr.hpp', ['docs/source/API/lapack/gegqr.rst']),
@@ -100,9 +101,9 @@ SRC_DOC_MAPPING = dict([
     ('sparse/src/KokkosSparse_CooMatrix.hpp', [
         'docs/source/API/sparse/coo_matrix.rst',
         'docs/source/API/sparse/CooMatrix_constructors.rst']),
+    ('sparse/src/KokkosSparse_IOUtils.hpp', ['docs/source/API/sparse/sparse_matrix_io_utils.rst']),
     # ('sparse/src/KokkosSparse_CcsMatrix.hpp', ['']),
     # ('sparse/src/KokkosSparse_CooMatrix.hpp', ['']),
-    # ('sparse/src/KokkosSparse_IOUtils.hpp', []),
     # ('sparse/src/KokkosSparse_LUPrec.hpp', []),
     # ('sparse/src/KokkosSparse_MatrixPrec.hpp', []),
     # ('sparse/src/KokkosSparse_OrdinalTraits.hpp', []),

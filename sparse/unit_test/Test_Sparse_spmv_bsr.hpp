@@ -218,10 +218,9 @@ std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::
 template <typename Bsr>
 std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::type> spmv_corner_case_0_by_1(
     const char *mode, const int blockSize) {
-  using vector_type     = typename VectorTypeFor<Bsr>::type;
-  using execution_space = typename Bsr::execution_space;
-  using scalar_type     = typename Bsr::non_const_value_type;
-  Bsr a                 = bsr_corner_case_0_by_1<Bsr>(blockSize);
+  using vector_type = typename VectorTypeFor<Bsr>::type;
+  using scalar_type = typename Bsr::non_const_value_type;
+  Bsr a             = bsr_corner_case_0_by_1<Bsr>(blockSize);
 
   size_t nx = a.numCols() * a.blockDim();
   size_t ny = a.numRows() * a.blockDim();
@@ -231,9 +230,8 @@ std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::
   vector_type x("x", nx);
   vector_type y("y", ny);
 
-  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
-  Kokkos::fill_random(x, random, max_x<scalar_type>());
-  Kokkos::fill_random(y, random, max_y<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(x, rand(), max_x<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(y, rand(), max_y<scalar_type>());
 
   return std::make_tuple(a, x, y);
 }
@@ -241,10 +239,9 @@ std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::
 template <typename Bsr>
 std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::type> spmv_corner_case_1_by_0(
     const char *mode, const int blockSize) {
-  using vector_type     = typename VectorTypeFor<Bsr>::type;
-  using execution_space = typename Bsr::execution_space;
-  using scalar_type     = typename Bsr::non_const_value_type;
-  Bsr a                 = bsr_corner_case_1_by_0<Bsr>(blockSize);
+  using vector_type = typename VectorTypeFor<Bsr>::type;
+  using scalar_type = typename Bsr::non_const_value_type;
+  Bsr a             = bsr_corner_case_1_by_0<Bsr>(blockSize);
 
   size_t nx = a.numCols() * a.blockDim();
   size_t ny = a.numRows() * a.blockDim();
@@ -254,9 +251,8 @@ std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::
   vector_type x("x", nx);
   vector_type y("y", ny);
 
-  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
-  Kokkos::fill_random(x, random, max_x<scalar_type>());
-  Kokkos::fill_random(y, random, max_y<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(x, rand(), max_x<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(y, rand(), max_y<scalar_type>());
 
   return std::make_tuple(a, x, y);
 }
@@ -275,8 +271,7 @@ std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::
   Bsr a = bsr_random<Bsr>(blockSize, blockRows, blockCols);
 
   // generate some random vectors
-  using vector_type     = typename VectorTypeFor<Bsr>::type;
-  using execution_space = typename Bsr::execution_space;
+  using vector_type = typename VectorTypeFor<Bsr>::type;
 
   size_t nx = a.numCols() * a.blockDim();
   size_t ny = a.numRows() * a.blockDim();
@@ -286,9 +281,8 @@ std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::
   vector_type x("x", nx);
   vector_type y("y", ny);
 
-  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
-  Kokkos::fill_random(x, random, max_x<scalar_type>());
-  Kokkos::fill_random(y, random, max_y<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(x, rand(), max_x<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(y, rand(), max_y<scalar_type>());
 
   return std::make_tuple(a, x, y);
 }
@@ -298,10 +292,9 @@ std::tuple<Bsr, typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::
 template <typename Bsr>
 auto random_vecs_for_spmv(const char *mode, const Bsr &a, const bool nans = false)
     -> std::tuple<typename VectorTypeFor<Bsr>::type, typename VectorTypeFor<Bsr>::type> {
-  using scalar_type     = typename Bsr::non_const_value_type;
-  using vector_type     = typename VectorTypeFor<Bsr>::type;
-  using execution_space = typename Bsr::execution_space;
-  using policy_type     = Kokkos::RangePolicy<typename vector_type::execution_space>;
+  using scalar_type = typename Bsr::non_const_value_type;
+  using vector_type = typename VectorTypeFor<Bsr>::type;
+  using policy_type = Kokkos::RangePolicy<typename vector_type::execution_space>;
 
   size_t nx = static_cast<size_t>(a.numCols()) * a.blockDim();
   size_t ny = static_cast<size_t>(a.numRows()) * a.blockDim();
@@ -311,9 +304,8 @@ auto random_vecs_for_spmv(const char *mode, const Bsr &a, const bool nans = fals
   vector_type x("x", nx);
   vector_type y("y", ny);
 
-  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
-  Kokkos::fill_random(x, random, max_x<scalar_type>());
-  Kokkos::fill_random(y, random, max_y<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(x, rand(), max_x<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(y, rand(), max_y<scalar_type>());
 
   if (nans) {
     Kokkos::parallel_for(
@@ -539,10 +531,9 @@ struct MultiVectorTypeFor {
 template <typename Layout, typename Bsr>
 auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a, const size_t numVecs, const bool nans = false)
     -> std::tuple<typename MultiVectorTypeFor<Layout, Bsr>::type, typename MultiVectorTypeFor<Layout, Bsr>::type> {
-  using scalar_type     = typename Bsr::non_const_value_type;
-  using vector_type     = typename MultiVectorTypeFor<Layout, Bsr>::type;
-  using execution_space = typename Bsr::execution_space;
-  using policy_type     = Kokkos::RangePolicy<typename vector_type::execution_space>;
+  using scalar_type = typename Bsr::non_const_value_type;
+  using vector_type = typename MultiVectorTypeFor<Layout, Bsr>::type;
+  using policy_type = Kokkos::RangePolicy<typename vector_type::execution_space>;
 
   size_t nx = static_cast<size_t>(a.numCols()) * a.blockDim();
   size_t ny = static_cast<size_t>(a.numRows()) * a.blockDim();
@@ -552,9 +543,8 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a, const size_t nu
   vector_type x("x", nx, numVecs);
   vector_type y("y", ny, numVecs);
 
-  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
-  Kokkos::fill_random(x, random, max_x<scalar_type>());
-  Kokkos::fill_random(y, random, max_y<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(x, rand(), max_x<scalar_type>());
+  KokkosKernels::Impl::det_fill_random(y, rand(), max_y<scalar_type>());
 
   // sprinkle some "random" NaNs in
   if (nans) {

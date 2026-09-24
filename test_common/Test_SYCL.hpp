@@ -4,16 +4,13 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
 
+#include "Test_Base_Common.hpp"
+
 #if defined(KOKKOSKERNELS_TEST_ETI_ONLY) && !defined(KOKKOSKERNELS_ETI_ONLY)
 #define KOKKOSKERNELS_ETI_ONLY
 #endif
 
-class sycl_test : public ::testing::Test {
- protected:
-  static void SetUpTestCase() {}
-
-  static void TearDownTestCase() {}
-};
+class sycl_test : public CommonParent {};
 
 #define TestCategory sycl_test
 #define TestDevice Kokkos::SYCL
