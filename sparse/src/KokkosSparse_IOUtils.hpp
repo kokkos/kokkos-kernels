@@ -19,7 +19,7 @@ namespace KokkosSparse {
 namespace Impl {
 
 // MD: Bases on Christian's sparseMatrix_generate function in test_crsmatrix.cpp
-// file.
+// file. Dummy.
 template <typename ScalarType, typename OrdinalType, typename SizeType>
 void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, SizeType &nnz, OrdinalType row_size_variance,
                               OrdinalType bandwidth, ScalarType *&values, SizeType *&rowPtr, OrdinalType *&colInd,
