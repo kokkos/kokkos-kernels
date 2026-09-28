@@ -34,9 +34,11 @@
 #include "Test_Batched_SerialTrmm.hpp"
 #include "Test_Batched_SerialTrmm_Real.hpp"
 #include "Test_Batched_SerialTrmm_Complex.hpp"
-#include "Test_Batched_SerialTrsm.hpp"
-#include "Test_Batched_SerialTrsm_Real.hpp"
-#include "Test_Batched_SerialTrsm_Complex.hpp"
+// NOTE: SerialTrsm{,_Real,_Complex} are intentionally NOT included here.  They
+// are compiled as their own translation unit via
+// backends/Test_<Backend>_Batched_SerialTrsm.cpp so that make -j can build
+// them in parallel with this umbrella TU.  See BATCHED_DLA_SPLIT_GROUPS in
+// batched/dense/unit_test/CMakeLists.txt.
 #include "Test_Batched_SerialTrsv.hpp"
 #include "Test_Batched_SerialTrsv_Real.hpp"
 #include "Test_Batched_SerialTrsv_Complex.hpp"
