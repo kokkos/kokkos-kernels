@@ -7,6 +7,7 @@
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Rotm.hpp>
 #include "Test_Batched_DenseUtils.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
 namespace Rotm {
