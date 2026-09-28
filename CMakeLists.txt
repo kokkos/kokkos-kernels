@@ -79,6 +79,22 @@ kokkoskernels_add_option("ENABLE_COMPILER_WARNINGS" OFF BOOL
 kokkoskernels_add_option("ENABLE_WARNINGS_AS_ERRORS" OFF BOOL
   "Whether warnings should be treated as errors. Default: OFF")
 
+# ------------------------------------------------------------------
+# Optional build-time speedups for the test executables.  These are
+# opt-in and default to OFF/empty so they don't affect existing users.
+# See cmake/kokkoskernels_tribits.cmake::kokkoskernels_add_executable
+# for the code that consumes these options.
+# ------------------------------------------------------------------
+kokkoskernels_add_option("TEST_ENABLE_PCH" ON BOOL
+  "Enable precompiled headers (<gtest/gtest.h>, <Kokkos_Core.hpp>, "
+  "<Kokkos_Random.hpp>) on the test executables to speed up compilation. "
+  "Only applied on host-only, non-Trilinos builds. Default: OFF")
+
+kokkoskernels_add_option("TEST_SLIM_DEBUG_INFO" ON BOOL
+  "In RelWithDebInfo builds, compile test executables with -g1 (backtraces "
+  "only, no locals/types) instead of the default -g2 to cut compile and link "
+  "time.  Debug builds are left alone.  Default: ON")
+
 include(cmake/kokkoskernels_warnings.cmake)
 include(cmake/kokkoskernels_windows.cmake)
 
