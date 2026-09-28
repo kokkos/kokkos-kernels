@@ -14,6 +14,11 @@
 
 #include "KokkosKernels_TestUtils.hpp"
 
+// TeamLU_Real.hpp / TeamLU_Complex.hpp call ::test_batched_lu (defined in
+// Test_Batched_SerialLU.hpp), so include it explicitly rather than relying on
+// umbrella ordering.
+#include "Test_Batched_SerialLU.hpp"
+
 using namespace KokkosBatched;
 
 namespace Test {
