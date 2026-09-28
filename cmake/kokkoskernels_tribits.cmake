@@ -136,9 +136,59 @@ function(kokkoskernels_add_executable EXE_NAME)
       else()
         target_link_libraries(${EXE_NAME} PRIVATE Kokkos::kokkoskernels)
       endif()
+
+      kokkoskernels_apply_test_build_speedups(${EXE_NAME})
     endif()
   else()
     message(STATUS "Skipping executable ${EXE_NAME} because not all necessary components enabled")
+  endif()
+endfunction()
+
+# Apply the opt-in build-time speedups (PCH, slim debug info, faster linker)
+# to a test-executable target.  All settings are gated on cache options declared
+# in the top-level CMakeLists.txt and default to no-ops so this function is
+# safe to call on every executable.
+function(kokkoskernels_apply_test_build_speedups TARGET)
+  if(NOT TARGET ${TARGET})
+    return()
+  endif()
+
+  # (2) Faster linker: forward -fuse-ld=<value> to the target's link step.
+  # Uses target_link_options across all supported CMake versions so users can
+  # pass any linker name their compiler understands (e.g. "mold", "lld",
+  # "gold").
+  # if(KokkosKernels_TEST_LINKER)
+  #   target_link_options(${TARGET} PRIVATE
+  #     "-fuse-ld=${KokkosKernels_TEST_LINKER}")
+  # endif()
+
+  # (3) Slim debug info: only meaningful for RelWithDebInfo builds where the
+  # user wants backtraces but doesn't need full debugger support.  Debug builds
+  # keep the default -g (which is -g2) so that stepping / inspecting locals
+  # still works.
+  if(KokkosKernels_TEST_SLIM_DEBUG_INFO)
+    set(_debug_cfgs "$<CONFIG:RelWithDebInfo>")
+    target_compile_options(${TARGET} PRIVATE
+      "$<${_debug_cfgs}:$<$<COMPILE_LANGUAGE:CXX>:-g1>>")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+      target_compile_options(${TARGET} PRIVATE
+        "$<${_debug_cfgs}:$<$<COMPILE_LANGUAGE:CXX>:-gsplit-dwarf>>")
+    endif()
+  endif()
+
+  # (4) Precompiled headers.  Skipped for Trilinos-driven builds and for the
+  # GPU backends whose compilers (nvcc / hipcc / SYCL) don't reliably support
+  # CMake's PCH machinery.
+  if(KokkosKernels_TEST_ENABLE_PCH
+     AND NOT KOKKOSKERNELS_HAS_TRILINOS
+     AND NOT KOKKOS_ENABLE_CUDA
+     AND NOT KOKKOS_ENABLE_HIP
+     AND NOT KOKKOS_ENABLE_SYCL
+     AND NOT KOKKOS_ENABLE_OPENMPTARGET)
+    target_precompile_headers(${TARGET} PRIVATE
+      <gtest/gtest.h>
+      <Kokkos_Core.hpp>
+      <Kokkos_Random.hpp>)
   endif()
 endfunction()
 
