@@ -11,6 +11,9 @@
 #include <KokkosBatched_Syrk.hpp>
 
 #include "Test_Batched_DenseUtils.hpp"
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Syrk {

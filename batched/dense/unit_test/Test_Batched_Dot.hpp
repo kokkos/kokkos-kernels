@@ -7,6 +7,9 @@
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Dot.hpp>
 #include "Test_Batched_DenseUtils.hpp"
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Dot {
