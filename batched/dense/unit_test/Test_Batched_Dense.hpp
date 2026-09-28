@@ -28,9 +28,8 @@
 #include "Test_Batched_SerialLU_Real.hpp"
 #include "Test_Batched_SerialLU_Complex.hpp"
 #include "Test_Batched_SerialQR.hpp"
-#include "Test_Batched_SerialSolveLU.hpp"
-#include "Test_Batched_SerialSolveLU_Real.hpp"
-#include "Test_Batched_SerialSolveLU_Complex.hpp"
+// NOTE: SerialSolveLU{,_Real,_Complex} are intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 // NOTE: SerialTrsm{,_Real,_Complex} and SerialTrmm{,_Real,_Complex} are
 // intentionally NOT included here.  They have been split into standalone TUs
 // under backends/Test_<Backend>_Batched_<Group>.cpp (auto-generated at
