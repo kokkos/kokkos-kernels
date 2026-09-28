@@ -24,9 +24,8 @@
 #include "Test_Batched_SerialInverseLU.hpp"
 #include "Test_Batched_SerialInverseLU_Real.hpp"
 #include "Test_Batched_SerialInverseLU_Complex.hpp"
-#include "Test_Batched_SerialLU.hpp"
-#include "Test_Batched_SerialLU_Real.hpp"
-#include "Test_Batched_SerialLU_Complex.hpp"
+// NOTE: SerialLU{,_Real,_Complex} are intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 #include "Test_Batched_SerialQR.hpp"
 // NOTE: SerialSolveLU{,_Real,_Complex} are intentionally NOT included here.
 // See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
