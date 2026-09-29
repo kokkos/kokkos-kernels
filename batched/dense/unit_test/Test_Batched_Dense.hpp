@@ -68,14 +68,10 @@
 
 // TeamVector Kernels
 #include "Test_Batched_TeamVectorAxpy.hpp"
-#include "Test_Batched_TeamVectorEigendecomposition.hpp"
-#include "Test_Batched_TeamVectorEigendecomposition_Real.hpp"
-#include "Test_Batched_TeamVectorGesv.hpp"
-#include "Test_Batched_TeamVectorGesv_Real.hpp"
-#include "Test_Batched_TeamVectorQR.hpp"
-#include "Test_Batched_TeamVectorQR_Real.hpp"
-#include "Test_Batched_TeamVectorQR_WithColumnPivoting.hpp"
-#include "Test_Batched_TeamVectorQR_WithColumnPivoting_Real.hpp"
+// NOTE: TeamVectorEigendecomposition{,_Real}, TeamVectorGesv{,_Real},
+// TeamVectorQR{,_Real}, and TeamVectorQR_WithColumnPivoting{,_Real} are
+// intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 #include "Test_Batched_TeamVectorSolveUTV.hpp"
 #include "Test_Batched_TeamVectorSolveUTV_Real.hpp"
 #include "Test_Batched_TeamVectorSolveUTV2.hpp"
