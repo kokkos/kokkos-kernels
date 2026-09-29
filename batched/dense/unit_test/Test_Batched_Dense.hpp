@@ -63,15 +63,9 @@
 // NOTE: TeamInverseLU{,_Real,_Complex} and TeamLU{,_Real,_Complex} are
 // intentionally NOT included here.
 // See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
-#include "Test_Batched_TeamSolveLU.hpp"
-#include "Test_Batched_TeamSolveLU_Real.hpp"
-#include "Test_Batched_TeamSolveLU_Complex.hpp"
-#include "Test_Batched_TeamTrsm.hpp"
-#include "Test_Batched_TeamTrsm_Real.hpp"
-#include "Test_Batched_TeamTrsm_Complex.hpp"
-#include "Test_Batched_TeamTrsv.hpp"
-#include "Test_Batched_TeamTrsv_Real.hpp"
-#include "Test_Batched_TeamTrsv_Complex.hpp"
+// NOTE: TeamSolveLU{,_Real,_Complex}, TeamTrsm{,_Real,_Complex}, and
+// TeamTrsv{,_Real,_Complex} are intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 
 // TeamVector Kernels
 #include "Test_Batched_TeamVectorAxpy.hpp"
