@@ -36,12 +36,10 @@
 // batched/dense/unit_test/CMakeLists.txt.
 // NOTE: SerialTrsv{,_Real,_Complex} are intentionally NOT included here.
 // See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
-#include "Test_Batched_SerialTbsv.hpp"
-#include "Test_Batched_SerialTbsv_Real.hpp"
-#include "Test_Batched_SerialTbsv_Complex.hpp"
-#include "Test_Batched_SerialTrtri.hpp"
-#include "Test_Batched_SerialTrtri_Real.hpp"
-#include "Test_Batched_SerialTrtri_Complex.hpp"
+// NOTE: SerialTbsv{,_Real,_Complex} are intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
+// NOTE: SerialTrtri{,_Real,_Complex} are intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 #include "Test_Batched_SerialSVD.hpp"
 #include "Test_Batched_SerialPttrf.hpp"
 #include "Test_Batched_SerialPttrs.hpp"
