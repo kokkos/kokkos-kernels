@@ -21,9 +21,8 @@
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
 #include "Test_Batched_SerialGesv.hpp"
 #include "Test_Batched_SerialGesv_Real.hpp"
-#include "Test_Batched_SerialInverseLU.hpp"
-#include "Test_Batched_SerialInverseLU_Real.hpp"
-#include "Test_Batched_SerialInverseLU_Complex.hpp"
+// NOTE: SerialInverseLU{,_Real,_Complex} are intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 // NOTE: SerialLU{,_Real,_Complex} are intentionally NOT included here.
 // See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 #include "Test_Batched_SerialQR.hpp"
@@ -35,9 +34,8 @@
 // configure time) so that `make -j` can build them in parallel with this
 // umbrella.  See BATCHED_DLA_SPLIT_GROUPS in
 // batched/dense/unit_test/CMakeLists.txt.
-#include "Test_Batched_SerialTrsv.hpp"
-#include "Test_Batched_SerialTrsv_Real.hpp"
-#include "Test_Batched_SerialTrsv_Complex.hpp"
+// NOTE: SerialTrsv{,_Real,_Complex} are intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 #include "Test_Batched_SerialTbsv.hpp"
 #include "Test_Batched_SerialTbsv_Real.hpp"
 #include "Test_Batched_SerialTbsv_Complex.hpp"
