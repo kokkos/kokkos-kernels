@@ -8,6 +8,7 @@
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Pttrf.hpp"
 #include "KokkosBatched_Pttrs.hpp"
+#include "KokkosBlas2_serial_gemv_impl.hpp"
 #include "Test_Batched_DenseUtils.hpp"
 
 namespace Test {
