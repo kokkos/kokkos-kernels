@@ -133,11 +133,11 @@ function(kokkoskernels_add_executable EXE_NAME)
 
       if(PARSE_TESTONLYLIBS)
         target_link_libraries(${EXE_NAME} PRIVATE Kokkos::kokkoskernels ${PARSE_TESTONLYLIBS})
+        kokkoskernels_apply_test_build_speedups(${EXE_NAME} IS_TEST)
       else()
         target_link_libraries(${EXE_NAME} PRIVATE Kokkos::kokkoskernels)
+        kokkoskernels_apply_test_build_speedups(${EXE_NAME})
       endif()
-
-      kokkoskernels_apply_test_build_speedups(${EXE_NAME})
     endif()
   else()
     message(STATUS "Skipping executable ${EXE_NAME} because not all necessary components enabled")
@@ -149,6 +149,7 @@ endfunction()
 # in the top-level CMakeLists.txt and default to no-ops so this function is
 # safe to call on every executable.
 function(kokkoskernels_apply_test_build_speedups TARGET)
+  cmake_parse_arguments(BSU "IS_TEST" "" "" ${ARGN})
   if(NOT TARGET ${TARGET})
     return()
   endif()
@@ -185,10 +186,13 @@ function(kokkoskernels_apply_test_build_speedups TARGET)
      AND NOT KOKKOS_ENABLE_HIP
      AND NOT KOKKOS_ENABLE_SYCL
      AND NOT KOKKOS_ENABLE_OPENMPTARGET)
-    target_precompile_headers(${TARGET} PRIVATE
-      <gtest/gtest.h>
-      <Kokkos_Core.hpp>
-      <Kokkos_Random.hpp>)
+    set(_pch_headers <Kokkos_Core.hpp> <Kokkos_Random.hpp>)
+    # gtest.h only PCHs cleanly for test executables that actually link gtest;
+    # example executables (which reuse this same helper) do not.
+    if(BSU_IS_TEST)
+      list(APPEND _pch_headers <gtest/gtest.h>)
+    endif()
+    target_precompile_headers(${TARGET} PRIVATE ${_pch_headers})
   endif()
 endfunction()
 
@@ -237,10 +241,9 @@ function(kokkoskernels_add_executable_and_test ROOT_NAME)
         COMM          serial mpi)
     else()
       set(EXE_NAME ${PACKAGE_NAME}_${ROOT_NAME})
-      kokkoskernels_add_executable(${EXE_NAME} SOURCES ${PARSE_SOURCES})
-      if(PARSE_TESTONLYLIBS)
-        target_link_libraries(${EXE_NAME} PRIVATE ${PARSE_TESTONLYLIBS})
-      endif()
+      kokkoskernels_add_executable(${EXE_NAME}
+        SOURCES ${PARSE_SOURCES}
+        TESTONLYLIBS ${PARSE_TESTONLYLIBS})
       kokkoskernels_add_test(NAME ${ROOT_NAME} EXE ${EXE_NAME})
     endif()
   else()
