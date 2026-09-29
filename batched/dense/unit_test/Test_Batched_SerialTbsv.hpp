@@ -7,6 +7,7 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Tbsv.hpp"
+#include "KokkosBatched_Trsv_Decl.hpp"
 #include "Test_Batched_DenseUtils.hpp"
 
 namespace Test {
