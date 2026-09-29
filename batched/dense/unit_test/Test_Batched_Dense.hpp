@@ -17,10 +17,9 @@
 #include "Test_Batched_Swap.hpp"
 #include "Test_Batched_Symv.hpp"
 #include "Test_Batched_Syrk.hpp"
-#include "Test_Batched_SerialEigendecomposition.hpp"
-#include "Test_Batched_SerialEigendecomposition_Real.hpp"
-#include "Test_Batched_SerialGesv.hpp"
-#include "Test_Batched_SerialGesv_Real.hpp"
+// NOTE: SerialEigendecomposition{,_Real} and SerialGesv{,_Real} are
+// intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 // NOTE: SerialInverseLU{,_Real,_Complex} are intentionally NOT included here.
 // See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 // NOTE: SerialLU{,_Real,_Complex} are intentionally NOT included here.
@@ -58,8 +57,8 @@
 
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"
-#include "Test_Batched_TeamGesv.hpp"
-#include "Test_Batched_TeamGesv_Real.hpp"
+// NOTE: TeamGesv{,_Real} is intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 // NOTE: TeamInverseLU{,_Real,_Complex} and TeamLU{,_Real,_Complex} are
 // intentionally NOT included here.
 // See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
