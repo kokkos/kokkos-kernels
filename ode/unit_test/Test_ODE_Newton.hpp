@@ -407,6 +407,84 @@ void test_simple_systems() {
   }
 }
 
+// Equation whose Jacobian becomes singular at the first Newton iterate, used
+// to guard against a regression where the update was applied to y0 before
+// checking the linear solver status. The residual is linear, f = x - 5, but
+// the Jacobian deliberately reports the wrong slope (2 instead of 1) for
+// x < 0 so that the first iteration moves the iterate from -1 to 2 without
+// converging, and reports 0 for x >= 0 so that the second iteration's linear
+// solve fails. The solver must return LIN_SOLVE_FAIL and leave the iterate
+// exactly where the last successful iteration put it. Before the fix, the
+// stale update from iteration 0 was re-applied to y0 (corrupting it from 2
+// back to -1) and the divergence check fired first, masking the linear solve
+// failure as NLS_DIVERGENCE.
+template <typename Device, typename scalar_type>
+struct SingularJacobianEquation {
+  using vec_type = Kokkos::View<scalar_type*, Device>;
+  using mat_type = Kokkos::View<scalar_type**, Device>;
+
+  static constexpr int neqs = 1;
+
+  SingularJacobianEquation() {}
+
+  KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const { f(0) = y(0) - 5; }
+
+  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const { jac(0, 0) = (y(0) < 0) ? 2 : 0; }
+};
+
+template <typename Device, typename scalar_type>
+void test_newton_lin_solve_fail_keeps_iterate() {
+  using execution_space      = typename Device::execution_space;
+  using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
+  using vec_type             = typename Kokkos::View<scalar_type*, Device>;
+  using mat_type             = typename Kokkos::View<scalar_type**, Device>;
+  using system_type          = SingularJacobianEquation<Device, scalar_type>;
+
+  double abs_tol, rel_tol;
+  if (std::is_same_v<scalar_type, float>) {
+    rel_tol = 10e-5;
+    abs_tol = 10e-7;
+  } else if (std::is_same_v<scalar_type, double>) {
+    rel_tol = 10e-8;
+    abs_tol = 10e-15;
+  } else {
+    throw std::runtime_error("scalar_type is neither float, nor double!");
+  }
+  KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
+
+  system_type my_system{};
+
+  Kokkos::View<newton_solver_status*, Device> status("Newton status", 1);
+
+  vec_type scale("scaling factors", my_system.neqs);
+  Kokkos::deep_copy(scale, 1);
+
+  vec_type x("solution vector", my_system.neqs), rhs("right hand side vector", my_system.neqs);
+  vec_type update("update", my_system.neqs);
+  mat_type J("jacobian", my_system.neqs, my_system.neqs), tmp("temp mem", my_system.neqs, my_system.neqs + 4);
+
+  // Iteration 0: f(-1) = -6, jac = 2, so the iterate moves to -1 + 6/2 = 2.
+  // Iteration 1: f(2) = -3 != 0 but jac = 0, so the linear solve must fail.
+  Kokkos::deep_copy(x, -1);
+
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+  NewtonSolve_wrapper solve_wrapper(my_system, params, x, rhs, update, J, tmp, status, scale);
+  Kokkos::parallel_for(my_policy, solve_wrapper);
+
+  auto status_h = Kokkos::create_mirror_view(status);
+  Kokkos::deep_copy(status_h, status);
+  auto x_h = Kokkos::create_mirror_view(x);
+  Kokkos::deep_copy(x_h, x);
+
+  // The failed linear solve must be reported as such, not misclassified by the
+  // divergence check that used to run first.
+  EXPECT_TRUE(status_h(0) == newton_solver_status::LIN_SOLVE_FAIL);
+
+  // y0 must be left at the last successful iterate (2), not corrupted by
+  // re-applying the stale update from iteration 0 (which brought it back to -1).
+  EXPECT_EQ(x_h(0), static_cast<scalar_type>(2));
+}
+
 ////////////////////////////////////////////
 // Finally, solving systems of equations  //
 // within a parallel_for loop as it would //
@@ -487,6 +565,13 @@ TEST_F(TestCategory, Newton_simple_double) { ::Test::test_simple_problems<TestDe
 
 TEST_F(TestCategory, Newton_system_float) { ::Test::test_simple_systems<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_system_double) { ::Test::test_simple_systems<TestDevice, double>(); }
+
+TEST_F(TestCategory, Newton_lin_solve_fail_keeps_iterate_float) {
+  ::Test::test_newton_lin_solve_fail_keeps_iterate<TestDevice, float>();
+}
+TEST_F(TestCategory, Newton_lin_solve_fail_keeps_iterate_double) {
+  ::Test::test_newton_lin_solve_fail_keeps_iterate<TestDevice, double>();
+}
 
 TEST_F(TestCategory, Newton_parallel_float) { ::Test::test_newton_on_device<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_parallel_double) { ::Test::test_newton_on_device<TestDevice, double>(); }
