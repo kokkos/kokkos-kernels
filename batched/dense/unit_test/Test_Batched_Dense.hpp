@@ -72,12 +72,9 @@
 // TeamVectorQR{,_Real}, and TeamVectorQR_WithColumnPivoting{,_Real} are
 // intentionally NOT included here.
 // See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
-#include "Test_Batched_TeamVectorSolveUTV.hpp"
-#include "Test_Batched_TeamVectorSolveUTV_Real.hpp"
-#include "Test_Batched_TeamVectorSolveUTV2.hpp"
-#include "Test_Batched_TeamVectorSolveUTV2_Real.hpp"
-#include "Test_Batched_TeamVectorUTV.hpp"
-#include "Test_Batched_TeamVectorUTV_Real.hpp"
+// NOTE: TeamVectorSolveUTV{,_Real}, TeamVectorSolveUTV2{,_Real}, and
+// TeamVectorUTV{,_Real} are intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 
 // Vector Kernels
 #include "Test_Batched_VectorArithmatic.hpp"
