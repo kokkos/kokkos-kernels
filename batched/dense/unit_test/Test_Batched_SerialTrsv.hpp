@@ -11,6 +11,7 @@
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBlas2_gemv.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 #include "Test_Batched_DenseUtils.hpp"
 
 using namespace KokkosBatched;
