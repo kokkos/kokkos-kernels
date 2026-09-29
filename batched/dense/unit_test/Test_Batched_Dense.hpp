@@ -60,12 +60,9 @@
 #include "Test_Batched_TeamAxpy.hpp"
 #include "Test_Batched_TeamGesv.hpp"
 #include "Test_Batched_TeamGesv_Real.hpp"
-#include "Test_Batched_TeamInverseLU.hpp"
-#include "Test_Batched_TeamInverseLU_Real.hpp"
-#include "Test_Batched_TeamInverseLU_Complex.hpp"
-#include "Test_Batched_TeamLU.hpp"
-#include "Test_Batched_TeamLU_Real.hpp"
-#include "Test_Batched_TeamLU_Complex.hpp"
+// NOTE: TeamInverseLU{,_Real,_Complex} and TeamLU{,_Real,_Complex} are
+// intentionally NOT included here.
+// See BATCHED_DLA_SPLIT_GROUPS in batched/dense/unit_test/CMakeLists.txt.
 #include "Test_Batched_TeamSolveLU.hpp"
 #include "Test_Batched_TeamSolveLU_Real.hpp"
 #include "Test_Batched_TeamSolveLU_Complex.hpp"

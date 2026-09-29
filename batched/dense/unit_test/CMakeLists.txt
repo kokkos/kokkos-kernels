@@ -50,7 +50,7 @@ endif()
 #
 # To split another group in the future: remove its includes from
 # Test_Batched_Dense.hpp and append its stem here.  No other changes needed.
-set(BATCHED_DLA_SPLIT_GROUPS SerialTrsm SerialTrmm SerialSolveLU SerialLU SerialTrsv SerialInverseLU SerialTbsv SerialTrtri)
+set(BATCHED_DLA_SPLIT_GROUPS SerialTrsm SerialTrmm SerialSolveLU SerialLU SerialTrsv SerialInverseLU SerialTbsv SerialTrtri TeamLU TeamInverseLU)
 
 # Generate one shim .cpp per (BACKEND, GROUP) into ${CMAKE_CURRENT_BINARY_DIR}
 # and return the list in OUT_VAR.  Each shim mimics the hand-written pattern
