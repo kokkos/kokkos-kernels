@@ -102,11 +102,11 @@ jobs:
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
         # kumquat has 96 CPUs
-        run: make -j24 all
+        run: time make -j24 all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
 
   PR_VOLTA70_CUDA1222_CUDA_LEFT_REL:
     name: PR_VOLTA70_CUDA1222_CUDA_LEFT_REL

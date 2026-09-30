@@ -81,7 +81,9 @@ jobs:
 
       - name: build
         working-directory: kokkos-kernels/build
-        run: time cmake --build . --parallel $(nproc)
+        run: |
+          echo "Building with $(nproc) procs"
+          time cmake --build . --parallel $(nproc)
 
       - name: test
         working-directory: kokkos-kernels/build
