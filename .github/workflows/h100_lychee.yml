@@ -83,11 +83,11 @@ jobs:
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
         # lychee has 224 CPUs
-        run: make -j56 all
+        run: time make -j56 all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
 
   PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_REL:
     name: PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_REL
@@ -152,11 +152,11 @@ jobs:
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
         # lychee has 224 CPUs
-        run: make -j56 all
+        run: time make -j56 all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
 
   PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_TPLS_REL:
     name: PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_TPLS_REL
@@ -221,11 +221,12 @@ jobs:
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
         # lychee has 224 CPUs
-        run: make -j56 all
+        run: time make -j56 all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
+
   PR_HOPPER90_CUDA1262_CUDA_LEFT_REL:
     name: PR_HOPPER90_CUDA1262_CUDA_LEFT_REL
     runs-on: [lychee-cuda-12.6.2-openblas-0.3.28]
@@ -289,9 +290,9 @@ jobs:
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
         # lychee has 224 CPUs
-        run: make -j56 all
+        run: time make -j56 all
 
       # individual ODE tests (e.g. Cuda.RK_Count) were taking more than 3600s
       - name: test
         working-directory: kokkos-kernels/build
-        run: compute-sanitizer --tool=memcheck --target-processes=all ctest --output-on-failure -V --timeout 3600 -E 'ode'
+        run: time compute-sanitizer --tool=memcheck --target-processes=all ctest --output-on-failure -V --timeout 3600 -E 'ode'

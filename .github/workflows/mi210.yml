@@ -81,11 +81,11 @@ jobs:
 
       - name: build
         working-directory: kokkos-kernels/build
-        run: cmake --build . --parallel $(nproc)
+        run: time cmake --build . --parallel $(nproc)
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
 
   PR_VEGA90A_ROCM721_HIP_SERIAL_LEFT_TPLS:
     name: PR_VEGA90A_ROCM721_HIP_SERIAL_LEFT_TPLS
@@ -159,10 +159,9 @@ jobs:
         working-directory: kokkos-kernels/build
         run: |
           echo "Building with $(nproc) procs"
-          cmake --build . --parallel $(nproc)
+          time cmake --build . --parallel $(nproc)
 
       - name: test
         working-directory: kokkos-kernels/build
         run: |
-          echo "Testing with $(nproc) procs"
-          ctest --output-on-failure -V --timeout 3600
+          time ctest --output-on-failure -V --timeout 3600

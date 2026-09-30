@@ -80,11 +80,11 @@ jobs:
 
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
-        run: make -j8 all
+        run: time make -j8 all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
 
   PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL:
     name: PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL
@@ -156,11 +156,11 @@ jobs:
 
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
-        run: make -j12 all
+        run: time make -j12 all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
 
   # PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL_NO_ETI_TESTS:
   #   name: PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL_NO_ETI_TESTS
@@ -237,11 +237,11 @@ jobs:
 
   #     - name: build_kokkos_kernels
   #       working-directory: kokkos-kernels/build
-  #       run: make -j12 all
+  #       run: time make -j12 all
 
   #     - name: test
   #       working-directory: kokkos-kernels/build
-  #       run: ctest --output-on-failure -V --timeout 3600
+  #       run: time ctest --output-on-failure -V --timeout 3600
   # PR_SPR_ONEAPI202310_OPENMP_LEFT_MKLBLAS_MKLLAPACK_REL:
   #   name: PR_SPR_ONEAPI202310_OPENMP_LEFT_MKLBLAS_MKLLAPACK_REL
   #   runs-on: [kk-env-intel-oneapi-compilers-2023.1.0-latest]
@@ -315,8 +315,8 @@ jobs:
   #         -D KokkosKernels_ENABLE_TPL_MKL=ON
 
   #     - name: build_kokkos_kernels
-  #       run: cmake --build "$PWD/kokkos-kernels/build" -j 12
+  #       run: time cmake --build "$PWD/kokkos-kernels/build" -j 12
 
   #     - name: test
   #       working-directory: kokkos-kernels/build
-  #       run: ctest --output-on-failure -V --timeout 3600
+  #       run: time ctest --output-on-failure -V --timeout 3600

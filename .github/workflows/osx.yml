@@ -110,11 +110,11 @@ jobs:
 
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
-        run: cmake --build . --target install --parallel 3
+        run: time cmake --build . --target install --parallel 3
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest -j 3 --output-on-failure --timeout 7200
+        run: time ctest -j 3 --output-on-failure --timeout 7200
 
   accelerate:
     needs: check-pr-labels
@@ -177,8 +177,8 @@ jobs:
 
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
-        run: cmake --build . --target install --parallel 3
+        run: time cmake --build . --target install --parallel 3
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest -j 3 --output-on-failure --timeout 7200
+        run: time ctest -j 3 --output-on-failure --timeout 7200

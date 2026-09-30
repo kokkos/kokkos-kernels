@@ -176,11 +176,11 @@ jobs:
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
         # kumquat has 96 CPUs
-        run: cmake --build . --parallel 24 --target all
+        run: time cmake --build . --parallel 24 --target all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
 
   PR_VOLTA70_CUDA1222_CUDA_LEFT_PREVIOUS_MINOR_REL:
     name: PR_VOLTA70_CUDA1222_CUDA_LEFT_REL_PREVIOUS_MINOR_REL
@@ -243,11 +243,11 @@ jobs:
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
         # kumquat has 96 CPUs
-        run: cmake --build . --parallel 24 --target all
+        run: time cmake --build . --parallel 24 --target all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
 
   PR_VOLTA70_CUDA1262_CUDA_CMAKE_LANG_FEATURE:
     name: PR_VOLTA70_CUDA1262_CUDA_CMAKE_LANG_FEATURE
@@ -319,10 +319,10 @@ jobs:
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
         # kumquat has 96 CPUs
-        run: cmake --build . --parallel 24 --target all
+        run: time cmake --build . --parallel 24 --target all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest --output-on-failure -V --timeout 3600
+        run: time ctest --output-on-failure -V --timeout 3600
 
 
