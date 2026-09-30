@@ -82,8 +82,8 @@ jobs:
           -D KokkosKernels_INST_OFFSET_INT=ON
 
       - name: build_kokkos_kernels
-        run: time cmake --build "$PWD/kokkos-kernels/build" -j 64
+        run: cmake --build "$PWD/kokkos-kernels/build" -j 64
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ZES_ENABLE_SYSMAN=1 time ctest --output-on-failure -V --timeout 3600
+        run: ZES_ENABLE_SYSMAN=1 ctest --output-on-failure -V --timeout 3600

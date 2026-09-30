@@ -96,9 +96,9 @@ jobs:
       - name: build_kokkos_kernels
         run: |
           echo "Building with $(nproc) procs"
-          time cmake --build kokkos-kernels/build --parallel $(nproc)
+          cmake --build kokkos-kernels/build --parallel $(nproc)
 
       - name: test
         run:  |
           echo "Testing with $(nproc) procs"
-          UBSAN_OPTIONS=print_stacktrace=1 time ctest --test-dir kokkos-kernels/build -j$(nproc) --output-on-failure --timeout 7200
+          UBSAN_OPTIONS=print_stacktrace=1 ctest --test-dir kokkos-kernels/build -j$(nproc) --output-on-failure --timeout 7200

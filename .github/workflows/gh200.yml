@@ -76,8 +76,8 @@ jobs:
 
       - name: build_kokkos_kernels
         working-directory: kokkos-kernels/build
-        run: time make -j50 all
+        run: make -j50 all
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: time ctest --output-on-failure -V --timeout 3600
+        run: ctest --output-on-failure -V --timeout 3600
