@@ -165,5 +165,4 @@ jobs:
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: |
-          ctest --output-on-failure -V --timeout 3600
+        run: ctest --output-on-failure -V --timeout 3600
