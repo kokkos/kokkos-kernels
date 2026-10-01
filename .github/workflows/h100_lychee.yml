@@ -226,6 +226,7 @@ jobs:
       - name: test
         working-directory: kokkos-kernels/build
         run: ctest --output-on-failure -V --timeout 3600
+
   PR_HOPPER90_CUDA1262_CUDA_LEFT_REL:
     name: PR_HOPPER90_CUDA1262_CUDA_LEFT_REL
     runs-on: [lychee-cuda-12.6.2-openblas-0.3.28]

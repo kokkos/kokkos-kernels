@@ -94,7 +94,11 @@ jobs:
           -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address -fsanitize=undefined -fno-sanitize=signed-integer-overflow -fno-sanitize=vptr -fno-sanitize-recover=all"
 
       - name: build_kokkos_kernels
-        run: cmake --build kokkos-kernels/build --parallel $(nproc)
+        run: |
+          echo "Building with $(nproc) procs"
+          cmake --build kokkos-kernels/build --parallel $(nproc)
 
       - name: test
-        run: UBSAN_OPTIONS=print_stacktrace=1 ctest --test-dir kokkos-kernels/build -j$(nproc) --output-on-failure --timeout 7200
+        run:  |
+          echo "Testing with $(nproc) procs"
+          UBSAN_OPTIONS=print_stacktrace=1 ctest --test-dir kokkos-kernels/build -j$(nproc) --output-on-failure --timeout 7200
