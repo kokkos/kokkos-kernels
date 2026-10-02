@@ -77,6 +77,7 @@ jobs:
         run: |
           mkdir -p kokkos-kernels/build
           cmake -S kokkos-kernels -B kokkos-kernels/build \
+          -DKokkosKernels_TEST_CI_BUILD=ON \
           -DKokkos_ROOT=$(realpath kokkos/install) \
           -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -DCMAKE_INSTALL_PREFIX=$PWD/../install \

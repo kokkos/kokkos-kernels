@@ -62,6 +62,7 @@ jobs:
           mkdir "$GITHUB_WORKSPACE/kokkos-kernels/install"
           cd "$GITHUB_WORKSPACE/kokkos-kernels/build"
           cmake -S "$GITHUB_WORKSPACE/kokkos-kernels" \
+            -DKokkosKernels_TEST_CI_BUILD=ON \
             -B "$GITHUB_WORKSPACE/kokkos-kernels/build" \
             -D CMAKE_CXX_COMPILER=hipcc \
             -D CMAKE_BUILD_TYPE=Release \
@@ -135,6 +136,7 @@ jobs:
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           cmake -S "$GITHUB_WORKSPACE/kokkos-kernels" \
+            -DKokkosKernels_TEST_CI_BUILD=ON \
             -B "$GITHUB_WORKSPACE/kokkos-kernels/build" \
             -D CMAKE_CXX_COMPILER=hipcc \
             -D CMAKE_BUILD_TYPE=Release \
