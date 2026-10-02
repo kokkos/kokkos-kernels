@@ -142,10 +142,15 @@ struct BDF {
 /// \param y_new [out]: vector of solution at t_end
 /// \param temp [in]: vectors for temporary storage
 /// \param temp2 [in]: vectors for temporary storage
+/// \param rtol [in]: optional, relative tolerance used for error control
+/// and convergence checks during the integration
+/// \param atol [in]: optional, absolute tolerance used for error control
+/// and convergence checks during the integration
 template <class ode_type, class mat_type, class vec_type, class scalar_type>
 KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, const scalar_type t_end,
                               const scalar_type initial_step, scalar_type max_step, const vec_type& y0,
-                              const vec_type& y_new, mat_type& temp, mat_type& temp2) {
+                              const vec_type& y_new, mat_type& temp, mat_type& temp2, scalar_type rtol = 1.0e-3,
+                              scalar_type atol = 1.0e-6) {
   using KAT = KokkosKernels::ArithTraits<scalar_type>;
 
   // This needs to go away and be pulled out of temp instead...
@@ -158,7 +163,6 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
   scalar_type t                    = t_start;
 
   constexpr int max_newton_iters = 10;
-  scalar_type atol = 1.0e-6, rtol = 1.0e-3;
 
   // Compute rhs = f(t_start, y0)
   ode.evaluate_function(t_start, 0, y0, rhs);
