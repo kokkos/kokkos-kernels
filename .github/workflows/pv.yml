@@ -62,6 +62,7 @@ jobs:
           cd kokkos-kernels/build
 
           cmake \
+          -DKokkosKernels_TEST_CI_BUILD=ON \
           -S "$PWD/.." \
           -B "$PWD" \
           -D BUILD_SHARED_LIBS=ON \

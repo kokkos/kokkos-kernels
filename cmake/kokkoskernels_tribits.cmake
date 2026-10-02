@@ -163,12 +163,12 @@ function(kokkoskernels_apply_test_build_speedups TARGET)
   #     "-fuse-ld=${KokkosKernels_TEST_LINKER}")
   # endif()
 
-  # (3) Slim debug info: only meaningful for RelWithDebInfo builds where the
-  # user wants backtraces but doesn't need full debugger support.  Debug builds
-  # keep the default -g (which is -g2) so that stepping / inspecting locals
-  # still works.
+  # (3) Slim debug info: replace the implicit "-g" (= -g2) with "-g1"
+  # (backtraces only, no locals/types) for the configs that produce debug
+  # info by default (Debug and RelWithDebInfo).  Release / MinSizeRel are
+  # left untouched.
   if(KokkosKernels_TEST_SLIM_DEBUG_INFO)
-    set(_debug_cfgs "$<CONFIG:RelWithDebInfo>")
+    set(_debug_cfgs "$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>")
     target_compile_options(${TARGET} PRIVATE
       "$<${_debug_cfgs}:$<$<COMPILE_LANGUAGE:CXX>:-g1>>")
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

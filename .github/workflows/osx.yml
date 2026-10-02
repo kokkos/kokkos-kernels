@@ -89,6 +89,7 @@ jobs:
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           cmake \
+          -DKokkosKernels_TEST_CI_BUILD=ON \
           -S "$PWD/.." \
           -B "$PWD" \
           -D CMAKE_CXX_STANDARD=20 \
@@ -158,6 +159,7 @@ jobs:
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           cmake \
+          -DKokkosKernels_TEST_CI_BUILD=ON \
           -S "$PWD/.." \
           -B "$PWD" \
           -D CMAKE_CXX_STANDARD=20 \
