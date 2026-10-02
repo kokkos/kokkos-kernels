@@ -76,6 +76,7 @@ jobs:
         run: |
           mkdir -p kokkos-kernels/{build,install}
           cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -DKokkosKernels_TEST_CI_BUILD=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
             -DKokkos_ROOT=kokkos/install \
@@ -158,6 +159,7 @@ jobs:
         run: |
           mkdir -p kokkos-kernels/{build,install}
           cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -DKokkosKernels_TEST_CI_BUILD=ON \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
@@ -228,6 +230,7 @@ jobs:
         run: |
           mkdir -p kokkos-kernels/{build,install}
           cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -DKokkosKernels_TEST_CI_BUILD=ON \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=$(realpath kokkos)/bin/nvcc_wrapper \
@@ -301,6 +304,7 @@ jobs:
         run: |
           mkdir -p kokkos-kernels/{build,install}
           cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -DKokkosKernels_TEST_CI_BUILD=ON \
             -D CMAKE_CUDA_ARCHITECTURES=70 \
             -D CMAKE_BUILD_TYPE:STRING=RELEASE \
             -D Kokkos_ROOT=kokkos/install \
