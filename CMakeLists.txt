@@ -85,12 +85,7 @@ kokkoskernels_add_option("ENABLE_WARNINGS_AS_ERRORS" OFF BOOL
 # See cmake/kokkoskernels_tribits.cmake::kokkoskernels_add_executable
 # for the code that consumes these options.
 # ------------------------------------------------------------------
-# ------------------------------------------------------------------
-# Optional build-time speedups for the test executables.  These are
-# opt-in and default to OFF/empty so they don't affect existing users.
-# See cmake/kokkoskernels_tribits.cmake::kokkoskernels_add_executable
-# for the code that consumes these options.
-# ------------------------------------------------------------------
+
 # TEST_CI_BUILD indicates this is a CI build.  CI machines have fixed
 # toolchains and benefit most from the test build speedups, so turning
 # this ON flips the defaults of TEST_ENABLE_PCH and TEST_SLIM_DEBUG_INFO

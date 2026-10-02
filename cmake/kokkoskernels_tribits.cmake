@@ -171,7 +171,8 @@ function(kokkoskernels_apply_test_build_speedups TARGET)
     set(_debug_cfgs "$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>")
     target_compile_options(${TARGET} PRIVATE
       "$<${_debug_cfgs}:$<$<COMPILE_LANGUAGE:CXX>:-g1>>")
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang" AND
+       NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
       target_compile_options(${TARGET} PRIVATE
         "$<${_debug_cfgs}:$<$<COMPILE_LANGUAGE:CXX>:-gsplit-dwarf>>")
     endif()
