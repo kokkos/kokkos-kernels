@@ -101,7 +101,8 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     norm_new = Kokkos::sqrt(norm_new / sys.neqs);
     if ((it > 0) && norm_old > KokkosKernels::ArithTraits<norm_type>::zero()) {
       rate = norm_new / norm_old;
-      if ((rate >= 1) || Kokkos::pow(rate, params.max_iters - it) / (1 - rate) * norm_new > tol) {
+      if ((norm_new >= tol) &&
+          ((rate >= 1) || Kokkos::pow(rate, params.max_iters - it) / (1 - rate) * norm_new > tol)) {
         return newton_solver_status::NLS_DIVERGENCE;
       }
     }
