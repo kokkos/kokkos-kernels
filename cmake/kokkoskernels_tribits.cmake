@@ -185,8 +185,7 @@ function(kokkoskernels_apply_test_build_speedups TARGET)
      AND NOT KOKKOSKERNELS_HAS_TRILINOS
      AND NOT KOKKOS_ENABLE_CUDA
      AND NOT KOKKOS_ENABLE_HIP
-     AND NOT KOKKOS_ENABLE_SYCL
-     AND NOT KOKKOS_ENABLE_OPENMPTARGET)
+     AND NOT KOKKOS_ENABLE_SYCL)
     set(_pch_headers <Kokkos_Core.hpp> <Kokkos_Random.hpp>)
     # gtest.h only PCHs cleanly for test executables that actually link gtest;
     # example executables (which reuse this same helper) do not.
