@@ -140,8 +140,8 @@ struct BDF {
 /// \param y0 [in/out]: vector of initial conditions, set to the solution
 /// at the end of the integration
 /// \param y_new [out]: vector of solution at t_end
-/// \param temp [in]: vectors for temporary storage
-/// \param temp2 [in]: vectors for temporary storage
+/// \param temp [in]: temporary storage, at least neqs x (26 + 2*neqs)
+/// \param temp2 [in]: temporary storage, at least 6 x 7
 template <class ode_type, class mat_type, class vec_type, class scalar_type>
 KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, const scalar_type t_end,
                               const scalar_type initial_step, scalar_type max_step, const vec_type& y0,
