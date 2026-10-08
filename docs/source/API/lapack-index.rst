@@ -11,6 +11,7 @@ API: LAPACK
    lapack/potrf
    lapack/potrs
    lapack/getrf
+   lapack/getrs
    lapack/gesv
    lapack/gesvd
    lapack/trtri
@@ -40,12 +41,12 @@ Below are tables summarizing the currently supported function calls and third pa
      - X
      - --
    * - getrs
-     - 
-     - 
-     - 
-     - 
-     - 
-     - 
+     - :doc:`getrs <lapack/getrs>`
+     - X
+     - X
+     - --
+     - --
+     - --
    * - gesv
      - :doc:`gesv <lapack/gesv>`
      - --
