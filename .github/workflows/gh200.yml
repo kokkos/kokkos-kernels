@@ -66,6 +66,7 @@ jobs:
         run: |
           mkdir -p kokkos-kernels/{build,install}
           cmake -S kokkos-kernels -B kokkos-kernels/build \
+            -DKokkosKernels_TEST_CI_BUILD=ON \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER=nvc++ \
