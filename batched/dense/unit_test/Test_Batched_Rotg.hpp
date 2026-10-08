@@ -215,6 +215,13 @@ void impl_test_batched_rotg(const std::size_t Nb) {
   }
   impl_test_batched_rotg_analytical<DeviceType, LayoutType, SType, MType>(Nb, a_in, b_in, c_ref, s_ref);
 
+  // With a == 0 and negative real b, r must retain the sign of b.
+  b_in = -b_in;
+  if constexpr (KokkosKernels::ArithTraits<SType>::is_complex) {
+    s_ref = -s_ref;
+  }
+  impl_test_batched_rotg_analytical<DeviceType, LayoutType, SType, MType>(Nb, a_in, b_in, c_ref, s_ref);
+
   // Test with b == 0
   a_in  = 4.0;
   b_in  = 0.0;
