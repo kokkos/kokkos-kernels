@@ -17,9 +17,6 @@
 
 #include "KokkosKernels_TestUtils.hpp"
 
-// TeamInverseLU_Real.hpp / TeamInverseLU_Complex.hpp call
-// ::test_batched_inverselu (defined in Test_Batched_SerialInverseLU.hpp), so
-// include it explicitly rather than relying on umbrella ordering.
 #include "Test_Batched_SerialInverseLU.hpp"
 
 using namespace KokkosBatched;
