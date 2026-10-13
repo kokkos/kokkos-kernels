@@ -312,8 +312,9 @@ void gemm_alpha_bypass(const char* TA, const char* TB, typename MatrixC::value_t
   for (int rowIdx = 0; rowIdx < C.extent_int(0); ++rowIdx) {
     for (int colIdx = 0; colIdx < C.extent_int(1); ++colIdx) {
       if (Kokkos::abs(C_h(rowIdx, colIdx) - beta * two) > 10 * Kokkos::abs(beta * two * KAT::eps())) {
-	check_flag = false;
-	std::cout << "C(" << rowIdx << ", " << colIdx << ")=" << C_h(rowIdx, colIdx) << " instead of " << beta * two << std::endl;
+        check_flag = false;
+        std::cout << "C(" << rowIdx << ", " << colIdx << ")=" << C_h(rowIdx, colIdx) << " instead of " << beta * two
+                  << std::endl;
       }
     }
   }
