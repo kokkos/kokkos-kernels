@@ -307,6 +307,7 @@ void gemm_alpha_bypass(const char* TA, const char* TB, typename MatrixC::value_t
   KokkosBlas::gemm(TA, TB, alpha, A, B, beta, C);
 
   auto C_h = Kokkos::create_mirror_view(C);
+  Kokkos::deep_copy(C_h, C);
 
   bool check_flag = true;
   for (int rowIdx = 0; rowIdx < C.extent_int(0); ++rowIdx) {
