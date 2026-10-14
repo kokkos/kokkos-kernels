@@ -476,10 +476,10 @@ void test_batched_syrk_layout() {
 template <typename DeviceType, typename ScalarType, typename ParamTagType>
 int test_batched_syrk() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
-    test_batched_syrk_layout<DeviceType, ScalarType, ParamTagType, Kokkos::LayoutLeft>();
+  test_batched_syrk_layout<DeviceType, ScalarType, ParamTagType, Kokkos::LayoutLeft>();
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
-    test_batched_syrk_layout<DeviceType, ScalarType, ParamTagType, Kokkos::LayoutRight>();
+  test_batched_syrk_layout<DeviceType, ScalarType, ParamTagType, Kokkos::LayoutRight>();
 #endif
 
   return 0;
