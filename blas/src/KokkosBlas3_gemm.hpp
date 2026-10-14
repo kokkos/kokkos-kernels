@@ -140,7 +140,8 @@ void gemm(const execution_space& space, const char transA[], const char transB[]
   }
 
   // Simply scale C if A matrix is degenerated or alpha == 0
-  if (A.extent(1) == 0 || alpha == KokkosKernels::ArithTraits<typename AViewType::value_type>::zero()) {
+  if (A.extent(1) == 0 ||
+      alpha == KokkosKernels::ArithTraits<std::remove_cv_t<typename AViewType::const_value_type>>::zero()) {
     scal(space, C, beta, C);
     return;
   }
