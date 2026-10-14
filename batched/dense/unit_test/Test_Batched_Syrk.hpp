@@ -458,33 +458,28 @@ void impl_test_batched_syrk(const std::size_t Nb, const std::size_t M, const std
 }  // namespace Syrk
 }  // namespace Test
 
+template <typename DeviceType, typename ScalarType, typename ParamTagType, typename LayoutType>
+void test_batched_syrk_layout() {
+  Test::Syrk::impl_test_batched_syrk_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(1);
+  Test::Syrk::impl_test_batched_syrk_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(2);
+  for (int i = 1; i < 5; i++) {
+    for (int j = 1; j < 5; j++) {
+      Test::Syrk::impl_test_batched_syrk<DeviceType, ScalarType, LayoutType, ParamTagType>(1, i, j);
+      Test::Syrk::impl_test_batched_syrk<DeviceType, ScalarType, LayoutType, ParamTagType>(2, i, j);
+    }
+  }
+  Test::Syrk::impl_test_batched_syrk<DeviceType, ScalarType, LayoutType, ParamTagType>(1, 0, 0);
+  Test::Syrk::impl_test_batched_syrk<DeviceType, ScalarType, LayoutType, ParamTagType>(1, 5, 0);
+  Test::Syrk::impl_test_batched_syrk<DeviceType, ScalarType, LayoutType, ParamTagType>(1, 0, 5);
+}
+
 template <typename DeviceType, typename ScalarType, typename ParamTagType>
 int test_batched_syrk() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
-  {
-    using LayoutType = Kokkos::LayoutLeft;
-    Test::Syrk::impl_test_batched_syrk_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(1);
-    Test::Syrk::impl_test_batched_syrk_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(2);
-    for (int i = 0; i < 5; i++) {
-      for (int j = 0; j < 5; j++) {
-        Test::Syrk::impl_test_batched_syrk<DeviceType, ScalarType, LayoutType, ParamTagType>(1, i, j);
-        Test::Syrk::impl_test_batched_syrk<DeviceType, ScalarType, LayoutType, ParamTagType>(2, i, j);
-      }
-    }
-  }
+    test_batched_syrk_layout<DeviceType, ScalarType, ParamTagType, Kokkos::LayoutLeft>();
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
-  {
-    using LayoutType = Kokkos::LayoutRight;
-    Test::Syrk::impl_test_batched_syrk_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(1);
-    Test::Syrk::impl_test_batched_syrk_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(2);
-    for (int i = 0; i < 5; i++) {
-      for (int j = 0; j < 5; j++) {
-        Test::Syrk::impl_test_batched_syrk<DeviceType, ScalarType, LayoutType, ParamTagType>(1, i, j);
-        Test::Syrk::impl_test_batched_syrk<DeviceType, ScalarType, LayoutType, ParamTagType>(2, i, j);
-      }
-    }
-  }
+    test_batched_syrk_layout<DeviceType, ScalarType, ParamTagType, Kokkos::LayoutRight>();
 #endif
 
   return 0;
