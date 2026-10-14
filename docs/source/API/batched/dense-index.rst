@@ -20,6 +20,7 @@ API: Batched Dense (DLA)
    dense/batched_swap
    dense/batched_syr
    dense/batched_syr2
+   dense/batched_syrk
    dense/batched_symv
    dense/batched_getrf
    dense/batched_getrs
@@ -275,9 +276,9 @@ BLAS 3
      - --
      - --
    * - SYRK
-     - --
-     - --
-     - --
+     - :doc:`SerialSyrk <dense/batched_syrk>`
+     - :doc:`TeamSyrk <dense/batched_syrk>`
+     - :doc:`TeamVectorSyrk <dense/batched_syrk>`
    * - SYRK2
      - --
      - --
@@ -287,9 +288,9 @@ BLAS 3
      - --
      - --
    * - HERK
-     - --
-     - --
-     - --
+     - :doc:`SerialSyrk <dense/batched_syrk>`
+     - :doc:`TeamSyrk <dense/batched_syrk>`
+     - :doc:`TeamVectorSyrk <dense/batched_syrk>`
    * - HERK2
      - --
      - --
