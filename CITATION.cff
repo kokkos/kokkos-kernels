@@ -49,8 +49,8 @@ abstract: >-
   shared-memory parallel programming model. "Local" means
   not using MPI, or running within a single MPI process
   without knowing about MPI. "Computational kernels" are
-  coarse-grained operations; they take a lot of work and
-  make sense to parallelize inside using Kokkos. Kokkos
+  coarse-grained operations, consisting of substantial work 
+  suitable for on-node parallel execution using Kokkos. Kokkos
   Kernels can be the building block of a parallel linear
   algebra library that uses MPI and threads for parallelism,
   or it can be used stand-alone in your application.
@@ -58,4 +58,4 @@ keywords:
   - Performance portability
   - High Performance Computing
   - Mathematics Library
-license: Apache-2.0 WITH LLVM Exception
+license-url: 'https://github.com/kokkos/kokkos-kernels/blob/develop/LICENSE'
