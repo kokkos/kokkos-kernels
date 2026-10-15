@@ -14,38 +14,66 @@
 namespace KokkosLapack {
 namespace Impl {
 
-template <class IpivView, class BMatrix>
+// Tags for the laswp_functor forward/backward modes
+struct ForwardMode {};
+struct BackwardMode {};
+
+// Functor parallelizing over columns:
+//  - For square matrices this is probably fine
+//  - For multi-vector it will slowdown with few vectors
+template <class IpivView, class Matrix>
 struct laswp_functor {
+  Matrix m_A;
   IpivView m_Ipiv;
-  BMatrix m_B;
 
-  laswp_functor(const IpivView& Ipiv, const BMatrix& B) : m_Ipiv(Ipiv), m_B(B) {}
+  laswp_functor(const Matrix& A, const IpivView& Ipiv) : m_A(A), m_Ipiv(Ipiv) {}
 
-  void KOKKOS_FUNCTION operator()(const int rowIdx) const {
-    const int piv = m_Ipiv(rowIdx);
-    typename BMatrix::non_const_value_type tmp;
-    for (int colIdx = 0; colIdx < m_B.extent_int(1); ++colIdx) {
-      tmp                 = m_B(rowIdx, colIdx);
-      m_B(rowIdx, colIdx) = m_B(piv, colIdx);
-      m_B(piv, colIdx)    = tmp;
+  void KOKKOS_FUNCTION operator()(ForwardMode, const int colIdx) const {
+    typename Matrix::non_const_value_type tmp;
+    for (int rowIdx = 0; rowIdx < m_A.extent_int(0); ++rowIdx) {
+      const int piv       = m_Ipiv(rowIdx) - 1;
+      tmp                 = m_A(rowIdx, colIdx);
+      m_A(rowIdx, colIdx) = m_A(piv, colIdx);
+      m_A(piv, colIdx)    = tmp;
+    }
+  }
+
+  void KOKKOS_FUNCTION operator()(BackwardMode, const int colIdx) const {
+    typename Matrix::non_const_value_type tmp;
+    for (int rowIdx = m_A.extent_int(0) - 1; rowIdx <= 0; --rowIdx) {
+      const int piv       = m_Ipiv(rowIdx) - 1;
+      tmp                 = m_A(rowIdx, colIdx);
+      m_A(rowIdx, colIdx) = m_A(piv, colIdx);
+      m_A(piv, colIdx)    = tmp;
     }
   }
 };
+
+// Hinting at a potenatial future laswp function
+// Right now not the actual focus of this PR
+template <class IpivView, class Matrix>
+void laswp_impl(const Matrix& A, const IpivView& Ipiv, const bool forward) {
+  laswp_functor swapper(A, Ipiv);
+  if (forward) {
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace, ForwardMode>(space, 0, A.extent(1)), swapper);
+  } else {
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace, BackwardMode>(space, 0, A.extent(1)), swapper);
+  }
+}
 
 template <class ExecutionSpace, class AMatrix, class IpivView, class BMatrix, class InfoView>
 void getrs_impl(const ExecutionSpace& space, const char trans[], const AMatrix& A, const IpivView& Ipiv,
                 const BMatrix& B, const InfoView& /* Info */) {
   auto one = KokkosKernels::ArithTraits<typename AMatrix::non_const_value_type>::one();
 
-  laswp_functor swapper(Ipiv, B);
   if (trans[0] == 'N' || trans[0] == 'n') {
-    Kokkos::parallel_for(Kokkos::RangePolicy(space, 0, B.extent(0)), swapper);
+    laswp_impl(B, Ipiv, true);
     KokkosBlas::trsm(space, "L", "L", "N", "U", one, A, B);
     KokkosBlas::trsm(space, "L", "U", "N", "N", one, A, B);
   } else {
-    KokkosBlas::trsm(space, "L", "U", trans, "N", one, A, B);
+    laswp_impl(B, Ipiv, false);
     KokkosBlas::trsm(space, "L", "L", trans, "U", one, A, B);
-    Kokkos::parallel_for(Kokkos::RangePolicy(space, 0, B.extent(0)), swapper);
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace, BackwardMode>(space, 0, B.extent(1)), swapper);
   }
 }
 

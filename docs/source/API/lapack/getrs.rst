@@ -28,7 +28,7 @@ Parameters
 
 :trans: a transpose mode to apply to matrix A: "N" for no transpose, "T" for transpose and "C" for conjugate transpose.
 
-:A: The input matrix that contains the :math:`L` and :math:`U` factors from a call to `getrs`.
+:A: The input matrix that contains the :math:`L` and :math:`U` factors from a call to `getrf`.
 
 :Ipiv: Pivots to apply to :math:`B`
 
@@ -47,7 +47,7 @@ Type Requirements
 
 - `IpivView` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 that satisfies
 
-  - ``Kokkos::SpaceAccessibility<ExecutionSpace, typename Tau::memory_space>::accessible``
+  - ``Kokkos::SpaceAccessibility<ExecutionSpace, typename IpivView::memory_space>::accessible``
   - ``std::is_integral_v<typename IpivView::non_const_value_type>``
 
 - `BMatrix` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 2 that satisfies
