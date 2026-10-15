@@ -7,7 +7,7 @@ on:
     - '**/*.md'
     - '**/requirements.txt'
     - '**/*.py'
-    - '**/*.cff'
+    - '*.cff'
     - 'docs/**'
     types: [ opened, reopened, synchronize ]
 
