@@ -34,7 +34,7 @@ int main(int /*argc*/, char** /*argv*/) {
     View2DType x("x", Nb, n);
 
     // Initialize A and x
-    auto h_ap   = Kokkos::create_mirror_view(ap);
+    auto h_ap  = Kokkos::create_mirror_view(ap);
     auto h_x   = Kokkos::create_mirror_view(x);
     auto h_Ref = Kokkos::create_mirror_view(Ref);
 
@@ -79,7 +79,7 @@ int main(int /*argc*/, char** /*argv*/) {
     Kokkos::parallel_for(
         "syr", policy, KOKKOS_LAMBDA(int ib) {
           auto sub_ap = Kokkos::subview(ap, ib, Kokkos::ALL);
-          auto sub_x = Kokkos::subview(x, ib, Kokkos::ALL);
+          auto sub_x  = Kokkos::subview(x, ib, Kokkos::ALL);
 
           // A = A + alpha * (x * x^T)
           KokkosBatched::SerialSpr<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::Transpose>::invoke(alpha, sub_x,
