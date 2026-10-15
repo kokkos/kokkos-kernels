@@ -386,7 +386,8 @@ class RandCooMat {
 
   template <class T>
   T getter_copy_helper(T src) {
-    T dst(std::string("RandCooMat.") + typeid(T).name() + " copy", src.extent(0));
+    const std::string name = std::string("RandCooMat.") + std::string(typeid(T).name()) + std::string(" copy");
+    T dst(name, src.extent(0));
     Kokkos::deep_copy(dst, src);
     ExeSpaceType().fence();
     return dst;
@@ -501,7 +502,8 @@ class RandCsMatrix {
 
   template <class T>
   T getter_copy_helper(T src) {
-    T dst(std::string("RandCsMatrix.") + typeid(T).name() + " copy", src.extent(0));
+    const std::string name = std::string("RandCsMatrix.") + std::string(typeid(T).name()) + std::string(" copy");
+    T dst(name, src.extent(0));
     Kokkos::deep_copy(dst, src);
     return dst;
   }
