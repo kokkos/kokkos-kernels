@@ -9,8 +9,12 @@
 
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_Gemm_Decl.hpp"
+#include "KokkosBatched_Gemm_Serial_Impl.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+
 #include "Test_Batched_DenseUtils.hpp"
+#include "Test_Batched_SerialTrmm.hpp"
 
 using namespace KokkosBatched;
 

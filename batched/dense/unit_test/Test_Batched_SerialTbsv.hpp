@@ -7,7 +7,11 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Tbsv.hpp"
+#include "KokkosBatched_Trsv_Decl.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 #include "Test_Batched_DenseUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Tbsv {
