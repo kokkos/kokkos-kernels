@@ -15,12 +15,9 @@
 #include "Test_Batched_Rotmg.hpp"
 #include "Test_Batched_Spr.hpp"
 #include "Test_Batched_Swap.hpp"
-<<<<<<< HEAD
 #include "Test_Batched_Symv.hpp"
 #include "Test_Batched_Syrk.hpp"
-=======
 #include "Test_Batched_Trmv.hpp"
->>>>>>> 7e0da24bb (Add batched serial trmv)
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
 #include "Test_Batched_SerialGesv.hpp"
