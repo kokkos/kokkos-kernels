@@ -252,6 +252,10 @@ BLAS 2
      - :doc:`SerialSpr <dense/batched_spr>`
      - :doc:`TeamSpr <dense/batched_spr>`
      - :doc:`TeamVectorSpr <dense/batched_spr>`
+   * - HPR
+     - :doc:`SerialSpr <dense/batched_spr>`
+     - :doc:`TeamSpr <dense/batched_spr>`
+     - :doc:`TeamVectorSpr <dense/batched_spr>`
    * - SYR2
      - :doc:`SerialSyr2 <dense/batched_syr2>`
      - --
