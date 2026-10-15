@@ -51,8 +51,8 @@ struct laswp_functor {
 
 // Hinting at a potenatial future laswp function
 // Right now not the actual focus of this PR
-template <class IpivView, class Matrix>
-void laswp_impl(const Matrix& A, const IpivView& Ipiv, const bool forward) {
+template <class ExecutionSpace, class IpivView, class Matrix>
+void laswp_impl(const ExecutionSpace& space, const Matrix& A, const IpivView& Ipiv, const bool forward) {
   laswp_functor swapper(A, Ipiv);
   if (forward) {
     Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace, ForwardMode>(space, 0, A.extent(1)), swapper);
@@ -67,13 +67,13 @@ void getrs_impl(const ExecutionSpace& space, const char trans[], const AMatrix& 
   auto one = KokkosKernels::ArithTraits<typename AMatrix::non_const_value_type>::one();
 
   if (trans[0] == 'N' || trans[0] == 'n') {
-    laswp_impl(B, Ipiv, true);
+    laswp_impl(space, B, Ipiv, true);
     KokkosBlas::trsm(space, "L", "L", "N", "U", one, A, B);
     KokkosBlas::trsm(space, "L", "U", "N", "N", one, A, B);
   } else {
-    laswp_impl(B, Ipiv, false);
+    KokkosBlas::trsm(space, "L", "U", trans, "N", one, A, B);
     KokkosBlas::trsm(space, "L", "L", trans, "U", one, A, B);
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace, BackwardMode>(space, 0, B.extent(1)), swapper);
+    laswp_impl(space, B, Ipiv, false);
   }
 }
 
