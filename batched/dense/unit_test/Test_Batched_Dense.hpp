@@ -17,6 +17,7 @@
 #include "Test_Batched_Swap.hpp"
 #include "Test_Batched_Symv.hpp"
 #include "Test_Batched_Syrk.hpp"
+#include "Test_Batched_Trmv.hpp"
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
 #include "Test_Batched_SerialGesv.hpp"
