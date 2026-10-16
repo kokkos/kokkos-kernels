@@ -284,7 +284,6 @@ void impl_test_batched_trmv(const std::size_t Nb, const std::size_t BlkSize) {
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
   using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using ArgUplo           = typename ParamTagType::uplo;
-  using ArgTrans          = typename ParamTagType::trans;
   using ArgDiag           = typename ParamTagType::diag;
 
   View3DType A("A", Nb, BlkSize, BlkSize), A_ref("A_ref", Nb, BlkSize, BlkSize);
