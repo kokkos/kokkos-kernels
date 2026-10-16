@@ -129,10 +129,12 @@ struct BDF_system_wrapper2 {
     if (compute_jac) {
       mySys.evaluate_jacobian(t, dt, y, jac);
 
-      // J = I - dt*(df/dy)
+      // Jacobian of the corrector residual psi + (y - y_predict) - c*f:
+      //   J = I - c*(df/dy),  with c = dt/alpha[order].
+      // This must use the same c that scales f in residual()
       for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
         for (int colIdx = 0; colIdx < neqs; ++colIdx) {
-          jac(rowIdx, colIdx) = -dt * jac(rowIdx, colIdx);
+          jac(rowIdx, colIdx) = -c * jac(rowIdx, colIdx);
         }
         jac(rowIdx, rowIdx) += 1.0;
       }
