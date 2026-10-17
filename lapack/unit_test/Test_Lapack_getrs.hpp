@@ -129,14 +129,14 @@ void impl_test_getrs_unsym() {
   using scalar_type    = typename MatrixType::non_const_value_type;
   using ExecutionSpace = typename Device::execution_space;
 
-  constexpr int m = 4, n = 4;
+  constexpr int n = 4;
 
   const scalar_type zero  = KokkosKernels::ArithTraits<scalar_type>::zero();
   const scalar_type one   = KokkosKernels::ArithTraits<scalar_type>::one();
   const scalar_type two   = one + one;
   const scalar_type three = two + one;
 
-  MatrixType A("matrix A", m, n);
+  MatrixType A("matrix A", n, n);
   auto A_h  = Kokkos::create_mirror_view(A);
   A_h(0, 0) = two;
   A_h(0, 1) = three;
@@ -156,14 +156,13 @@ void impl_test_getrs_unsym() {
   A_h(3, 3) = 31 * one;
   Kokkos::deep_copy(A, A_h);
 
-  const int min_mn = Kokkos::min(A.extent(0), A.extent(1));
-  IpivType ipiv("LU pivots", min_mn);
+  IpivType ipiv("LU pivots", n);
   InfoType info("LU info", 1);
 
   KokkosLapack::getrf(ExecutionSpace(), A, ipiv, info);
   Kokkos::fence();
 
-  auto tol = 31 * min_mn * m * n * KokkosKernels::ArithTraits<scalar_type>::eps();
+  auto tol = 31 * n * n * n * KokkosKernels::ArithTraits<scalar_type>::eps();
 
   // Two rhs
   MatrixType b2("b3", n, 2);

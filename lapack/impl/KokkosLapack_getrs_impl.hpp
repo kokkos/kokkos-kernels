@@ -40,7 +40,7 @@ struct laswp_functor {
 
   void KOKKOS_FUNCTION operator()(BackwardMode, const int colIdx) const {
     typename Matrix::non_const_value_type tmp;
-    for (int rowIdx = m_A.extent_int(0) - 1; rowIdx <= 0; --rowIdx) {
+    for (int rowIdx = m_A.extent_int(0) - 1; rowIdx >= 0; --rowIdx) {
       const int piv       = m_Ipiv(rowIdx) - 1;
       tmp                 = m_A(rowIdx, colIdx);
       m_A(rowIdx, colIdx) = m_A(piv, colIdx);
