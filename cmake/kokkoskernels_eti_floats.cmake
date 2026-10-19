@@ -14,7 +14,6 @@ kokkoskernels_add_option("INST_HALF" OFF BOOL
   "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::half_t.  Disabling this may increase build times. Default: OFF")
 
 get_target_property(target_inc_dirs Kokkos::kokkos INTERFACE_INCLUDE_DIRECTORIES)
-message(STATUS "INCLUDE_DIRECTORIES: ${target_inc_dirs}")
 include(CheckCXXSymbolExists)
 # Syntax: check_cxx_symbol_exists(<macro_name> <header_file> <result_variable>)
 set(CMAKE_REQUIRED_INCLUDES ${target_inc_dirs})
