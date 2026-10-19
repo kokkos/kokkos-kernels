@@ -1598,6 +1598,15 @@ int test_syr2(const std::string& /*caseName*/) {
   return 1;
 }
 
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, syr2_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_half");
+  test_syr2<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("test case syr2_half");
+  Kokkos::Profiling::popRegion();
+}
+#endif
+
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr2_float) {
