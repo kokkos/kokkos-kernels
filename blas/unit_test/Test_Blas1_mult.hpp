@@ -217,6 +217,20 @@ int test_mult_mv() {
   return 1;
 }
 
+#if defined(KOKKOSKERNELS_INST_HALF) ||					\
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, mult_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::mult_half");
+  test_mult<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+TEST_F(TestCategory, mult_mv_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::mult_mv_half");
+  test_mult_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
+
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, mult_float) {
@@ -225,7 +239,7 @@ TEST_F(TestCategory, mult_float) {
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, mult_mv_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::mult_float");
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::mult_mv_float");
   test_mult_mv<float, float, float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }

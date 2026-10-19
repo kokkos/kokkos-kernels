@@ -148,6 +148,20 @@ int test_nrm2_mv() {
   return 1;
 }
 
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, nrm2_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_half");
+  test_nrm2<Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+TEST_F(TestCategory, nrm2_mv_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_mv_half");
+  test_nrm2_mv<Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
+
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, nrm2_float) {
