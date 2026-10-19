@@ -13,32 +13,20 @@ kokkoskernels_add_option("INST_FLOAT" ${KOKKOSKERNELS_INST_FLOAT_DEFAULT} BOOL
 kokkoskernels_add_option("INST_HALF" OFF BOOL
   "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::half_t.  Disabling this may increase build times. Default: OFF")
 
-kokkoskernels_add_option("INST_BHALF" OFF BOOL
-  "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::bhalf_t.  Disabling this may increase build times. Default: OFF")
+include(CheckCXXSymbolExists)
+# Syntax: check_cxx_symbol_exists(<macro_name> <header_file> <result_variable>)
+check_cxx_symbol_exists(KOKKOS_HAS_NATIVE_HALF_TYPE "Kokkos_Macros.hpp" KOKKOS_CORE_HAS_HALF)
 
-set(KOKKOS_IMPL_HALF_TYPE_DEFINED 0)
-if (KOKKOS_ENABLE_SYCL)
-  set(KOKKOS_IMPL_HALF_TYPE_DEFINED 1)
-endif()
-
-if (KOKKOS_ENABLE_HIP)
-  set(KOKKOS_IMPL_HALF_TYPE_DEFINED 1)
-endif()
-
-if(KOKKOS_ENALE_CUDA)
-  set(KOKKOS_IMPL_HALF_TYPE_DEFINED 1)
-endif()
-
-set(REAL_FLOATS              FLOAT DOUBLE)
-if (KOKKOSKERNELS_INST_HALF AND KOKKOS_IMPL_HALF_TYPE_DEFINED)
+if (KOKKOSKERNELS_INST_HALF AND KOKKOS_CORE_HAS_HALF)
+set(REAL_FLOATS              HALF FLOAT DOUBLE)
 set(FLOATS                   HALF FLOAT DOUBLE COMPLEX_FLOAT COMPLEX_DOUBLE)
 else()
+set(REAL_FLOATS              FLOAT DOUBLE)
 set(FLOATS                   FLOAT DOUBLE COMPLEX_FLOAT COMPLEX_DOUBLE)
 endif()
 set(DOUBLE_CPP_TYPE          "double")
 set(FLOAT_CPP_TYPE           "float")
 set(HALF_CPP_TYPE            "Kokkos::Experimental::half_t")
-set(BHALF_CPP_TYPE           "Kokkos::Experimental::bhalf_t")
 set(COMPLEX_FLOAT_CPP_TYPE   "Kokkos::complex<float>")
 set(COMPLEX_DOUBLE_CPP_TYPE  "Kokkos::complex<double>")
 

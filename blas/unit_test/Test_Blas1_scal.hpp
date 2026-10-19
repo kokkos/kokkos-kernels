@@ -337,16 +337,16 @@ int test_scal_mv_rank0_view() {
   return 1;
 }
 
-#if defined(KOKKOSKERNELS_INST_FLOAT) || \
+#if defined(KOKKOSKERNELS_INST_HALF) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, scal_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_float");
-  test_scal<float, float, TestDevice>();
+TEST_F(TestCategory, scal_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_half");
+  test_scal<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
-TEST_F(TestCategory, scal_mv_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_mv_float");
-  test_scal_mv<float, float, TestDevice>();
+TEST_F(TestCategory, scal_mv_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_mv_half");
+  test_scal_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
