@@ -13,9 +13,13 @@ kokkoskernels_add_option("INST_FLOAT" ${KOKKOSKERNELS_INST_FLOAT_DEFAULT} BOOL
 kokkoskernels_add_option("INST_HALF" OFF BOOL
   "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::half_t.  Disabling this may increase build times. Default: OFF")
 
+get_target_property(target_inc_dirs Kokkos::kokkos INTERFACE_INCLUDE_DIRECTORIES)
+message(STATUS "INCLUDE_DIRECTORIES: ${target_inc_dirs}")
 include(CheckCXXSymbolExists)
 # Syntax: check_cxx_symbol_exists(<macro_name> <header_file> <result_variable>)
+set(CMAKE_REQUIRED_INCLUDES ${target_inc_dirs})
 check_cxx_symbol_exists(KOKKOS_HAS_NATIVE_HALF_TYPE "Kokkos_Macros.hpp" KOKKOS_CORE_HAS_HALF)
+# check_cxx_symbol_exists(KOKKOS_HAS_NATIVE_HALF_TYPE "setup/Kokkos_Setup_Cuda.hpp" KOKKOS_CORE_HAS_HALF)
 
 if (KOKKOSKERNELS_INST_HALF AND KOKKOS_CORE_HAS_HALF)
 set(REAL_FLOATS              HALF FLOAT DOUBLE)
