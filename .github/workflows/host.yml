@@ -61,7 +61,7 @@ jobs:
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           cmake \
-            -DKokkosKernels_TEST_CI_BUILD=ON \
+            -DKokkosKernels_IMPL_CI_BUILD=ON \
             -S "$PWD/.." \
             -B "$PWD" \
             -DBUILD_SHARED_LIBS=OFF \
@@ -137,7 +137,7 @@ jobs:
           cd kokkos-kernels/build
 
           cmake \
-            -DKokkosKernels_TEST_CI_BUILD=ON \
+            -DKokkosKernels_IMPL_CI_BUILD=ON \
             -S "$PWD/.." \
             -B "$PWD" \
             -DBUILD_SHARED_LIBS=OFF \
