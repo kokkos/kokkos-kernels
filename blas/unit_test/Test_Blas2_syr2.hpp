@@ -167,8 +167,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::Syr
       // large enough to require 'relTol' to value 5.0e-3. The same
       // calculations show no discrepancies for calculations with double.
       // ****************************************************************
-      m_absTol(std::is_same<AuxType, float>::value ? 1.0e-6 : (std::is_same<AuxType, double>::value ? 1.0e-9 : 0)),
-      m_relTol(std::is_same<AuxType, float>::value ? 5.0e-3 : (std::is_same<AuxType, double>::value ? 1.0e-6 : 0)),
+       m_absTol(std::is_same<AuxType, float>::value ? 1.0e-6 : (std::is_same<AuxType, double>::value ? 1.0e-9 : (std::is_same<AuxType, Kokkos::Experimental::half_t>::value ? 1.0e-1 : 0))),
+      m_relTol(std::is_same<AuxType, float>::value ? 5.0e-3 : (std::is_same<AuxType, double>::value ? 1.0e-6 : (std::is_same<AuxType, Kokkos::Experimental::half_t>::value ? 0.1 : 0))),
       m_M(-1),
       m_N(-1),
       m_useAnalyticalResults(false),
@@ -524,26 +524,26 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::pop
 
   for (int i = 0; i < m_M; ++i) {
     AuxType auxI = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i));
-    h_x[i]       = sin(auxI);
+    h_x[i]        = Kokkos::sin(auxI);
   }
 
   for (int i = 0; i < m_M; ++i) {
     AuxType auxI = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i));
-    h_y[i]       = cos(auxI);
+    h_y[i]        = Kokkos::cos(auxI);
   }
 
   for (int i = 0; i < m_M; ++i) {
     for (int j = 0; j < m_N; ++j) {
       AuxType auxIpJ = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i + j));
-      h_A(i, j)      = .1 * sin(auxIpJ);
+      h_A(i, j)       = .1 * Kokkos::sin(auxIpJ);
     }
   }
 
   for (int i = 0; i < m_M; ++i) {
     for (int j = 0; j < m_N; ++j) {
       if (((m_useUpOption == true) && (i <= j)) || ((m_useUpOption == false) && (i >= j))) {
-        AuxType auxIpJ   = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i + j));
-        h_expected(i, j) = 1.2 * sin(auxIpJ);
+        AuxType auxIpJ  = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i + j));
+        h_expected(i, j) = 1.2 * Kokkos::sin(auxIpJ);
       } else {
         h_expected(i, j) = h_A(i, j);
       }
@@ -741,6 +741,11 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::com
           }
 
           diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j).real());
+          // For half_t, also consider absolute tolerance when expected value is small
+          if (std::is_same<AuxType, Kokkos::Experimental::half_t>::value) {
+            AuxType absThresh = KAT_A::abs(m_absTol);
+            if (absThresh > diffThreshold) diffThreshold = absThresh;
+          }
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRealRel++;
@@ -772,6 +777,11 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::com
           }
 
           diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j).imag());
+          // For half_t, also consider absolute tolerance when expected value is small
+          if (std::is_same<AuxType, Kokkos::Experimental::half_t>::value) {
+            AuxType absThresh = KAT_A::abs(m_absTol);
+            if (absThresh > diffThreshold) diffThreshold = absThresh;
+          }
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsImagRel++;
@@ -1204,6 +1214,11 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::com
         }
 
         diffThreshold = KAT_A::abs(m_relTol * h_reference(i, j));
+        // For half_t, also consider absolute tolerance when expected value is small
+        if (std::is_same<AuxType, Kokkos::Experimental::half_t>::value) {
+          AuxType absThresh = KAT_A::abs(m_absTol);
+          if (absThresh > diffThreshold) diffThreshold = absThresh;
+        }
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRel++;

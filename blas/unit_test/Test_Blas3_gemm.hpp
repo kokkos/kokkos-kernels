@@ -151,7 +151,7 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K, typenam
   typedef KokkosKernels::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
-  double machine_eps = APT::epsilon();
+   double machine_eps = static_cast<double>(APT::epsilon());
 
   ViewTypeA A("A", A_t ? K : M, A_t ? M : K);
   ViewTypeB B("B", B_t ? N : K, B_t ? K : N);
@@ -207,7 +207,7 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K, typenam
 
   if (N != 0 && M != 0) {
     int K_eff             = (K == 0) ? 1 : K;
-    double diff_C_average = diff_C / (N * M);
+    double diff_C_average = static_cast<double>(diff_C) / (N * M);
     // Expected Result: Random Walk in the least significant bit (i.e. ~
     // sqrt(K)*eps eps scales with the total sum and has a factor in it for the
     // accuracy of the operations -> eps = K * 75 * machine_eps * 7
@@ -232,7 +232,7 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K, const Sc
 
   const char tA[]          = {"N"};
   const char tB[]          = {"N"};
-  const double machine_eps = APT::epsilon();
+  const double machine_eps = static_cast<double>(APT::epsilon());
 
   ViewTypeA A1, A2;
   ViewTypeB B1, B2;
@@ -276,13 +276,13 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K, const Sc
     // accuracy of the operations -> eps = K * 75 * machine_eps * 7
     const double diff_C_expected = 1.0 * sqrt(K_eff) * K_eff * 75 * machine_eps * 7;
 
-    const double diff_C1_average = diff_C1 / (N * M);
+    const double diff_C1_average = static_cast<double>(diff_C1) / (N * M);
     if ((diff_C1_average >= 1.05 * diff_C_expected)) {
       printf("Result: %e %e\n", diff_C1_average, diff_C_expected);
     }
     EXPECT_TRUE((diff_C1_average < 1.05 * diff_C_expected));
 
-    const double diff_C2_average = diff_C2 / (N * M);
+    const double diff_C2_average = static_cast<double>(diff_C2) / (N * M);
     if ((diff_C2_average >= 1.05 * diff_C_expected)) {
       printf("Result: %e %e\n", diff_C2_average, diff_C_expected);
     }

@@ -21,12 +21,14 @@ void impl_test_dot(int N) {
 
   {
     ScalarA randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = std::is_same<ScalarB, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(b.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -37,7 +39,8 @@ void impl_test_dot(int N) {
   for (int i = 0; i < N; i++) expected_result += ats::conj(a.h_view(i)) * b.h_view(i);
 
   ScalarA nonconst_nonconst_result = KokkosBlas::dot(a.d_view, b.d_view);
-  double eps                       = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps                       = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
+                                      std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
   EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result, eps * expected_result);
 
   ScalarA const_const_result = KokkosBlas::dot(a.d_view_const, b.d_view_const);
@@ -63,12 +66,14 @@ void impl_test_dot_mv(int N, int K) {
 
   {
     ScalarA randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = std::is_same<ScalarB, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(b.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -81,7 +86,8 @@ void impl_test_dot_mv(int N, int K) {
     for (int i = 0; i < N; i++) expected_result[j] += ats::conj(a.h_view(i, j)) * b.h_view(i, j);
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
+               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
 
   Kokkos::View<ScalarB*, Kokkos::HostSpace> r("Dot::Result", K);
 
@@ -119,13 +125,14 @@ void impl_test_dot_mv(int N, int K) {
 
 template <class ScalarA, class ScalarB, class Device>
 int test_dot() {
+  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(0);
   Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(13);
-  Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(1024);
+  Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(Nbig);
   // Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(132231);
 #endif
 
@@ -135,7 +142,7 @@ int test_dot() {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(0);
   Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(13);
-  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(1024);
+  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(Nbig);
   // Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
@@ -144,13 +151,13 @@ int test_dot() {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(0);
   Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(13);
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(1024);
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(Nbig);
   // Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(132231);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ll, Device>(1024);
-  Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(1024);
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ll, Device>(Nbig);
+  Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(Nbig);
 #endif
 
   return 1;
@@ -158,13 +165,14 @@ int test_dot() {
 
 template <class ScalarA, class ScalarB, class Device>
 int test_dot_mv() {
+  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(0, 5);
   Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(13, 5);
-  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(1024, 5);
+  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(Nbig, 5);
   Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(789, 1);
   // Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(132231,5);
 #endif
@@ -175,7 +183,7 @@ int test_dot_mv() {
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(0, 5);
   Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(13, 5);
-  Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(1024, 5);
+  Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(Nbig, 5);
   Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(789, 1);
   // Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
 #endif
@@ -187,14 +195,14 @@ int test_dot_mv() {
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(0, 5);
   Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(13, 5);
-  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(1024, 5);
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(Nbig, 5);
   Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(789, 1);
   // Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ll, Device>(1024, 5);
-  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ls, Device>(1024, 5);
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ll, Device>(Nbig, 5);
+  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ls, Device>(Nbig, 5);
 #endif
 
   return 1;
