@@ -89,7 +89,7 @@ void impl_test_trmm(char side, char uplo, char trans, char diag, int M, int N, S
   using APT             = KokkosKernels::ArithTraits<ScalarA>;
   using mag_type        = typename APT::mag_type;
 
-  double machine_eps = APT::epsilon();
+   double machine_eps = static_cast<double>(APT::epsilon());
   const mag_type eps = 1.0e8 * machine_eps;  //~1e-13 for double
   bool A_l           = (side == 'L') || (side == 'l');
   int K              = A_l ? M : N;

@@ -32,7 +32,7 @@ void impl_test_axpby(int N) {
 
   {
     ScalarA randStart, randEnd;
-    TestUtils::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(static_cast<double>(max_val), randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
 
