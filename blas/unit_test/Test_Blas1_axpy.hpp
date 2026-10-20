@@ -28,12 +28,12 @@ void impl_test_axpy(int N) {
 
   {
     ScalarA randStart, randEnd;
-    TestUtils::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(static_cast<double>(max_val), randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    TestUtils::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(static_cast<double>(max_val), randStart, randEnd);
     Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -78,12 +78,12 @@ void impl_test_axpy_mv(int N, int K) {
 
   {
     ScalarA randStart, randEnd;
-    TestUtils::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(static_cast<double>(max_val), randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    TestUtils::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(static_cast<double>(max_val), randStart, randEnd);
     Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
 

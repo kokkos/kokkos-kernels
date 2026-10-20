@@ -39,9 +39,9 @@ class BsrSpmvV42NonTrans {
     const a_ordinal_type row  = k % y_.extent(0);
 
     // scale by beta
-    if (0 == beta_) {
+    if (y_value_type(0) == beta_) {
       y_(row, irhs) = 0;  // convert NaN to 0
-    } else if (1 != beta_) {
+    } else if (y_value_type(1) != beta_) {
       y_(row, irhs) *= beta_;
     }
 
@@ -54,7 +54,7 @@ class BsrSpmvV42NonTrans {
       blocksz = BLOCK_SIZE;
     }
 
-    if (0 != alpha_) {
+    if (y_value_type(0) != alpha_) {
       const a_ordinal_type blockRow = row / blocksz;
       const a_ordinal_type lclrow   = row % blocksz;
       y_value_type accum            = 0;
