@@ -432,6 +432,9 @@ void run_spiluk_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t&
     }
     KokkosSparse::spiluk_symbolic(&kh, fill_lev, A_row_map, A_entries, L_row_map, L_entries, U_row_map, U_entries);
     Kokkos::fence();
+    if (measure_symbolic) {
+      state.PauseTiming();
+    }
 
     const size_type_t nnzL = spiluk_handle->get_nnzL();
     const size_type_t nnzU = spiluk_handle->get_nnzU();
@@ -446,6 +449,9 @@ void run_spiluk_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t&
       KokkosSparse::spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                                    U_row_map, U_entries, U_values);
       Kokkos::fence();
+    }
+    else {
+      state.ResumeTiming();
     }
 
     if (verbosity > 1) {
