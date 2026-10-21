@@ -256,7 +256,7 @@ void impl_test_batched_laswp_analytical(const std::size_t N) {
   EXPECT_EQ(info1, 0);
   EXPECT_EQ(info2, 0);
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
 
   Kokkos::deep_copy(h_A0, A0);
   Kokkos::deep_copy(h_A1, A1);
@@ -402,7 +402,7 @@ void impl_test_batched_laswp_vector(const std::size_t N, const std::size_t BlkSi
     }
   }
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
 
   auto h_b            = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b);
   auto h_b_identity   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_identity);
@@ -531,7 +531,7 @@ void impl_test_batched_laswp_matrix(const std::size_t N, const std::size_t BlkSi
     }
   }
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
 
   auto h_A            = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
   auto h_A_identity   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_identity);
@@ -604,6 +604,11 @@ TEST_F(TestCategory, test_batched_laswp_b_float) { test_batched_laswp<TestDevice
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, test_batched_laswp_f_double) { test_batched_laswp<TestDevice, double, Direct::Forward>(); }
 TEST_F(TestCategory, test_batched_laswp_b_double) { test_batched_laswp<TestDevice, double, Direct::Backward>(); }
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, test_batched_laswp_f_half) { test_batched_laswp<TestDevice, Kokkos::Experimental::half_t, Direct::Forward>(); }
+TEST_F(TestCategory, test_batched_laswp_b_half) { test_batched_laswp<TestDevice, Kokkos::Experimental::half_t, Direct::Backward>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)

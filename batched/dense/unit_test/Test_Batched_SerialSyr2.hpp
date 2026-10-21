@@ -197,7 +197,7 @@ void impl_test_batched_syr2_analytical(const std::size_t Nb) {
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   Kokkos::deep_copy(h_A, A);
   auto h_A_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_s);
 
@@ -319,7 +319,7 @@ void impl_test_batched_syr2(const std::size_t Nb, const std::size_t BlkSize) {
     }
   }
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
 
   auto h_A    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
   auto h_A0   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A0);
@@ -405,6 +405,25 @@ TEST_F(TestCategory, test_batched_syr2_u_t_double) {
 TEST_F(TestCategory, test_batched_syr2_u_c_double) {
   using param_tag_type = ::Test::Syr2::ParamTag<Uplo::Upper, Trans::ConjTranspose>;
   test_batched_syr2<TestDevice, double, param_tag_type>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, test_batched_syr2_l_t_half) {
+  using param_tag_type = ::Test::Syr2::ParamTag<Uplo::Lower, Trans::Transpose>;
+  test_batched_syr2<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
+}
+TEST_F(TestCategory, test_batched_syr2_l_c_half) {
+  using param_tag_type = ::Test::Syr2::ParamTag<Uplo::Lower, Trans::ConjTranspose>;
+  test_batched_syr2<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
+}
+TEST_F(TestCategory, test_batched_syr2_u_t_half) {
+  using param_tag_type = ::Test::Syr2::ParamTag<Uplo::Upper, Trans::Transpose>;
+  test_batched_syr2<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
+}
+TEST_F(TestCategory, test_batched_syr2_u_c_half) {
+  using param_tag_type = ::Test::Syr2::ParamTag<Uplo::Upper, Trans::ConjTranspose>;
+  test_batched_syr2<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
 }
 #endif
 

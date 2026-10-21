@@ -101,7 +101,7 @@ void impl_test_batched_lacgv_analytical(const std::size_t Nb) {
   EXPECT_EQ(info0, 0);
   EXPECT_EQ(info1, 0);
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   Kokkos::deep_copy(h_x, x);
   // Check if x is conjugated
   for (std::size_t ib = 0; ib < Nb; ib++) {
@@ -168,7 +168,7 @@ void impl_test_batched_lacgv(const std::size_t Nb, const std::size_t BlkSize) {
     }
   }
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   auto h_x     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
   // Check if x is conjugated
   for (std::size_t ib = 0; ib < Nb; ib++) {
@@ -224,6 +224,10 @@ TEST_F(TestCategory, test_batched_lacgv_float) { test_batched_lacgv<TestDevice, 
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, test_batched_lacgv_double) { test_batched_lacgv<TestDevice, double>(); }
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, test_batched_lacgv_half) { test_batched_lacgv<TestDevice, Kokkos::Experimental::half_t>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
