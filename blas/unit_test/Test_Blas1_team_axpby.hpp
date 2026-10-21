@@ -25,7 +25,8 @@ void impl_test_team_axpby(int N) {
 
   ScalarA a  = 3;
   ScalarB b  = 5;
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
+               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
 
   TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
   TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
@@ -33,8 +34,9 @@ void impl_test_team_axpby(int N) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(10));
-  Kokkos::fill_random(y.d_view, rand_pool, ScalarB(10));
+  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(randMag));
+  Kokkos::fill_random(y.d_view, rand_pool, ScalarB(randMag));
 
   Kokkos::deep_copy(x.h_base, x.d_base);
   Kokkos::deep_copy(y.h_base, y.d_base);
@@ -97,8 +99,9 @@ void impl_test_team_axpby_mv(int N, int K) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(10));
-  Kokkos::fill_random(y.d_view, rand_pool, ScalarB(10));
+  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(randMag));
+  Kokkos::fill_random(y.d_view, rand_pool, ScalarB(randMag));
 
   Kokkos::deep_copy(x.h_base, x.d_base);
   Kokkos::deep_copy(y.h_base, y.d_base);
@@ -115,7 +118,8 @@ void impl_test_team_axpby_mv(int N, int K) {
           ScalarB(a * x.h_view(i, j) + b * y.h_view(i, j)) * ScalarB(a * x.h_view(i, j) + b * y.h_view(i, j));
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
+               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
 
   Kokkos::View<ScalarB *, Kokkos::HostSpace> r("Dot::Result", K);
 
@@ -262,6 +266,12 @@ TEST_F(TestCategory, team_axpby_mv_complex_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_axpby_int) { test_team_axpby<int, int, TestDevice>(); }
 TEST_F(TestCategory, team_axpby_mv_int) { test_team_axpby_mv<int, int, TestDevice>(); }
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, team_axpby_half) { test_team_axpby<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
+TEST_F(TestCategory, team_axpby_mv_half) { test_team_axpby_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)

@@ -158,6 +158,12 @@ TEST_F(TestCategory, batched_scalar_team_axpy_nt_double_double) {
 }
 #endif
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, batched_scalar_team_axpy_nt_half_half) {
+  test_batched_team_axpy<TestDevice, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t>();
+}
+#endif
+
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, batched_scalar_team_axpy_nt_fcomplex_fcomplex) {
   test_batched_team_axpy<TestDevice, Kokkos::complex<float>, Kokkos::complex<float>>();

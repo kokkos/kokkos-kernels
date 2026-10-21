@@ -39,6 +39,13 @@ struct TolMeta<float> {
   static constexpr float value = 1e-5;  // Lower tolerance for floats
 };
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+template <>
+struct TolMeta<Kokkos::Experimental::half_t> {
+  static constexpr double value = 0.1;
+};
+#endif
+
 }  // namespace ParIlut
 
 template <class ViewA, class ViewB>

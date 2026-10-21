@@ -142,7 +142,7 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
 
         KokkosSparse::spmv("N", one, DiagBlks[i], In, mone, Out);
 
-        double nrm_val = KokkosBlas::nrm2(Out);
+        double nrm_val = static_cast<double>(KokkosBlas::nrm2(Out));
         EXPECT_LE(nrm_val, 1e-9);
       }
     }

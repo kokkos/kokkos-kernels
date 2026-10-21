@@ -180,3 +180,13 @@ TEST_F(TestCategory, blas_scalar_team_scale_dcomplex_double) {
   test_blas_team_matutil<TestDevice, Kokkos::complex<double>, double, ::Test::BlasScale>();
 }
 #endif
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, blas_scalar_team_set_half_half) {
+  test_blas_team_matutil<TestDevice, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, ::Test::BlasSet>();
+}
+TEST_F(TestCategory, blas_scalar_team_scale_half_half) {
+  test_blas_team_matutil<TestDevice, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, ::Test::BlasScale>();
+}
+#endif

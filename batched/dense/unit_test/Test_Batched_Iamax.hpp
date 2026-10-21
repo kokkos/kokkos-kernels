@@ -299,6 +299,21 @@ TEST_F(TestCategory, test_batched_team_vector_iamax_double) {
 }
 #endif
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+// Serial
+TEST_F(TestCategory, test_batched_serial_iamax_half) {
+  test_batched_iamax<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Mode::Serial>();
+}
+// Team
+TEST_F(TestCategory, test_batched_team_iamax_half) {
+  test_batched_iamax<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Mode::Team>();
+}
+// TeamVector
+TEST_F(TestCategory, test_batched_team_vector_iamax_half) {
+  test_batched_iamax<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Mode::TeamVector>();
+}
+#endif
+
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 // Serial
 TEST_F(TestCategory, test_batched_serial_iamax_fcomplex) {

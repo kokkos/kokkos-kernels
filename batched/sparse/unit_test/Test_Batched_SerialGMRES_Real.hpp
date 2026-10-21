@@ -8,3 +8,5 @@ TEST_F(TestCategory, batched_scalar_serial_GMRES_float) { test_batched_serial_GM
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, batched_scalar_serial_GMRES_double) { test_batched_serial_GMRES<TestDevice, double>(); }
 #endif
+
+// Half precision not tested for GMRES due to library-level operator ambiguity issues with half_t *= half_t

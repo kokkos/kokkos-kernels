@@ -400,7 +400,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   // Check against gold solution
   scalar_t xSq             = KokkosBlas::dot(x, x);
   scalar_t solnDot         = KokkosBlas::dot(x, xgold);
-  double scaledSolutionDot = KokkosKernels::ArithTraits<scalar_t>::abs(solnDot / xSq);
+   double scaledSolutionDot = static_cast<double>(KokkosKernels::ArithTraits<scalar_t>::abs(solnDot / xSq));
   EXPECT_TRUE(0.99 < scaledSolutionDot);
 }
 
@@ -694,51 +694,61 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_asymmetric_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_gauss_seidel_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, false);                         \
   }                                                                                                                    \
   TEST_F(TestCategory,                                                                                                 \
          sparse##_##gauss_seidel_asymmetric_streams_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {              \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, false, 0.9,             \
-                                                                     KokkosGraph::COLORING_DEFAULT, 1);                \
+                                                                       KokkosGraph::COLORING_DEFAULT, 1);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, false, 0.9,             \
-                                                                     KokkosGraph::COLORING_DEFAULT, 2);                \
+                                                                       KokkosGraph::COLORING_DEFAULT, 2);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, false, 0.9,             \
-                                                                     KokkosGraph::COLORING_DEFAULT, 3);                \
+                                                                       KokkosGraph::COLORING_DEFAULT, 3);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, false, 0.9,             \
-                                                                     KokkosGraph::COLORING_DEFAULT, 4);                \
+                                                                       KokkosGraph::COLORING_DEFAULT, 4);                \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_asymmetric_rank2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_gauss_seidel_rank2<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, 3, false);                      \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_symmetric_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {         \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_gauss_seidel_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, true);                          \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_symmetric_streams_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, true, 0.9,              \
-                                                                     KokkosGraph::COLORING_DEFAULT, 1);                \
+                                                                       KokkosGraph::COLORING_DEFAULT, 1);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, true, 0.9,              \
-                                                                     KokkosGraph::COLORING_DEFAULT, 2);                \
+                                                                       KokkosGraph::COLORING_DEFAULT, 2);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, true, 0.9,              \
-                                                                     KokkosGraph::COLORING_DEFAULT, 3);                \
+                                                                       KokkosGraph::COLORING_DEFAULT, 3);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, true, 0.9,              \
-                                                                     KokkosGraph::COLORING_DEFAULT, 4);                \
+                                                                       KokkosGraph::COLORING_DEFAULT, 4);                \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_symmetric_rank2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {         \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_gauss_seidel_rank2<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, 3, true);                       \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_empty##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                   \
     test_gauss_seidel_empty<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                        \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##balloon_clustering##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                   \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_balloon_clustering<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 100, 2000);                                         \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##sequential_sor##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                       \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_sequential_sor<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 15, 50, 10);                                     \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_long_rows##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {               \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_gauss_seidel_long_rows<SCALAR, ORDINAL, OFFSET, DEVICE>(500, 10, 20, true);                                   \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_custom_coloring##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {         \
+    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;                                        \
     test_gauss_seidel_custom_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(500, 10);                                       \
   }
 

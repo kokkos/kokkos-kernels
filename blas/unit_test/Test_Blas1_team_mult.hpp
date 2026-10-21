@@ -26,7 +26,8 @@ void impl_test_team_mult(int N) {
 
   ScalarA a  = 3;
   ScalarB b  = 5;
-  double eps = std::is_same<ScalarC, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
+               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
 
   TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
   TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
@@ -35,9 +36,10 @@ void impl_test_team_mult(int N) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(10));
-  Kokkos::fill_random(y.d_view, rand_pool, ScalarB(10));
-  Kokkos::fill_random(z.d_view, rand_pool, ScalarC(10));
+  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(randMag));
+  Kokkos::fill_random(y.d_view, rand_pool, ScalarB(randMag));
+  Kokkos::fill_random(z.d_view, rand_pool, ScalarC(randMag));
 
   Kokkos::deep_copy(org_z.h_base, z.d_base);
 
@@ -127,7 +129,8 @@ void impl_test_team_mult_mv(int N, int K) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  typename KokkosKernels::ArithTraits<ScalarC>::mag_type const max_val = 10;
+  typename KokkosKernels::ArithTraits<ScalarC>::mag_type const max_val =
+      std::is_same<ScalarC, Kokkos::Experimental::half_t>::value ? 1 : 10;
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(max_val));
   Kokkos::fill_random(y.d_view, rand_pool, ScalarB(max_val));
   Kokkos::fill_random(z.d_view, rand_pool, ScalarC(max_val));
@@ -308,4 +311,10 @@ TEST_F(TestCategory, team_mult_mv_int) { test_team_mult_mv<int, int, int, TestDe
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, team_mult_double_int) { test_team_mult<double, int, float, TestDevice>(); }
 TEST_F(TestCategory, team_mult_double_mv_int) { test_team_mult_mv<double, int, float, TestDevice>(); }
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, team_mult_half) { test_team_mult<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
+TEST_F(TestCategory, team_mult_mv_half) { test_team_mult_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
 #endif
