@@ -13,12 +13,21 @@ kokkoskernels_add_option("INST_FLOAT" ${KOKKOSKERNELS_INST_FLOAT_DEFAULT} BOOL
 kokkoskernels_add_option("INST_HALF" OFF BOOL
   "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::half_t.  Disabling this may increase build times. Default: OFF")
 
-get_target_property(target_inc_dirs Kokkos::kokkos INTERFACE_INCLUDE_DIRECTORIES)
-include(CheckCXXSymbolExists)
-# Syntax: check_cxx_symbol_exists(<macro_name> <header_file> <result_variable>)
-set(CMAKE_REQUIRED_INCLUDES ${target_inc_dirs})
-check_cxx_symbol_exists(KOKKOS_HAS_NATIVE_HALF_TYPE "Kokkos_Macros.hpp" KOKKOS_CORE_HAS_HALF)
-# check_cxx_symbol_exists(KOKKOS_HAS_NATIVE_HALF_TYPE "setup/Kokkos_Setup_Cuda.hpp" KOKKOS_CORE_HAS_HALF)
+# Detect whether Kokkos defines KOKKOS_HAS_NATIVE_HALF_TYPE, i.e. whether
+# half_t is a natively supported 16-bit type rather than an alias for float.
+# This test uses the proper compiler launcher from Kokkos.
+function(kokkoskernels_check_native_half RESULT_VAR)
+  include(CheckCXXSymbolExists)
+  get_property(_launcher GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
+  if(_launcher)
+    separate_arguments(CMAKE_CXX_COMPILER_LAUNCHER UNIX_COMMAND "${_launcher}")
+    list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES CMAKE_CXX_COMPILER_LAUNCHER)
+  endif()
+  set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+  set(CMAKE_REQUIRED_LIBRARIES Kokkos::kokkos)
+  check_cxx_symbol_exists(KOKKOS_HAS_NATIVE_HALF_TYPE "Kokkos_Macros.hpp" ${RESULT_VAR})
+endfunction()
+kokkoskernels_check_native_half(KOKKOS_CORE_HAS_HALF)
 
 if (KOKKOSKERNELS_INST_HALF AND KOKKOS_CORE_HAS_HALF)
 set(REAL_FLOATS              HALF FLOAT DOUBLE)
