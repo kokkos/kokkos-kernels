@@ -299,6 +299,13 @@ void run_test_par_ilut_reuse_numeric_pattern() {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_par_ilut_precond() {
+  // Half precision is skipped: this test drives GMRES, whose iterative
+  // refinement / Gram-Schmidt orthogonalization in scalar_t accumulates
+  // roundoff to NaN (see Test_Sparse_gmres.hpp). This mirrors the batched
+  // GMRES tests, which do not instantiate half_t for the same reason.
+  if constexpr (std::is_same_v<scalar_t, Kokkos::Experimental::half_t>) {
+    return;
+  }
   // Test using par_ilut as a preconditioner
   // Does (LU)^inv Ax = (LU)^inv b converge faster than solving Ax=b?
   using exe_space      = typename device::execution_space;
