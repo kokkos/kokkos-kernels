@@ -24,7 +24,8 @@ void impl_test_team_abs(int N) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
+               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
 
   TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
   TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
@@ -259,6 +260,12 @@ TEST_F(TestCategory, team_abs_mv_complex_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_abs_int) { test_team_abs<int, int, TestDevice>(); }
 TEST_F(TestCategory, team_abs_mv_int) { test_team_abs_mv<int, int, TestDevice>(); }
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, team_abs_half) { test_team_abs<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
+TEST_F(TestCategory, team_abs_mv_half) { test_team_abs_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
 #endif
 
 /*#if !defined(KOKKOSKERNELS_ETI_ONLY) &&

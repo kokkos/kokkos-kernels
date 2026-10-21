@@ -214,7 +214,7 @@ void impl_test_batched_spr_analytical(const std::size_t Nb) {
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   Kokkos::deep_copy(h_ap, ap);
   auto h_ap_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, ap_s);
 
@@ -290,7 +290,7 @@ void impl_test_batched_spr(const std::size_t Nb, const std::size_t BlkSize) {
   packed_to_dense<ArgUplo, ArgTrans>(ap0, A0);
   packed_to_dense<ArgUplo, ArgTrans>(ap, A);
 
-  RealType eps  = 1.0e1 * ats::epsilon();
+  RealType eps  = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   auto h_A      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A);
   auto h_A0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A0);
   auto h_A_ref  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A_ref);
@@ -447,6 +447,38 @@ TEST_F(TestCategory, test_batched_team_vector_spr_u_t_double) {
 TEST_F(TestCategory, test_batched_team_vector_spr_u_c_double) {
   using param_tag_type = ::Test::Spr::ParamTag<Uplo::Upper, Trans::ConjTranspose, Mode::TeamVector>;
   test_batched_spr<TestDevice, double, param_tag_type>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+// Serial
+TEST_F(TestCategory, test_batched_serial_spr_l_t_half) {
+  using param_tag_type = ::Test::Spr::ParamTag<Uplo::Lower, Trans::Transpose, Mode::Serial>;
+  test_batched_spr<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
+}
+TEST_F(TestCategory, test_batched_serial_spr_u_t_half) {
+  using param_tag_type = ::Test::Spr::ParamTag<Uplo::Upper, Trans::Transpose, Mode::Serial>;
+  test_batched_spr<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
+}
+
+// Team
+TEST_F(TestCategory, test_batched_team_spr_l_t_half) {
+  using param_tag_type = ::Test::Spr::ParamTag<Uplo::Lower, Trans::Transpose, Mode::Team>;
+  test_batched_spr<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
+}
+TEST_F(TestCategory, test_batched_team_spr_u_t_half) {
+  using param_tag_type = ::Test::Spr::ParamTag<Uplo::Upper, Trans::Transpose, Mode::Team>;
+  test_batched_spr<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
+}
+
+// TeamVector
+TEST_F(TestCategory, test_batched_team_vector_spr_l_t_half) {
+  using param_tag_type = ::Test::Spr::ParamTag<Uplo::Lower, Trans::Transpose, Mode::TeamVector>;
+  test_batched_spr<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
+}
+TEST_F(TestCategory, test_batched_team_vector_spr_u_t_half) {
+  using param_tag_type = ::Test::Spr::ParamTag<Uplo::Upper, Trans::Transpose, Mode::TeamVector>;
+  test_batched_spr<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();
 }
 #endif
 
