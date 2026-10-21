@@ -393,8 +393,7 @@ void impl_test_batched_syr2k(const std::size_t Nb, const std::size_t M, const st
   }
 
   const ScalarType alpha = alpha0;
-  const RealType beta = 1.2, zero = KokkosKernels::ArithTraits<RealType>::zero(),
-                 one = KokkosKernels::ArithTraits<RealType>::one();
+  const RealType beta = 1.2, zero = KokkosKernels::ArithTraits<RealType>::zero();
 
   const ScalarType cbeta = 1.2, czero = KokkosKernels::ArithTraits<ScalarType>::zero(),
                    cone = KokkosKernels::ArithTraits<ScalarType>::one();
