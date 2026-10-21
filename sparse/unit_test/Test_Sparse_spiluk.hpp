@@ -779,8 +779,10 @@ void test_spiluk() {
   TestStruct::run_test_spiluk_blocks();
   TestStruct::run_test_spiluk_scale();
   TestStruct::run_test_spiluk_scale_blocks();
-  TestStruct::template run_test_spiluk_precond<false>();
-  TestStruct::template run_test_spiluk_precond<true>();
+  if constexpr (!std::is_same_v<scalar_t, Kokkos::Experimental::half_t>) {
+    TestStruct::template run_test_spiluk_precond<false>();
+    TestStruct::template run_test_spiluk_precond<true>();
+  }
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
@@ -800,7 +802,6 @@ void test_spiluk_streams() {
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                      \
   TEST_F(TestCategory, sparse##_##spiluk##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    if constexpr (std::is_same_v<SCALAR, Kokkos::Experimental::half_t>) return;        \
     test_spiluk<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
     test_spiluk_streams<SCALAR, ORDINAL, OFFSET, DEVICE>();                              \
   }

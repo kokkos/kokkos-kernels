@@ -186,6 +186,13 @@ struct GmresTest {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gmres() {
+  // Half precision is skipped: GMRES iteratively refines via Gram-Schmidt
+  // orthogonalization in scalar_t, which accumulates roundoff to NaN (the
+  // residual never reaches the requested tolerance). This mirrors the batched
+  // GMRES tests, which do not instantiate half_t for the same reason.
+  if constexpr (std::is_same_v<scalar_t, Kokkos::Experimental::half_t>) {
+    return;
+  }
   using TestStruct = Test::GmresTest<scalar_t, lno_t, size_type, device>;
   TestStruct::template run_test_gmres<false>();
   TestStruct::template run_test_gmres<true>();

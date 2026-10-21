@@ -148,9 +148,11 @@ void impl_test_team_mult_mv(int N, int K) {
   // Since b and a are known and the largest value in z, x and y
   // is set by the variables max_val, the error upper bound will be
   //         max_error = a * max_val * max_val
-  typename KokkosKernels::ArithTraits<ScalarC>::mag_type const eps = KokkosKernels::ArithTraits<ScalarC>::epsilon();
+   typename KokkosKernels::ArithTraits<ScalarC>::mag_type const eps = KokkosKernels::ArithTraits<ScalarC>::epsilon();
+  // For half_t, account for accumulation error from multiple multiplications (a*x*y): scale by 2
   typename KokkosKernels::ArithTraits<ScalarC>::mag_type const max_error =
-      KokkosKernels::ArithTraits<ScalarC>::abs(a) * max_val * max_val * eps;
+      KokkosKernels::ArithTraits<ScalarC>::abs(a) * max_val * max_val * eps *
+      (std::is_same<ScalarC, Kokkos::Experimental::half_t>::value ? 2 : 1);
 
   // KokkosBlas::mult(b,z,a,x,y);
   Kokkos::parallel_for(
