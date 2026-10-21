@@ -134,9 +134,9 @@ void run_test_extract_diagonal_blocks_rcb_deprecated(lno_t n_pts_per_dim, lno_t 
   for (lno_t i = 0; i < nrows; i++) {
     h_row_map(i) = nnz;
     for (lno_t j = 0; j < nrows; j++) {
-      magnitude_t distance = sqrt(pow(h_coordinates(i, 0) - h_coordinates(j, 0), 2.0) +
-                                  pow(h_coordinates(i, 1) - h_coordinates(j, 1), 2.0) +
-                                  pow(h_coordinates(i, 2) - h_coordinates(j, 2), 2.0));
+      magnitude_t distance = sqrt(pow(static_cast<double>(h_coordinates(i, 0)) - static_cast<double>(h_coordinates(j, 0)), 2.0) +
+                                  pow(static_cast<double>(h_coordinates(i, 1)) - static_cast<double>(h_coordinates(j, 1)), 2.0) +
+                                  pow(static_cast<double>(h_coordinates(i, 2)) - static_cast<double>(h_coordinates(j, 2)), 2.0));
       if (distance <= dx) {
         nnz++;
         near_indices.push_back(std::make_pair(i, j));
@@ -257,9 +257,9 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
   for (lno_t i = 0; i < nrows; i++) {
     h_row_map(i) = nnz;
     for (lno_t j = 0; j < nrows; j++) {
-      magnitude_t distance = sqrt(pow(h_coordinates(i, 0) - h_coordinates(j, 0), 2.0) +
-                                  pow(h_coordinates(i, 1) - h_coordinates(j, 1), 2.0) +
-                                  pow(h_coordinates(i, 2) - h_coordinates(j, 2), 2.0));
+      magnitude_t distance = sqrt(pow(static_cast<double>(h_coordinates(i, 0)) - static_cast<double>(h_coordinates(j, 0)), 2.0) +
+                                  pow(static_cast<double>(h_coordinates(i, 1)) - static_cast<double>(h_coordinates(j, 1)), 2.0) +
+                                  pow(static_cast<double>(h_coordinates(i, 2)) - static_cast<double>(h_coordinates(j, 2)), 2.0));
       if (distance <= dx) {
         nnz++;
         near_indices.push_back(std::make_pair(i, j));

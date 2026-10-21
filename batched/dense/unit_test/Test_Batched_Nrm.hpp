@@ -132,14 +132,14 @@ void impl_test_batched_nrm_analytical(const std::size_t Nb) {
   info = Functor_BatchedNrm<DeviceType, StridedView2DType, NormViewType, ArgNorm, ArgMode>(x_s, norm_s).run();
   EXPECT_EQ(info, 0);
 
-  RealType eps  = 1.0e1 * ats::epsilon();
-  auto h_norm   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm);
-  auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
+   RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+   auto h_norm   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm);
+   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
-  for (std::size_t ib = 0; ib < Nb; ib++) {
-    EXPECT_NEAR_KK(h_norm(ib), h_norm_ref(ib), eps);
-    EXPECT_NEAR_KK(h_norm_s(ib), h_norm_ref(ib), eps);
-  }
+   for (std::size_t ib = 0; ib < Nb; ib++) {
+     EXPECT_NEAR_KK(h_norm(ib), h_norm_ref(ib), eps);
+     EXPECT_NEAR_KK(h_norm_s(ib), h_norm_ref(ib), eps);
+   }
 }
 
 /// \brief Implementation details of batched nrm overflow test
@@ -181,7 +181,9 @@ void impl_test_batched_nrm_overflow(const std::size_t Nb) {
   auto h_norm_ref = Kokkos::create_mirror_view(norm_ref);
 
   constexpr bool is_complex = KokkosKernels::ArithTraits<ScalarType>::is_complex;
-  const RealType large_val  = std::is_same_v<RealType, float> ? RealType(1e20) : RealType(1e200);
+  const RealType large_val = std::is_same_v<RealType, Kokkos::Experimental::half_t> ? RealType(1e4)
+                                 : std::is_same_v<RealType, float>                    ? RealType(1e20)
+                                                                                     : RealType(1e200);
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
     if constexpr (is_complex) {
@@ -214,7 +216,7 @@ void impl_test_batched_nrm_overflow(const std::size_t Nb) {
   info = Functor_BatchedNrm<DeviceType, StridedView2DType, NormViewType, ArgNorm, ArgMode>(x_s, norm_s).run();
   EXPECT_EQ(info, 0);
 
-  RealType eps  = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   auto h_norm   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm);
   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
@@ -310,7 +312,7 @@ void impl_test_batched_nrm(const std::size_t Nb, const std::size_t N) {
     h_norm_ref(ib) = norm_tmp;
   }
 
-  RealType eps  = 1.0e1 * ats::epsilon();
+  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   auto h_norm   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm);
   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
@@ -483,6 +485,68 @@ TEST_F(TestCategory, test_batched_teamvector_nrm_linf_double) {
 }
 TEST_F(TestCategory, test_batched_teamvector_nrm_genuinelinf_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::TeamVector>();
+ }
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+// Serial
+TEST_F(TestCategory, test_batched_serial_nrm_l1_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::L1, KokkosBatched::Mode::Serial>();
+}
+TEST_F(TestCategory, test_batched_serial_nrm_genuinel1_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Serial>();
+}
+TEST_F(TestCategory, test_batched_serial_nrm_l2_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::L2, KokkosBatched::Mode::Serial>();
+}
+TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Serial>();
+}
+TEST_F(TestCategory, test_batched_serial_nrm_linf_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Serial>();
+}
+TEST_F(TestCategory, test_batched_serial_nrm_genuinelinf_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::Serial>();
+}
+
+// Team
+TEST_F(TestCategory, test_batched_team_nrm_l1_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::L1, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_nrm_genuinel1_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_nrm_l2_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::L2, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_nrm_scaled_l2_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_nrm_linf_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_nrm_genuinelinf_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::Team>();
+}
+
+// TeamVector
+TEST_F(TestCategory, test_batched_teamvector_nrm_l1_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::L1, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinel1_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_nrm_l2_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::L2, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_nrm_linf_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::LInf, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinelinf_half) {
+  test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::TeamVector>();
 }
 #endif
 

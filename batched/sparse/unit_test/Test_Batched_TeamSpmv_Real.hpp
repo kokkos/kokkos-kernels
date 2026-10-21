@@ -14,3 +14,10 @@ TEST_F(TestCategory, batched_scalar_team_spmv_nt_double_double) {
   test_batched_team_spmv<TestDevice, double, double, param_tag_type>();
 }
 #endif
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, batched_scalar_team_spmv_nt_half_half) {
+  typedef ::Test::Spmv::ParamTag<Trans::NoTranspose> param_tag_type;
+  test_batched_team_spmv<TestDevice, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, param_tag_type>();
+}
+#endif

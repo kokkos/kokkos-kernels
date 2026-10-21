@@ -33,6 +33,13 @@ struct TolMeta<float> {
   static constexpr float value = 1e-5;  // Lower tolerance for floats
 };
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+template <>
+struct TolMeta<Kokkos::Experimental::half_t> {
+  static constexpr double value = 0.1;
+};
+#endif
+
 template <typename Crs, typename AType, typename std::enable_if<is_crs_matrix<AType>::value>::type* = nullptr>
 AType get_A(int n, int diagDominance, int) {
   using lno_t                           = typename Crs::ordinal_type;

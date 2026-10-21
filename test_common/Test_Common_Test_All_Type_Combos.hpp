@@ -13,6 +13,13 @@
 #error Test_Common_Test_All_Type_Combos.hpp requires KOKKOSKERNELS_EXECUTE_TEST to be set
 #endif
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+#ifndef KOKKOSKERNELS_KOKKOS_HALF_TYPEDEF
+#define KOKKOSKERNELS_KOKKOS_HALF_TYPEDEF
+typedef Kokkos::Experimental::half_t kokkos_half;
+#endif
+#endif
+
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
 // ETI is off, test all possible type combos
@@ -25,6 +32,13 @@ KOKKOSKERNELS_EXECUTE_TEST(float, int, int, TestDevice)
 KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, int, TestDevice)
 KOKKOSKERNELS_EXECUTE_TEST(float, int, size_t, TestDevice)
 KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, size_t, TestDevice)
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int64_t, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int, size_t, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int64_t, size_t, TestDevice)
+#endif
 
 #if !defined(NO_TEST_COMPLEX)
 
@@ -81,6 +95,26 @@ KOKKOSKERNELS_EXECUTE_TEST(float, int, size_t, TestDevice)
 #if (defined(KOKKOSKERNELS_INST_FLOAT) && defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
 KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, size_t, TestDevice)
+#endif
+
+#if (defined(KOKKOSKERNELS_INST_HALF) && defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT))
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int, int, TestDevice)
+#endif
+
+#if (defined(KOKKOSKERNELS_INST_HALF) && defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT))
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int64_t, int, TestDevice)
+#endif
+
+#if (defined(KOKKOSKERNELS_INST_HALF) && defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int, size_t, TestDevice)
+#endif
+
+#if (defined(KOKKOSKERNELS_INST_HALF) && defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int64_t, size_t, TestDevice)
 #endif
 
 #if !defined(NO_TEST_COMPLEX)
