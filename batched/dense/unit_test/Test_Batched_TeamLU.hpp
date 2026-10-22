@@ -14,6 +14,8 @@
 
 #include "KokkosKernels_TestUtils.hpp"
 
+#include "Test_Batched_SerialLU.hpp"
+
 using namespace KokkosBatched;
 
 namespace Test {

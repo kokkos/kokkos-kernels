@@ -5,6 +5,7 @@
 #include "KokkosBatched_SVD_Decl.hpp"             //For testing overall kernel
 #include "KokkosBatched_SVD_Serial_Internal.hpp"  //For unit testing individual components
 #include "KokkosBatched_SetIdentity_Decl.hpp"
+#include "KokkosBatched_SetIdentity_Impl.hpp"
 #include "KokkosKernels_TestMatrixUtils.hpp"
 #include "KokkosKernels_TestVanilla.hpp"
 
