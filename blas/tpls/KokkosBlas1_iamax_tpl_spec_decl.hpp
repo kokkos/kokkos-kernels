@@ -85,8 +85,8 @@ namespace Impl {
 
 using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
 
-#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, INDEX_TYPE,          \
-                                                        EXEC_SPACE, RET_DEVICE_TYPE, CUBLAS_PTR_MODE_1,                \
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_INT_TYPE, CUBLAS_FN,     \
+                                                        INDEX_TYPE, EXEC_SPACE, RET_DEVICE_TYPE, CUBLAS_PTR_MODE_1,    \
                                                         CUBLAS_PTR_MODE_2)                                             \
   template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Iamax<                                                                                                        \
@@ -110,9 +110,9 @@ using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
       }                                                                                                                \
       if (numElems < static_cast<size_type>(INT_MAX)) {                                                                \
         iamax_print_specialization<RV, XV>();                                                                          \
-        const int N                            = static_cast<int>(numElems);                                           \
-        const int XST                          = X.stride(0);                                                          \
-        const int LDX                          = (XST == 0) ? 1 : XST;                                                 \
+        const CUBLAS_INT_TYPE N                = static_cast<CUBLAS_INT_TYPE>(numElems);                               \
+        const CUBLAS_INT_TYPE XST              = X.stride(0);                                                          \
+        const CUBLAS_INT_TYPE LDX              = (XST == 0) ? 1 : XST;                                                 \
         KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                     \
         KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                              \
         cublasPointerMode_t prevPtrMode;                                                                               \
@@ -121,7 +121,7 @@ using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
           KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_PTR_MODE_1));                         \
         }                                                                                                              \
         KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(CUBLAS_FN(s.handle, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(X.data()),   \
-                                                   LDX, reinterpret_cast<int*>(R.data())));                            \
+                                                   LDX, reinterpret_cast<CUBLAS_INT_TYPE*>(R.data())));                \
         if (prevPtrMode == CUBLAS_PTR_MODE_2) {                                                                        \
           KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_PTR_MODE_2));                         \
           KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                           \
@@ -133,26 +133,57 @@ using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, INDEX_TYPE)                 \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, INDEX_TYPE, Kokkos::Cuda, \
-                                                  Kokkos::HostSpace, CUBLAS_POINTER_MODE_HOST,                        \
-                                                  CUBLAS_POINTER_MODE_DEVICE)                                         \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, INDEX_TYPE, Kokkos::Cuda, \
-                                                  CUBLAS_DEVICE_TYPE, CUBLAS_POINTER_MODE_DEVICE,                     \
-                                                  CUBLAS_POINTER_MODE_HOST)
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_INT_TYPE, CUBLAS_FN, INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_INT_TYPE, CUBLAS_FN,           \
+                                                  INDEX_TYPE, Kokkos::Cuda, Kokkos::HostSpace,                         \
+                                                  CUBLAS_POINTER_MODE_HOST, CUBLAS_POINTER_MODE_DEVICE)                \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_INT_TYPE, CUBLAS_FN,           \
+                                                  INDEX_TYPE, Kokkos::Cuda, CUBLAS_DEVICE_TYPE,                        \
+                                                  CUBLAS_POINTER_MODE_DEVICE, CUBLAS_POINTER_MODE_HOST)
+
+#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS_64(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(double, double, int64_t, cublasIdamax_64, INDEX_TYPE)
+
+#define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS_64(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(float, float, int64_t, cublasIsamax_64, INDEX_TYPE)
+
+#define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS_64(INDEX_TYPE)                                                \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, int64_t, cublasIzamax_64, \
+                                          INDEX_TYPE)
+
+#define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS_64(INDEX_TYPE) \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, int64_t, cublasIcamax_64, INDEX_TYPE)
 
 #define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(double, double, cublasIdamax, INDEX_TYPE)
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(double, double, int, cublasIdamax, INDEX_TYPE)
 
 #define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(float, float, cublasIsamax, INDEX_TYPE)
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(float, float, int, cublasIsamax, INDEX_TYPE)
 
 #define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasIzamax, INDEX_TYPE)
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, int, cublasIzamax, INDEX_TYPE)
 
 #define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE) \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasIcamax, INDEX_TYPE)
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, int, cublasIcamax, INDEX_TYPE)
 
+#if ULONG_MAX == 0xfffffffffffffffful
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS_64(unsigned long)
+
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS_64(unsigned long)
+
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS_64(unsigned long)
+
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS_64(unsigned long)
+
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
+
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
+
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
+
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
+
+#else
 KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long)
 
 KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long)
@@ -168,6 +199,7 @@ KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
 KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
 
 KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int)
+#endif
 
 }  // namespace Impl
 }  // namespace KokkosBlas
