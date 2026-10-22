@@ -11,8 +11,8 @@ set(CTEST_CONFIGURE_COMMAND "cmake -S ${CTEST_SOURCE_DIRECTORY} \
                                    -B ${CTEST_BINARY_DIRECTORY} \
                                    -DCMAKE_CXX_COMPILER=hipcc \
                                    -DCMAKE_INSTALL_PREFIX=$ENV{PWD}/kokkos-kernels/install \
-                                   -DCMAKE_BUILD_TYPE="Release" \
-                                   -DCMAKE_VERBOSE_MAKEFILE=ON \
+                                   -DCMAKE_BUILD_TYPE=Release \
+                                   -DCMAKE_VERBOSE_MAKEFILE=OFF \
                                    -DKokkos_ROOT=${CTEST_SOURCE_DIRECTORY}/kokkos/install \
                                    -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
                                    -DKokkosKernels_ENABLE_TPL_ROCSOLVER=ON \
