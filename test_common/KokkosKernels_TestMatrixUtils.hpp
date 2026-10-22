@@ -12,6 +12,7 @@
 #include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBatched_Vector.hpp"
 // Make this include-able from all subdirectories
+#include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_NEAR
 
 namespace Test {
 
