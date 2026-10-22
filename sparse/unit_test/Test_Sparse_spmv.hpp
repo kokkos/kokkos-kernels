@@ -187,7 +187,7 @@ void check_spmv(handle_t *handle, crsMat_t input_mat, x_vector_type x, y_vector_
                           num_errors);
   if (num_errors > 0)
     printf("KokkosSparse::Test::spmv: %i errors of %i with params: %lf %lf\n", num_errors, y.extent_int(0),
-           y_value_trait::abs(alpha), y_value_trait::abs(beta));
+           static_cast<double>(y_value_trait::abs(alpha)), static_cast<double>(y_value_trait::abs(beta)));
   EXPECT_TRUE(num_errors == 0);
 }
 
@@ -274,7 +274,8 @@ void check_spmv_struct(const crsMat_t input_mat, const int stencil_type,
     printf(
         "KokkosKernels::UnitTests::spmv_struct: %i errors of %i with params: "
         "%d %lf %lf\n",
-        num_errors, y.extent_int(0), stencil_type, y_value_trait::abs(alpha), y_value_trait::abs(beta));
+        num_errors, y.extent_int(0), stencil_type, static_cast<double>(y_value_trait::abs(alpha)),
+        static_cast<double>(y_value_trait::abs(beta)));
   }
   EXPECT_TRUE(num_errors == 0);
 }  // check_spmv_struct
@@ -316,7 +317,8 @@ void check_spmv_mv_struct(const crsMat_t input_mat, const int stencil_type,
       printf(
           "KokkosKernels::UnitTests::spmv_mv_struct: %i errors of %i with "
           "params: %d %lf %lf, in vector %i\n",
-          num_errors, y.extent_int(0), stencil_type, y_value_trait::abs(alpha), y_value_trait::abs(beta), vectorIdx);
+          num_errors, y.extent_int(0), stencil_type, static_cast<double>(y_value_trait::abs(alpha)),
+          static_cast<double>(y_value_trait::abs(beta)), vectorIdx);
     EXPECT_TRUE(num_errors == 0);
   }
 }  // check_spmv_mv_struct
