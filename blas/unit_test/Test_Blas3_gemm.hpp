@@ -151,7 +151,7 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K, typenam
   typedef KokkosKernels::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
-   double machine_eps = static_cast<double>(APT::epsilon());
+  double machine_eps = static_cast<double>(APT::epsilon());
 
   ViewTypeA A("A", A_t ? K : M, A_t ? M : K);
   ViewTypeB B("B", B_t ? N : K, B_t ? K : N);

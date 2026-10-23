@@ -16,9 +16,9 @@ void impl_test_nrm2w_squared(int N) {
   TestUtils::view_stride_adapter<ViewTypeA> a("A", N);
   TestUtils::view_stride_adapter<ViewTypeA> w("W", N);
 
-  const MagnitudeA max_val = 10;
-  const MagnitudeA eps         = AT::epsilon();
-  const MagnitudeA max_error   = max_val * max_val * N * eps;
+  const MagnitudeA max_val   = 10;
+  const MagnitudeA eps       = AT::epsilon();
+  const MagnitudeA max_error = max_val * max_val * N * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -50,9 +50,9 @@ void impl_test_nrm2w_squared_mv(int N, int K) {
   TestUtils::view_stride_adapter<ViewTypeA> a("A", N, K);
   TestUtils::view_stride_adapter<ViewTypeA> w("W", N, K);
 
-  const MagnitudeA max_val = 10;
-  const MagnitudeA eps         = AT::epsilon();
-  const MagnitudeA max_error   = max_val * max_val * N * eps;
+  const MagnitudeA max_val   = 10;
+  const MagnitudeA eps       = AT::epsilon();
+  const MagnitudeA max_error = max_val * max_val * N * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 

@@ -10,5 +10,7 @@ TEST_F(TestCategory, batched_scalar_teamvector_CG_double) { test_batched_teamvec
 #endif
 
 #if defined(KOKKOSKERNELS_INST_HALF)
-TEST_F(TestCategory, batched_scalar_teamvector_CG_half) { test_batched_teamvector_CG<TestDevice, Kokkos::Experimental::half_t>(); }
+TEST_F(TestCategory, batched_scalar_teamvector_CG_half) {
+  test_batched_teamvector_CG<TestDevice, Kokkos::Experimental::half_t>();
+}
 #endif

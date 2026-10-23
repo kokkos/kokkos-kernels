@@ -1544,7 +1544,7 @@ int runAllArithTraitsDeviceTests(std::ostream& out, const int verbose) {
   success    = success && curSuccess;
   curSuccess = testArithTraitsOnDevice<Kokkos::Experimental::half_t, DeviceType>(out, verbose);
 #endif  // defined(KOKKOSKERNELS_INST_HALF)
-   success    = success && curSuccess;
+  success    = success && curSuccess;
   curSuccess = testArithTraitsOnDevice<float, DeviceType>(out, verbose);
   success    = success && curSuccess;
   curSuccess = testArithTraitsOnDevice<double, DeviceType>(out, verbose);
@@ -1658,7 +1658,7 @@ int runAllArithTraitsHostTests(std::ostream& out, const int verbose) {
   TRACE();
   curSuccess = testArithTraitsOnHost<Kokkos::Experimental::half_t, DeviceType>(out, verbose);
 #endif  // defined(KOKKOSKERNELS_INST_HALF)
-   success    = success && curSuccess;
+  success    = success && curSuccess;
   curSuccess = testArithTraitsOnHost<Kokkos::complex<float>, DeviceType>(out, verbose);
   success    = success && curSuccess;
   curSuccess = testArithTraitsOnHost<Kokkos::complex<double>, DeviceType>(out, verbose);

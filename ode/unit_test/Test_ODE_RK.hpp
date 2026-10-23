@@ -528,7 +528,7 @@ void test_RK_half() {
   Kokkos::deep_copy(y, y_h);
 
   constexpr double tstart = 0, tend = 0.1;
-  double dt               = (tend - tstart) / 1000;
+  double dt = (tend - tstart) / 1000;
   vec_type y_new("y new", neqs), y_old("y old", neqs);
 
   typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
@@ -566,7 +566,7 @@ void test_RK_half() {
 }
 #endif
 
- }  // namespace Test
+}  // namespace Test
 
 void test_RK() { Test::test_RK<TestDevice>(); }
 void test_RK_conv_rate() { Test::test_convergence_rate<TestDevice>(); }

@@ -51,8 +51,7 @@ TEST_F(TestCategory, batched_scalar_batched_gemm_t_t_bhalf_bhalf_right) {
 
 // We do not ETI half-types. Only test this if ETI ONLY is off
 // and half_t is not an alias to float.
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && \
-    defined(KOKKOSKERNELS_INST_HALF)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && defined(KOKKOSKERNELS_INST_HALF)
 /********************* BatchLayout::Left *********************/
 TEST_F(TestCategory, batched_scalar_batched_gemm_nt_nt_half_half_left) {
   typedef TestUtils::SharedParamTag<Trans::NoTranspose, Trans::NoTranspose, BatchLayout::Left> param_tag_type;

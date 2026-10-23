@@ -263,8 +263,12 @@ TEST_F(TestCategory, team_abs_mv_int) { test_team_abs_mv<int, int, TestDevice>()
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_abs_half) { test_team_abs<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
-TEST_F(TestCategory, team_abs_mv_half) { test_team_abs_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
+TEST_F(TestCategory, team_abs_half) {
+  test_team_abs<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+}
+TEST_F(TestCategory, team_abs_mv_half) {
+  test_team_abs_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+}
 #endif
 
 /*#if !defined(KOKKOSKERNELS_ETI_ONLY) &&
