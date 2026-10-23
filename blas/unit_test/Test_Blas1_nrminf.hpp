@@ -22,7 +22,7 @@ void impl_test_nrminf(int N) {
 
   Kokkos::deep_copy(a.h_base, a.d_base);
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   typename AT::mag_type expected_result = KokkosKernels::ArithTraits<typename AT::mag_type>::min();
   for (int i = 0; i < N; i++)
@@ -61,7 +61,7 @@ void impl_test_nrminf_mv(int N, int K) {
     if (N == 0) expected_result[j] = typename AT::mag_type(0);
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   Kokkos::View<typename AT::mag_type*, Kokkos::HostSpace> r("Dot::Result", K);
 

@@ -28,8 +28,7 @@ void impl_test_team_axpy(int N) {
   TestUtils::view_stride_adapter<ViewTypeB> org_y("Y", N);
 
   ScalarA a  = 3;
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
-               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -113,8 +112,7 @@ void impl_test_team_axpy_mv(int N, int K) {
       expected_result[j] += ScalarB(a * x.h_view(i, j) + y.h_view(i, j)) * ScalarB(a * x.h_view(i, j) + y.h_view(i, j));
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
-               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   Kokkos::View<ScalarB *, Kokkos::HostSpace> r("Dot::Result", K);
 
