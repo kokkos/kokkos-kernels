@@ -26,8 +26,7 @@ void impl_test_team_mult(int N) {
 
   ScalarA a  = 3;
   ScalarB b  = 5;
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
-               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
   TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);

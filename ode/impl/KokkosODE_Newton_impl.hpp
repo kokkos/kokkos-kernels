@@ -28,18 +28,23 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
   using value_type           = typename ini_vec_type::non_const_value_type;
 
-  // Define the type returned by nrm2 to store
-  // the norm of the residual.
-  using norm_type =
-      typename KokkosKernels::Details::InnerProductSpaceTraits<typename ini_vec_type::non_const_value_type>::mag_type;
+  // Use double for scalar convergence checks (norm, rate, tol).
+  // When value_type is half_t, half_t-precision norms and rates are
+  // unreliable: the rate can round to exactly 1.0, triggering false
+  // divergence.  Computing norms in double makes the rate computation
+  // accurate while the vectors themselves remain in the original type.
+  using norm_type = double;
+  using value_traits = KokkosKernels::ArithTraits<value_type>;
+  // Use the scalar type's epsilon for the divergence tolerance so that
+  // half_t retains a lenient tol (matching pre-double-norm behavior),
+  // while float/double keep their stricter, precision-appropriate tol.
+  const norm_type tol = Kokkos::max(10 * static_cast<norm_type>(value_traits::eps()) / params.rel_tol,
+                                    Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
   sys.residual(y0, rhs);
-  const norm_type norm0 = KokkosBlas::serial_nrm2(rhs);
+  const norm_type norm0 = static_cast<norm_type>(KokkosBlas::serial_nrm2(rhs));
   norm_type norm        = KokkosKernels::ArithTraits<norm_type>::zero();
   norm_type norm_old    = KokkosKernels::ArithTraits<norm_type>::zero();
   norm_type rate        = KokkosKernels::ArithTraits<norm_type>::zero();
-
-  const norm_type tol = Kokkos::max(10 * KokkosKernels::ArithTraits<norm_type>::eps() / params.rel_tol,
-                                    Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
 
   // LBV - 07/24/2023: for now assume that we take
   // a full Newton step. Eventually this value can
@@ -68,17 +73,22 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // that can fail spuriously on well-conditioned sparse systems
     // (e.g. chemistry Jacobians with one dense row), so it is only kept
     // as a fallback for systems larger than the stack pivot buffer.
-    int linSolverStat    = 0;
-    using mat_value_type = typename mat_type::non_const_value_type;
-    if (sys.neqs * sizeof(int) <= tmp.size() * sizeof(mat_value_type)) {
-      Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::AnonymousSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> piv(
-          reinterpret_cast<int*>(tmp.data()), sys.neqs);
-      for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
-      linSolverStat = KokkosBatched::SerialGetrf<KokkosBatched::Algo::Getrf::Unblocked>::invoke(J, piv);
-      if (linSolverStat == 0) {
-        linSolverStat = KokkosBatched::SerialGetrs<KokkosBatched::Trans::NoTranspose,
-                                                   KokkosBatched::Algo::Getrs::Unblocked>::invoke(J, piv, update);
-      }
+     int linSolverStat    = 0;
+     using mat_value_type = typename mat_type::non_const_value_type;
+     if (sys.neqs * sizeof(int) <= tmp.size() * sizeof(mat_value_type)) {
+       // Use a properly aligned int array for pivots instead of
+       // reinterpret_cast on the half_t tmp view, which is undefined
+       // behavior and causes non-deterministic failures on CUDA.
+       int piv_array[64];
+       Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::AnonymousSpace,
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+           piv(piv_array, sys.neqs);
+       for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
+       linSolverStat = KokkosBatched::SerialGetrf<KokkosBatched::Algo::Getrf::Unblocked>::invoke(J, piv);
+       if (linSolverStat == 0) {
+         linSolverStat = KokkosBatched::SerialGetrs<KokkosBatched::Trans::NoTranspose,
+                                                    KokkosBatched::Algo::Getrs::Unblocked>::invoke(J, piv, update);
+       }
     } else {
       linSolverStat = KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(J, update, rhs, tmp);
     }
@@ -93,9 +103,11 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
 
     // Compute the rms norm of the scaled update and check for divergence
     // before applying the update to y0
-    norm_type norm_new = KokkosKernels::ArithTraits<norm_type>::zero();
+    norm_type norm_new = 0;
     for (int idx = 0; idx < sys.neqs; ++idx) {
-      norm_new += (update(idx) * update(idx)) / (scale(idx) * scale(idx));
+      double ui = static_cast<double>(update(idx));
+      double si = static_cast<double>(scale(idx));
+      norm_new += (ui * ui) / (si * si);
     }
     norm_new = Kokkos::sqrt(norm_new / sys.neqs);
     if ((it > 0) && norm_old > KokkosKernels::ArithTraits<norm_type>::zero()) {
@@ -107,14 +119,15 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
 
     // update solution // x = x + alpha*update
     KokkosBlas::serial_axpy(alpha, update, y0);
-    norm = KokkosBlas::serial_nrm2(rhs);
+    norm = static_cast<norm_type>(KokkosBlas::serial_nrm2(rhs));
 
     if ((it > 0) && norm_old > KokkosKernels::ArithTraits<norm_type>::zero() &&
         ((norm_new == 0) || ((rate / (1 - rate)) * norm_new < tol))) {
       return newton_solver_status::NLS_SUCCESS;
     }
 
-    if ((norm < (params.rel_tol * norm0)) || (it > 0 ? KokkosBlas::serial_nrm2(update) < params.abs_tol : false)) {
+    if ((norm < (params.rel_tol * norm0)) ||
+        (it > 0 ? static_cast<norm_type>(KokkosBlas::serial_nrm2(update)) < params.abs_tol : false)) {
       return newton_solver_status::NLS_SUCCESS;
     }
 

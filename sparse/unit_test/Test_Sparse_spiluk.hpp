@@ -7,6 +7,7 @@
 #include <string>
 #include <stdexcept>
 
+#include <KokkosKernels_TestUtils.hpp>
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_IOUtils.hpp>
@@ -116,7 +117,7 @@ struct SpilukTest {
   using memory_space           = typename device::memory_space;
   using range_policy           = Kokkos::RangePolicy<execution_space>;
 
-  static constexpr double EPS = std::is_same_v<mag_t, double> ? 1e-7 : (std::is_same_v<mag_t, Kokkos::Experimental::half_t> ? 1.0 : 1e-4);
+  static constexpr double EPS = TestUtils::selectEpsilonForScalarType<scalar_t>(1e-7, 1e-4, 1.0);
 
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, execution_space,
                                                                         memory_space, memory_space>;
@@ -212,7 +213,7 @@ struct SpilukTest {
 
     if (fill_lev > 1) {
       const double result_d = static_cast<double>(result);
-      const double tol      = std::is_same_v<scalar_t, Kokkos::Experimental::half_t> ? 0.001 : 1e-4;
+      const double tol      = TestUtils::selectEpsilonForScalarType<scalar_t>(1e-4, 1e-4, 0.001);
       EXPECT_LT(result_d, tol);
     }
   }

@@ -36,8 +36,7 @@ void impl_test_team_nrm2(int N, int K) {
     expected_result[j] = KokkosKernels::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
-               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   Kokkos::View<typename AT::mag_type *, Kokkos::HostSpace> r("Nrm2::Result", K);
   Kokkos::View<typename AT::mag_type *, Device> d_r("Nrm2::Result", K);

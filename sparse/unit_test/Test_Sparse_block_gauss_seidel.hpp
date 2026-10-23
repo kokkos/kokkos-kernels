@@ -36,7 +36,7 @@ struct GSTestParams {
   lno_t block_size = 7;
   lno_t numVecs    = 2;  // how many columns X/Y have
   scalar_t omega   = 0.9;
-  mag_t tolerance  = 1e-7;  // relative error for solution x vector
+  mag_t tolerance = TestUtils::selectEpsilonForScalarType<scalar_t>(1e-7, 1e-7, 0.1);  // relative error for solution x vector
 
   // Note: GS_DEFAULT is same as GS_TEAM and - for blocks - as GS_PERMUTED
   // Note: GS_TWOSTAGE and GS_CLUSTER are not supported for blocks

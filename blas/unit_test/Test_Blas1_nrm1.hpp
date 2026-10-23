@@ -25,8 +25,7 @@ void impl_test_nrm1(int N) {
 
   Kokkos::deep_copy(a.h_base, a.d_base);
 
-  double eps = (std::is_same<typename KokkosKernels::ArithTraits<ScalarA>::mag_type, float>::value ? 1e-4 :
-                std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7);
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 1e-4, 0.1);
 
   mag_type expected_result = 0;
   for (int i = 0; i < N; i++) {
@@ -63,8 +62,7 @@ void impl_test_nrm1_mv(int N, int K) {
 
   Kokkos::deep_copy(a.h_base, a.d_base);
 
-  double eps = (std::is_same<typename KokkosKernels::ArithTraits<ScalarA>::mag_type, float>::value ? 1e-4 :
-                std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7);
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 1e-4, 0.1);
 
   Kokkos::View<mag_type*, Kokkos::HostSpace> expected_result("Expected Nrm1", K);
   for (int k = 0; k < K; k++) {
