@@ -22,25 +22,23 @@ namespace Test {
 
 template <typename Crs>
 void scaleDiagonalForHalfPrecision(Crs& mat) {
-  using scalar_t    = typename Crs::non_const_value_type;
-  using lno_t       = typename Crs::ordinal_type;
-  using size_type   = typename Crs::size_type;
-  using exec_space  = typename Crs::execution_space;
-  auto row_map = mat.graph.row_map;
-  auto entries = mat.graph.entries;
-  auto values  = mat.values;
-  Kokkos::parallel_for("scaleDiagForHalf",
-                       Kokkos::RangePolicy<exec_space>(0, mat.numRows()),
-                       KOKKOS_LAMBDA(lno_t i) {
-    for (size_type j = row_map(i); j < row_map(i + 1); ++j) {
-      if (entries(j) == i) {
-        // Note BMK: this test always uses unit diagonals for all scalar types
-        values(j) = scalar_t(1.0);
-      }
-      else
-        values(j) = scalar_t(-0.1);
-    }
-  });
+  using scalar_t   = typename Crs::non_const_value_type;
+  using lno_t      = typename Crs::ordinal_type;
+  using size_type  = typename Crs::size_type;
+  using exec_space = typename Crs::execution_space;
+  auto row_map     = mat.graph.row_map;
+  auto entries     = mat.graph.entries;
+  auto values      = mat.values;
+  Kokkos::parallel_for(
+      "scaleDiagForHalf", Kokkos::RangePolicy<exec_space>(0, mat.numRows()), KOKKOS_LAMBDA(lno_t i) {
+        for (size_type j = row_map(i); j < row_map(i + 1); ++j) {
+          if (entries(j) == i) {
+            // Note BMK: this test always uses unit diagonals for all scalar types
+            values(j) = scalar_t(1.0);
+          } else
+            values(j) = scalar_t(-0.1);
+        }
+      });
 }
 
 template <typename Crs, typename LUType, typename size_type,
@@ -92,10 +90,10 @@ struct TrsvTest {
                             const char uplo[], const char trans[]) {
     double eps = TestUtils::selectEpsilonForScalarType<scalar_t>(1e-7, 2e-2, 0.5);
 
-     Kokkos::fence();
-     KokkosSparse::trsv(uplo, trans, "N", input_mat, b, x);
+    Kokkos::fence();
+    KokkosSparse::trsv(uplo, trans, "N", input_mat, b, x);
 
-     for (int i = 0; i < numMV; ++i) {
+    for (int i = 0; i < numMV; ++i) {
       auto x_i = Kokkos::subview(x, Kokkos::ALL(), i);
 
       auto expected_x_i = Kokkos::subview(expected_x, Kokkos::ALL(), i);
@@ -164,9 +162,9 @@ void test_trsv_mv() {
   // Use smaller problems for half_t to avoid large accumulated rounding errors
   if constexpr (std::is_same_v<scalar_t, Kokkos::Experimental::half_t>) {
     TestStruct::template test_trsv_mv<false>(50, 50 * 15, 35, 5, 1);
-    //TestStruct::template test_trsv_mv<true>(50, 50 * 15, 35, 5, 1);
+    // TestStruct::template test_trsv_mv<true>(50, 50 * 15, 35, 5, 1);
     TestStruct::template test_trsv_mv<false>(50, 50 * 15, 35, 5, 3);
-    //TestStruct::template test_trsv_mv<true>(50, 50 * 15, 35, 5, 3);
+    // TestStruct::template test_trsv_mv<true>(50, 50 * 15, 35, 5, 3);
     return;
   }
   TestStruct::template test_trsv_mv<false>(1000, 1000 * 30, 200, 10, 1);
