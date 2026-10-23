@@ -93,12 +93,27 @@ void kk_sparseMatrix_generate_lower_upper_triangle(char uplo, OrdinalType nrows,
   values = new ScalarType[nnz];
   colInd = new OrdinalType[nnz];
   for (OrdinalType row = 0; row < nrows; row++) {
+    ScalarType off_diag_sum = 0;
     for (SizeType k = rowPtr[row]; k < rowPtr[row + 1]; k++) {
       if (uplo == 'L')
         colInd[k] = k - rowPtr[row];
       else
         colInd[k] = row + (k - rowPtr[row]);
-      values[k] = 1.0;
+      if (colInd[k] != row) {
+        values[k] = ScalarType(0.5 * (1.0 * rand() / RAND_MAX) - 0.25);  // [-0.25, 0.25)
+        off_diag_sum += KokkosKernels::ArithTraits<ScalarType>::abs(values[k]);
+      } else {
+        values[k] = ScalarType(0);  // placeholder, set diagonal below
+      }
+    }
+    // Set a non-unit diagonal value so the diagonal-division code path is
+    // actually exercised by tests.  Use diagonal dominance for numerical
+    // stability: diag = off_diag_sum + 1 + small_random_offset.
+    for (SizeType k = rowPtr[row]; k < rowPtr[row + 1]; k++) {
+      if (colInd[k] == row) {
+        values[k] = ScalarType(off_diag_sum + 1.0 + 0.5 * (1.0 * rand() / RAND_MAX));
+        break;
+      }
     }
   }
 }
