@@ -208,8 +208,10 @@ struct TrsvWrap {
       for (offset_type k = beg; k < end; ++k) {
         const scalar_t A_rc = val(k);
         const lno_t c       = ind(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
+        if (r != c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(r, j) -= A_rc * X(c, j);
+          }
         }
       }  // for each entry A_rc in the current row r
     }    // for each row r
@@ -287,8 +289,10 @@ struct TrsvWrap {
       for (offset_type k = beg; k < end; ++k) {
         const scalar_t A_rc = val(k);
         const lno_t c       = ind(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
+        if (r != c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(r, j) -= A_rc * X(c, j);
+          }
         }
       }  // for each entry A_rc in the current row r
     }    // for each row r
@@ -367,8 +371,10 @@ struct TrsvWrap {
       for (offset_type k = beg; k < end; ++k) {
         const scalar_t A_rc = val(k);
         const lno_t r       = ind(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
+        if (r != c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(r, j) -= A_rc * X(c, j);
+          }
         }
       }  // for each entry A_rc in the current column c
     }    // for each column c
@@ -451,8 +457,10 @@ struct TrsvWrap {
       for (offset_type k = beg; k < end; ++k) {
         const lno_t r       = ind(k);
         const scalar_t A_rc = val(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
+        if (r != c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(r, j) -= A_rc * X(c, j);
+          }
         }
       }  // for each entry A_rc in the current column c
     }    // for each column c

@@ -75,9 +75,10 @@ void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, SizeType &nn
 }
 
 template <typename ScalarType, typename OrdinalType, typename SizeType>
-void kk_sparseMatrix_generate_lower_upper_triangle(char uplo, OrdinalType nrows, OrdinalType ncols, SizeType &nnz,
-                                                   OrdinalType /*row_size_variance*/, OrdinalType /*bandwidth*/,
-                                                   ScalarType *&values, SizeType *&rowPtr, OrdinalType *&colInd) {
+void kk_sparseMatrix_generate_lower_upper_triangle(char uplo, bool unit_diag, OrdinalType nrows, OrdinalType ncols,
+                                                   SizeType &nnz, OrdinalType /*row_size_variance*/,
+                                                   OrdinalType /*bandwidth*/, ScalarType *&values, SizeType *&rowPtr,
+                                                   OrdinalType *&colInd) {
   rowPtr = new SizeType[nrows + 1];
 
   // OrdinalType elements_per_row = nnz/nrows;
@@ -106,12 +107,15 @@ void kk_sparseMatrix_generate_lower_upper_triangle(char uplo, OrdinalType nrows,
         values[k] = ScalarType(0);  // placeholder, set diagonal below
       }
     }
-    // Set a non-unit diagonal value so the diagonal-division code path is
-    // actually exercised by tests.  Use diagonal dominance for numerical
-    // stability: diag = off_diag_sum + 1 + small_random_offset.
+    // Set the diagonal entry. When unit_diag is true, use 1.0;
+    // otherwise, sample value from [1, 1.5) so it's not near 0
     for (SizeType k = rowPtr[row]; k < rowPtr[row + 1]; k++) {
       if (colInd[k] == row) {
-        values[k] = ScalarType(off_diag_sum + 1.0 + 0.5 * (1.0 * rand() / RAND_MAX));
+        if (unit_diag) {
+          values[k] = KokkosKernels::ArithTraits<ScalarType>::one();
+        } else {
+          values[k] = ScalarType(1.0 + 0.5 * (1.0 * rand() / RAND_MAX));  // [1, 1.5)
+        }
         break;
       }
     }
@@ -286,7 +290,7 @@ crsMat_t kk_generate_diagonally_dominant_sparse_matrix(
 }
 
 template <typename crsMat_t>
-crsMat_t kk_generate_triangular_sparse_matrix(char uplo, typename crsMat_t::const_ordinal_type nrows,
+crsMat_t kk_generate_triangular_sparse_matrix(char uplo, bool unit_diag, typename crsMat_t::const_ordinal_type nrows,
                                               typename crsMat_t::const_ordinal_type ncols,
                                               typename crsMat_t::non_const_size_type &nnz,
                                               typename crsMat_t::const_ordinal_type row_size_variance,
@@ -303,8 +307,8 @@ crsMat_t kk_generate_triangular_sparse_matrix(char uplo, typename crsMat_t::cons
   size_type *xadj;  //, nnzA;
   scalar_t *values;
 
-  kk_sparseMatrix_generate_lower_upper_triangle<scalar_t, lno_t, size_type>(uplo, nrows, ncols, nnz, row_size_variance,
-                                                                            bandwidth, values, xadj, adj);
+  kk_sparseMatrix_generate_lower_upper_triangle<scalar_t, lno_t, size_type>(
+      uplo, unit_diag, nrows, ncols, nnz, row_size_variance, bandwidth, values, xadj, adj);
 
   row_map_view_t rowmap_view("rowmap_view", nrows + 1);
   cols_view_t columns_view("colsmap_view", nnz);
