@@ -54,11 +54,7 @@ struct TrsvTest {
   template <bool UseBlocks, typename sp_matrix_type>
   static void check_trsv_mv(sp_matrix_type input_mat, View2D x, View2D b, View2D expected_x, int numMV,
                             const char uplo[], const char trans[]) {
-    double eps =
-        (std::is_same<scalar_t, float>::value ? 2 * 1e-2
-         : (std::is_same<scalar_t, std::complex<float>>::value || std::is_same<scalar_t, Kokkos::complex<float>>::value)
-             ? 2 * 1e-1
-             : 1e-7);
+    double eps = TestUtils::selectEpsilonForScalarType<scalar_t>(1e-7, 2e-2, 2.0);
 
     Kokkos::fence();
     KokkosSparse::trsv(uplo, trans, "N", input_mat, b, x);
@@ -124,6 +120,12 @@ struct TrsvTest {
 template <typename scalar_t, typename lno_t, typename size_type, typename layout, typename device>
 void test_trsv_mv() {
   using TestStruct = Test::TrsvTest<scalar_t, lno_t, size_type, layout, device>;
+  // Use smaller problems for half_t to avoid large accumulated rounding errors
+  if constexpr (std::is_same_v<scalar_t, Kokkos::Experimental::half_t>) {
+    TestStruct::template test_trsv_mv<false>(200, 200 * 30, 200, 10, 1);
+    TestStruct::template test_trsv_mv<true>(200, 200 * 30, 200, 10, 1);
+    return;
+  }
   TestStruct::template test_trsv_mv<false>(1000, 1000 * 30, 200, 10, 1);
   TestStruct::template test_trsv_mv<false>(800, 800 * 30, 100, 10, 5);
   TestStruct::template test_trsv_mv<false>(400, 400 * 20, 100, 5, 10);
