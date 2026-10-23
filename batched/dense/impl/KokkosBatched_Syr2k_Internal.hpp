@@ -4,6 +4,7 @@
 #ifndef KOKKOSBATCHED_SYR2K_INTERNAL_HPP_
 #define KOKKOSBATCHED_SYR2K_INTERNAL_HPP_
 
+#include <Kokkos_Core.hpp>
 #include <KokkosBatched_Util.hpp>
 
 namespace KokkosBatched {
@@ -16,20 +17,20 @@ namespace Impl {
 /// Lower
 
 struct SerialSyr2kInternalLower {
-  template <bool is_trans, typename Op, typename SymOp, typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(Op op, SymOp sym_op, const int n, const int k, const ScalarType alpha,
+  template <bool is_trans, typename Op, typename SymOp, typename AlphaType, typename ValueType, typename BetaType>
+  KOKKOS_INLINE_FUNCTION static int invoke(Op op, SymOp sym_op, const int n, const int k, const AlphaType alpha,
                                            const ValueType *KOKKOS_RESTRICT a, const int as0, const int as1,
                                            const ValueType *KOKKOS_RESTRICT b, const int bs0, const int bs1,
-                                           const ScalarType beta, ValueType *KOKKOS_RESTRICT c, const int cs0,
+                                           const BetaType beta, ValueType *KOKKOS_RESTRICT c, const int cs0,
                                            const int cs1);
 };
 
-template <bool is_trans, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+template <bool is_trans, typename Op, typename SymOp, typename AlphaType, typename ValueType, typename BetaType>
 KOKKOS_INLINE_FUNCTION int SerialSyr2kInternalLower::invoke(
-    Op op, SymOp sym_op, const int n, const int k, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT a,
-    const int as0, const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0, const int bs1,
-    const ScalarType beta, ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
-  if (beta == ScalarType(0)) {
+    Op op, SymOp sym_op, const int n, const int k, const AlphaType alpha, const ValueType *KOKKOS_RESTRICT a,
+    const int as0, const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0, const int bs1, const BetaType beta,
+    ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
+  if (beta == BetaType(0)) {
     for (int j = 0; j < n; j++) {
       for (int i = j; i < n; i++) {
         c[i * cs0 + j * cs1] = ValueType(0);
@@ -44,8 +45,8 @@ KOKKOS_INLINE_FUNCTION int SerialSyr2kInternalLower::invoke(
     }
   }
 
-  if (alpha != ScalarType(0)) {
-    // C: = alpha*A*B^T + alpha*B*A^T + beta*C or C: = alpha*A*B^H + alpha*B*A^H + beta*C
+  if (alpha != AlphaType(0)) {
+    // C: = alpha*A*B^T + alpha*B*A^T + beta*C or C: = alpha*A*B^H + conj(alpha)*B*A^H + beta*C
     if constexpr (!is_trans) {
       for (int j = 0; j < n; j++) {
         for (int l = 0; l < k; l++) {
@@ -61,7 +62,7 @@ KOKKOS_INLINE_FUNCTION int SerialSyr2kInternalLower::invoke(
         }
       }
     } else {
-      // C: = alpha*A^T*B + alpha*B^T*A + beta*C or C: = alpha*A^H*B + alpha*B^H*A + beta*C
+      // C: = alpha*A^T*B + alpha*B^T*A + beta*C or C: = alpha*A^H*B + conj(alpha)*B^H*A + beta*C
       for (int j = 0; j < n; j++) {
         for (int i = j; i < n; i++) {
           ValueType temp1(0), temp2(0);
@@ -82,20 +83,20 @@ KOKKOS_INLINE_FUNCTION int SerialSyr2kInternalLower::invoke(
 /// Upper
 
 struct SerialSyr2kInternalUpper {
-  template <bool is_trans, typename Op, typename SymOp, typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(Op op, SymOp sym_op, const int n, const int k, const ScalarType alpha,
+  template <bool is_trans, typename Op, typename SymOp, typename AlphaType, typename ValueType, typename BetaType>
+  KOKKOS_INLINE_FUNCTION static int invoke(Op op, SymOp sym_op, const int n, const int k, const AlphaType alpha,
                                            const ValueType *KOKKOS_RESTRICT a, const int as0, const int as1,
                                            const ValueType *KOKKOS_RESTRICT b, const int bs0, const int bs1,
-                                           const ScalarType beta, ValueType *KOKKOS_RESTRICT c, const int cs0,
+                                           const BetaType beta, ValueType *KOKKOS_RESTRICT c, const int cs0,
                                            const int cs1);
 };
 
-template <bool is_trans, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+template <bool is_trans, typename Op, typename SymOp, typename AlphaType, typename ValueType, typename BetaType>
 KOKKOS_INLINE_FUNCTION int SerialSyr2kInternalUpper::invoke(
-    Op op, SymOp sym_op, const int n, const int k, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT a,
-    const int as0, const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0, const int bs1,
-    const ScalarType beta, ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
-  if (beta == ScalarType(0)) {
+    Op op, SymOp sym_op, const int n, const int k, const AlphaType alpha, const ValueType *KOKKOS_RESTRICT a,
+    const int as0, const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0, const int bs1, const BetaType beta,
+    ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
+  if (beta == BetaType(0)) {
     for (int j = 0; j < n; j++) {
       for (int i = 0; i < j + 1; i++) {
         c[i * cs0 + j * cs1] = ValueType(0);
@@ -110,8 +111,8 @@ KOKKOS_INLINE_FUNCTION int SerialSyr2kInternalUpper::invoke(
     }
   }
 
-  if (alpha != ScalarType(0)) {
-    // C: = alpha * A * A**T + beta * C or C: = alpha * A * A**H + beta * C
+  if (alpha != AlphaType(0)) {
+    // C: = alpha * A * B^T + alpha * B * A^T + beta * C or C: = alpha * A * B^H + conj(alpha) * B * A^H + beta * C
     if constexpr (!is_trans) {
       for (int j = 0; j < n; j++) {
         for (int l = 0; l < k; l++) {
@@ -126,7 +127,7 @@ KOKKOS_INLINE_FUNCTION int SerialSyr2kInternalUpper::invoke(
         }
       }
     } else {
-      // C: = alpha * A**T * A + beta * C or C: = alpha * A**H * A + beta * C
+      // C: = alpha * A^T * B + alpha * B^T * A + beta * C or C: = alpha * A^H * B + conj(alpha) * B^H * A + beta * C
       for (int j = 0; j < n; j++) {
         for (int i = 0; i < j + 1; i++) {
           ValueType temp1(0), temp2(0);
@@ -151,22 +152,24 @@ KOKKOS_INLINE_FUNCTION int SerialSyr2kInternalUpper::invoke(
 /// Lower
 
 struct TeamSyr2kInternalLower {
-  template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+  template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename AlphaType, typename ValueType,
+            typename BetaType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, Op op, SymOp sym_op, const int n, const int k,
-                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT a, const int as0,
+                                           const AlphaType alpha, const ValueType *KOKKOS_RESTRICT a, const int as0,
                                            const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0,
-                                           const int bs1, const ScalarType beta, ValueType *KOKKOS_RESTRICT c,
+                                           const int bs1, const BetaType beta, ValueType *KOKKOS_RESTRICT c,
                                            const int cs0, const int cs1);
 };
 
-template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename AlphaType, typename ValueType,
+          typename BetaType>
 KOKKOS_INLINE_FUNCTION int TeamSyr2kInternalLower::invoke(const MemberType &member, Op op, SymOp sym_op, const int n,
-                                                          const int k, const ScalarType alpha,
+                                                          const int k, const AlphaType alpha,
                                                           const ValueType *KOKKOS_RESTRICT a, const int as0,
                                                           const int as1, const ValueType *KOKKOS_RESTRICT b,
-                                                          const int bs0, const int bs1, const ScalarType beta,
+                                                          const int bs0, const int bs1, const BetaType beta,
                                                           ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
-  if (beta == ScalarType(0)) {
+  if (beta == BetaType(0)) {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int j) {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, (n - j)),
                            [&](const int ii) { c[(ii + j) * cs0 + j * cs1] = ValueType(0); });
@@ -179,8 +182,8 @@ KOKKOS_INLINE_FUNCTION int TeamSyr2kInternalLower::invoke(const MemberType &memb
     });
   }
 
-  if (alpha != ScalarType(0)) {
-    // C: = alpha*A*B^T + alpha*B*A^T + beta*C or C: = alpha*A*B^H + alpha*B*A^H + beta*C
+  if (alpha != AlphaType(0)) {
+    // C: = alpha*A*B^T + alpha*B*A^T + beta*C or C: = alpha*A*B^H + conj(alpha)*B*A^H + beta*C
     if constexpr (!is_trans) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int j) {
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, (n - j)), [&](const int ii) {
@@ -195,7 +198,7 @@ KOKKOS_INLINE_FUNCTION int TeamSyr2kInternalLower::invoke(const MemberType &memb
         c[j * cs0 + j * cs1] = sym_op(c[j * cs0 + j * cs1]);
       });
     } else {
-      // C: = alpha*A^T*B + alpha*B^T*A + beta*C or C: = alpha*A^H*B + alpha*B^H*A + beta*C
+      // C: = alpha*A^T*B + alpha*B^T*A + beta*C or C: = alpha*A^H*B + conj(alpha)*B^H*A + beta*C
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int j) {
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, (n - j)), [&](const int ii) {
           const int i = ii + j;
@@ -217,22 +220,24 @@ KOKKOS_INLINE_FUNCTION int TeamSyr2kInternalLower::invoke(const MemberType &memb
 /// Upper
 
 struct TeamSyr2kInternalUpper {
-  template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+  template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename AlphaType, typename ValueType,
+            typename BetaType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, Op op, SymOp sym_op, const int n, const int k,
-                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT a, const int as0,
+                                           const AlphaType alpha, const ValueType *KOKKOS_RESTRICT a, const int as0,
                                            const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0,
-                                           const int bs1, const ScalarType beta, ValueType *KOKKOS_RESTRICT c,
+                                           const int bs1, const BetaType beta, ValueType *KOKKOS_RESTRICT c,
                                            const int cs0, const int cs1);
 };
 
-template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename AlphaType, typename ValueType,
+          typename BetaType>
 KOKKOS_INLINE_FUNCTION int TeamSyr2kInternalUpper::invoke(const MemberType &member, Op op, SymOp sym_op, const int n,
-                                                          const int k, const ScalarType alpha,
+                                                          const int k, const AlphaType alpha,
                                                           const ValueType *KOKKOS_RESTRICT a, const int as0,
                                                           const int as1, const ValueType *KOKKOS_RESTRICT b,
-                                                          const int bs0, const int bs1, const ScalarType beta,
+                                                          const int bs0, const int bs1, const BetaType beta,
                                                           ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
-  if (beta == ScalarType(0)) {
+  if (beta == BetaType(0)) {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int j) {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1),
                            [&](const int i) { c[i * cs0 + j * cs1] = ValueType(0); });
@@ -244,8 +249,8 @@ KOKKOS_INLINE_FUNCTION int TeamSyr2kInternalUpper::invoke(const MemberType &memb
     });
   }
 
-  if (alpha != ScalarType(0)) {
-    // C: = alpha * A * A**T + beta * C or C: = alpha * A * A**H + beta * C
+  if (alpha != AlphaType(0)) {
+    // C: = alpha * A * B^T + alpha * B * A^T + beta * C or C: = alpha * A * B^H + conj(alpha) * B * A^H + beta * C
     if constexpr (!is_trans) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int j) {
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1), [&](const int i) {
@@ -259,7 +264,7 @@ KOKKOS_INLINE_FUNCTION int TeamSyr2kInternalUpper::invoke(const MemberType &memb
         c[j * cs0 + j * cs1] = sym_op(c[j * cs0 + j * cs1]);
       });
     } else {
-      // C: = alpha * A**T * A + beta * C or C: = alpha * A**H * A + beta * C
+      // C: = alpha * A^T * B + alpha * B^T * A + beta * C or C: = alpha * A^H * B + conj(alpha) * B^H * A + beta * C
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int j) {
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1), [&](const int i) {
           ValueType temp1(0), temp2(0);
@@ -284,20 +289,22 @@ KOKKOS_INLINE_FUNCTION int TeamSyr2kInternalUpper::invoke(const MemberType &memb
 /// Lower
 
 struct TeamVectorSyr2kInternalLower {
-  template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+  template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename AlphaType, typename ValueType,
+            typename BetaType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, Op op, SymOp sym_op, const int n, const int k,
-                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT a, const int as0,
+                                           const AlphaType alpha, const ValueType *KOKKOS_RESTRICT a, const int as0,
                                            const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0,
-                                           const int bs1, const ScalarType beta, ValueType *KOKKOS_RESTRICT c,
+                                           const int bs1, const BetaType beta, ValueType *KOKKOS_RESTRICT c,
                                            const int cs0, const int cs1);
 };
 
-template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename AlphaType, typename ValueType,
+          typename BetaType>
 KOKKOS_INLINE_FUNCTION int TeamVectorSyr2kInternalLower::invoke(
-    const MemberType &member, Op op, SymOp sym_op, const int n, const int k, const ScalarType alpha,
+    const MemberType &member, Op op, SymOp sym_op, const int n, const int k, const AlphaType alpha,
     const ValueType *KOKKOS_RESTRICT a, const int as0, const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0,
-    const int bs1, const ScalarType beta, ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
-  if (beta == ScalarType(0)) {
+    const int bs1, const BetaType beta, ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
+  if (beta == BetaType(0)) {
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int j) {
       for (int i = j; i < n; i++) {
         c[i * cs0 + j * cs1] = ValueType(0);
@@ -312,8 +319,8 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSyr2kInternalLower::invoke(
     });
   }
 
-  if (alpha != ScalarType(0)) {
-    // C: = alpha*A*B^T + alpha*B*A^T + beta*C or C: = alpha*A*B^H + alpha*B*A^H + beta*C
+  if (alpha != AlphaType(0)) {
+    // C: = alpha*A*B^T + alpha*B*A^T + beta*C or C: = alpha*A*B^H + conj(alpha)*B*A^H + beta*C
     if constexpr (!is_trans) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int j) {
         for (int l = 0; l < k; l++) {
@@ -329,7 +336,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSyr2kInternalLower::invoke(
         }
       });
     } else {
-      // C: = alpha*A^T*B + alpha*B^T*A + beta*C or C: = alpha*A^H*B + alpha*B^H*A + beta*C
+      // C: = alpha*A^T*B + alpha*B^T*A + beta*C or C: = alpha*A^H*B + conj(alpha)*B^H*A + beta*C
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int j) {
         for (int i = j; i < n; i++) {
           ValueType temp1(0), temp2(0);
@@ -350,20 +357,22 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSyr2kInternalLower::invoke(
 /// Upper
 
 struct TeamVectorSyr2kInternalUpper {
-  template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+  template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename AlphaType, typename ValueType,
+            typename BetaType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, Op op, SymOp sym_op, const int n, const int k,
-                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT a, const int as0,
+                                           const AlphaType alpha, const ValueType *KOKKOS_RESTRICT a, const int as0,
                                            const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0,
-                                           const int bs1, const ScalarType beta, ValueType *KOKKOS_RESTRICT c,
+                                           const int bs1, const BetaType beta, ValueType *KOKKOS_RESTRICT c,
                                            const int cs0, const int cs1);
 };
 
-template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename ScalarType, typename ValueType>
+template <bool is_trans, typename MemberType, typename Op, typename SymOp, typename AlphaType, typename ValueType,
+          typename BetaType>
 KOKKOS_INLINE_FUNCTION int TeamVectorSyr2kInternalUpper::invoke(
-    const MemberType &member, Op op, SymOp sym_op, const int n, const int k, const ScalarType alpha,
+    const MemberType &member, Op op, SymOp sym_op, const int n, const int k, const AlphaType alpha,
     const ValueType *KOKKOS_RESTRICT a, const int as0, const int as1, const ValueType *KOKKOS_RESTRICT b, const int bs0,
-    const int bs1, const ScalarType beta, ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
-  if (beta == ScalarType(0)) {
+    const int bs1, const BetaType beta, ValueType *KOKKOS_RESTRICT c, const int cs0, const int cs1) {
+  if (beta == BetaType(0)) {
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int j) {
       for (int i = 0; i < j + 1; i++) {
         c[i * cs0 + j * cs1] = ValueType(0);
@@ -378,8 +387,8 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSyr2kInternalUpper::invoke(
     });
   }
 
-  if (alpha != ScalarType(0)) {
-    // C: = alpha * A * A**T + beta * C or C: = alpha * A * A**H + beta * C
+  if (alpha != AlphaType(0)) {
+    // C: = alpha * A * B^T + alpha * B * A^T + beta * C or C: = alpha * A * B^H + conj(alpha) * B * A^H + beta * C
     if constexpr (!is_trans) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int j) {
         for (int l = 0; l < k; l++) {
@@ -394,7 +403,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSyr2kInternalUpper::invoke(
         }
       });
     } else {
-      // C: = alpha * A**T * A + beta * C or C: = alpha * A**H * A + beta * C
+      // C: = alpha * A^T * B + alpha * B^T * A + beta * C or C: = alpha * A^H * B + conj(alpha) * B^H * A + beta * C
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int j) {
         for (int i = 0; i < j + 1; i++) {
           ValueType temp1(0), temp2(0);

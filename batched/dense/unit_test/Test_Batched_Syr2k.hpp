@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
+#include <concepts>
+#include <type_traits>
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -20,8 +22,8 @@ struct ParamTag {
   using mode  = M;
 };
 
-template <typename DeviceType, typename ParamTagType, typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename DeviceType, typename ParamTagType, typename AlphaType, typename AViewType, typename BViewType,
+          typename BetaType, typename CViewType>
 struct Functor_BatchedSyr2k {
   using execution_space = typename DeviceType::execution_space;
   using member_type     = typename Kokkos::TeamPolicy<execution_space>::member_type;
@@ -31,9 +33,10 @@ struct Functor_BatchedSyr2k {
   AViewType m_A;
   BViewType m_B;
   CViewType m_C;
-  ScalarType m_alpha, m_beta;
+  AlphaType m_alpha;
+  BetaType m_beta;
 
-  Functor_BatchedSyr2k(const ScalarType alpha, const AViewType &A, const BViewType &B, const ScalarType beta,
+  Functor_BatchedSyr2k(const AlphaType alpha, const AViewType &A, const BViewType &B, const BetaType beta,
                        const CViewType &C)
       : m_A(A), m_B(B), m_C(C), m_alpha(alpha), m_beta(beta) {}
 
@@ -300,17 +303,22 @@ void impl_test_batched_syr2k_analytical(const std::size_t Nb) {
   Kokkos::deep_copy(B_s, B);
   Kokkos::deep_copy(C_s, A);
 
-  const ScalarType alpha = 1.5, beta = 1.2;
+  using AlphaType       = ScalarType;
+  using BetaType        = std::conditional_t<std::same_as<ArgTrans, KokkosBatched::Trans::ConjNoTranspose> ||
+                                          std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>,
+                                      RealType, ScalarType>;
+  const AlphaType alpha = 1.5;
+  const BetaType beta   = 1.2;
 
-  auto info = Functor_BatchedSyr2k<DeviceType, ParamTagType, ScalarType, View3DType, View3DType, View3DType>(alpha, A,
-                                                                                                             B, beta, C)
+  auto info = Functor_BatchedSyr2k<DeviceType, ParamTagType, AlphaType, View3DType, View3DType, BetaType, View3DType>(
+                  alpha, A, B, beta, C)
                   .run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
   // With strided views
-  info = Functor_BatchedSyr2k<DeviceType, ParamTagType, ScalarType, StridedView3DType, StridedView3DType,
+  info = Functor_BatchedSyr2k<DeviceType, ParamTagType, AlphaType, StridedView3DType, StridedView3DType, BetaType,
                               StridedView3DType>(alpha, A_s, B_s, beta, C_s)
              .run();
 
@@ -354,9 +362,10 @@ void impl_test_batched_syr2k(const std::size_t Nb, const std::size_t M, const st
   using RealType   = typename ats::mag_type;
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using ArgUplo    = typename ParamTagType::uplo;
+  using ArgTrans   = typename ParamTagType::trans;
 
-  constexpr bool is_trans = std::same_as<typename ParamTagType::trans, KokkosBatched::Trans::Transpose> ||
-                            std::same_as<typename ParamTagType::trans, KokkosBatched::Trans::ConjTranspose>;
+  constexpr bool is_trans = std::same_as<ArgTrans, KokkosBatched::Trans::Transpose> ||
+                            std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>;
 
   // For NoTrans, A is N*M, C is NxN
   // For Trans, A is M*N, C is MxM
@@ -386,24 +395,27 @@ void impl_test_batched_syr2k(const std::size_t Nb, const std::size_t M, const st
   Kokkos::deep_copy(C_alpha0_ref, C_alpha0);
   Kokkos::deep_copy(C_beta0_ref, C_beta0);
 
-  // When beta is zero
-  ScalarType alpha0 = 1.5;
+  using AlphaType  = ScalarType;
+  using BetaType   = std::conditional_t<std::same_as<ArgTrans, KokkosBatched::Trans::ConjNoTranspose> ||
+                                          std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>,
+                                      RealType, ScalarType>;
+  AlphaType alpha0 = 1.5;
   if constexpr (KokkosKernels::ArithTraits<ScalarType>::is_complex) {
-    alpha0 = ScalarType(1.5, 1.8);
+    alpha0 = AlphaType(1.5, 1.8);
   }
 
-  const ScalarType alpha = alpha0;
-  const RealType beta = 1.2, zero = KokkosKernels::ArithTraits<RealType>::zero();
+  const AlphaType alpha = alpha0;
+  const BetaType beta = 1.2, zero = KokkosKernels::ArithTraits<BetaType>::zero();
 
   const ScalarType cbeta = 1.2, czero = KokkosKernels::ArithTraits<ScalarType>::zero(),
                    cone = KokkosKernels::ArithTraits<ScalarType>::one();
-  auto info0 = Functor_BatchedSyr2k<DeviceType, ParamTagType, ScalarType, View3DType, View3DType, View3DType>(
+  auto info0 = Functor_BatchedSyr2k<DeviceType, ParamTagType, AlphaType, View3DType, View3DType, BetaType, View3DType>(
                    alpha, A, B, beta, C)
                    .run();
-  auto info1 = Functor_BatchedSyr2k<DeviceType, ParamTagType, ScalarType, View3DType, View3DType, View3DType>(
+  auto info1 = Functor_BatchedSyr2k<DeviceType, ParamTagType, AlphaType, View3DType, View3DType, BetaType, View3DType>(
                    zero, A, B, beta, C_alpha0)
                    .run();
-  auto info2 = Functor_BatchedSyr2k<DeviceType, ParamTagType, ScalarType, View3DType, View3DType, View3DType>(
+  auto info2 = Functor_BatchedSyr2k<DeviceType, ParamTagType, AlphaType, View3DType, View3DType, BetaType, View3DType>(
                    alpha, A, B, zero, C_beta0)
                    .run();
 
