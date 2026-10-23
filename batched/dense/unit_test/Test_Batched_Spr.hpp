@@ -214,7 +214,8 @@ void impl_test_batched_spr_analytical(const std::size_t Nb) {
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
-  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps =
+      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   Kokkos::deep_copy(h_ap, ap);
   auto h_ap_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, ap_s);
 
@@ -290,7 +291,8 @@ void impl_test_batched_spr(const std::size_t Nb, const std::size_t BlkSize) {
   packed_to_dense<ArgUplo, ArgTrans>(ap0, A0);
   packed_to_dense<ArgUplo, ArgTrans>(ap, A);
 
-  RealType eps  = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps =
+      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   auto h_A      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A);
   auto h_A0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A0);
   auto h_A_ref  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A_ref);

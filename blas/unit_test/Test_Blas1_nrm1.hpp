@@ -86,16 +86,15 @@ void impl_test_nrm1_mv(int N, int K) {
 
 template <class ScalarA, class Device>
 int test_nrm1() {
-  const int Nbig   = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
-  const int Nhuge  = 132231;
+  const int Nbig  = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
+  const int Nhuge = 132231;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_nrm1<view_type_a_ll, Device>(0);
   Test::impl_test_nrm1<view_type_a_ll, Device>(13);
   Test::impl_test_nrm1<view_type_a_ll, Device>(Nbig);
-  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value)
-    Test::impl_test_nrm1<view_type_a_ll, Device>(Nhuge);
+  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value) Test::impl_test_nrm1<view_type_a_ll, Device>(Nhuge);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
@@ -104,8 +103,7 @@ int test_nrm1() {
   Test::impl_test_nrm1<view_type_a_lr, Device>(0);
   Test::impl_test_nrm1<view_type_a_lr, Device>(13);
   Test::impl_test_nrm1<view_type_a_lr, Device>(Nbig);
-  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value)
-    Test::impl_test_nrm1<view_type_a_lr, Device>(Nhuge);
+  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value) Test::impl_test_nrm1<view_type_a_lr, Device>(Nhuge);
 #endif
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -113,8 +111,7 @@ int test_nrm1() {
   Test::impl_test_nrm1<view_type_a_ls, Device>(0);
   Test::impl_test_nrm1<view_type_a_ls, Device>(13);
   Test::impl_test_nrm1<view_type_a_ls, Device>(Nbig);
-  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value)
-    Test::impl_test_nrm1<view_type_a_ls, Device>(Nhuge);
+  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value) Test::impl_test_nrm1<view_type_a_ls, Device>(Nhuge);
 #endif
 
   return 1;

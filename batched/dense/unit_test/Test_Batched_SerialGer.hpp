@@ -235,7 +235,8 @@ void impl_test_batched_ger_analytical(const std::size_t Nb) {
   EXPECT_EQ(info1, 0);
   EXPECT_EQ(info2, 0);
 
-  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps =
+      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   Kokkos::deep_copy(h_A2, A2);
   auto h_A0   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A0);
   auto h_A1   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A1);
@@ -350,7 +351,8 @@ void impl_test_batched_ger(const std::size_t N, const std::size_t BlkSize) {
     }
   }
 
-  RealType eps = std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps =
+      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
 
   auto h_A    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
   auto h_A0   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A0);

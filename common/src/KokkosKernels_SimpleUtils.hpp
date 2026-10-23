@@ -188,8 +188,8 @@ struct IsRelativelyIdenticalFunctor {
       Kokkos::printf(
           "Values at index %d, %.6f + %.6fi and %.6f + %.6fi, differ too much "
           "(eps = %e, rel err = %e)\n",
-          (int)i, (double)KAT::real(view1(i)), (double)KAT::imag(view1(i)),
-          (double)KAT::real(view2(i)), (double)KAT::imag(view2(i)), (double)eps, (double)val_diff);
+          (int)i, (double)KAT::real(view1(i)), (double)KAT::imag(view1(i)), (double)KAT::real(view2(i)),
+          (double)KAT::imag(view2(i)), (double)eps, (double)val_diff);
       num_diffs++;
     }
   }

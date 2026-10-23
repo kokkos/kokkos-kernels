@@ -169,8 +169,16 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::Syr
       // large enough to require 'relTol' to value 5.0e-3. The same
       // calculations show no discrepancies for calculations with double.
       // ****************************************************************
-       _absTol(std::is_same<_AuxType, float>::value ? 1.0e-6 : (std::is_same<_AuxType, double>::value ? 1.0e-9 : (std::is_same<_AuxType, Kokkos::Experimental::half_t>::value ? 1.0e-1 : 0))),
-      _relTol(std::is_same<_AuxType, float>::value ? 5.0e-3 : (std::is_same<_AuxType, double>::value ? 1.0e-6 : (std::is_same<_AuxType, Kokkos::Experimental::half_t>::value ? 0.1 : 0))),
+      _absTol(std::is_same<_AuxType, float>::value
+                  ? 1.0e-6
+                  : (std::is_same<_AuxType, double>::value
+                         ? 1.0e-9
+                         : (std::is_same<_AuxType, Kokkos::Experimental::half_t>::value ? 1.0e-1 : 0))),
+      _relTol(std::is_same<_AuxType, float>::value
+                  ? 5.0e-3
+                  : (std::is_same<_AuxType, double>::value
+                         ? 1.0e-6
+                         : (std::is_same<_AuxType, Kokkos::Experimental::half_t>::value ? 0.1 : 0))),
       _M(-1),
       _N(-1),
       _useAnalyticalResults(false),
@@ -1617,7 +1625,8 @@ int test_syr2(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr2_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_half");
-  test_syr2<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("test case syr2_half");
+  test_syr2<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(
+      "test case syr2_half");
   Kokkos::Profiling::popRegion();
 }
 #endif

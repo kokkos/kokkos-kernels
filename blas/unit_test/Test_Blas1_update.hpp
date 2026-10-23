@@ -239,7 +239,8 @@ TEST_F(TestCategory, update_half) {
 }
 TEST_F(TestCategory, update_mv_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::update_mv_half");
-  test_update_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+  test_update_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t,
+                 TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif

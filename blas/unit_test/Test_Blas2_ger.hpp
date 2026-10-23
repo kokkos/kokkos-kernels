@@ -159,8 +159,16 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::GerT
       // large enough to require 'relTol' to value 5.0e-3. The same
       // calculations show no discrepancies for calculations with double.
       // ****************************************************************
-       _absTol(std::is_same<_AuxType, float>::value ? 1.0e-6 : (std::is_same<_AuxType, double>::value ? 1.0e-9 : (std::is_same<_AuxType, Kokkos::Experimental::half_t>::value ? 5.0e-2 : 0))),
-      _relTol(std::is_same<_AuxType, float>::value ? 5.0e-3 : (std::is_same<_AuxType, double>::value ? 1.0e-6 : (std::is_same<_AuxType, Kokkos::Experimental::half_t>::value ? 0.3 : 0))),
+      _absTol(std::is_same<_AuxType, float>::value
+                  ? 1.0e-6
+                  : (std::is_same<_AuxType, double>::value
+                         ? 1.0e-9
+                         : (std::is_same<_AuxType, Kokkos::Experimental::half_t>::value ? 5.0e-2 : 0))),
+      _relTol(std::is_same<_AuxType, float>::value
+                  ? 5.0e-3
+                  : (std::is_same<_AuxType, double>::value
+                         ? 1.0e-6
+                         : (std::is_same<_AuxType, Kokkos::Experimental::half_t>::value ? 0.3 : 0))),
       _M(-1),
       _N(-1),
       _useAnalyticalResults(false),
@@ -622,7 +630,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::comp
 
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-         diff          = _KAT_A::abs(h_expected(i, j).real() - h_vanilla(i, j).real());
+        diff          = _KAT_A::abs(h_expected(i, j).real() - h_vanilla(i, j).real());
         errorHappened = false;
         if (h_expected(i, j).real() == 0.) {
           diffThreshold = _KAT_A::abs(_absTol);
@@ -1363,7 +1371,8 @@ int test_ger(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_half");
-  test_ger<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("test case ger_half");
+  test_ger<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(
+      "test case ger_half");
   Kokkos::Profiling::popRegion();
 }
 #endif
