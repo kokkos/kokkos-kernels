@@ -172,16 +172,16 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
   srand(245);
   lno_t numCols      = numRows;
-   crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
-       numRows, numCols, nnz, row_size_variance, bandwidth);
-   if (symmetric) {
-     // Symmetrize on host, rather than relying on the parallel versions (those
-     // can be tested for symmetric=false)
-     input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
-   }
-   lno_t nv = input_mat.numRows();
-   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
-   TestUtils::create_random_x_vector(solution_x, 1.0);
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
+      numRows, numCols, nnz, row_size_variance, bandwidth);
+  if (symmetric) {
+    // Symmetrize on host, rather than relying on the parallel versions (those
+    // can be tested for symmetric=false)
+    input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
+  }
+  lno_t nv = input_mat.numRows();
+  scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
+  TestUtils::create_random_x_vector(solution_x, 1.0);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
   scalar_view_t y_vector = TestUtils::create_random_y_vector(input_mat, solution_x);
   // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
@@ -247,18 +247,18 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
 
-   lno_t numCols      = numRows;
-   crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
-       numRows, numCols, nnz, row_size_variance, bandwidth);
-   if (symmetric) {
-     // Symmetrize on host, rather than relying on the parallel versions (those
-     // can be tested for symmetric=false)
-     input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
-   }
-   lno_t nv = input_mat.numRows();
-   host_scalar_view2d_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv, numVecs);
-   TestUtils::create_random_x_vector(solution_x, 1.0);
-   scalar_view2d_t x_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, numVecs);
+  lno_t numCols      = numRows;
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
+      numRows, numCols, nnz, row_size_variance, bandwidth);
+  if (symmetric) {
+    // Symmetrize on host, rather than relying on the parallel versions (those
+    // can be tested for symmetric=false)
+    input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
+  }
+  lno_t nv = input_mat.numRows();
+  host_scalar_view2d_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv, numVecs);
+  TestUtils::create_random_x_vector(solution_x, 1.0);
+  scalar_view2d_t x_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, numVecs);
   Kokkos::deep_copy(x_vector, solution_x);
   scalar_view2d_t y_vector = TestUtils::create_random_y_vector_mv(input_mat, x_vector);
   auto x_host              = Kokkos::create_mirror_view(x_vector);
@@ -353,10 +353,10 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   srand(245);
   typedef typename device::execution_space exec_space;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-   lno_t numCols      = numRows;
-   crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
-       numRows, numCols, nnz, row_size_variance, bandwidth);
-   auto rowmap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), input_mat.graph.row_map);
+  lno_t numCols      = numRows;
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
+      numRows, numCols, nnz, row_size_variance, bandwidth);
+  auto rowmap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), input_mat.graph.row_map);
   auto entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), input_mat.graph.entries);
   auto values  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), input_mat.values);
   // create raw x (unkown), y (rhs) vectors
@@ -400,7 +400,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   // Check against gold solution
   scalar_t xSq             = KokkosBlas::dot(x, x);
   scalar_t solnDot         = KokkosBlas::dot(x, xgold);
-   double scaledSolutionDot = static_cast<double>(KokkosKernels::ArithTraits<scalar_t>::abs(solnDot / xSq));
+  double scaledSolutionDot = static_cast<double>(KokkosKernels::ArithTraits<scalar_t>::abs(solnDot / xSq));
   EXPECT_TRUE(0.99 < scaledSolutionDot);
 }
 
@@ -581,8 +581,8 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
   const scalar_t one = KokkosKernels::ArithTraits<scalar_t>::one();
   size_type nnz      = nnzPerRow * numRows;
-   crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
-       numRows, numRows, nnz, 0, numRows / 10, 2.0 * one);
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(
+      numRows, numRows, nnz, 0, numRows / 10, 2.0 * one);
   input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
   input_mat = KokkosSparse::sort_and_merge_matrix(input_mat);
   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), numRows);
@@ -699,13 +699,13 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
   TEST_F(TestCategory,                                                                                                 \
          sparse##_##gauss_seidel_asymmetric_streams_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {              \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, false, 0.9,             \
-                                                                       KokkosGraph::COLORING_DEFAULT, 1);                \
+                                                                     KokkosGraph::COLORING_DEFAULT, 1);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, false, 0.9,             \
-                                                                       KokkosGraph::COLORING_DEFAULT, 2);                \
+                                                                     KokkosGraph::COLORING_DEFAULT, 2);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, false, 0.9,             \
-                                                                       KokkosGraph::COLORING_DEFAULT, 3);                \
+                                                                     KokkosGraph::COLORING_DEFAULT, 3);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, false, 0.9,             \
-                                                                       KokkosGraph::COLORING_DEFAULT, 4);                \
+                                                                     KokkosGraph::COLORING_DEFAULT, 4);                \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_asymmetric_rank2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
     test_gauss_seidel_rank2<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, 3, false);                      \
@@ -715,13 +715,13 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_symmetric_streams_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, true, 0.9,              \
-                                                                       KokkosGraph::COLORING_DEFAULT, 1);                \
+                                                                     KokkosGraph::COLORING_DEFAULT, 1);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, true, 0.9,              \
-                                                                       KokkosGraph::COLORING_DEFAULT, 2);                \
+                                                                     KokkosGraph::COLORING_DEFAULT, 2);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, true, 0.9,              \
-                                                                       KokkosGraph::COLORING_DEFAULT, 3);                \
+                                                                     KokkosGraph::COLORING_DEFAULT, 3);                \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, true, 0.9,              \
-                                                                       KokkosGraph::COLORING_DEFAULT, 4);                \
+                                                                     KokkosGraph::COLORING_DEFAULT, 4);                \
   }                                                                                                                    \
   TEST_F(TestCategory, sparse##_##gauss_seidel_symmetric_rank2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {         \
     test_gauss_seidel_rank2<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 200, 10, 3, true);                       \

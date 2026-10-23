@@ -117,10 +117,10 @@ bool is_same_block_matrix(bsrMat_t output_mat_actual, bsrMat_t output_mat_refere
   }
 
   using cmp_eps_type = double;
-  cmp_eps_type eps = TestUtils::selectEpsilonForScalarType<value_type>(5e-7, 3e-2, 0.1);
+  cmp_eps_type eps   = TestUtils::selectEpsilonForScalarType<value_type>(5e-7, 3e-2, 0.1);
 
   is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view<scalar_view_t, scalar_view_t, cmp_eps_type,
-                                                                       typename device::execution_space>(
+                                                                      typename device::execution_space>(
       output_mat_actual.values, output_mat_reference.values, eps);
 
   if (!is_identical) {

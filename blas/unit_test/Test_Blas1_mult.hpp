@@ -143,9 +143,9 @@ int test_mult() {
   typedef Kokkos::View<ScalarC*, Kokkos::LayoutLeft, Device> view_type_c_ll;
   Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(0);
   Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(13);
-   Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(Nbig);
-   // Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll,
-   // Device>(132231);
+  Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(Nbig);
+  // Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll,
+  // Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
@@ -225,7 +225,7 @@ int test_mult_mv() {
   return 1;
 }
 
-#if defined(KOKKOSKERNELS_INST_HALF) ||					\
+#if defined(KOKKOSKERNELS_INST_HALF) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, mult_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::mult_half");

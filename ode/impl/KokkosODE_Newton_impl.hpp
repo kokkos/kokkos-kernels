@@ -33,7 +33,7 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   // unreliable: the rate can round to exactly 1.0, triggering false
   // divergence.  Computing norms in double makes the rate computation
   // accurate while the vectors themselves remain in the original type.
-  using norm_type = double;
+  using norm_type    = double;
   using value_traits = KokkosKernels::ArithTraits<value_type>;
   // Use the scalar type's epsilon for the divergence tolerance so that
   // half_t retains a lenient tol (matching pre-double-norm behavior),
@@ -73,22 +73,21 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // that can fail spuriously on well-conditioned sparse systems
     // (e.g. chemistry Jacobians with one dense row), so it is only kept
     // as a fallback for systems larger than the stack pivot buffer.
-     int linSolverStat    = 0;
-     using mat_value_type = typename mat_type::non_const_value_type;
-     if (sys.neqs * sizeof(int) <= tmp.size() * sizeof(mat_value_type)) {
-       // Use a properly aligned int array for pivots instead of
-       // reinterpret_cast on the half_t tmp view, which is undefined
-       // behavior and causes non-deterministic failures on CUDA.
-       int piv_array[64];
-       Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::AnonymousSpace,
-                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-           piv(piv_array, sys.neqs);
-       for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
-       linSolverStat = KokkosBatched::SerialGetrf<KokkosBatched::Algo::Getrf::Unblocked>::invoke(J, piv);
-       if (linSolverStat == 0) {
-         linSolverStat = KokkosBatched::SerialGetrs<KokkosBatched::Trans::NoTranspose,
-                                                    KokkosBatched::Algo::Getrs::Unblocked>::invoke(J, piv, update);
-       }
+    int linSolverStat    = 0;
+    using mat_value_type = typename mat_type::non_const_value_type;
+    if (sys.neqs * sizeof(int) <= tmp.size() * sizeof(mat_value_type)) {
+      // Use a properly aligned int array for pivots instead of
+      // reinterpret_cast on the half_t tmp view, which is undefined
+      // behavior and causes non-deterministic failures on CUDA.
+      int piv_array[64];
+      Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::AnonymousSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> piv(
+          piv_array, sys.neqs);
+      for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
+      linSolverStat = KokkosBatched::SerialGetrf<KokkosBatched::Algo::Getrf::Unblocked>::invoke(J, piv);
+      if (linSolverStat == 0) {
+        linSolverStat = KokkosBatched::SerialGetrs<KokkosBatched::Trans::NoTranspose,
+                                                   KokkosBatched::Algo::Getrs::Unblocked>::invoke(J, piv, update);
+      }
     } else {
       linSolverStat = KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(J, update, rhs, tmp);
     }

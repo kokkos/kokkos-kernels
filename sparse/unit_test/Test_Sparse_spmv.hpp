@@ -702,8 +702,8 @@ void test_spmv_struct_1D(lno_t nx, lno_t leftBC, lno_t rightBC) {
   using y_vector_type = scalar_view_t;
   using mag_t         = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
-  const int max_x   = 1;
-  const int max_y   = 1;
+  const int max_x     = 1;
+  const int max_y     = 1;
   const mag_t max_val = static_cast<mag_t>(2);
 
   Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", 1);

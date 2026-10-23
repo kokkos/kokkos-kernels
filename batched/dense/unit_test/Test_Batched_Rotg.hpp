@@ -60,7 +60,9 @@ void impl_test_batched_rotg_analytical(const std::size_t Nb, SType a_in, SType b
   auto h_c = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, c);
   auto h_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, s);
 
-  typename ats::mag_type eps = std::is_same_v<SType, Kokkos::Experimental::half_t> ? typename ats::mag_type(0.1) : typename ats::mag_type(1.0e1 * ats::epsilon());
+  typename ats::mag_type eps = std::is_same_v<SType, Kokkos::Experimental::half_t>
+                                   ? typename ats::mag_type(0.1)
+                                   : typename ats::mag_type(1.0e1 * ats::epsilon());
   for (std::size_t i = 0; i < Nb; i++) {
     // Check if the computed c and s satisfy the Givens rotation properties
     EXPECT_NEAR_KK(h_c(i), c_ref, eps);
@@ -140,7 +142,9 @@ void impl_test_batched_rotg_random(const std::size_t Nb) {
   auto h_a_init = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, a_init);
   auto h_b_init = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, b_init);
 
-  typename ats::mag_type eps = std::is_same_v<SType, Kokkos::Experimental::half_t> ? typename ats::mag_type(0.1) : typename ats::mag_type(1.0e1 * ats::epsilon());
+  typename ats::mag_type eps = std::is_same_v<SType, Kokkos::Experimental::half_t>
+                                   ? typename ats::mag_type(0.1)
+                                   : typename ats::mag_type(1.0e1 * ats::epsilon());
   for (std::size_t i = 0; i < Nb; i++) {
     // Check if the computed c and s satisfy the Givens rotation properties
     auto rotation_norm = h_c(i) * h_c(i) + Kokkos::abs(h_s(i)) * Kokkos::abs(h_s(i));

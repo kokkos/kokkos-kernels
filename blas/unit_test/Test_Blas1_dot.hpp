@@ -39,7 +39,7 @@ void impl_test_dot(int N) {
   for (int i = 0; i < N; i++) expected_result += ats::conj(a.h_view(i)) * b.h_view(i);
 
   ScalarA nonconst_nonconst_result = KokkosBlas::dot(a.d_view, b.d_view);
-  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
+  double eps                       = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
   EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result, eps * expected_result);
 
   ScalarA const_const_result = KokkosBlas::dot(a.d_view_const, b.d_view_const);

@@ -202,8 +202,8 @@ void test_newton_status() {
   newton_solver_status newton_status[3] = {newton_solver_status::NLS_SUCCESS, newton_solver_status::NLS_DIVERGENCE,
                                            newton_solver_status::LIN_SOLVE_FAIL};
   vec_type x("solution vector", 1), rhs("right hand side vector", 1);
-  auto x_h = Kokkos::create_mirror_view(x);
-  auto r_h = Kokkos::create_mirror_view(rhs);
+  auto x_h      = Kokkos::create_mirror_view(x);
+  auto r_h      = Kokkos::create_mirror_view(rhs);
   auto status_h = Kokkos::create_mirror_view(status);
 
   vec_type update("update", 1);
@@ -224,7 +224,8 @@ void test_newton_status() {
     Kokkos::deep_copy(x_h, x);
     Kokkos::deep_copy(r_h, rhs);
     printf("Non-linear problem solution and residual with initial value %f:\n", double(initial_value[idx]));
-    printf("  [%f, %g, %g]\n", double(x_h(0)), double(r_h(0)), double(Kokkos::abs(x_h(0) - solution[idx]) / Kokkos::abs(solution[idx])));
+    printf("  [%f, %g, %g]\n", double(x_h(0)), double(r_h(0)),
+           double(Kokkos::abs(x_h(0) - solution[idx]) / Kokkos::abs(solution[idx])));
 #endif
   }
 }
@@ -806,7 +807,9 @@ TEST_F(TestCategory, Newton_parallel_float) { ::Test::test_newton_on_device<Test
 TEST_F(TestCategory, Newton_parallel_double) { ::Test::test_newton_on_device<TestDevice, double>(); }
 
 #if defined(KOKKOSKERNELS_INST_HALF)
-TEST_F(TestCategory, Newton_parallel_half) { ::Test::test_newton_on_device<TestDevice, Kokkos::Experimental::half_t>(); }
+TEST_F(TestCategory, Newton_parallel_half) {
+  ::Test::test_newton_on_device<TestDevice, Kokkos::Experimental::half_t>();
+}
 #endif
 
 TEST_F(TestCategory, Newton_norm_accumulation_float) { ::Test::test_newton_norm_accumulation<TestDevice, float>(); }
@@ -823,5 +826,7 @@ TEST_F(TestCategory, Newton_iteration_count_float) { ::Test::test_newton_iterati
 TEST_F(TestCategory, Newton_iteration_count_double) { ::Test::test_newton_iteration_count<TestDevice, double>(); }
 
 #if defined(KOKKOSKERNELS_INST_HALF)
-TEST_F(TestCategory, Newton_iteration_count_half) { ::Test::test_newton_iteration_count<TestDevice, Kokkos::Experimental::half_t>(); }
+TEST_F(TestCategory, Newton_iteration_count_half) {
+  ::Test::test_newton_iteration_count<TestDevice, Kokkos::Experimental::half_t>();
+}
 #endif

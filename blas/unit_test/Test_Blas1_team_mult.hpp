@@ -147,7 +147,7 @@ void impl_test_team_mult_mv(int N, int K) {
   // Since b and a are known and the largest value in z, x and y
   // is set by the variables max_val, the error upper bound will be
   //         max_error = a * max_val * max_val
-   typename KokkosKernels::ArithTraits<ScalarC>::mag_type const eps = KokkosKernels::ArithTraits<ScalarC>::epsilon();
+  typename KokkosKernels::ArithTraits<ScalarC>::mag_type const eps = KokkosKernels::ArithTraits<ScalarC>::epsilon();
   // For half_t, account for accumulation error from multiple multiplications (a*x*y): scale by 2
   typename KokkosKernels::ArithTraits<ScalarC>::mag_type const max_error =
       KokkosKernels::ArithTraits<ScalarC>::abs(a) * max_val * max_val * eps *
@@ -316,6 +316,12 @@ TEST_F(TestCategory, team_mult_double_mv_int) { test_team_mult_mv<double, int, f
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_mult_half) { test_team_mult<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
-TEST_F(TestCategory, team_mult_mv_half) { test_team_mult_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(); }
+TEST_F(TestCategory, team_mult_half) {
+  test_team_mult<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t,
+                 TestDevice>();
+}
+TEST_F(TestCategory, team_mult_mv_half) {
+  test_team_mult_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t,
+                    TestDevice>();
+}
 #endif
