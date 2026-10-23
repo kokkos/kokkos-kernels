@@ -299,6 +299,23 @@ class epsilon {
 
 using KokkosKernels::Impl::getRandomBounds;
 
+/// Helper to select the appropriate tolerance/epsilon value for the given scalar type.
+/// Avoids verbose "std::is_same_v<...> ? val1 : val2" chains in tests.
+template <typename scalar_t>
+constexpr double selectEpsilonForScalarType(double eps_double, double eps_float, double eps_half) {
+  using KAT   = KokkosKernels::ArithTraits<scalar_t>;
+  using mag_t = typename KAT::mag_type;
+  if constexpr (std::is_same_v<mag_t, Kokkos::Experimental::half_t>) {
+    return eps_half;
+  } else if constexpr (std::is_same_v<mag_t, float>) {
+    return eps_float;
+  } else {
+    // Either mag_t is double, or some other type not explicitly handled here.
+    // In the latter case conservatively return the strictest tolerance (eps_double).
+    return eps_double;
+  }
+}
+
 // create_random_x_vector and create_random_y_vector can be used together to
 // generate a random linear system Ax = y.
 template <typename vec_t>

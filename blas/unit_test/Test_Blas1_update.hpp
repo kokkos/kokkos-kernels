@@ -17,8 +17,7 @@ void impl_test_update(int N) {
   ScalarA a  = 3;
   ScalarB b  = 5;
   ScalarC c  = 7;
-  double eps = std::is_same<ScalarC, float>::value ? 2 * 1e-5 :
-               std::is_same<ScalarC, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarC>(1e-7, 2e-5, 0.1);
 
   TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
   TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
@@ -113,8 +112,7 @@ void impl_test_update_mv(int N, int K) {
   ScalarB b = 5;
   ScalarC c = 5;
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
-               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   KokkosBlas::update(a, x.d_view, b, y.d_view, c, z.d_view);
   Kokkos::deep_copy(z.h_base, z.d_base);

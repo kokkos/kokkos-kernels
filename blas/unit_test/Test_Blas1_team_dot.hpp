@@ -56,8 +56,7 @@ void impl_test_team_dot(int N) {
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < M; k++) nonconst_nonconst_result += r(k);
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
-               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
   EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result, eps * expected_result);
 
   ScalarA const_const_result = 0;
@@ -144,8 +143,7 @@ void impl_test_team_dot_mv(int N, int K) {
     for (int i = 0; i < N; i++) expected_result[j] += a.h_view(i, j) * b.h_view(i, j);
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 :
-               std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 0.1 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   Kokkos::View<ScalarB *, Kokkos::HostSpace> r("Dot::Result", K);
   Kokkos::View<ScalarB *, Device> d_r("Dot::Result", K);
