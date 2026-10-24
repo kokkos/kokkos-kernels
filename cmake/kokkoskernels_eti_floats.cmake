@@ -69,7 +69,6 @@ if(KOKKOSKERNELS_INST_FLOAT)
   list(APPEND SCALAR_LIST "float")
 endif()
 
-# TODO: Fix build errors in kokkos when half_t is used in ETI
 if (KOKKOSKERNELS_INST_HALF)
  list(APPEND SCALAR_LIST "Kokkos::Experimental::half_t")
 endif()
