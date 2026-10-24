@@ -337,6 +337,20 @@ int test_scal_mv_rank0_view() {
   return 1;
 }
 
+#if defined(KOKKOSKERNELS_INST_FLOAT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, scal_float) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_float");
+  test_scal<float, float, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+TEST_F(TestCategory, scal_mv_float) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_mv_float");
+  test_scal_mv<float, float, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
+
 #if defined(KOKKOSKERNELS_INST_HALF) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, scal_half) {
