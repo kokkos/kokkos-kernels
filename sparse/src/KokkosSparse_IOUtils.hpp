@@ -101,7 +101,7 @@ void kk_sparseMatrix_generate_lower_upper_triangle(char uplo, bool unit_diag, Or
       else
         colInd[k] = row + (k - rowPtr[row]);
       if (colInd[k] != row) {
-        values[k] = ScalarType(0.5 * (1.0 * rand() / RAND_MAX) - 0.25);  // [-0.25, 0.25)
+        values[k] = ScalarType(0.2 * (1.0 * rand() / RAND_MAX) - 0.1);  // [-0.1, 0.1)
         off_diag_sum += KokkosKernels::ArithTraits<ScalarType>::abs(values[k]);
       } else {
         values[k] = ScalarType(0);  // placeholder, set diagonal below
