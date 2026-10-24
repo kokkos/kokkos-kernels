@@ -132,9 +132,7 @@ struct TrsvTest {
 
       KokkosSparse::spmv("T", alpha, lower_part_unit, b_x_copy, beta, b_y);
       check_trsv_mv<UseBlocks>(lower_part_unit, b_x, b_y, b_x_copy, numMV, "L", "T", "U");
-    }
 
-    if (!UseBlocks) {
       auto upper_part_unit =
           get_LU<Crs, sp_matrix_type, size_type>('U', numRows, nnz, row_size_variance, bandwidth, block_size, true);
 
