@@ -179,7 +179,8 @@ void impl_test_batched_rot_analytical(const std::size_t Nb) {
         .run();
   }
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps =
+      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   Kokkos::deep_copy(h_x, x);
   Kokkos::deep_copy(h_y, y);
 
@@ -297,9 +298,10 @@ void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
     }
   }
 
-  RealType eps = 1.0e1 * ats::epsilon();
-  auto h_x     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x);
-  auto h_y     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y);
+  RealType eps =
+      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  auto h_x = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x);
+  auto h_y = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y);
 
   // Check if x := c*x + s*y and y := c*y - op(s)*x
   for (std::size_t ib = 0; ib < Nb; ib++) {
@@ -402,6 +404,32 @@ TEST_F(TestCategory, test_batched_teamvector_rot_i_double) {
 }
 TEST_F(TestCategory, test_batched_teamvector_rot_c_double) {
   test_batched_rot<TestDevice, double, true, KokkosBatched::Mode::TeamVector>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+// Serial
+TEST_F(TestCategory, test_batched_serial_rot_i_half) {
+  test_batched_rot<TestDevice, Kokkos::Experimental::half_t, false, KokkosBatched::Mode::Serial>();
+}
+TEST_F(TestCategory, test_batched_serial_rot_c_half) {
+  test_batched_rot<TestDevice, Kokkos::Experimental::half_t, true, KokkosBatched::Mode::Serial>();
+}
+
+// Team
+TEST_F(TestCategory, test_batched_team_rot_i_half) {
+  test_batched_rot<TestDevice, Kokkos::Experimental::half_t, false, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_rot_c_half) {
+  test_batched_rot<TestDevice, Kokkos::Experimental::half_t, true, KokkosBatched::Mode::Team>();
+}
+
+// TeamVector
+TEST_F(TestCategory, test_batched_teamvector_rot_i_half) {
+  test_batched_rot<TestDevice, Kokkos::Experimental::half_t, false, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_rot_c_half) {
+  test_batched_rot<TestDevice, Kokkos::Experimental::half_t, true, KokkosBatched::Mode::TeamVector>();
 }
 #endif
 

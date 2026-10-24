@@ -351,6 +351,20 @@ TEST_F(TestCategory, scal_mv_float) {
 }
 #endif
 
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, scal_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_half");
+  test_scal<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+TEST_F(TestCategory, scal_mv_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_mv_half");
+  test_scal_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
+
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, scal_double) {

@@ -22,7 +22,7 @@ void impl_test_nrm2(int N) {
 
   Kokkos::deep_copy(a.h_base, a.d_base);
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   typename AT::mag_type expected_result = 0;
   for (int i = 0; i < N; i++) {
@@ -61,7 +61,7 @@ void impl_test_nrm2_mv(int N, int K) {
     expected_result[j] = KokkosKernels::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   Kokkos::View<typename AT::mag_type*, Kokkos::HostSpace> r("Dot::Result", K);
 
@@ -85,12 +85,13 @@ void impl_test_nrm2_mv(int N, int K) {
 
 template <class ScalarA, class Device>
 int test_nrm2() {
+  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_nrm2<view_type_a_ll, Device>(0);
   Test::impl_test_nrm2<view_type_a_ll, Device>(13);
-  Test::impl_test_nrm2<view_type_a_ll, Device>(1024);
+  Test::impl_test_nrm2<view_type_a_ll, Device>(Nbig);
   // Test::impl_test_nrm2<view_type_a_ll, Device>(132231);
 #endif
 
@@ -99,7 +100,7 @@ int test_nrm2() {
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutRight, Device> view_type_a_lr;
   Test::impl_test_nrm2<view_type_a_lr, Device>(0);
   Test::impl_test_nrm2<view_type_a_lr, Device>(13);
-  Test::impl_test_nrm2<view_type_a_lr, Device>(1024);
+  Test::impl_test_nrm2<view_type_a_lr, Device>(Nbig);
   // Test::impl_test_nrm2<view_type_a_lr, Device>(132231);
 #endif
 
@@ -107,7 +108,7 @@ int test_nrm2() {
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_nrm2<view_type_a_ls, Device>(0);
   Test::impl_test_nrm2<view_type_a_ls, Device>(13);
-  Test::impl_test_nrm2<view_type_a_ls, Device>(1024);
+  Test::impl_test_nrm2<view_type_a_ls, Device>(Nbig);
   // Test::impl_test_nrm2<view_type_a_ls, Device>(132231);
 #endif
 
@@ -116,12 +117,13 @@ int test_nrm2() {
 
 template <class ScalarA, class Device>
 int test_nrm2_mv() {
+  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_nrm2_mv<view_type_a_ll, Device>(0, 5);
   Test::impl_test_nrm2_mv<view_type_a_ll, Device>(13, 5);
-  Test::impl_test_nrm2_mv<view_type_a_ll, Device>(1024, 5);
+  Test::impl_test_nrm2_mv<view_type_a_ll, Device>(Nbig, 5);
   Test::impl_test_nrm2_mv<view_type_a_ll, Device>(789, 1);
   // Test::impl_test_nrm2_mv<view_type_a_ll, Device>(132231,5);
 #endif
@@ -131,7 +133,7 @@ int test_nrm2_mv() {
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   Test::impl_test_nrm2_mv<view_type_a_lr, Device>(0, 5);
   Test::impl_test_nrm2_mv<view_type_a_lr, Device>(13, 5);
-  Test::impl_test_nrm2_mv<view_type_a_lr, Device>(1024, 5);
+  Test::impl_test_nrm2_mv<view_type_a_lr, Device>(Nbig, 5);
   Test::impl_test_nrm2_mv<view_type_a_lr, Device>(789, 1);
   // Test::impl_test_nrm2_mv<view_type_a_lr, Device>(132231,5);
 #endif
@@ -140,13 +142,27 @@ int test_nrm2_mv() {
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_nrm2_mv<view_type_a_ls, Device>(0, 5);
   Test::impl_test_nrm2_mv<view_type_a_ls, Device>(13, 5);
-  Test::impl_test_nrm2_mv<view_type_a_ls, Device>(1024, 5);
+  Test::impl_test_nrm2_mv<view_type_a_ls, Device>(Nbig, 5);
   Test::impl_test_nrm2_mv<view_type_a_ls, Device>(789, 1);
   // Test::impl_test_nrm2_mv<view_type_a_ls, Device>(132231,5);
 #endif
 
   return 1;
 }
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, nrm2_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_half");
+  test_nrm2<Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+TEST_F(TestCategory, nrm2_mv_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_mv_half");
+  test_nrm2_mv<Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))

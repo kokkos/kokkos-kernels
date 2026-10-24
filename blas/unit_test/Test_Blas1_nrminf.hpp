@@ -22,7 +22,7 @@ void impl_test_nrminf(int N) {
 
   Kokkos::deep_copy(a.h_base, a.d_base);
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   typename AT::mag_type expected_result = KokkosKernels::ArithTraits<typename AT::mag_type>::min();
   for (int i = 0; i < N; i++)
@@ -61,7 +61,7 @@ void impl_test_nrminf_mv(int N, int K) {
     if (N == 0) expected_result[j] = typename AT::mag_type(0);
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   Kokkos::View<typename AT::mag_type*, Kokkos::HostSpace> r("Dot::Result", K);
 
@@ -144,6 +144,20 @@ int test_nrminf_mv() {
   return 1;
 }
 
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, nrminf_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrminf_half");
+  test_nrminf<Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+TEST_F(TestCategory, nrminf_mv_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrminf_mv_half");
+  test_nrminf_mv<Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
+
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, nrminf_float) {
@@ -152,7 +166,7 @@ TEST_F(TestCategory, nrminf_float) {
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrminf_mv_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrminf_mvfloat");
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrminf_mv_float");
   test_nrminf_mv<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }

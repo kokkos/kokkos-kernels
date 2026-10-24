@@ -100,6 +100,11 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+  // half_t cannot represent the accumulated values in Jacobi preconditioner
+  // (omega*dinv*matrix products overflow ~65504 max with large matrices)
+  if constexpr (std::is_same_v<scalar_t, Kokkos::Experimental::half_t>) {
+    return;
+  }
   using namespace Test;
   typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 

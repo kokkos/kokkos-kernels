@@ -181,7 +181,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   lno_t nv = input_mat.numRows();
   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
-  TestUtils::create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x, 1.0);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
   scalar_view_t y_vector = TestUtils::create_random_y_vector(input_mat, solution_x);
   // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
@@ -257,7 +257,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   lno_t nv = input_mat.numRows();
   host_scalar_view2d_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv, numVecs);
-  TestUtils::create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x, 1.0);
   scalar_view2d_t x_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, numVecs);
   Kokkos::deep_copy(x_vector, solution_x);
   scalar_view2d_t y_vector = TestUtils::create_random_y_vector_mv(input_mat, x_vector);
@@ -400,7 +400,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   // Check against gold solution
   scalar_t xSq             = KokkosBlas::dot(x, x);
   scalar_t solnDot         = KokkosBlas::dot(x, xgold);
-  double scaledSolutionDot = KokkosKernels::ArithTraits<scalar_t>::abs(solnDot / xSq);
+  double scaledSolutionDot = static_cast<double>(KokkosKernels::ArithTraits<scalar_t>::abs(solnDot / xSq));
   EXPECT_TRUE(0.99 < scaledSolutionDot);
 }
 
@@ -586,7 +586,7 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
   input_mat = KokkosSparse::sort_and_merge_matrix(input_mat);
   scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), numRows);
-  TestUtils::create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x, 1.0);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
   scalar_view_t y_vector = TestUtils::create_random_y_vector(input_mat, solution_x);
   scalar_view_t x_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x vector"), numRows);
@@ -661,7 +661,7 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
     lno_t nv = input_mat_v[i].numRows();
     scalar_view_t solution_x_tmp(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
     solution_x_v[i] = solution_x_tmp;
-    TestUtils::create_random_x_vector(solution_x_v[i]);
+    TestUtils::create_random_x_vector(solution_x_v[i], 1.0);
     initial_norm_res_v[i] = KokkosBlas::nrm2(solution_x_v[i]);
     y_vector_v[i]         = TestUtils::create_random_y_vector(input_mat_v[i], solution_x_v[i]);
     // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
@@ -741,7 +741,6 @@ void test_gauss_seidel_streams_rank1(lno_t numRows, size_type nnz, lno_t bandwid
   TEST_F(TestCategory, sparse##_##gauss_seidel_custom_coloring##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {         \
     test_gauss_seidel_custom_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(500, 10);                                       \
   }
-
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
 #undef KOKKOSKERNELS_EXECUTE_TEST
