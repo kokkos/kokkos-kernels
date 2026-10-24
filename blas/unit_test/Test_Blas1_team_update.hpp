@@ -27,7 +27,7 @@ void impl_test_team_update(int N) {
   ScalarA a  = 3;
   ScalarB b  = 5;
   ScalarC c  = 7;
-  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarC>(1e-7, 2e-5, 0.1);
 
   TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
   TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
