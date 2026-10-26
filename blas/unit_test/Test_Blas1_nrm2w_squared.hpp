@@ -16,13 +16,9 @@ void impl_test_nrm2w_squared(int N) {
   TestUtils::view_stride_adapter<ViewTypeA> a("A", N);
   TestUtils::view_stride_adapter<ViewTypeA> w("W", N);
 
-  const MagnitudeA max_val = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1 : 10;
-  const MagnitudeA eps     = AT::epsilon();
-  // For half_t, use a larger safety factor since accumulation in half_t
-  // introduces more rounding error than float/double.
-  const MagnitudeA safety_factor = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 10 : 1;
-  const MagnitudeA max_error =
-      max_val * max_val * safety_factor * KokkosKernels::ArithTraits<MagnitudeA>::sqrt(static_cast<MagnitudeA>(N)) * eps;
+  const MagnitudeA max_val = std::is_same<MagnitudeA, Kokkos::Experimental::half_t>::value ? 1 : 10;
+  const MagnitudeA eps     = std::is_same<MagnitudeA, Kokkos::Experimental::half_t>::value ? 2 * AT::epsilon() : AT::epsilon();
+  const MagnitudeA max_error = max_val * max_val * static_cast<MagnitudeA>(N) * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -55,12 +51,8 @@ void impl_test_nrm2w_squared_mv(int N, int K) {
   TestUtils::view_stride_adapter<ViewTypeA> w("W", N, K);
 
   const MagnitudeA max_val = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1 : 10;
-  const MagnitudeA eps     = AT::epsilon();
-  // For half_t, use a larger safety factor since accumulation in half_t
-  // introduces more rounding error than float/double.
-  const MagnitudeA safety_factor = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 10 : 1;
-  const MagnitudeA max_error =
-      max_val * max_val * safety_factor * KokkosKernels::ArithTraits<MagnitudeA>::sqrt(static_cast<MagnitudeA>(N)) * eps;
+  const MagnitudeA eps     = std::is_same<MagnitudeA, Kokkos::Experimental::half_t>::value ? 2 * AT::epsilon() : AT::epsilon();
+  const MagnitudeA max_error = max_val * max_val * static_cast<MagnitudeA>(N) * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
