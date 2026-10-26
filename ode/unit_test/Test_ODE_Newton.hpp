@@ -176,19 +176,8 @@ void test_newton_status() {
   vec_type scale("scaling factors", 1);
   Kokkos::deep_copy(scale, 1);
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, Kokkos::Experimental::half_t>) {
-    rel_tol = 1e-2;
-    abs_tol = 1e-1;
-  } else if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
   Kokkos::View<newton_solver_status*, Device> status("newton solver status", 1);
 
@@ -232,19 +221,8 @@ void test_newton_status() {
 
 template <typename Device, typename scalar_type>
 void test_simple_problems() {
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, Kokkos::Experimental::half_t>) {
-    rel_tol = 1e-2;
-    abs_tol = 1e-1;
-  } else if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   {
@@ -368,19 +346,8 @@ struct CircleHyperbolaIntersection {
 
 template <typename Device, typename scalar_type>
 void test_simple_systems() {
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, Kokkos::Experimental::half_t>) {
-    rel_tol = 1e-2;
-    abs_tol = 1e-1;
-  } else if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   {
@@ -451,19 +418,8 @@ void test_newton_lin_solve_fail_keeps_iterate() {
   using mat_type             = typename Kokkos::View<scalar_type**, Device>;
   using system_type          = SingularJacobianEquation<Device, scalar_type>;
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, Kokkos::Experimental::half_t>) {
-    rel_tol = 1e-2;
-    abs_tol = 1e-1;
-  } else if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   system_type my_system{};
@@ -514,19 +470,8 @@ void test_newton_on_device() {
   using system_type          = CircleHyperbolaIntersection<Device, scalar_type>;
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, Kokkos::Experimental::half_t>) {
-    rel_tol = 1e-2;
-    abs_tol = 1e-1;
-  } else if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
 
   constexpr int num_systems = 1000;
   const newton_params params(50, abs_tol, rel_tol);
@@ -613,19 +558,8 @@ void test_newton_norm_accumulation() {
   using mat_type             = typename Kokkos::View<scalar_type**, Device>;
   using system_type          = DecoupledEquations<Device, scalar_type>;
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, Kokkos::Experimental::half_t>) {
-    rel_tol = 1e-2;
-    abs_tol = 1e-1;
-  } else if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   system_type my_system{};
@@ -723,19 +657,8 @@ void test_newton_iteration_count() {
   using mat_type             = typename Kokkos::View<scalar_type**, Device>;
   using system_type          = QuadraticEquation<Device, scalar_type>;
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, Kokkos::Experimental::half_t>) {
-    rel_tol = 1e-2;
-    abs_tol = 1e-1;
-  } else if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   system_type mySys{};
