@@ -17,12 +17,8 @@ void impl_test_nrm2w(int N) {
   TestUtils::view_stride_adapter<ViewTypeA> w("W", N);
 
   const MagnitudeA max_val = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1 : 10;
-  const MagnitudeA eps     = AT::epsilon();
-  // For half_t, use a larger safety factor since accumulation in half_t
-  // introduces more rounding error than float/double.
-  const MagnitudeA safety_factor = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 10 : 1;
-  const MagnitudeA max_error =
-      max_val * safety_factor * KokkosKernels::ArithTraits<MagnitudeA>::sqrt(static_cast<MagnitudeA>(N)) * eps;
+  const MagnitudeA eps     = std::is_same<MagnitudeA, Kokkos::Experimental::half_t>::value ? 2 * AT::epsilon() : AT::epsilon();
+  const MagnitudeA max_error   = max_val * Kokkos::sqrt(static_cast<MagnitudeA>(N)) * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -40,7 +36,7 @@ void impl_test_nrm2w(int N) {
     typename AT::mag_type term = AT::abs(a.h_view(i)) / AT::abs(w.h_view(i));
     expected_result += term * term;
   }
-  expected_result = KokkosKernels::ArithTraits<typename AT::mag_type>::sqrt(expected_result);
+  expected_result = Kokkos::sqrt(expected_result);
 
   typename AT::mag_type nonconst_result = KokkosBlas::nrm2w(a.d_view, w.d_view);
   EXPECT_NEAR_KK(nonconst_result, expected_result, max_error);
@@ -56,12 +52,8 @@ void impl_test_nrm2w_mv(int N, int K) {
   TestUtils::view_stride_adapter<ViewTypeA> w("W", N, K);
 
   const MagnitudeA max_val = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1 : 10;
-  const MagnitudeA eps     = AT::epsilon();
-  // For half_t, use a larger safety factor since accumulation in half_t
-  // introduces more rounding error than float/double.
-  const MagnitudeA safety_factor = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 10 : 1;
-  const MagnitudeA max_error =
-      max_val * safety_factor * KokkosKernels::ArithTraits<MagnitudeA>::sqrt(static_cast<MagnitudeA>(N)) * eps;
+  const MagnitudeA eps     = std::is_same<MagnitudeA, Kokkos::Experimental::half_t>::value ? 2 * AT::epsilon() : AT::epsilon();
+  const MagnitudeA max_error   = max_val * Kokkos::sqrt(static_cast<MagnitudeA>(N)) * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -81,7 +73,7 @@ void impl_test_nrm2w_mv(int N, int K) {
       typename AT::mag_type term = AT::abs(a.h_view(i, j)) / AT::abs(w.h_view(i, j));
       expected_result[j] += term * term;
     }
-    expected_result[j] = KokkosKernels::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
+    expected_result[j] = Kokkos::sqrt(expected_result[j]);
   }
 
   Kokkos::View<typename AT::mag_type*, Device> r("Dot::Result", K);
