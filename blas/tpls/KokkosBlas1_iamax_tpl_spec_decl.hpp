@@ -120,6 +120,7 @@ using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
         if (prevPtrMode == CUBLAS_PTR_MODE_2) {                                                                        \
           KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_PTR_MODE_1));                         \
         }                                                                                                              \
+        static_assert(sizeof(INDEX_TYPE) == sizeof(CUBLAS_INT_TYPE) \
         KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(CUBLAS_FN(s.handle, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(X.data()),   \
                                                    LDX, reinterpret_cast<CUBLAS_INT_TYPE*>(R.data())));                \
         if (prevPtrMode == CUBLAS_PTR_MODE_2) {                                                                        \
