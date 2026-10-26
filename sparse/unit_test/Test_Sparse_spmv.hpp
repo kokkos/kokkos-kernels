@@ -187,7 +187,7 @@ void check_spmv(handle_t *handle, crsMat_t input_mat, x_vector_type x, y_vector_
                           num_errors);
   if (num_errors > 0)
     printf("KokkosSparse::Test::spmv: %i errors of %i with params: %lf %lf\n", num_errors, y.extent_int(0),
-           y_value_trait::abs(alpha), y_value_trait::abs(beta));
+           static_cast<double>(y_value_trait::abs(alpha)), static_cast<double>(y_value_trait::abs(beta)));
   EXPECT_TRUE(num_errors == 0);
 }
 
@@ -258,7 +258,7 @@ void check_spmv_struct(const crsMat_t input_mat, const int stencil_type,
   // y is the quantity being tested here,
   // so let us use y_value_type to determine
   // the appropriate tolerance precision.
-  const double eps = KokkosKernels::ArithTraits<y_value_mag_type>::eps();
+  const double eps = static_cast<double>(KokkosKernels::ArithTraits<y_value_mag_type>::eps());
   const size_t nr  = input_mat.numRows();
   y_vector_type expected_y("expected", nr);
   Kokkos::deep_copy(expected_y, y);
@@ -274,7 +274,8 @@ void check_spmv_struct(const crsMat_t input_mat, const int stencil_type,
     printf(
         "KokkosKernels::UnitTests::spmv_struct: %i errors of %i with params: "
         "%d %lf %lf\n",
-        num_errors, y.extent_int(0), stencil_type, y_value_trait::abs(alpha), y_value_trait::abs(beta));
+        num_errors, y.extent_int(0), stencil_type, static_cast<double>(y_value_trait::abs(alpha)),
+        static_cast<double>(y_value_trait::abs(beta)));
   }
   EXPECT_TRUE(num_errors == 0);
 }  // check_spmv_struct
@@ -295,7 +296,7 @@ void check_spmv_mv_struct(const crsMat_t input_mat, const int stencil_type,
   // y is the quantity being tested here,
   // so let us use y_value_type to determine
   // the appropriate tolerance precision.
-  const double eps = KokkosKernels::ArithTraits<y_value_mag_type>::eps();
+  const double eps = static_cast<double>(KokkosKernels::ArithTraits<y_value_mag_type>::eps());
   Kokkos::deep_copy(expected_y, y);
   Kokkos::fence();
 
@@ -316,7 +317,8 @@ void check_spmv_mv_struct(const crsMat_t input_mat, const int stencil_type,
       printf(
           "KokkosKernels::UnitTests::spmv_mv_struct: %i errors of %i with "
           "params: %d %lf %lf, in vector %i\n",
-          num_errors, y.extent_int(0), stencil_type, y_value_trait::abs(alpha), y_value_trait::abs(beta), vectorIdx);
+          num_errors, y.extent_int(0), stencil_type, static_cast<double>(y_value_trait::abs(alpha)),
+          static_cast<double>(y_value_trait::abs(beta)), vectorIdx);
     EXPECT_TRUE(num_errors == 0);
   }
 }  // check_spmv_mv_struct
@@ -338,6 +340,13 @@ Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(int mag) {
   return Kokkos::complex<float>(mag, mag);
 }
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+template <>
+Kokkos::Experimental::half_t randomUpperBound<Kokkos::Experimental::half_t>(int mag) {
+  return Kokkos::Experimental::half_t(static_cast<float>(mag));
+}
+#endif
+
 template <typename scalar_t, typename lno_t, typename size_type, typename Device>
 void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance,
                bool heavy) {
@@ -349,9 +358,9 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz, l
   using handle_t      = KokkosSparse::SPMVHandle<Device, crsMat_t, x_vector_type, y_vector_type>;
   using y_policy      = Kokkos::RangePolicy<typename y_vector_type::execution_space>;
 
-  constexpr mag_t max_x   = static_cast<mag_t>(1);
-  constexpr mag_t max_y   = static_cast<mag_t>(1);
-  constexpr mag_t max_val = static_cast<mag_t>(1);
+  const int max_x   = 1;
+  const int max_y   = 1;
+  const int max_val = 1;
 
   lno_t numCols = numRows;
 
@@ -450,9 +459,9 @@ template <typename scalar_t, typename lno_t, typename size_type, typename layout
 void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool heavy, int numMV) {
   using mag_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
-  constexpr mag_t max_x   = static_cast<mag_t>(1);
-  constexpr mag_t max_y   = static_cast<mag_t>(1);
-  constexpr mag_t max_val = static_cast<mag_t>(1);
+  const int max_x   = 1;
+  const int max_y   = 1;
+  const int max_val = 1;
 
   lno_t numCols = numRows;
 
@@ -534,9 +543,9 @@ void test_spmv_mv_heavy(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandw
   using mag_t     = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using handle_t  = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
 
-  constexpr mag_t max_x   = static_cast<mag_t>(10);
-  constexpr mag_t max_y   = static_cast<mag_t>(10);
-  constexpr mag_t max_val = static_cast<mag_t>(10);
+  const int max_x   = 10;
+  const int max_y   = 10;
+  const int max_val = 10;
 
   crsMat_t input_mat =
       KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
@@ -602,9 +611,9 @@ void test_spmv_padded_sizealigned(lno_t numRows, lno_t numCols, size_type nnz, l
   using handle_t     = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
   using handle_r1_t  = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX_1D, ViewTypeY_1D>;
 
-  constexpr mag_t max_x   = static_cast<mag_t>(10);
-  constexpr mag_t max_y   = static_cast<mag_t>(10);
-  constexpr mag_t max_val = static_cast<mag_t>(10);
+  const int max_x   = 10;
+  const int max_y   = 10;
+  const int max_val = 10;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -693,9 +702,9 @@ void test_spmv_struct_1D(lno_t nx, lno_t leftBC, lno_t rightBC) {
   using y_vector_type = scalar_view_t;
   using mag_t         = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
-  constexpr mag_t max_x   = static_cast<mag_t>(1);
-  constexpr mag_t max_y   = static_cast<mag_t>(1);
-  constexpr mag_t max_val = static_cast<mag_t>(2);
+  const int max_x     = 1;
+  const int max_y     = 1;
+  const mag_t max_val = static_cast<mag_t>(2);
 
   Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", 1);
   structure(0) = nx;
@@ -736,8 +745,8 @@ void test_spmv_struct_2D(lno_t nx, lno_t ny, lno_t horizontalBC, lno_t verticalB
   using y_vector_type = scalar_view_t;
   using mag_t         = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
-  constexpr mag_t max_x = static_cast<mag_t>(1);
-  constexpr mag_t max_y = static_cast<mag_t>(1);
+  const mag_t max_x = static_cast<mag_t>(1);
+  const mag_t max_y = static_cast<mag_t>(1);
 
   Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", 2);
   structure(0) = nx;
@@ -773,16 +782,16 @@ void test_spmv_struct_2D(lno_t nx, lno_t ny, lno_t horizontalBC, lno_t verticalB
   Kokkos::fill_random(output_y, rand_pool, max_y);
 
   {
-    constexpr mag_t max_val   = static_cast<mag_t>(4);
-    constexpr mag_t max_error = max_y + 5 * max_val * max_x;
+    const mag_t max_val   = static_cast<mag_t>(4);
+    const mag_t max_error = max_y + 5 * max_val * max_x;
     Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0, 0.0, max_error);
     Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 0.0, 1.0, max_error);
     Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0, 1.0, max_error);
   }
 
   {
-    constexpr mag_t max_val   = static_cast<mag_t>(8);
-    constexpr mag_t max_error = max_y + 9 * max_val * max_x;
+    const mag_t max_val   = static_cast<mag_t>(8);
+    const mag_t max_error = max_y + 9 * max_val * max_x;
     Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 1.0, 0.0, max_error);
     Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 0.0, 1.0, max_error);
     Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 1.0, 1.0, max_error);
@@ -797,8 +806,8 @@ void test_spmv_struct_3D(lno_t nx, lno_t ny, lno_t nz, lno_t horizontal1BC, lno_
   using y_vector_type = scalar_view_t;
   using mag_t         = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
-  constexpr mag_t max_x = static_cast<mag_t>(1);
-  constexpr mag_t max_y = static_cast<mag_t>(1);
+  const mag_t max_x = static_cast<mag_t>(1);
+  const mag_t max_y = static_cast<mag_t>(1);
 
   Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", 3);
   structure(0) = nx;
@@ -842,16 +851,16 @@ void test_spmv_struct_3D(lno_t nx, lno_t ny, lno_t nz, lno_t horizontal1BC, lno_
   Kokkos::fill_random(output_y, rand_pool, max_y);
 
   {
-    constexpr mag_t max_val   = static_cast<mag_t>(6);
-    constexpr mag_t max_error = max_y + 7 * max_val * max_x;
+    const mag_t max_val   = static_cast<mag_t>(6);
+    const mag_t max_error = max_y + 7 * max_val * max_x;
     Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0, 0.0, max_error);
     Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 0.0, 1.0, max_error);
     Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0, 1.0, max_error);
   }
 
   {
-    constexpr mag_t max_val   = static_cast<mag_t>(26);
-    constexpr mag_t max_error = max_y + 27 * max_val * max_x;
+    const mag_t max_val   = static_cast<mag_t>(26);
+    const mag_t max_error = max_y + 27 * max_val * max_x;
     Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 1.0, 0.0, max_error);
     Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 0.0, 1.0, max_error);
     Test::check_spmv_struct(input_mat_FE, 2, structure, input_x, output_y, 1.0, 1.0, max_error);
@@ -865,8 +874,8 @@ void test_spmv_mv_struct_1D(lno_t nx, int numMV) {
   using y_multivector_type = Kokkos::View<scalar_t **, layout, Device>;
   using mag_t              = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
-  constexpr mag_t max_x = static_cast<mag_t>(1);
-  constexpr mag_t max_y = static_cast<mag_t>(1);
+  const mag_t max_x = static_cast<mag_t>(1);
+  const mag_t max_y = static_cast<mag_t>(1);
 
   Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", 1);
   structure(0) = nx;
@@ -889,7 +898,7 @@ void test_spmv_mv_struct_1D(lno_t nx, int numMV) {
   Kokkos::fill_random(input_x, rand_pool, max_x);
   Kokkos::fill_random(output_y, rand_pool, max_y);
 
-  constexpr mag_t max_error = 5;
+  const mag_t max_error = 5;
 
   Kokkos::deep_copy(output_y_copy, output_y);
 
@@ -1065,8 +1074,8 @@ void test_spmv_all_interfaces_light() {
   multivector_t x_mv("x_mv", n, 3);
   vector_t x("x", n);
   // Randomize x (it won't be modified after that)
-  Kokkos::fill_random(x_mv, rand_pool, randomUpperBound<scalar_t>(maxVal));
-  Kokkos::fill_random(x, rand_pool, randomUpperBound<scalar_t>(maxVal));
+  Kokkos::fill_random(x_mv, rand_pool, randomUpperBound<scalar_t>(static_cast<int>(maxVal)));
+  Kokkos::fill_random(x, rand_pool, randomUpperBound<scalar_t>(static_cast<int>(maxVal)));
   multivector_t y_mv("y_mv", m, 3);
   vector_t y("y", m);
   // Compute the correct y = Ax once

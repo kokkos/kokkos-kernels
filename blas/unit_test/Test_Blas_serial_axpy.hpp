@@ -150,4 +150,11 @@ TEST_F(TestCategory, serial_axpy_fcomplex_fcomplex) {
 TEST_F(TestCategory, serial_axpy_fcomplex_float) { test_blas_serial_axpy<TestDevice, Kokkos::complex<float>, float>(); }
 #endif
 
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, serial_axpy_half_half) {
+  test_blas_serial_axpy<TestDevice, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t>();
+}
+#endif
+
 #endif  // TEST_BLAS_SERIAL_AXPY_HPP_

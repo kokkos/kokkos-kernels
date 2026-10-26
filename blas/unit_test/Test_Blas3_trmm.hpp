@@ -88,7 +88,7 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans, const
   using APT             = KokkosKernels::ArithTraits<ScalarA>;
   using mag_type        = typename APT::mag_type;
 
-  double machine_eps = APT::epsilon();
+  double machine_eps = static_cast<double>(APT::epsilon());
   const mag_type eps = 1.0e8 * machine_eps;  //~1e-13 for double
   bool A_l           = (side[0] == 'L') || (side[0] == 'l');
   int K              = A_l ? M : N;
@@ -220,6 +220,51 @@ int test_trmm(const char* mode, ScalarA alpha) {
 
   return 1;
 }
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, trmm_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_half");
+  Kokkos::Experimental::half_t alpha = 1.0;
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLNN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLNU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLTN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLTU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUNN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUNU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUTN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUTU", alpha);
+
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLNN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLNU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLTN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLTU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUNN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUNU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUTN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUTU", alpha);
+
+  alpha = 4.5;
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLNN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLNU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLTN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLTU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUNN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUNU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUTN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUTU", alpha);
+
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLNN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLNU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLTN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLTU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUNN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUNU", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUTN", alpha);
+  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUTU", alpha);
+  Kokkos::Profiling::popRegion();
+}
+#endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))

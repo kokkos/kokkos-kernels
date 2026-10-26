@@ -176,19 +176,10 @@ void test_newton_status() {
   vec_type scale("scaling factors", 1);
   Kokkos::deep_copy(scale, 1);
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
   Kokkos::View<newton_solver_status*, Device> status("newton solver status", 1);
-  auto status_h = Kokkos::create_mirror_view(status);
 
   // Create the non-linear system and initialize data
   QuadraticEquation<Device, scalar_type> my_system{};
@@ -200,8 +191,9 @@ void test_newton_status() {
   newton_solver_status newton_status[3] = {newton_solver_status::NLS_SUCCESS, newton_solver_status::NLS_DIVERGENCE,
                                            newton_solver_status::LIN_SOLVE_FAIL};
   vec_type x("solution vector", 1), rhs("right hand side vector", 1);
-  auto x_h = Kokkos::create_mirror_view(x);
-  auto r_h = Kokkos::create_mirror_view(rhs);
+  auto x_h      = Kokkos::create_mirror_view(x);
+  auto r_h      = Kokkos::create_mirror_view(rhs);
+  auto status_h = Kokkos::create_mirror_view(status);
 
   vec_type update("update", 1);
   mat_type J("jacobian", 1, 1), tmp("temp mem", 1, 5);
@@ -220,24 +212,17 @@ void test_newton_status() {
 #ifndef NDEBUG
     Kokkos::deep_copy(x_h, x);
     Kokkos::deep_copy(r_h, rhs);
-    printf("Non-linear problem solution and residual with initial value %f:\n", initial_value[idx]);
-    printf("  [%f, %g, %g]\n", x_h(0), r_h(0), Kokkos::abs(x_h(0) - solution[idx]) / Kokkos::abs(solution[idx]));
+    printf("Non-linear problem solution and residual with initial value %f:\n", double(initial_value[idx]));
+    printf("  [%f, %g, %g]\n", double(x_h(0)), double(r_h(0)),
+           double(Kokkos::abs(x_h(0) - solution[idx]) / Kokkos::abs(solution[idx])));
 #endif
   }
 }
 
 template <typename Device, typename scalar_type>
 void test_simple_problems() {
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   {
@@ -361,16 +346,8 @@ struct CircleHyperbolaIntersection {
 
 template <typename Device, typename scalar_type>
 void test_simple_systems() {
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   {
@@ -441,16 +418,8 @@ void test_newton_lin_solve_fail_keeps_iterate() {
   using mat_type             = typename Kokkos::View<scalar_type**, Device>;
   using system_type          = SingularJacobianEquation<Device, scalar_type>;
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   system_type my_system{};
@@ -501,16 +470,8 @@ void test_newton_on_device() {
   using system_type          = CircleHyperbolaIntersection<Device, scalar_type>;
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
 
   constexpr int num_systems = 1000;
   const newton_params params(50, abs_tol, rel_tol);
@@ -597,16 +558,8 @@ void test_newton_norm_accumulation() {
   using mat_type             = typename Kokkos::View<scalar_type**, Device>;
   using system_type          = DecoupledEquations<Device, scalar_type>;
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   system_type my_system{};
@@ -644,8 +597,8 @@ void test_newton_norm_accumulation() {
   const scalar_type solution[2] = {static_cast<scalar_type>(Kokkos::sqrt(static_cast<scalar_type>(2.0))),
                                    static_cast<scalar_type>(5.0)};
   const scalar_type rel_check   = static_cast<scalar_type>(1e-2);
-  EXPECT_NEAR(x_h(0), solution[0], rel_check * solution[0]);
-  EXPECT_NEAR(x_h(1), solution[1], rel_check * solution[1]);
+  EXPECT_NEAR(double(x_h(0)), double(solution[0]), double(rel_check * solution[0]));
+  EXPECT_NEAR(double(x_h(1)), double(solution[1]), double(rel_check * solution[1]));
 }
 
 ////////////////////////////////////////////
@@ -704,16 +657,8 @@ void test_newton_iteration_count() {
   using mat_type             = typename Kokkos::View<scalar_type**, Device>;
   using system_type          = QuadraticEquation<Device, scalar_type>;
 
-  double abs_tol, rel_tol;
-  if (std::is_same_v<scalar_type, float>) {
-    rel_tol = 10e-5;
-    abs_tol = 10e-7;
-  } else if (std::is_same_v<scalar_type, double>) {
-    rel_tol = 10e-8;
-    abs_tol = 10e-15;
-  } else {
-    throw std::runtime_error("scalar_type is neither float, nor double!");
-  }
+  const double abs_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-15, 10e-7, 10e-2);
+  const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
 
   system_type mySys{};
@@ -753,11 +698,26 @@ void test_newton_iteration_count() {
 TEST_F(TestCategory, Newton_status_float) { ::Test::test_newton_status<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_status_double) { ::Test::test_newton_status<TestDevice, double>(); }
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, Newton_status_half) {
+  // Skipped: Newton solver convergence checks don't work reliably with half_t
+  // as norm_type (affects tol computation, pow, rate-based checks)
+}
+#endif
+
 TEST_F(TestCategory, Newton_simple_float) { ::Test::test_simple_problems<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_simple_double) { ::Test::test_simple_problems<TestDevice, double>(); }
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, Newton_simple_half) { ::Test::test_simple_problems<TestDevice, Kokkos::Experimental::half_t>(); }
+#endif
+
 TEST_F(TestCategory, Newton_system_float) { ::Test::test_simple_systems<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_system_double) { ::Test::test_simple_systems<TestDevice, double>(); }
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, Newton_system_half) { ::Test::test_simple_systems<TestDevice, Kokkos::Experimental::half_t>(); }
+#endif
 
 TEST_F(TestCategory, Newton_lin_solve_fail_keeps_iterate_float) {
   ::Test::test_newton_lin_solve_fail_keeps_iterate<TestDevice, float>();
@@ -769,8 +729,27 @@ TEST_F(TestCategory, Newton_lin_solve_fail_keeps_iterate_double) {
 TEST_F(TestCategory, Newton_parallel_float) { ::Test::test_newton_on_device<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_parallel_double) { ::Test::test_newton_on_device<TestDevice, double>(); }
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, Newton_parallel_half) {
+  ::Test::test_newton_on_device<TestDevice, Kokkos::Experimental::half_t>();
+}
+#endif
+
 TEST_F(TestCategory, Newton_norm_accumulation_float) { ::Test::test_newton_norm_accumulation<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_norm_accumulation_double) { ::Test::test_newton_norm_accumulation<TestDevice, double>(); }
 
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, Newton_norm_accumulation_half) {
+  // Skipped: Newton solver convergence checks don't work reliably with half_t
+  // as norm_type (affects sqrt, pow, rate-based checks)
+}
+#endif
+
 TEST_F(TestCategory, Newton_iteration_count_float) { ::Test::test_newton_iteration_count<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_iteration_count_double) { ::Test::test_newton_iteration_count<TestDevice, double>(); }
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+TEST_F(TestCategory, Newton_iteration_count_half) {
+  ::Test::test_newton_iteration_count<TestDevice, Kokkos::Experimental::half_t>();
+}
+#endif

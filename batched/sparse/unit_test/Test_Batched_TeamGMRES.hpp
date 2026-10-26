@@ -199,7 +199,11 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
 
   const MagnitudeType eps = 1.0e5 * ats::epsilon();
 
-  for (int l = 0; l < N; ++l) EXPECT_NEAR_KK(std::sqrt(sqr_norm_j_host(l)) / std::sqrt(sqr_norm_0_host(l)), 0, eps);
+  for (int l = 0; l < N; ++l) {
+    const double sqrt_j = static_cast<double>(sqr_norm_j_host(l));
+    const double sqrt_0 = static_cast<double>(sqr_norm_0_host(l));
+    EXPECT_NEAR_KK(std::sqrt(sqrt_j) / std::sqrt(sqrt_0), 0.0, static_cast<double>(eps));
+  }
 }
 }  // namespace TeamGMRES
 }  // namespace Test

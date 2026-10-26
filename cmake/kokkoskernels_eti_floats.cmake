@@ -13,15 +13,32 @@ kokkoskernels_add_option("INST_FLOAT" ${KOKKOSKERNELS_INST_FLOAT_DEFAULT} BOOL
 kokkoskernels_add_option("INST_HALF" OFF BOOL
   "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::half_t.  Disabling this may increase build times. Default: OFF")
 
-kokkoskernels_add_option("INST_BHALF" OFF BOOL
-  "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::bhalf_t.  Disabling this may increase build times. Default: OFF")
+# Detect whether Kokkos defines KOKKOS_HAS_NATIVE_HALF_TYPE, i.e. whether
+# half_t is a natively supported 16-bit type rather than an alias for float.
+# This test uses the proper compiler launcher from Kokkos.
+function(kokkoskernels_check_native_half RESULT_VAR)
+  include(CheckCXXSymbolExists)
+  get_property(_launcher GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
+  if(_launcher)
+    separate_arguments(CMAKE_CXX_COMPILER_LAUNCHER UNIX_COMMAND "${_launcher}")
+    list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES CMAKE_CXX_COMPILER_LAUNCHER)
+  endif()
+  set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+  set(CMAKE_REQUIRED_LIBRARIES Kokkos::kokkos)
+  check_cxx_symbol_exists(KOKKOS_HAS_NATIVE_HALF_TYPE "Kokkos_Macros.hpp" ${RESULT_VAR})
+endfunction()
+kokkoskernels_check_native_half(KOKKOS_CORE_HAS_HALF)
 
+if (KOKKOSKERNELS_INST_HALF AND KOKKOS_CORE_HAS_HALF)
+set(REAL_FLOATS              HALF FLOAT DOUBLE)
+set(FLOATS                   HALF FLOAT DOUBLE COMPLEX_FLOAT COMPLEX_DOUBLE)
+else()
 set(REAL_FLOATS              FLOAT DOUBLE)
 set(FLOATS                   FLOAT DOUBLE COMPLEX_FLOAT COMPLEX_DOUBLE)
+endif()
 set(DOUBLE_CPP_TYPE          "double")
 set(FLOAT_CPP_TYPE           "float")
 set(HALF_CPP_TYPE            "Kokkos::Experimental::half_t")
-set(BHALF_CPP_TYPE           "Kokkos::Experimental::bhalf_t")
 set(COMPLEX_FLOAT_CPP_TYPE   "Kokkos::complex<float>")
 set(COMPLEX_DOUBLE_CPP_TYPE  "Kokkos::complex<double>")
 
@@ -52,10 +69,9 @@ if(KOKKOSKERNELS_INST_FLOAT)
   list(APPEND SCALAR_LIST "float")
 endif()
 
-# TODO: Fix build errors in kokkos when half_t is used in ETI
-#IF (KOKKOSKERNELS_INST_HALF)
-#  LIST(APPEND SCALAR_LIST "Kokkos::Experimental::half_t")
-#ENDIF()
+if (KOKKOSKERNELS_INST_HALF)
+ list(APPEND SCALAR_LIST "Kokkos::Experimental::half_t")
+endif()
 
 if(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
   list(APPEND SCALAR_LIST "complex<double>")

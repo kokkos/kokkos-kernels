@@ -299,6 +299,26 @@ class epsilon {
 
 using KokkosKernels::Impl::getRandomBounds;
 
+/// Helper to select the appropriate tolerance/epsilon value for the given scalar type.
+/// Avoids verbose "std::is_same_v<...> ? val1 : val2" chains in tests.
+template <typename scalar_t>
+constexpr double selectEpsilonForScalarType(double eps_double, double eps_float, double eps_half) {
+  using KAT   = KokkosKernels::ArithTraits<scalar_t>;
+  using mag_t = typename KAT::mag_type;
+  // Check float/double before half_t. Kokkos::Experimental::half_t is an alias
+  // for float when native half precision is unavailable (KOKKOS_HALF_T_IS_FLOAT),
+  // so matching half_t first would make a float scalar select eps_half.
+  if constexpr (std::is_same_v<mag_t, float>) {
+    return eps_float;
+  } else if constexpr (std::is_same_v<mag_t, Kokkos::Experimental::half_t>) {
+    return eps_half;
+  } else {
+    // Either mag_t is double, or some other type not explicitly handled here.
+    // In the latter case conservatively return the strictest tolerance (eps_double).
+    return eps_double;
+  }
+}
+
 // create_random_x_vector and create_random_y_vector can be used together to
 // generate a random linear system Ax = y.
 template <typename vec_t>
@@ -308,17 +328,17 @@ vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
   if constexpr (vec_t::rank == 2) {
     for (size_t j = 0; j < h_x.extent(1); ++j) {
       for (size_t i = 0; i < h_x.extent(0); ++i) {
-        scalar_t r       = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
+        scalar_t r = static_cast<scalar_t>(static_cast<double>(rand()) / static_cast<double>(RAND_MAX / max_value));
         h_x.access(i, j) = r;
       }
     }
   } else if constexpr (vec_t::rank == 1) {
     for (size_t i = 0; i < h_x.extent(0); ++i) {
-      scalar_t r    = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
+      scalar_t r    = static_cast<scalar_t>(static_cast<double>(rand()) / static_cast<double>(RAND_MAX / max_value));
       h_x.access(i) = r;
     }
   } else if constexpr (vec_t::rank == 0) {
-    scalar_t r = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
+    scalar_t r = static_cast<scalar_t>(static_cast<double>(rand()) / static_cast<double>(RAND_MAX / max_value));
     h_x()      = r;
   }
   Kokkos::deep_copy(kok_x, h_x);
@@ -616,7 +636,7 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNN
   // populate values
   typename scalar_view_t::host_mirror_type h_values = Kokkos::create_mirror_view(values);
   for (size_type i = 0; i < nnz; i++) {
-    h_values(i) = KAT::one() * (((typename KAT::mag_type)rand()) / static_cast<typename KAT::mag_type>(RAND_MAX));
+    h_values(i) = KAT::one() * (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
   }
   Kokkos::deep_copy(values, h_values);
   // populate entries (make sure no entry is repeated within a row)

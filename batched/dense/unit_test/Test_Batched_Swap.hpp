@@ -181,7 +181,8 @@ void impl_test_batched_swap_analytical(const std::size_t Nb) {
   EXPECT_EQ(info0, 0);
   EXPECT_EQ(info1, 0);
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps =
+      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   Kokkos::deep_copy(h_x0, x0);
   Kokkos::deep_copy(h_y0, y0);
   Kokkos::deep_copy(h_x1, x1);
@@ -295,7 +296,8 @@ void impl_test_batched_swap(const std::size_t Nb, const std::size_t M, const std
   EXPECT_EQ(info0, 0);
   EXPECT_EQ(info1, 0);
 
-  RealType eps  = 1.0e1 * ats::epsilon();
+  RealType eps =
+      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   auto h_x0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x0);
   auto h_y0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y0);
   auto h_x1     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x1);
@@ -416,6 +418,21 @@ TEST_F(TestCategory, test_batched_team_swap_double) {
 // TeamVector
 TEST_F(TestCategory, test_batched_teamvector_swap_double) {
   test_batched_swap<TestDevice, double, KokkosBatched::Mode::TeamVector>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF)
+// Serial
+TEST_F(TestCategory, test_batched_serial_swap_half) {
+  test_batched_swap<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Mode::Serial>();
+}
+// Team
+TEST_F(TestCategory, test_batched_team_swap_half) {
+  test_batched_swap<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Mode::Team>();
+}
+// TeamVector
+TEST_F(TestCategory, test_batched_teamvector_swap_half) {
+  test_batched_swap<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Mode::TeamVector>();
 }
 #endif
 

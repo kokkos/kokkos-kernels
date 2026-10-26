@@ -59,10 +59,19 @@ int test_rot() {
   return 1;
 }
 
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, rot_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::rot_half");
+  test_rot<Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
+
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rot_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::rot");
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::rot_float");
   test_rot<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
@@ -71,7 +80,7 @@ TEST_F(TestCategory, rot_float) {
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rot_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::rot");
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::rot_double");
   test_rot<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
@@ -80,7 +89,7 @@ TEST_F(TestCategory, rot_double) {
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rot_complex_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::rot");
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::rot_complex_float");
   test_rot<Kokkos::complex<float>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
@@ -89,7 +98,7 @@ TEST_F(TestCategory, rot_complex_float) {
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rot_complex_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::rot");
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::rot_complex_double");
   test_rot<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }

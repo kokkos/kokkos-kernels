@@ -27,7 +27,7 @@ void impl_test_reciprocal(int N) {
 
   {
     ScalarA randStart, randEnd;
-    TestUtils::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(static_cast<double>(max_val), randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, one, randEnd);
   }
 
@@ -171,6 +171,20 @@ int test_reciprocal_mv() {
 
   return 1;
 }
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, reciprocal_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::reciprocal_half");
+  test_reciprocal<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+TEST_F(TestCategory, reciprocal_mv_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::reciprocal_mv_half");
+  test_reciprocal_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
