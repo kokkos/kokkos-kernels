@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
+#include <concepts>
+#include <type_traits>
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBatched_Util.hpp>
+#include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Syrk.hpp>
+
 #include "Test_Batched_DenseUtils.hpp"
 
 namespace Test {
@@ -65,6 +69,46 @@ struct Functor_BatchedSyrk {
     Kokkos::parallel_reduce(name.c_str(), policy, *this, info_sum);
     Kokkos::Profiling::popRegion();
     return info_sum;
+  }
+};
+
+template <typename DeviceType, typename ArgMode, typename ArgTransA, typename ArgTransB, typename ScalarType,
+          typename AViewType, typename BViewType, typename CViewType>
+struct Functor_BatchedGemm {
+  using execution_space = typename DeviceType::execution_space;
+
+  AViewType m_a;
+  BViewType m_b;
+  CViewType m_c;
+  ScalarType m_alpha;
+  ScalarType m_beta;
+
+  Functor_BatchedGemm(const ScalarType alpha, const AViewType &a, const BViewType &b, const ScalarType beta,
+                      const CViewType &c)
+      : m_a(a), m_b(b), m_c(c), m_alpha(alpha), m_beta(beta) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(const int k) const {
+    auto aa = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
+    auto bb = Kokkos::subview(m_b, k, Kokkos::ALL(), Kokkos::ALL());
+    auto cc = Kokkos::subview(m_c, k, Kokkos::ALL(), Kokkos::ALL());
+
+    KokkosBatched::SerialGemm<ArgTransA, ArgTransB, KokkosBatched::Algo::Gemm::Unblocked>::invoke(m_alpha, aa, bb,
+                                                                                                  m_beta, cc);
+  }
+
+  inline void run() {
+    using value_type        = typename CViewType::non_const_value_type;
+    std::string name_region = std::same_as<ArgMode, KokkosBatched::Mode::Serial> ? "KokkosBatched::Test::SerialSyrk"
+                              : std::same_as<ArgMode, KokkosBatched::Mode::Team>
+                                  ? "KokkosBatched::Test::TeamSyrk"
+                                  : "KokkosBatched::Test::TeamVectorSyrk";
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
+    Kokkos::Profiling::pushRegion(name.c_str());
+
+    Kokkos::RangePolicy<execution_space> policy(0, m_b.extent(0));
+    Kokkos::parallel_for(name.c_str(), policy, *this);
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -225,17 +269,19 @@ void impl_test_batched_syrk_analytical(const std::size_t Nb) {
   Kokkos::deep_copy(A_s, A);
   Kokkos::deep_copy(C_s, A);
 
-  const ScalarType alpha = 1.5, beta = 1.2;
+  using AlphaType       = std::conditional_t<std::same_as<ArgTrans, KokkosBatched::Trans::ConjNoTranspose> ||
+                                           std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>,
+                                       RealType, ScalarType>;
+  const AlphaType alpha = 1.5, beta = 1.2;
 
-  auto info =
-      Functor_BatchedSyrk<DeviceType, ParamTagType, ScalarType, View3DType, View3DType>(alpha, A, beta, C).run();
+  auto info = Functor_BatchedSyrk<DeviceType, ParamTagType, AlphaType, View3DType, View3DType>(alpha, A, beta, C).run();
 
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
   // With strided views
-  info = Functor_BatchedSyrk<DeviceType, ParamTagType, ScalarType, StridedView3DType, StridedView3DType>(alpha, A_s,
-                                                                                                         beta, C_s)
+  info = Functor_BatchedSyrk<DeviceType, ParamTagType, AlphaType, StridedView3DType, StridedView3DType>(alpha, A_s,
+                                                                                                        beta, C_s)
              .run();
 
   Kokkos::fence();
@@ -278,17 +324,19 @@ void impl_test_batched_syrk(const std::size_t Nb, const std::size_t M, const std
   using RealType   = typename ats::mag_type;
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using ArgUplo    = typename ParamTagType::uplo;
+  using ArgTrans   = typename ParamTagType::trans;
 
-  const bool is_trans = std::same_as<typename ParamTagType::trans, KokkosBatched::Trans::Transpose> ||
-                        std::same_as<typename ParamTagType::trans, KokkosBatched::Trans::ConjTranspose>;
+  constexpr bool is_trans = std::same_as<ArgTrans, KokkosBatched::Trans::Transpose> ||
+                            std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>;
 
   // For NoTrans, A is N*M, C is NxN
   // For Trans, A is M*N, C is MxM
   const std::size_t n = is_trans ? M : N;
   const std::size_t k = is_trans ? N : M;
 
-  View3DType A("A", Nb, n, k), C("C", Nb, N, N), C_alpha0("C_alpha0", Nb, N, N), C_beta0("C_beta0", Nb, N, N),
-      C_ref("C_ref", Nb, N, N), C_alpha0_ref("C_alpha0_ref", Nb, N, N), C_beta0_ref("C_beta0_ref", Nb, N, N);
+  View3DType A("A", Nb, n, k), B("B", Nb, n, k), C("C", Nb, N, N), C_alpha0("C_alpha0", Nb, N, N),
+      C_beta0("C_beta0", Nb, N, N), C_ref("C_ref", Nb, N, N), C_alpha0_ref("C_alpha0_ref", Nb, N, N),
+      C_beta0_ref("C_beta0_ref", Nb, N, N);
 
   // Create a random matrix A and x
   using execution_space = typename DeviceType::execution_space;
@@ -297,7 +345,11 @@ void impl_test_batched_syrk(const std::size_t Nb, const std::size_t M, const std
 
   KokkosKernels::Impl::getRandomBounds(1.0, randStart, randEnd);
   Kokkos::fill_random(A, rand_pool, randStart, randEnd);
-  Kokkos::fill_random(C, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(C_ref, rand_pool, randStart, randEnd);
+  Kokkos::deep_copy(B, A);  // This is used to compute reference by GEMM
+
+  // Make C Symmetric or Hermitian
+  dense_to_symmetric<ArgUplo, KokkosBatched::Trans::ConjTranspose>(C_ref, C);
 
   Kokkos::deep_copy(C_ref, C);
   Kokkos::deep_copy(C_alpha0, C);
@@ -305,15 +357,23 @@ void impl_test_batched_syrk(const std::size_t Nb, const std::size_t M, const std
   Kokkos::deep_copy(C_alpha0_ref, C_alpha0);
   Kokkos::deep_copy(C_beta0_ref, C_beta0);
 
-  // When beta is zero
-  const RealType alpha = 1.5, beta = 1.2, zero = KokkosKernels::ArithTraits<RealType>::zero();
-  const ScalarType czero = KokkosKernels::ArithTraits<ScalarType>::zero();
+  using AlphaType  = std::conditional_t<std::same_as<ArgTrans, KokkosBatched::Trans::ConjNoTranspose> ||
+                                           std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>,
+                                       RealType, ScalarType>;
+  AlphaType alpha0 = 1.5;
+  if constexpr (KokkosKernels::ArithTraits<AlphaType>::is_complex) {
+    alpha0 = AlphaType(1.5, 1.8);
+  }
+
+  const AlphaType alpha = alpha0;
+  const AlphaType beta = 1.2, zero = KokkosKernels::ArithTraits<AlphaType>::zero();
+
   auto info0 =
-      Functor_BatchedSyrk<DeviceType, ParamTagType, ScalarType, View3DType, View3DType>(alpha, A, beta, C).run();
+      Functor_BatchedSyrk<DeviceType, ParamTagType, AlphaType, View3DType, View3DType>(alpha, A, beta, C).run();
   auto info1 =
-      Functor_BatchedSyrk<DeviceType, ParamTagType, ScalarType, View3DType, View3DType>(zero, A, beta, C_alpha0).run();
+      Functor_BatchedSyrk<DeviceType, ParamTagType, AlphaType, View3DType, View3DType>(zero, A, beta, C_alpha0).run();
   auto info2 =
-      Functor_BatchedSyrk<DeviceType, ParamTagType, ScalarType, View3DType, View3DType>(alpha, A, zero, C_beta0).run();
+      Functor_BatchedSyrk<DeviceType, ParamTagType, AlphaType, View3DType, View3DType>(alpha, A, zero, C_beta0).run();
 
   Kokkos::fence();
 
@@ -337,119 +397,51 @@ void impl_test_batched_syrk(const std::size_t Nb, const std::size_t M, const std
   EXPECT_EQ(info1, 0);
   EXPECT_EQ(info2, 0);
 
-  // Make a reference at host
-  auto h_A            = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A);
+  using ArgTransA = std::conditional_t<is_trans, typename ParamTagType::trans, KokkosBatched::Trans::NoTranspose>;
+  using ArgTransB = std::conditional_t<
+      is_trans, KokkosBatched::Trans::NoTranspose,
+      std::conditional_t<std::same_as<typename ParamTagType::trans, KokkosBatched::Trans::NoTranspose>,
+                         KokkosBatched::Trans::Transpose, KokkosBatched::Trans::ConjTranspose>>;
+
+  // Make a reference with GEMM
+  // C_ref = alpha * A * A^T + beta * C (ArgTrans == Trans::NoTranspose)
+  // C_ref = alpha * A^T * A + beta * C (ArgTrans == Trans::Transpose)
+  using ArgMode = typename ParamTagType::mode;
+  Functor_BatchedGemm<DeviceType, ArgMode, ArgTransA, ArgTransB, ScalarType, View3DType, View3DType, View3DType>(
+      alpha, A, B, beta, C_ref)
+      .run();
+  Functor_BatchedGemm<DeviceType, ArgMode, ArgTransA, ArgTransB, ScalarType, View3DType, View3DType, View3DType>(
+      zero, A, B, beta, C_alpha0_ref)
+      .run();
+  Functor_BatchedGemm<DeviceType, ArgMode, ArgTransA, ArgTransB, ScalarType, View3DType, View3DType, View3DType>(
+      alpha, A, B, zero, C_beta0_ref)
+      .run();
+
+  RealType eps = 1.0e1 * ats::epsilon();
+
+  auto h_C            = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C);
+  auto h_C_alpha0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_alpha0);
+  auto h_C_beta0      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_beta0);
   auto h_C_ref        = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_ref);
   auto h_C_alpha0_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_alpha0_ref);
   auto h_C_beta0_ref  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_beta0_ref);
 
-  // Note: ConjTranspose/ConjNoTranspose corresponds to {c,z}herk for Hermitian matrix
-  constexpr bool is_conj = std::same_as<typename ParamTagType::trans, Trans::ConjTranspose> ||
-                           std::same_as<typename ParamTagType::trans, Trans::ConjNoTranspose>;
-  using Op     = std::conditional_t<is_conj, KokkosBlas::Impl::OpConj, KokkosBlas::Impl::OpID>;
-  using Sym_Op = std::conditional_t<is_conj, KokkosBlas::Impl::OpReal, KokkosBlas::Impl::OpID>;
-
-  Op op;
-  Sym_Op sym_op;
-
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    if (std::same_as<ArgUplo, Uplo::Upper>) {
-      for (std::size_t j = 0; j < N; j++) {
-        for (std::size_t i = 0; i < j + 1; i++) {
-          h_C_alpha0_ref(ib, i, j) = beta * h_C_alpha0_ref(ib, i, j);
-        }
-        h_C_alpha0_ref(ib, j, j) = sym_op(h_C_alpha0_ref(ib, j, j));
-      }
-    } else {
-      for (std::size_t j = 0; j < N; j++) {
-        for (std::size_t i = j; i < N; i++) {
-          h_C_alpha0_ref(ib, i, j) = beta * h_C_alpha0_ref(ib, i, j);
-        }
-        h_C_alpha0_ref(ib, j, j) = sym_op(h_C_alpha0_ref(ib, j, j));
-      }
-    }
-
-    if (!is_trans) {
-      if (std::same_as<ArgUplo, Uplo::Upper>) {
-        for (std::size_t j = 0; j < N; j++) {
-          for (std::size_t i = 0; i < j + 1; i++) {
-            h_C_beta0_ref(ib, i, j) = zero;
-            h_C_ref(ib, i, j)       = beta * h_C_ref(ib, i, j);
-          }
-          for (std::size_t l = 0; l < M; l++) {
-            if (h_A(ib, j, l) != czero) {
-              auto temp = alpha * op(h_A(ib, j, l));
-              for (std::size_t i = 0; i < j + 1; i++) {
-                h_C_ref(ib, i, j) += temp * h_A(ib, i, l);
-                h_C_beta0_ref(ib, i, j) += temp * h_A(ib, i, l);
-              }
-            }
-          }
-          h_C_ref(ib, j, j)       = sym_op(h_C_ref(ib, j, j));
-          h_C_beta0_ref(ib, j, j) = sym_op(h_C_beta0_ref(ib, j, j));
-        }
-      } else {
-        for (std::size_t j = 0; j < N; j++) {
-          for (std::size_t i = j; i < N; i++) {
-            h_C_beta0_ref(ib, i, j) = zero;
-            h_C_ref(ib, i, j)       = beta * h_C_ref(ib, i, j);
-          }
-          for (std::size_t l = 0; l < M; l++) {
-            if (h_A(ib, j, l) != czero) {
-              auto temp = alpha * op(h_A(ib, j, l));
-              for (std::size_t i = j; i < N; i++) {
-                h_C_ref(ib, i, j) += temp * h_A(ib, i, l);
-                h_C_beta0_ref(ib, i, j) += temp * h_A(ib, i, l);
-              }
-            }
-          }
-          h_C_ref(ib, j, j)       = sym_op(h_C_ref(ib, j, j));
-          h_C_beta0_ref(ib, j, j) = sym_op(h_C_beta0_ref(ib, j, j));
+    if (std::same_as<ArgUplo, KokkosBatched::Uplo::Lower>) {
+      for (std::size_t i = 0; i < N; i++) {
+        for (std::size_t j = 0; j < i + 1; j++) {
+          EXPECT_NEAR_KK(h_C(ib, i, j), h_C_ref(ib, i, j), eps);
+          EXPECT_NEAR_KK(h_C_alpha0(ib, i, j), h_C_alpha0_ref(ib, i, j), eps);
+          EXPECT_NEAR_KK(h_C_beta0(ib, i, j), h_C_beta0_ref(ib, i, j), eps);
         }
       }
     } else {
-      if (std::same_as<ArgUplo, Uplo::Upper>) {
-        for (std::size_t j = 0; j < N; j++) {
-          for (std::size_t i = 0; i < j + 1; i++) {
-            auto temp = czero;
-            for (std::size_t l = 0; l < M; l++) {
-              temp += op(h_A(ib, l, i)) * h_A(ib, l, j);
-            }
-            h_C_beta0_ref(ib, i, j) = alpha * temp;
-            h_C_ref(ib, i, j)       = alpha * temp + beta * h_C_ref(ib, i, j);
-          }
-          h_C_ref(ib, j, j)       = sym_op(h_C_ref(ib, j, j));
-          h_C_beta0_ref(ib, j, j) = sym_op(h_C_beta0_ref(ib, j, j));
+      for (std::size_t i = 0; i < N; i++) {
+        for (std::size_t j = i; j < N; j++) {
+          EXPECT_NEAR_KK(h_C(ib, i, j), h_C_ref(ib, i, j), eps);
+          EXPECT_NEAR_KK(h_C_alpha0(ib, i, j), h_C_alpha0_ref(ib, i, j), eps);
+          EXPECT_NEAR_KK(h_C_beta0(ib, i, j), h_C_beta0_ref(ib, i, j), eps);
         }
-      } else {
-        for (std::size_t j = 0; j < N; j++) {
-          for (std::size_t i = j; i < N; i++) {
-            auto temp = czero;
-            for (std::size_t l = 0; l < M; l++) {
-              temp += op(h_A(ib, l, i)) * h_A(ib, l, j);
-            }
-            h_C_beta0_ref(ib, i, j) = alpha * temp;
-            h_C_ref(ib, i, j)       = alpha * temp + beta * h_C_ref(ib, i, j);
-          }
-          h_C_ref(ib, j, j)       = sym_op(h_C_ref(ib, j, j));
-          h_C_beta0_ref(ib, j, j) = sym_op(h_C_beta0_ref(ib, j, j));
-        }
-      }
-    }
-  }
-
-  RealType eps = 1.0e1 * ats::epsilon();
-
-  auto h_C        = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C);
-  auto h_C_alpha0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_alpha0);
-  auto h_C_beta0  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_beta0);
-
-  for (std::size_t ib = 0; ib < Nb; ib++) {
-    for (std::size_t i = 0; i < N; i++) {
-      for (std::size_t j = 0; j < N; j++) {
-        EXPECT_NEAR_KK(h_C(ib, i, j), h_C_ref(ib, i, j), eps);
-        EXPECT_NEAR_KK(h_C_alpha0(ib, i, j), h_C_alpha0_ref(ib, i, j), eps);
-        EXPECT_NEAR_KK(h_C_beta0(ib, i, j), h_C_beta0_ref(ib, i, j), eps);
       }
     }
   }

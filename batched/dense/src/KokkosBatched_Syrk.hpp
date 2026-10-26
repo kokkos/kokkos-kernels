@@ -42,8 +42,8 @@ struct SerialSyrk {
                 "KokkosBatched::syrk: Use Trans::NoTranspose/Trans::Transpose for {s,d,c,z}syrk or "
                 "Trans::ConjNoTranspose/Trans::ConjTranspose for {c,z}herk");
 
-  template <typename ScalarType, typename AViewType, typename CViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const ScalarType beta,
+  template <typename AlphaType, typename AViewType, typename BetaType, typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const AlphaType alpha, const AViewType &A, const BetaType beta,
                                            const CViewType &C);
 };
 
@@ -78,9 +78,9 @@ struct TeamSyrk {
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::syrk: Use Trans::NoTranspose/Trans::Transpose for {s,d,c,z}syrk or "
                 "Trans::ConjNoTranspose/Trans::ConjTranspose for {c,z}herk");
-  template <typename ScalarType, typename AViewType, typename CViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
-                                           const ScalarType beta, const CViewType &C);
+  template <typename AlphaType, typename AViewType, typename BetaType, typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AlphaType alpha, const AViewType &A,
+                                           const BetaType beta, const CViewType &C);
 };
 
 /// \brief TeamVector Batched Syrk:
@@ -114,9 +114,9 @@ struct TeamVectorSyrk {
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::syrk: Use Trans::NoTranspose/Trans::Transpose for {s,d,c,z}syrk or "
                 "Trans::ConjNoTranspose/Trans::ConjTranspose for {c,z}herk");
-  template <typename ScalarType, typename AViewType, typename CViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
-                                           const ScalarType beta, const CViewType &C);
+  template <typename AlphaType, typename AViewType, typename BetaType, typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AlphaType alpha, const AViewType &A,
+                                           const BetaType beta, const CViewType &C);
 };
 
 }  // namespace KokkosBatched
