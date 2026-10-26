@@ -305,10 +305,13 @@ template <typename scalar_t>
 constexpr double selectEpsilonForScalarType(double eps_double, double eps_float, double eps_half) {
   using KAT   = KokkosKernels::ArithTraits<scalar_t>;
   using mag_t = typename KAT::mag_type;
-  if constexpr (std::is_same_v<mag_t, Kokkos::Experimental::half_t>) {
-    return eps_half;
-  } else if constexpr (std::is_same_v<mag_t, float>) {
+  // Check float/double before half_t. Kokkos::Experimental::half_t is an alias
+  // for float when native half precision is unavailable (KOKKOS_HALF_T_IS_FLOAT),
+  // so matching half_t first would make a float scalar select eps_half.
+  if constexpr (std::is_same_v<mag_t, float>) {
     return eps_float;
+  } else if constexpr (std::is_same_v<mag_t, Kokkos::Experimental::half_t>) {
+    return eps_half;
   } else {
     // Either mag_t is double, or some other type not explicitly handled here.
     // In the latter case conservatively return the strictest tolerance (eps_double).
