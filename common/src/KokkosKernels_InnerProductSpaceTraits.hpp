@@ -249,15 +249,49 @@ KOKKOS_INLINE_FUNCTION void updateDot(Kokkos::complex<float>& sum, const Kokkos:
 // Kokkos::complex<float> is not defined.
 template <class Out, class In>
 struct CastPossiblyComplex {
-  static Out cast(const In& x) { return x; }
+  static KOKKOS_INLINE_FUNCTION Out cast(const In& x) { return x; }
 };
 
 template <class OutReal, class InReal>
 struct CastPossiblyComplex<Kokkos::complex<OutReal>, Kokkos::complex<InReal>> {
-  static Kokkos::complex<OutReal> cast(const Kokkos::complex<InReal>& x) {
+  static KOKKOS_INLINE_FUNCTION Kokkos::complex<OutReal> cast(const Kokkos::complex<InReal>& x) {
     return {static_cast<OutReal>(x.real()), static_cast<OutReal>(x.imag())};
   }
 };
+
+// When vectors have a low-precision element type,
+// use this to define a higher-precision type for
+// accumulating the dot product. This improves
+// numerical accuracy without significantly affecting performance.
+//
+// Note that this type is not the same thing as
+// InnerProductSpaceTraits<scalar>::dot_type.
+template <typename scalar_t>
+struct DotAccumulatingScalar {
+  using type = scalar_t;
+};
+
+template <>
+struct DotAccumulatingScalar<float> {
+  using type = double;
+};
+
+template <>
+struct DotAccumulatingScalar<Kokkos::complex<float>> {
+  using type = Kokkos::complex<double>;
+};
+
+#if !KOKKOS_HALF_T_IS_FLOAT
+template <>
+struct DotAccumulatingScalar<Kokkos::Experimental::half_t> {
+  using type = float;
+};
+
+template <>
+struct DotAccumulatingScalar<Kokkos::complex<Kokkos::Experimental::half_t>> {
+  using type = Kokkos::complex<float>;
+};
+#endif
 
 }  // namespace Details
 }  // namespace KokkosKernels
