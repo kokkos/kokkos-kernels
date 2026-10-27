@@ -208,7 +208,8 @@ void test_spmv_sell(ordinal_t num_rows, ordinal_t num_cols, ordinal_t row_length
   Kokkos::deep_copy(y_ref_h, y_ref);
 
   for (int rowIdx = 0; rowIdx < num_rows; ++rowIdx) {
-    EXPECT_NEAR_KK_REL(y_h(rowIdx), y_ref_h(rowIdx), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+    // First 10 is a fudge factor, the second one is the max abs value from the random distribution for scaling.
+    EXPECT_NEAR_KK_REL(y_h(rowIdx), y_ref_h(rowIdx), 10 * 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
   }
 }
 
