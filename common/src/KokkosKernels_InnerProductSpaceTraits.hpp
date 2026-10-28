@@ -237,6 +237,23 @@ KOKKOS_INLINE_FUNCTION void updateDot(Kokkos::complex<double>& sum, const Kokkos
   sum += Kokkos::conj(Kokkos::complex<double>(x)) * Kokkos::complex<double>(y);
 }
 
+#if !KOKKOS_HALF_T_IS_FLOAT
+// Accumulate half_t products in float precision to avoid overflow.
+KOKKOS_INLINE_FUNCTION void updateDot(float& sum, const Kokkos::Experimental::half_t x,
+                                      const Kokkos::Experimental::half_t y) {
+  sum += static_cast<float>(x) * static_cast<float>(y);
+}
+
+/*
+// Accumulate complex<half_t> products in complex<float> precision to avoid overflow.
+// TODO BMK: need Kokkos::complex to suppot half_t for this to work (see Kokkos #9174)
+KOKKOS_INLINE_FUNCTION void updateDot(Kokkos::complex<float>& sum, const Kokkos::complex<Kokkos::Experimental::half_t>
+x, const Kokkos::complex<Kokkos::Experimental::half_t> y) { sum += Kokkos::conj(Kokkos::complex<float>(x)) *
+Kokkos::complex<float>(y);
+}
+*/
+#endif  // !KOKKOS_HALF_T_IS_FLOAT
+
 // This exists in case people call the overload of KokkosBlas::dot
 // that takes an output View, and the output View has element type
 // Kokkos::complex<float>.
@@ -287,10 +304,13 @@ struct DotAccumulatingScalar<Kokkos::Experimental::half_t> {
   using type = float;
 };
 
+/*
+// TODO BMK: need Kokkos::complex to suppot half_t for this to work (see Kokkos #9174)
 template <>
 struct DotAccumulatingScalar<Kokkos::complex<Kokkos::Experimental::half_t>> {
   using type = Kokkos::complex<float>;
 };
+*/
 #endif
 
 }  // namespace Details
