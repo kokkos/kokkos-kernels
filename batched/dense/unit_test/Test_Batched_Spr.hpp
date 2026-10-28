@@ -265,9 +265,6 @@ void impl_test_batched_spr(const std::size_t Nb, const std::size_t BlkSize) {
   dense_to_symmetric<ArgUplo, ArgTrans>(A, A_ref);
   dense_to_packed<ArgUplo>(A_ref, ap);
 
-  auto h_A_ref2 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, A_ref);
-  auto h_ap2    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, ap);
-
   // Cleanup A
   Kokkos::deep_copy(A, 0);
 
@@ -299,18 +296,18 @@ void impl_test_batched_spr(const std::size_t Nb, const std::size_t BlkSize) {
   // Check if A:= alpha * x * y**T + A or A:= alpha * x * y**H + A
   // Note: only the upper or lower part of the matrix is updated depending on ArgUplo by Syr
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    if (std::is_same_v<ArgUplo, KokkosBatched::Uplo::Upper>) {
+    if (std::is_same_v<ArgUplo, KokkosBatched::Uplo::Lower>) {
       for (std::size_t i = 0; i < BlkSize; i++) {
         for (std::size_t j = 0; j < i + 1; j++) {
-          EXPECT_NEAR_KK(h_A(ib, j, i), h_A_ref(ib, j, i), eps);
-          EXPECT_NEAR_KK(h_A0(ib, j, i), h_A0_ref(ib, j, i), eps);
+          EXPECT_NEAR_KK(h_A(ib, i, j), h_A_ref(ib, i, j), eps);
+          EXPECT_NEAR_KK(h_A0(ib, i, j), h_A0_ref(ib, i, j), eps);
         }
       }
     } else {
       for (std::size_t i = 0; i < BlkSize; i++) {
         for (std::size_t j = i; j < BlkSize; j++) {
-          EXPECT_NEAR_KK(h_A(ib, j, i), h_A_ref(ib, j, i), eps);
-          EXPECT_NEAR_KK(h_A0(ib, j, i), h_A0_ref(ib, j, i), eps);
+          EXPECT_NEAR_KK(h_A(ib, i, j), h_A_ref(ib, i, j), eps);
+          EXPECT_NEAR_KK(h_A0(ib, i, j), h_A0_ref(ib, i, j), eps);
         }
       }
     }
