@@ -31,7 +31,7 @@ jobs:
     uses: ./.github/workflows/v100_kumquat.yml
     with:
       kokkos_version: 5.2.2
-      kokkos_previous_version: 5.1.1
+      kokkos_previous_version: 5.2.2
   host:
     uses: ./.github/workflows/host.yml
     with:
