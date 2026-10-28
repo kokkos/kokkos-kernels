@@ -83,13 +83,11 @@ KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float
 namespace KokkosBlas {
 namespace Impl {
 
-using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
-
-#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, INDEX_TYPE, EXEC_SPACE, RET_DEVICE_TYPE,          \
-                                                        CUBLAS_PTR_MODE_1, CUBLAS_PTR_MODE_2)                          \
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, INDEX_TYPE, RET_DEVICE_TYPE, CUBLAS_PTR_MODE_1,   \
+                                                        CUBLAS_PTR_MODE_2)                                             \
   template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Iamax<                                                                                                        \
-      EXEC_SPACE,                                                                                                      \
+      Kokkos::Cuda,                                                                                                    \
       Kokkos::View<INDEX_TYPE, Kokkos::LayoutLeft, RET_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,          \
       Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, 1,  \
       true, ETI_SPEC_AVAIL> {                                                                                          \
@@ -99,43 +97,42 @@ using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
         XV;                                                                                                            \
     typedef typename XV::size_type size_type;                                                                          \
                                                                                                                        \
-    static void iamax(const EXEC_SPACE& space, RV& R, const XV& X) {                                                   \
+    static void iamax(const Kokkos::Cuda& space, RV& R, const XV& X) {                                                 \
       Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_CUBLAS," #SCALAR_TYPE "]");                                 \
       const size_type numElems = X.extent(0);                                                                          \
       if (numElems == 0) {                                                                                             \
         Kokkos::deep_copy(R, 0);                                                                                       \
         return;                                                                                                        \
       }                                                                                                                \
-      using kokkosblas1_int_t = typename std::conditional_t<(sizeof(INDEX_TYPE) == sizeof(int64_t)), int64_t, int>;    \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                                \
-        iamax_print_specialization<RV, XV>();                                                                          \
-        const kokkosblas1_int_t N              = static_cast<kokkosblas1_int_t>(numElems);                             \
-        const kokkosblas1_int_t XST            = X.stride(0);                                                          \
-        const kokkosblas1_int_t LDX            = (XST == 0) ? 1 : XST;                                                 \
-        KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                     \
-        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                              \
-        cublasPointerMode_t prevPtrMode;                                                                               \
-        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(s.handle, &prevPtrMode));                                \
-        if (prevPtrMode == CUBLAS_PTR_MODE_2) {                                                                        \
-          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_PTR_MODE_1));                         \
+      using ordinal_type = typename std::conditional_t<(sizeof(INDEX_TYPE) == sizeof(int64_t)), int64_t, int>;         \
+      iamax_print_specialization<RV, XV>();                                                                            \
+      const ordinal_type N                   = static_cast<ordinal_type>(numElems);                                    \
+      const ordinal_type XST                 = X.stride(0);                                                            \
+      const ordinal_type LDX                 = (XST == 0) ? 1 : XST;                                                   \
+      KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                       \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                                \
+      cublasPointerMode_t prevPtrMode;                                                                                 \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(s.handle, &prevPtrMode));                                  \
+      if (prevPtrMode == CUBLAS_PTR_MODE_2) {                                                                          \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_PTR_MODE_1));                           \
+      }                                                                                                                \
+      if constexpr (sizeof(INDEX_TYPE) == sizeof(int64_t)) {                                                           \
+        if constexpr (std::is_same_v<SCALAR_TYPE, double>) {                                                           \
+          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIdamax_64(s.handle, N, reinterpret_cast<const double*>(X.data()),     \
+                                                           LDX, reinterpret_cast<int64_t*>(R.data())));                \
+        } else if constexpr (std::is_same_v<SCALAR_TYPE, float>) {                                                     \
+          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIsamax_64(s.handle, N, reinterpret_cast<const float*>(X.data()), LDX, \
+                                                           reinterpret_cast<int64_t*>(R.data())));                     \
+        } else if constexpr (std::is_same_v<SCALAR_TYPE, Kokkos::complex<double>>) {                                   \
+          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIzamax_64(s.handle, N,                                                \
+                                                           reinterpret_cast<const cuDoubleComplex*>(X.data()), LDX,    \
+                                                           reinterpret_cast<int64_t*>(R.data())));                     \
+        } else if constexpr (std::is_same_v<SCALAR_TYPE, Kokkos::complex<float>>) {                                    \
+          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIcamax_64(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()),  \
+                                                           LDX, reinterpret_cast<int64_t*>(R.data())));                \
         }                                                                                                              \
-        if constexpr (sizeof(INDEX_TYPE) == sizeof(int64_t)) {                                                         \
-          if constexpr (std::is_same_v<SCALAR_TYPE, double>) {                                                         \
-            KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIdamax_64(s.handle, N, reinterpret_cast<const double*>(X.data()),   \
-                                                             LDX, reinterpret_cast<int64_t*>(R.data())));              \
-          } else if constexpr (std::is_same_v<SCALAR_TYPE, float>) {                                                   \
-            KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIsamax_64(s.handle, N, reinterpret_cast<const float*>(X.data()),    \
-                                                             LDX, reinterpret_cast<int64_t*>(R.data())));              \
-          } else if constexpr (std::is_same_v<SCALAR_TYPE, Kokkos::complex<double>>) {                                 \
-            KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIzamax_64(s.handle, N,                                              \
-                                                             reinterpret_cast<const cuDoubleComplex*>(X.data()), LDX,  \
-                                                             reinterpret_cast<int64_t*>(R.data())));                   \
-          } else if constexpr (std::is_same_v<SCALAR_TYPE, Kokkos::complex<float>>) {                                  \
-            KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIcamax_64(s.handle, N,                                              \
-                                                             reinterpret_cast<const cuComplex*>(X.data()), LDX,        \
-                                                             reinterpret_cast<int64_t*>(R.data())));                   \
-          }                                                                                                            \
-        } else {                                                                                                       \
+      } else {                                                                                                         \
+        if (numElems < static_cast<size_type>(INT_MAX)) {                                                              \
           if constexpr (std::is_same_v<SCALAR_TYPE, double>) {                                                         \
             KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIdamax(s.handle, N, reinterpret_cast<const double*>(X.data()), LDX, \
                                                           reinterpret_cast<int*>(R.data())));                          \
@@ -150,23 +147,23 @@ using CUBLAS_DEVICE_TYPE = Kokkos::Cuda;
             KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIcamax(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()),   \
                                                           LDX, reinterpret_cast<int*>(R.data())));                     \
           }                                                                                                            \
+        } else {                                                                                                       \
+          Iamax<Kokkos::Cuda, RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(space, R, X);                                   \
         }                                                                                                              \
-        if (prevPtrMode == CUBLAS_PTR_MODE_2) {                                                                        \
-          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_PTR_MODE_2));                         \
-          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                           \
-        }                                                                                                              \
-      } else {                                                                                                         \
-        Iamax<EXEC_SPACE, RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(space, R, X);                                       \
+      }                                                                                                                \
+      if (prevPtrMode == CUBLAS_PTR_MODE_2) {                                                                          \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_PTR_MODE_2));                           \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                             \
       }                                                                                                                \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, INDEX_TYPE)                                     \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, INDEX_TYPE, Kokkos::Cuda, Kokkos::HostSpace,  \
-                                                  CUBLAS_POINTER_MODE_HOST, CUBLAS_POINTER_MODE_DEVICE)      \
-  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, INDEX_TYPE, Kokkos::Cuda, CUBLAS_DEVICE_TYPE, \
-                                                  CUBLAS_POINTER_MODE_DEVICE, CUBLAS_POINTER_MODE_HOST)
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, INDEX_TYPE)                                             \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, INDEX_TYPE, Kokkos::HostSpace,                        \
+                                                  CUBLAS_POINTER_MODE_HOST, CUBLAS_POINTER_MODE_DEVICE)              \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, INDEX_TYPE, Kokkos::Cuda, CUBLAS_POINTER_MODE_DEVICE, \
+                                                  CUBLAS_POINTER_MODE_HOST)
 
 #define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE) KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(double, INDEX_TYPE)
 
