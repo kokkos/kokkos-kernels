@@ -19,8 +19,7 @@ namespace KokkosBatched {
 /// matrix.
 template <typename ArgUplo, typename ArgTrans>
 struct SerialSymv {
-  static_assert(std::same_as<ArgUplo, Uplo::Upper> || std::same_as<ArgUplo, Uplo::Lower>,
-                "KokkosBatched::symv: ArgUplo must be a KokkosBatched::Uplo.");
+  static_assert(is_uplo_v<ArgUplo>, "KokkosBatched::symv: ArgUplo must be a KokkosBatched::Uplo.");
   static_assert(std::same_as<ArgTrans, Trans::Transpose> || std::same_as<ArgTrans, Trans::ConjTranspose>,
                 "KokkosBatched::symv: Use Trans::Transpose for {s,d,c,z}symv or Trans::ConjTranspose for {c,z}hemv");
 
@@ -59,8 +58,7 @@ struct SerialSymv {
 /// matrix.
 template <typename MemberType, typename ArgUplo, typename ArgTrans>
 struct TeamSymv {
-  static_assert(std::same_as<ArgUplo, Uplo::Upper> || std::same_as<ArgUplo, Uplo::Lower>,
-                "KokkosBatched::symv: ArgUplo must be a KokkosBatched::Uplo.");
+  static_assert(is_uplo_v<ArgUplo>, "KokkosBatched::symv: ArgUplo must be a KokkosBatched::Uplo.");
   static_assert(std::same_as<ArgTrans, Trans::Transpose> || std::same_as<ArgTrans, Trans::ConjTranspose>,
                 "KokkosBatched::symv: Use Trans::Transpose for {s,d,c,z}symv or Trans::ConjTranspose for {c,z}hemv");
 
@@ -99,8 +97,7 @@ struct TeamSymv {
 /// matrix.
 template <typename MemberType, typename ArgUplo, typename ArgTrans>
 struct TeamVectorSymv {
-  static_assert(std::same_as<ArgUplo, Uplo::Upper> || std::same_as<ArgUplo, Uplo::Lower>,
-                "KokkosBatched::symv: ArgUplo must be a KokkosBatched::Uplo.");
+  static_assert(is_uplo_v<ArgUplo>, "KokkosBatched::symv: ArgUplo must be a KokkosBatched::Uplo.");
   static_assert(std::same_as<ArgTrans, Trans::Transpose> || std::same_as<ArgTrans, Trans::ConjTranspose>,
                 "KokkosBatched::symv: Use Trans::Transpose for {s,d,c,z}symv or Trans::ConjTranspose for {c,z}hemv");
 

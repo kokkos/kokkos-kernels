@@ -36,7 +36,7 @@ namespace KokkosBatched {
 template <typename ArgUplo, typename ArgTrans>
 struct SerialSyrk {
   static_assert(
-      std::is_same_v<ArgUplo, Uplo::Upper> || std::is_same_v<ArgUplo, Uplo::Lower>,
+      is_uplo_v<ArgUplo>,
       "KokkosBatched::syrk: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::syrk: Use Trans::NoTranspose/Trans::Transpose for {s,d,c,z}syrk or "
@@ -73,7 +73,7 @@ struct SerialSyrk {
 template <typename MemberType, typename ArgUplo, typename ArgTrans>
 struct TeamSyrk {
   static_assert(
-      std::is_same_v<ArgUplo, Uplo::Upper> || std::is_same_v<ArgUplo, Uplo::Lower>,
+      is_uplo_v<ArgUplo>,
       "KokkosBatched::syrk: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::syrk: Use Trans::NoTranspose/Trans::Transpose for {s,d,c,z}syrk or "
@@ -109,7 +109,7 @@ struct TeamSyrk {
 template <typename MemberType, typename ArgUplo, typename ArgTrans>
 struct TeamVectorSyrk {
   static_assert(
-      std::is_same_v<ArgUplo, Uplo::Upper> || std::is_same_v<ArgUplo, Uplo::Lower>,
+      is_uplo_v<ArgUplo>,
       "KokkosBatched::syrk: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::syrk: Use Trans::NoTranspose/Trans::Transpose for {s,d,c,z}syrk or "
