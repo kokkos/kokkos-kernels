@@ -208,6 +208,8 @@ struct AVX {
 //////// Tags for BLAS ////////
 
 using KokkosBlas::Trans;
+using KokkosBlas::is_trans;
+using KokkosBlas::is_trans_v;
 
 struct Side {
   struct Left {};
@@ -231,6 +233,18 @@ struct Uplo {
   struct Lower {};
 };
 
+template <class T>
+struct is_uplo : std::false_type {};
+
+template <>
+struct is_uplo<Uplo::Upper> : std::true_type {};
+
+template <>
+struct is_uplo<Uplo::Lower> : std::true_type {};
+
+template <class T>
+constexpr bool is_uplo_v = is_uplo<T>::value;
+
 struct Diag {
   struct Unit {
     static const bool use_unit_diag = true;
@@ -239,6 +253,18 @@ struct Diag {
     static const bool use_unit_diag = false;
   };
 };
+
+template <class T>
+struct is_diag : std::false_type {};
+
+template <>
+struct is_diag<Diag::Unit> : std::true_type {};
+
+template <>
+struct is_diag<Diag::NonUnit> : std::true_type {};
+
+template <class T>
+constexpr bool is_diag_v = is_diag<T>::value;
 
 struct Norm {
   struct L1 {};
