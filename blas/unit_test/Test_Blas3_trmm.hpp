@@ -8,6 +8,7 @@
 
 #include <chrono>
 #include <vector>
+#include <sstream>
 
 namespace Test {
 
@@ -256,39 +257,43 @@ TEST_F(TestCategory, trmm_double) {
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trmm_complex_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double");
   std::vector<Kokkos::complex<double>> alphas = {Kokkos::complex<double>(1.0, 0.0), Kokkos::complex<double>(4.5, 0.0)};
   for (Kokkos::complex<double> alpha : alphas) {
     for (char side : {'L', 'R'}) {
       for (char uplo : {'L', 'U'}) {
         for (char trans : {'N', 'C'}) {
           for (char diag : {'N', 'U'}) {
+            std::ostringstream oss;
+            oss << "KokkosBlas::Test::trmm_complex_double_" << side << uplo << trans << diag;
+            Kokkos::Profiling::pushRegion(oss.str());
             test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(side, uplo, trans, diag, alpha);
+            Kokkos::Profiling::popRegion();
           }
         }
       }
     }
   }
-  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trmm_complex_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float");
   std::vector<Kokkos::complex<float>> alphas = {Kokkos::complex<float>(1.0f, 0.0f), Kokkos::complex<float>(4.5f, 0.0f)};
   for (Kokkos::complex<float> alpha : alphas) {
     for (char side : {'L', 'R'}) {
       for (char uplo : {'L', 'U'}) {
         for (char trans : {'N', 'C'}) {
           for (char diag : {'N', 'U'}) {
+            std::ostringstream oss;
+            oss << "KokkosBlas::Test::trmm_complex_float_" << side << uplo << trans << diag;
+            Kokkos::Profiling::pushRegion(oss.str());
             test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>(side, uplo, trans, diag, alpha);
+            Kokkos::Profiling::popRegion();
           }
         }
       }
     }
   }
-  Kokkos::Profiling::popRegion();
 }
 #endif
