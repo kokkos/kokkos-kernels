@@ -207,9 +207,9 @@ struct AVX {
 
 //////// Tags for BLAS ////////
 
-using KokkosBlas::Trans;
 using KokkosBlas::is_trans;
 using KokkosBlas::is_trans_v;
+using KokkosBlas::Trans;
 
 struct Side {
   struct Left {};

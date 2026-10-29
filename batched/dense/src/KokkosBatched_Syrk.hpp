@@ -35,7 +35,9 @@ namespace KokkosBatched {
 ///
 template <typename ArgUplo, typename ArgTrans>
 struct SerialSyrk {
-  static_assert(is_uplo_v<ArgUplo>, "KokkosBatched::syrk: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
+  static_assert(
+      is_uplo_v<ArgUplo>,
+      "KokkosBatched::syrk: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::syrk: Use Trans::NoTranspose/Trans::Transpose for {s,d,c,z}syrk or "
                 "Trans::ConjNoTranspose/Trans::ConjTranspose for {c,z}herk");
@@ -70,7 +72,9 @@ struct SerialSyrk {
 ///
 template <typename MemberType, typename ArgUplo, typename ArgTrans>
 struct TeamSyrk {
-  static_assert(is_uplo_v<ArgUplo>, "KokkosBatched::syrk: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
+  static_assert(
+      is_uplo_v<ArgUplo>,
+      "KokkosBatched::syrk: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::syrk: Use Trans::NoTranspose/Trans::Transpose for {s,d,c,z}syrk or "
                 "Trans::ConjNoTranspose/Trans::ConjTranspose for {c,z}herk");
@@ -104,7 +108,9 @@ struct TeamSyrk {
 ///
 template <typename MemberType, typename ArgUplo, typename ArgTrans>
 struct TeamVectorSyrk {
-  static_assert(is_uplo_v<ArgUplo>, "KokkosBatched::syrk: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
+  static_assert(
+      is_uplo_v<ArgUplo>,
+      "KokkosBatched::syrk: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(KokkosBlas::is_trans_v<ArgTrans>,
                 "KokkosBatched::syrk: Use Trans::NoTranspose/Trans::Transpose for {s,d,c,z}syrk or "
                 "Trans::ConjNoTranspose/Trans::ConjTranspose for {c,z}herk");
