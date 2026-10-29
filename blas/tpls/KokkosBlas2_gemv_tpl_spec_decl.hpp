@@ -293,6 +293,56 @@ KOKKOSBLAS2_ZGEMV_CUBLAS(Kokkos::LayoutRight)
 KOKKOSBLAS2_CGEMV_CUBLAS(Kokkos::LayoutLeft)
 KOKKOSBLAS2_CGEMV_CUBLAS(Kokkos::LayoutRight)
 
+// bhalf_t (bfloat16) GEMV via cublasGemmEx.
+// There is no cublasGemvEx, so we express GEMV as GEMM with N=1:
+//   y = alpha * op(A) * x + beta * y
+//   maps to: C[M,1] = alpha * op(A)[M,K] * B[K,1] + beta * C[M,1]
+// alpha and beta are passed as float (required by CUBLAS_COMPUTE_32F with bf16 I/O).
+#if !defined(KOKKOS_BHALF_T_IS_FLOAT)
+#define KOKKOSBLAS2_BHGEMV_CUBLAS(LAYOUT)                                                                              \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
+  struct GEMV<Kokkos::Cuda,                                                                                            \
+              Kokkos::View<const Kokkos::Experimental::bhalf_t**, LAYOUT, Kokkos::Cuda,                                \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
+              Kokkos::View<const Kokkos::Experimental::bhalf_t*, LAYOUT, Kokkos::Cuda,                                 \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
+              Kokkos::View<Kokkos::Experimental::bhalf_t*, LAYOUT, Kokkos::Cuda,                                       \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                  \
+              true, ETI_SPEC_AVAIL> {                                                                                  \
+    using SCALAR    = Kokkos::Experimental::bhalf_t;                                                                   \
+    using AViewType = Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;    \
+    using XViewType = Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;     \
+    using YViewType = Kokkos::View<SCALAR*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;           \
+                                                                                                                       \
+    static void gemv(const Kokkos::Cuda& space, const char trans[],                                                    \
+                     typename AViewType::const_value_type& alpha, const AViewType& A, const XViewType& X,              \
+                     typename YViewType::const_value_type& beta, const YViewType& Y) {                                 \
+      Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_CUBLAS,bhalf_t]");                                           \
+      KOKKOSBLAS2_GEMV_CUBLAS_DETERMINE_ARGS(LAYOUT);                                                                  \
+      /* cublasGemmEx with CUBLAS_COMPUTE_32F requires float alpha/beta */                                             \
+      const float alpha_f = static_cast<float>(alpha);                                                                 \
+      const float beta_f  = static_cast<float>(beta);                                                                  \
+      KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                       \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                                \
+      /* Express gemv as gemm with n=1: op(A)[M x K] * X[K x 1] -> Y[M x 1] */                                       \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(                                                                                \
+          cublasGemmEx(s.handle, transa, CUBLAS_OP_N,                                                                  \
+                       M, 1, N,                                                                                        \
+                       &alpha_f,                                                                                       \
+                       A.data(), CUDA_R_16BF, LDA,                                                                    \
+                       X.data(), CUDA_R_16BF, N,                                                                      \
+                       &beta_f,                                                                                        \
+                       Y.data(), CUDA_R_16BF, M,                                                                      \
+                       CUBLAS_COMPUTE_32F, CUBLAS_GEMM_DEFAULT));                                                      \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                               \
+      Kokkos::Profiling::popRegion();                                                                                  \
+    }                                                                                                                  \
+  };
+
+KOKKOSBLAS2_BHGEMV_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS2_BHGEMV_CUBLAS(Kokkos::LayoutRight)
+#endif  // !KOKKOS_BHALF_T_IS_FLOAT
+
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
