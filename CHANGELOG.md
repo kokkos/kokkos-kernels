@@ -5,13 +5,10 @@
 
 ### New Features
 
-#### BLAS updates
+#### Batched updates
 
 - Add genuine linf norm [\#3217](https://github.com/kokkos/kokkos-kernels/pull/3217)
 - Add genuine l1 norm [\#3150](https://github.com/kokkos/kokkos-kernels/pull/3150)
-
-#### Batched updates
-
 - Implement batched spr [\#3282](https://github.com/kokkos/kokkos-kernels/pull/3282)
 - Implement right-transpose SerialApplyQ [\#3274](https://github.com/kokkos/kokkos-kernels/pull/3274)
 - Implement batched symv [\#3272](https://github.com/kokkos/kokkos-kernels/pull/3272)
@@ -69,16 +66,12 @@
 
 ### Documentation and Testing
 
-- Cleanup batched SPR unit-tests [\#3349](https://github.com/kokkos/kokkos-kernels/pull/3349)
 - [Docs] Batched Spr [\#3346](https://github.com/kokkos/kokkos-kernels/pull/3346)
 - [Docs] batched Syrk [\#3337](https://github.com/kokkos/kokkos-kernels/pull/3337)
 - [Docs] Batched Symv [\#3303](https://github.com/kokkos/kokkos-kernels/pull/3303)
 - Citation: adding our initial citation file [\#3314](https://github.com/kokkos/kokkos-kernels/pull/3314)
 - Fix(doxygen): fix a few commands in a graph header [\#3326](https://github.com/kokkos/kokkos-kernels/pull/3326)
 - Add clique test for D2 coloring [\#3312](https://github.com/kokkos/kokkos-kernels/pull/3312)
-- Batched - Syrk: avoid multiple runs of zero length inputs in CI [\#3309](https://github.com/kokkos/kokkos-kernels/pull/3309)
-- EXPECT*KK macro rework [\#3258](https://github.com/kokkos/kokkos-kernels/pull/3258)
-- Test utils and misc improvements [\#3232](https://github.com/kokkos/kokkos-kernels/pull/3232)
 - CodeQL: grouping dependabot updates of CodeQL [\#3227](https://github.com/kokkos/kokkos-kernels/pull/3227)
 - CI: adding warning as error in one Kumquat build [\#3223](https://github.com/kokkos/kokkos-kernels/pull/3223)
 - CI: add rocm-7.2.1 job [\#3200](https://github.com/kokkos/kokkos-kernels/pull/3200)
@@ -92,6 +85,8 @@
 
 ### Cleanup
 
+- EXPECT*KK macro rework [\#3258](https://github.com/kokkos/kokkos-kernels/pull/3258)
+- Test utils and misc improvements [\#3232](https://github.com/kokkos/kokkos-kernels/pull/3232)
 - BLAS unit tests: remove leading underscores from ger/syr/syr2 identifiers [\#3364](https://github.com/kokkos/kokkos-kernels/pull/3364)
 - README cleanup [\#3246](https://github.com/kokkos/kokkos-kernels/pull/3246)
 - Remove all uses of KOKKOS_ENABLE_OPENMPTARGET [\#3327](https://github.com/kokkos/kokkos-kernels/pull/3327)
@@ -126,7 +121,7 @@
 - Export enabled TPLs in KokkosKernelsConfig.cmake [\#3248](https://github.com/kokkos/kokkos-kernels/pull/3248)
   - Fix typo KokkosKernels_TPL_ENABLE -> KokkosKernels_ENABLE_TPL [\#3251](https://github.com/kokkos/kokkos-kernels/pull/3251)
 - Indexing fixes for structured matrix generation in tests [\#3271](https://github.com/kokkos/kokkos-kernels/pull/3271)
-- Add missing <bit> header in KokkosBatched_HostLevel_Gemm_DblBuf_Impl.hpp [\#3286](https://github.com/kokkos/kokkos-kernels/pull/3286)
+- Add missing `<bit>` header in KokkosBatched_HostLevel_Gemm_DblBuf_Impl.hpp [\#3286](https://github.com/kokkos/kokkos-kernels/pull/3286)
 
 ## [5.2.1](https://github.com/kokkos/kokkos-kernels/tree/5.2.1)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.2.0...5.2.1)
