@@ -42,43 +42,51 @@ Controlling What Gets Compiled
 
 - ``KokkosKernels_ENABLE_ALL_COMPONENTS``: BOOL
 
-  - When ``ON``, all ``ENABLE_COMPONENT_*`` flags are silently overridden to ``ON`` regardless of their individual values.
+  - Whether to compile the components whose ``KokkosKernels_ENABLE_COMPONENT_*`` option is left empty.
+    It never overrides a component that was explicitly set to ``ON`` or ``OFF``.
   - Default: ``ON``
 
   .. note::
      To build only a subset of components, set ``KokkosKernels_ENABLE_ALL_COMPONENTS=OFF`` and then enable individual components with the flags below.
+     To build everything but a few components, keep ``KokkosKernels_ENABLE_ALL_COMPONENTS=ON`` and disable those components with the flags below.
 
-- ``KokkosKernels_ENABLE_COMPONENT_BATCHED``: BOOL
+Each ``KokkosKernels_ENABLE_COMPONENT_*`` option accepts ``ON``, ``OFF``, or an empty value (the default) meaning "follow ``KokkosKernels_ENABLE_ALL_COMPONENTS``".
+Components required by an enabled component are enabled automatically.
+Explicitly disabling a component also disables the components that require it, unless they were explicitly enabled, in which case configuration fails.
+To go back to the default for a component in an existing build directory, pass ``-UKokkosKernels_ENABLE_COMPONENT_<NAME>`` or set it to an empty value.
+The configuration summary reports the resolved value of each component and why it differs from the request, if it does.
+
+- ``KokkosKernels_ENABLE_COMPONENT_BATCHED``: STRING
 
   - Whether to compile the Batched component.
-  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+  - Default: empty (follows ``ENABLE_ALL_COMPONENTS``)
 
-- ``KokkosKernels_ENABLE_COMPONENT_BLAS``: BOOL
+- ``KokkosKernels_ENABLE_COMPONENT_BLAS``: STRING
 
   - Whether to compile the BLAS component.
-  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+  - Default: empty (follows ``ENABLE_ALL_COMPONENTS``)
 
-- ``KokkosKernels_ENABLE_COMPONENT_LAPACK``: BOOL
+- ``KokkosKernels_ENABLE_COMPONENT_LAPACK``: STRING
 
   - Whether to compile the LAPACK component.
-  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+  - Default: empty (follows ``ENABLE_ALL_COMPONENTS``)
 
-- ``KokkosKernels_ENABLE_COMPONENT_SPARSE``: BOOL
+- ``KokkosKernels_ENABLE_COMPONENT_SPARSE``: STRING
 
   - Whether to compile the Sparse component.
-  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
-  - Enabling SPARSE also enables BATCHED, BLAS, LAPACK, and GRAPH.
+  - Default: empty (follows ``ENABLE_ALL_COMPONENTS``)
+  - Requires BATCHED, BLAS, LAPACK, and GRAPH.
 
-- ``KokkosKernels_ENABLE_COMPONENT_GRAPH``: BOOL
+- ``KokkosKernels_ENABLE_COMPONENT_GRAPH``: STRING
 
   - Whether to compile the Graph component.
-  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
-  - Enabling GRAPH also enables SPARSE (and it's dependencies).
+  - Default: empty (follows ``ENABLE_ALL_COMPONENTS``)
+  - Requires SPARSE (and its dependencies).
 
-- ``KokkosKernels_ENABLE_COMPONENT_ODE``: BOOL
+- ``KokkosKernels_ENABLE_COMPONENT_ODE``: STRING
 
   - Whether to compile the ODE component.
-  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+  - Default: empty (follows ``ENABLE_ALL_COMPONENTS``)
 
 Controlling Which Tests Are Registered
 ----------------------------------------
