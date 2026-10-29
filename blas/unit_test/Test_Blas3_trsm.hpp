@@ -7,6 +7,7 @@
 #include <KokkosKernels_TestUtils.hpp>
 
 #include <chrono>
+#include <vector>
 
 namespace Test {
 
