@@ -490,6 +490,6 @@ certifi==2026.10.23 \
   --hash=sha256:a9895e6e2758b371e0545e321a3a8fd1fcfd9829ada8824a936dfb16aaaf36cd \
   --hash=sha256:e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1
 
-sphinxcontrib-googleanalytics==0.5 \
-  --hash=sha256:a2ac6df9d16b9c124febf6b44e714c1fd9725e692b73ee84ec6b52b377ff5561 \
-  --hash=sha256:437e529c33c441bcccceabe3ead1585115e6ba83fe90e23bd42e42521333cc0a
+sphinxcontrib-googleanalytics==0.6 \
+  --hash=sha256:9264640a9a0449a088cadaca6794946e60059345752221dae2c6ad986723d3d4 \
+  --hash=sha256:dc8740342331ff523b5eda8f5d1ea6176acfa86bbd195e8d67f642db8f2b22c7
