@@ -50,10 +50,7 @@ struct Functor_BatchedTrmv {
 
   inline int run() {
     using value_type        = typename AViewType::non_const_value_type;
-    std::string name_region = std::same_as<ArgMode, KokkosBatched::Mode::Serial> ? "KokkosBatched::Test::SerialTrmv"
-                              : std::same_as<ArgMode, KokkosBatched::Mode::Team>
-                                  ? "KokkosBatched::Test::TeamTrmv"
-                                  : "KokkosBatched::Test::TeamVectorTrmv";
+    std::string name_region = "KokkosBatched::Test::SerialTrmv";
     const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     int info_sum                      = 0;

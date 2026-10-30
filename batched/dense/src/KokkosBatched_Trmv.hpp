@@ -17,9 +17,11 @@ namespace KokkosBatched {
 /// alpha is a scalar, x is an n element vector, and A is a n by n matrix.
 ///
 /// \tparam ArgUplo: Type indicating whether the matrix is an upper (Uplo::Upper) or lower (Uplo::Lower) triangular
-/// matrix modified \tparam ArgTrans: Type indicating whether the A (Trans::NoTranspose), or A**T (Trans::Transpose) or
-/// A**H (Trans::ConjTranspose) is used. \tparam ArgDiag: Type indicating whether the matrix is unit triangular
-/// (Diag::Unit) or non-unit triangular (Diag::NonUnit)
+/// matrix modified
+/// \tparam ArgTrans: Type indicating whether the A (Trans::NoTranspose), or A**T (Trans::Transpose) or A**H
+/// (Trans::ConjTranspose) is used.
+/// \tparam ArgDiag: Type indicating whether the matrix is unit triangular (Diag::Unit) or non-unit triangular
+/// (Diag::NonUnit)
 ///
 /// \tparam ScalarType: Input type for the scalar alpha
 /// \tparam XViewType: Input type for the vector x, needs to be a 1D view
