@@ -16,6 +16,8 @@ KOKKOS_INLINE_FUNCTION static int checkTrmvInput([[maybe_unused]] const AViewTyp
                                                  [[maybe_unused]] const XViewType &x) {
   static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::trmv: AViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<XViewType>, "KokkosBatched::trmv: XViewType is not a Kokkos::View.");
+  static_assert(std::same_as<typename XViewType::value_type, typename XViewType::non_const_value_type>,
+                "KokkosBatched::trmv: XViewType must have a non-const value type.");
   static_assert(AViewType::rank == 2, "KokkosBatched::trmv: AViewType must have rank 2.");
   static_assert(XViewType::rank == 1, "KokkosBatched::trmv: XViewType must have rank 1.");
 #ifndef NDEBUG

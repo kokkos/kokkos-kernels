@@ -36,11 +36,10 @@ namespace KokkosBatched {
 template <typename ArgUplo, typename ArgTrans, typename ArgDiag>
 struct SerialTrmv {
   static_assert(
-      std::same_as<ArgUplo, Uplo::Upper> || std::same_as<ArgUplo, Uplo::Lower>,
+      is_uplo_v<ArgUplo>,
       "KokkosBatched::trmv: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(KokkosBlas::is_trans_v<ArgTrans>, "KokkosBatched::trmv: ArgTrans must be a KokkosBlas::Trans");
-  static_assert(std::same_as<ArgDiag, Diag::Unit> || std::same_as<ArgDiag, Diag::NonUnit>,
-                "KokkosBatched::trmv: ArgDiag must be either Diag::Unit or Diag::NonUnit");
+  static_assert(is_diag_v<ArgDiag>, "KokkosBatched::trmv: ArgDiag must be either Diag::Unit or Diag::NonUnit");
   template <typename ScalarType, typename AViewType, typename XViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const XViewType &x);
 };
