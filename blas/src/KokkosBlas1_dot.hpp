@@ -59,42 +59,17 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 
   using dot_type =
       typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type;
-  // result_type is usually just dot_type, except:
-  //  if dot_type is float, result_type is double
-  //  if dot_type is complex<float>, result_type is complex<double>
-  // These special cases are to maintain accuracy.
-  using result_type = typename KokkosBlas::Impl::DotAccumulatingScalar<dot_type>::type;
   using RVector_Internal =
       Kokkos::View<dot_type, KokkosKernels::default_layout, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using RVector_Result = Kokkos::View<result_type, KokkosKernels::default_layout, Kokkos::HostSpace,
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   XVector_Internal X = x;
   YVector_Internal Y = y;
 
-  bool useFallback = false;
-  if (useFallback) {
-    // Even though RVector is the template parameter, Dot::dot has an overload
-    // that accepts RVector_Internal (with the special accumulator, if dot_type
-    // is 32-bit precision). Impl::Dot needs to support both cases, and it's
-    // easier to do this with overloading than by extending the ETI to deal with
-    // two different scalar types.
-    result_type result{};
-    RVector_Result R = RVector_Result(&result);
-    Impl::DotSpecialAccumulator<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X,
-                                                                                                            Y);
-    space.fence();
-    // mfh 22 Jan 2020: We need the line below because
-    // Kokkos::complex<T> lacks a constructor that takes a
-    // Kokkos::complex<U> with U != T.
-    return KokkosKernels::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
-  } else {
-    dot_type result{};
-    RVector_Internal R = RVector_Internal(&result);
-    Impl::Dot<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X, Y);
-    space.fence();
-    return KokkosKernels::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
-  }
+  dot_type result{};
+  RVector_Internal R = RVector_Internal(&result);
+  Impl::Dot<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X, Y);
+  space.fence();
+  return result;
 }
 
 /// \brief Return the dot product of the two vectors x and y.
