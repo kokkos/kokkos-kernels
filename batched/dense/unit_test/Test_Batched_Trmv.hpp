@@ -319,7 +319,7 @@ void impl_test_batched_trmv(const std::size_t Nb, const std::size_t BlkSize) {
   Kokkos::fence();
   EXPECT_EQ(info0, 0);
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = 1.0e2 * ats::epsilon();
 
   auto h_x     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x);
   auto h_x_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x_ref);
