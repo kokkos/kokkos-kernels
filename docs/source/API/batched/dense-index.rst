@@ -22,6 +22,7 @@ API: Batched Dense (DLA)
    dense/batched_syr
    dense/batched_syr2
    dense/batched_syrk
+   dense/batched_syr2k
    dense/batched_symv
    dense/batched_getrf
    dense/batched_getrs
@@ -289,9 +290,9 @@ BLAS 3
      - :doc:`TeamSyrk <dense/batched_syrk>`
      - :doc:`TeamVectorSyrk <dense/batched_syrk>`
    * - SYRK2
-     - --
-     - --
-     - --
+     - :doc:`SerialSyr2k <dense/batched_syr2k>`
+     - :doc:`TeamSyr2k <dense/batched_syr2k>`
+     - :doc:`TeamVectorSyr2k <dense/batched_syr2k>`
    * - HEMM
      - --
      - --
@@ -301,9 +302,9 @@ BLAS 3
      - :doc:`TeamSyrk <dense/batched_syrk>`
      - :doc:`TeamVectorSyrk <dense/batched_syrk>`
    * - HERK2
-     - --
-     - --
-     - --
+     - :doc:`SerialSyr2k <dense/batched_syr2k>`
+     - :doc:`TeamSyr2k <dense/batched_syr2k>`
+     - :doc:`TeamVectorSyr2k <dense/batched_syr2k>`
    * - TRMM
      - `SerialTrmm`
      - `TeamTrmm`
