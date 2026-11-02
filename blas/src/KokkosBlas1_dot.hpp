@@ -23,8 +23,8 @@ namespace KokkosBlas {
 /// \param y [in] Input 1-D View.
 ///
 /// \return The dot product result; a single value.
-template <class execution_space, class XVector, class YVector,
-          typename std::enable_if<Kokkos::is_execution_space_v<execution_space>, int>::type = 0>
+template <class execution_space, class XVector, class YVector>
+  requires Kokkos::is_execution_space_v<execution_space>
 typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type dot(
     const execution_space& space, const XVector& x, const YVector& y) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
@@ -59,42 +59,17 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 
   using dot_type =
       typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type;
-  // result_type is usually just dot_type, except:
-  //  if dot_type is float, result_type is double
-  //  if dot_type is complex<float>, result_type is complex<double>
-  // These special cases are to maintain accuracy.
-  using result_type = typename KokkosBlas::Impl::DotAccumulatingScalar<dot_type>::type;
   using RVector_Internal =
       Kokkos::View<dot_type, KokkosKernels::default_layout, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using RVector_Result = Kokkos::View<result_type, KokkosKernels::default_layout, Kokkos::HostSpace,
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   XVector_Internal X = x;
   YVector_Internal Y = y;
 
-  bool useFallback = false;
-  if (useFallback) {
-    // Even though RVector is the template parameter, Dot::dot has an overload
-    // that accepts RVector_Internal (with the special accumulator, if dot_type
-    // is 32-bit precision). Impl::Dot needs to support both cases, and it's
-    // easier to do this with overloading than by extending the ETI to deal with
-    // two different scalar types.
-    result_type result{};
-    RVector_Result R = RVector_Result(&result);
-    Impl::DotSpecialAccumulator<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X,
-                                                                                                            Y);
-    space.fence();
-    // mfh 22 Jan 2020: We need the line below because
-    // Kokkos::complex<T> lacks a constructor that takes a
-    // Kokkos::complex<U> with U != T.
-    return KokkosKernels::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
-  } else {
-    dot_type result{};
-    RVector_Internal R = RVector_Internal(&result);
-    Impl::Dot<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X, Y);
-    space.fence();
-    return KokkosKernels::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
-  }
+  dot_type result{};
+  RVector_Internal R = RVector_Internal(&result);
+  Impl::Dot<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X, Y);
+  space.fence();
+  return result;
 }
 
 /// \brief Return the dot product of the two vectors x and y.
@@ -144,12 +119,12 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 ///   product X with each column of Y, in turn.  R must be 1-D. </li>
 /// </ul>
 ///
-/// \note To implementers: We use enable_if here so that the compiler
+/// \note To implementers: We use 'requires' here so that the compiler
 ///   doesn't confuse this version of dot() with the three-argument
 ///   version of dot() in Kokkos_Blas1.hpp.
 template <class execution_space, class RV, class XMV, class YMV>
-void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
-         typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  requires Kokkos::is_view_v<RV>
+void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::dot: excution_space must be a valid Kokkos "
                 "execution space.");
@@ -273,11 +248,12 @@ void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
 ///   product X with each column of Y, in turn.  R must be 1-D. </li>
 /// </ul>
 ///
-/// \note To implementers: We use enable_if here so that the compiler
+/// \note To implementers: We use 'requires' here so that the compiler
 ///   doesn't confuse this version of dot() with the three-argument
 ///   version of dot() in Kokkos_Blas1.hpp.
 template <class RV, class XMV, class YMV>
-void dot(const RV& R, const XMV& X, const YMV& Y, typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  requires Kokkos::is_view_v<RV>
+void dot(const RV& R, const XMV& X, const YMV& Y) {
   dot(typename XMV::execution_space{}, R, X, Y);
 }
 }  // namespace KokkosBlas
