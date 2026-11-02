@@ -23,8 +23,8 @@ namespace KokkosBlas {
 /// \param y [in] Input 1-D View.
 ///
 /// \return The dot product result; a single value.
-template <class execution_space, class XVector, class YVector,
-          typename std::enable_if<Kokkos::is_execution_space_v<execution_space>, int>::type = 0>
+template <class execution_space, class XVector, class YVector>
+  requires Kokkos::is_execution_space_v<execution_space>
 typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type dot(
     const execution_space& space, const XVector& x, const YVector& y) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
