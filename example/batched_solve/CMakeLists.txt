@@ -25,6 +25,8 @@ kokkoskernels_add_executable(serial_laswp SOURCES serial_laswp.cpp)
 
 kokkoskernels_add_executable(serial_lacgv SOURCES serial_lacgv.cpp)
 
+kokkoskernels_add_executable(serial_trmv SOURCES serial_trmv.cpp)
+
 kokkoskernels_add_executable(serial_trsv SOURCES serial_trsv.cpp)
 
 kokkoskernels_add_executable(serial_trsm SOURCES serial_trsm.cpp)
