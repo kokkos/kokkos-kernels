@@ -83,6 +83,55 @@ KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float
 namespace KokkosBlas {
 namespace Impl {
 
+template <class ScalarType, class OrdinalType, class XViewType, class ResultType>
+void call_cublas_iamax_64(cublasHandle_t handle, OrdinalType N, const XViewType& X, OrdinalType LDX,
+                          ResultType result) {
+  if constexpr (std::is_same_v<ScalarType, double>) {
+    const double* x_ptr = X.data();
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIdamax_64(handle, N, x_ptr, LDX, result));
+
+  } else if constexpr (std::is_same_v<ScalarType, float>) {
+    const float* x_ptr = X.data();
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIsamax_64(handle, N, x_ptr, LDX, result));
+
+  } else if constexpr (std::is_same_v<ScalarType, Kokkos::complex<double>>) {
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(
+        cublasIzamax_64(handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), LDX, result));
+
+  } else if constexpr (std::is_same_v<ScalarType, Kokkos::complex<float>>) {
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(
+        cublasIcamax_64(handle, N, reinterpret_cast<const cuComplex*>(X.data()), LDX, result));
+
+  } else {
+    static_assert(std::is_same_v<ScalarType, void>, "call_cublas_iamax_64: Unsupported scalar type for cuBLAS iamax");
+  }
+}
+
+template <class ScalarType, class OrdinalType, class XViewType, class ResultType>
+void call_cublas_iamax_32(cublasHandle_t handle, OrdinalType N, const XViewType& X, OrdinalType LDX,
+                          ResultType result) {
+  std::cout << "iamax cublas 32" << std::endl;
+  if constexpr (std::is_same_v<ScalarType, double>) {
+    const double* x_ptr = X.data();
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIdamax(handle, N, x_ptr, LDX, result));
+
+  } else if constexpr (std::is_same_v<ScalarType, float>) {
+    const float* x_ptr = X.data();
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIsamax(handle, N, x_ptr, LDX, result));
+
+  } else if constexpr (std::is_same_v<ScalarType, Kokkos::complex<double>>) {
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(
+        cublasIzamax(handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), LDX, result));
+
+  } else if constexpr (std::is_same_v<ScalarType, Kokkos::complex<float>>) {
+    KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(
+        cublasIcamax(handle, N, reinterpret_cast<const cuComplex*>(X.data()), LDX, result));
+
+  } else {
+    static_assert(std::is_same_v<ScalarType, void>, "call_cublas_iamax_32: Unsupported scalar type for cuBLAS iamax");
+  }
+}
+
 #define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(SCALAR_TYPE, INDEX_TYPE, RET_DEVICE_TYPE, CUBLAS_PTR_MODE_1,   \
                                                         CUBLAS_PTR_MODE_2)                                             \
   template <bool ETI_SPEC_AVAIL>                                                                                       \
@@ -116,37 +165,11 @@ namespace Impl {
       if (prevPtrMode == CUBLAS_PTR_MODE_2) {                                                                          \
         KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_PTR_MODE_1));                           \
       }                                                                                                                \
-      if constexpr (sizeof(INDEX_TYPE) == sizeof(int64_t)) {                                                           \
-        if constexpr (std::is_same_v<SCALAR_TYPE, double>) {                                                           \
-          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIdamax_64(s.handle, N, reinterpret_cast<const double*>(X.data()),     \
-                                                           LDX, reinterpret_cast<int64_t*>(R.data())));                \
-        } else if constexpr (std::is_same_v<SCALAR_TYPE, float>) {                                                     \
-          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIsamax_64(s.handle, N, reinterpret_cast<const float*>(X.data()), LDX, \
-                                                           reinterpret_cast<int64_t*>(R.data())));                     \
-        } else if constexpr (std::is_same_v<SCALAR_TYPE, Kokkos::complex<double>>) {                                   \
-          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIzamax_64(s.handle, N,                                                \
-                                                           reinterpret_cast<const cuDoubleComplex*>(X.data()), LDX,    \
-                                                           reinterpret_cast<int64_t*>(R.data())));                     \
-        } else if constexpr (std::is_same_v<SCALAR_TYPE, Kokkos::complex<float>>) {                                    \
-          KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIcamax_64(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()),  \
-                                                           LDX, reinterpret_cast<int64_t*>(R.data())));                \
-        }                                                                                                              \
+      if constexpr (sizeof(ordinal_type) == sizeof(int64_t)) {                                                         \
+        call_cublas_iamax_64<SCALAR_TYPE>(s.handle, N, X, LDX, reinterpret_cast<int64_t*>(R.data()));                  \
       } else {                                                                                                         \
         if (numElems < static_cast<size_type>(INT_MAX)) {                                                              \
-          if constexpr (std::is_same_v<SCALAR_TYPE, double>) {                                                         \
-            KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIdamax(s.handle, N, reinterpret_cast<const double*>(X.data()), LDX, \
-                                                          reinterpret_cast<int*>(R.data())));                          \
-          } else if constexpr (std::is_same_v<SCALAR_TYPE, float>) {                                                   \
-            KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIsamax(s.handle, N, reinterpret_cast<const float*>(X.data()), LDX,  \
-                                                          reinterpret_cast<int*>(R.data())));                          \
-          } else if constexpr (std::is_same_v<SCALAR_TYPE, Kokkos::complex<double>>) {                                 \
-            KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIzamax(s.handle, N,                                                 \
-                                                          reinterpret_cast<const cuDoubleComplex*>(X.data()), LDX,     \
-                                                          reinterpret_cast<int*>(R.data())));                          \
-          } else if constexpr (std::is_same_v<SCALAR_TYPE, Kokkos::complex<float>>) {                                  \
-            KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIcamax(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()),   \
-                                                          LDX, reinterpret_cast<int*>(R.data())));                     \
-          }                                                                                                            \
+          call_cublas_iamax_32<SCALAR_TYPE>(s.handle, N, X, LDX, reinterpret_cast<int*>(R.data()));                    \
         } else {                                                                                                       \
           Iamax<Kokkos::Cuda, RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(space, R, X);                                   \
         }                                                                                                              \
