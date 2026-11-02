@@ -110,7 +110,6 @@ void call_cublas_iamax_64(cublasHandle_t handle, OrdinalType N, const XViewType&
 template <class ScalarType, class OrdinalType, class XViewType, class ResultType>
 void call_cublas_iamax_32(cublasHandle_t handle, OrdinalType N, const XViewType& X, OrdinalType LDX,
                           ResultType result) {
-  std::cout << "iamax cublas 32" << std::endl;
   if constexpr (std::is_same_v<ScalarType, double>) {
     const double* x_ptr = X.data();
     KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasIdamax(handle, N, x_ptr, LDX, result));
