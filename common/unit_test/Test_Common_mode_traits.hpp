@@ -12,7 +12,6 @@
 #include <KokkosBatched_Util.hpp>
 
 void test_mode_traits() {
-
   // Resource Mode
   static_assert(KokkosBlas::is_mode_v<KokkosBlas::Mode::Serial>);
   static_assert(KokkosBlas::is_mode_v<KokkosBlas::Mode::Team>);
