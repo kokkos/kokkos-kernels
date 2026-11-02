@@ -119,12 +119,12 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 ///   product X with each column of Y, in turn.  R must be 1-D. </li>
 /// </ul>
 ///
-/// \note To implementers: We use enable_if here so that the compiler
+/// \note To implementers: We use 'requires' here so that the compiler
 ///   doesn't confuse this version of dot() with the three-argument
 ///   version of dot() in Kokkos_Blas1.hpp.
 template <class execution_space, class RV, class XMV, class YMV>
-void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
-         typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  requires Kokkos::is_view_v<RV>
+void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::dot: excution_space must be a valid Kokkos "
                 "execution space.");
@@ -248,11 +248,12 @@ void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
 ///   product X with each column of Y, in turn.  R must be 1-D. </li>
 /// </ul>
 ///
-/// \note To implementers: We use enable_if here so that the compiler
+/// \note To implementers: We use 'requires' here so that the compiler
 ///   doesn't confuse this version of dot() with the three-argument
 ///   version of dot() in Kokkos_Blas1.hpp.
 template <class RV, class XMV, class YMV>
-void dot(const RV& R, const XMV& X, const YMV& Y, typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  requires Kokkos::is_view_v<RV>
+void dot(const RV& R, const XMV& X, const YMV& Y) {
   dot(typename XMV::execution_space{}, R, X, Y);
 }
 }  // namespace KokkosBlas
