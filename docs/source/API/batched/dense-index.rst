@@ -14,6 +14,7 @@ API: Batched Dense (DLA)
    dense/batched_dot
    dense/batched_nrm
    dense/batched_iamax
+   dense/batched_trmv
    dense/batched_trsv
    dense/batched_tbsv
    dense/batched_ger
@@ -206,7 +207,7 @@ BLAS 2
      - --
      - --
    * - TRMV
-     - --
+     - :doc:`SerialTrmv <dense/batched_trmv>`
      - --
      - --
    * - TBMV
@@ -289,7 +290,7 @@ BLAS 3
      - :doc:`SerialSyrk <dense/batched_syrk>`
      - :doc:`TeamSyrk <dense/batched_syrk>`
      - :doc:`TeamVectorSyrk <dense/batched_syrk>`
-   * - SYRK2
+   * - SYR2K
      - :doc:`SerialSyr2k <dense/batched_syr2k>`
      - :doc:`TeamSyr2k <dense/batched_syr2k>`
      - :doc:`TeamVectorSyr2k <dense/batched_syr2k>`
@@ -301,7 +302,7 @@ BLAS 3
      - :doc:`SerialSyrk <dense/batched_syrk>`
      - :doc:`TeamSyrk <dense/batched_syrk>`
      - :doc:`TeamVectorSyrk <dense/batched_syrk>`
-   * - HERK2
+   * - HER2K
      - :doc:`SerialSyr2k <dense/batched_syr2k>`
      - :doc:`TeamSyr2k <dense/batched_syr2k>`
      - :doc:`TeamVectorSyr2k <dense/batched_syr2k>`
