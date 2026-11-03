@@ -278,12 +278,12 @@ void impl_test_batched_trmv_analytical(const std::size_t Nb) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType>
 void impl_test_batched_trmv(const std::size_t Nb, const std::size_t BlkSize) {
-  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
-  using RealType          = typename ats::mag_type;
-  using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
-  using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
-  using ArgUplo           = typename ParamTagType::uplo;
-  using ArgDiag           = typename ParamTagType::diag;
+  using ats        = typename KokkosKernels::ArithTraits<ScalarType>;
+  using RealType   = typename ats::mag_type;
+  using View2DType = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
+  using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
+  using ArgUplo    = typename ParamTagType::uplo;
+  using ArgDiag    = typename ParamTagType::diag;
 
   View3DType A("A", Nb, BlkSize, BlkSize), A_ref("A_ref", Nb, BlkSize, BlkSize);
   View2DType x("x", Nb, BlkSize), x_ref("x_ref", Nb, BlkSize);
