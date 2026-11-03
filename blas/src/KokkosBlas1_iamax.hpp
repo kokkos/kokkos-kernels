@@ -23,7 +23,7 @@ namespace KokkosBlas {
 /// single value.
 ///         Note: Returned index is 1-based for compatibility with Fortran.
 template <class execution_space, class XVector>
-requires Kokkos::is_execution_space_v<execution_space>
+  requires Kokkos::is_execution_space_v<execution_space>
 typename XVector::size_type iamax(const execution_space& space, const XVector& x) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::iamax: execution_space must be a valid Kokkos "
@@ -90,7 +90,7 @@ typename XVector::size_type iamax(const XVector& x) {
 /// Note for TPL cuBLAS: When TPL cuBLAS iamax is used and returns result to a
 /// view, RMV must be 0-D view and XMV must be 1-D view.
 template <class execution_space, class RV, class XMV>
-requires Kokkos::is_view_v<RV>
+  requires Kokkos::is_view_v<RV>
 void iamax(const execution_space& space, const RV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::iamax: execution_space must be a valid Kokkos "
@@ -164,7 +164,7 @@ void iamax(const execution_space& space, const RV& R, const XMV& X) {
 /// Note for TPL cuBLAS: When TPL cuBLAS iamax is used and returns result to a
 /// view, RMV must be 0-D view and XMV must be 1-D view.
 template <class RV, class XMV>
-requires Kokkos::is_view_v<RV>
+  requires Kokkos::is_view_v<RV>
 void iamax(const RV& R, const XMV& X) {
   iamax(typename XMV::execution_space{}, R, X);
 }
