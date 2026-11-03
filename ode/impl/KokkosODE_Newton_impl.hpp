@@ -16,6 +16,7 @@
 #include "KokkosBatched_Getrf.hpp"
 #include "KokkosBatched_Getrs.hpp"
 #include "KokkosODE_Types.hpp"
+#include "KokkosKernels_Utils.hpp"
 
 namespace KokkosODE {
 namespace Impl {
@@ -72,16 +73,24 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // KokkosBatched::SerialGesv uses a greedy row-to-column assignment
     // that can fail spuriously on well-conditioned sparse systems
     // (e.g. chemistry Jacobians with one dense row), so it is only kept
-    // as a fallback for systems larger than the stack pivot buffer.
+    // as a fallback for systems larger than the pivot buffer we can carve
+    // out of tmp.
     int linSolverStat    = 0;
     using mat_value_type = typename mat_type::non_const_value_type;
-    if (sys.neqs * sizeof(int) <= tmp.size() * sizeof(mat_value_type)) {
-      // Use a properly aligned int array for pivots instead of
-      // reinterpret_cast on the half_t tmp view, which is undefined
-      // behavior and causes non-deterministic failures on CUDA.
-      int piv_array[64];
+    // tmp is laid out as mat_value_type, which may be less aligned than
+    // int (e.g. half_t is 2-byte aligned). alignPtrTo<int> may need to
+    // skip up to (alignof(int) - alignof(mat_value_type)) bytes to find a
+    // valid int-aligned address inside tmp's buffer, so that padding must
+    // be included when checking whether tmp has enough room for the pivot
+    // array. Reinterpreting tmp.data() directly as int* (as used to be
+    // done here) is undefined behavior whenever alignof(mat_value_type) <
+    // alignof(int), and causes non-deterministic failures on CUDA.
+    constexpr size_t piv_align_pad =
+        (alignof(int) > alignof(mat_value_type)) ? (alignof(int) - alignof(mat_value_type)) : size_t(0);
+    if (sys.neqs * sizeof(int) + piv_align_pad <= tmp.size() * sizeof(mat_value_type)) {
+      int* piv_data = KokkosKernels::Impl::alignPtrTo<int>(tmp.data());
       Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::AnonymousSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> piv(
-          piv_array, sys.neqs);
+          piv_data, sys.neqs);
       for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
       linSolverStat = KokkosBatched::SerialGetrf<KokkosBatched::Algo::Getrf::Unblocked>::invoke(J, piv);
       if (linSolverStat == 0) {
