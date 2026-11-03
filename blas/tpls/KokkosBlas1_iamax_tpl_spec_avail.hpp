@@ -56,14 +56,14 @@ KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_BLAS(unsigned long, Kokkos::complex<float>)
     enum : bool { value = true };                                                                                   \
   };
 
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(unsigned long, double)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(unsigned int, double)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(unsigned long, float)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(unsigned int, float)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(unsigned long, Kokkos::complex<double>)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(unsigned int, Kokkos::complex<double>)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(unsigned long, Kokkos::complex<float>)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(unsigned int, Kokkos::complex<float>)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(int, float)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(int, double)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(int, Kokkos::complex<float>)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(int, Kokkos::complex<double>)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(std::int64_t, float)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(std::int64_t, double)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(std::int64_t, Kokkos::complex<float>)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(std::int64_t, Kokkos::complex<double>)
 
 #endif
 

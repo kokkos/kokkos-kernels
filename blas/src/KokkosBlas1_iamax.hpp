@@ -35,7 +35,7 @@ typename XVector::size_type iamax(const execution_space& space, const XVector& x
                 "KokkosBlas::iamax: "
                 "Both Vector inputs must have rank 1.");
 
-  using index_type = typename XVector::size_type;
+  using index_type = std::make_signed_t<typename XVector::size_type>;
 
   using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
                                         typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
@@ -52,7 +52,7 @@ typename XVector::size_type iamax(const execution_space& space, const XVector& x
 
   Impl::Iamax<execution_space, RVector_Internal, XVector_Internal>::iamax(space, R, X);
   space.fence();
-  return result;
+  return static_cast<typename XVector::size_type>(result);
 }
 
 /// \brief Return the (smallest) index of the element of the maximum magnitude
