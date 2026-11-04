@@ -100,12 +100,12 @@ void cublasIamaxWrapper(const ExecutionSpace& space, RViewType& R, const XViewTy
   KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(s.handle, &prevPtrMode));
   if constexpr (std::is_same_v<typename RViewType::execution_space, Kokkos::Cuda>) {
     if (prevPtrMode == CUBLAS_POINTER_MODE_HOST) {
-      // With a return view using Kokkos::Cuda, we need the device point mode
+      // With a return view using Kokkos::Cuda, we need the device pointer mode
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));
     }
   } else if constexpr (std::is_same_v<typename RViewType::memory_space, Kokkos::HostSpace>) {
     if (prevPtrMode == CUBLAS_POINTER_MODE_DEVICE) {
-      // With a return view using Kokkos::HostSpace, we need the host point mode
+      // With a return view using Kokkos::HostSpace, we need the host pointer mode
       KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_HOST));
     }
   }
@@ -221,12 +221,12 @@ void rocblasIamaxWrapper(const ExecutionSpace& space, RViewType& R, const XViewT
   KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(s.handle, &prevPtrMode));
   if constexpr (std::is_same_v<typename RViewType::execution_space, Kokkos::HIP>) {
     if (prevPtrMode == rocblas_pointer_mode_host) {
-      // With a return view using Kokkos::Cuda, we need the device point mode
+      // With a return view using Kokkos::HIP, we need the device pointer mode
       KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));
     }
   } else if constexpr (std::is_same_v<typename RViewType::memory_space, Kokkos::HostSpace>) {
     if (prevPtrMode == rocblas_pointer_mode_device) {
-      // With a return view using Kokkos::HostSpace, we need the host point mode
+      // With a return view using Kokkos::HostSpace, we need the host pointer mode
       KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host));
     }
   }
