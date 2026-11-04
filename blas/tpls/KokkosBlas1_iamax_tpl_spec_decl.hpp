@@ -234,15 +234,18 @@ void rocblasIamaxWrapper(const ExecutionSpace& space, RViewType& R, const XViewT
   if constexpr (std::is_same_v<index_type, int>) {
     if (X.extent(0) < static_cast<size_type>(INT_MAX)) {
       iamax_print_specialization<RViewType, XViewType>();
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_ROCBLAS," + KokkosKernels::ArithTraits<scalar_type>::name() + "]");
+      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_ROCBLAS," + KokkosKernels::ArithTraits<scalar_type>::name() +
+                                    "]");
       if constexpr (std::is_same_v<scalar_type, float>) {
         KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_isamax(s.handle, N, X.data(), LDX, R.data()));
       } else if constexpr (std::is_same_v<scalar_type, double>) {
         KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_idamax(s.handle, N, X.data(), LDX, R.data()));
       } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<float>>) {
-        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_icamax(s.handle, N, reinterpret_cast<const rocblas_float_complex*>(X.data()), LDX, R.data()));
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
+            rocblas_icamax(s.handle, N, reinterpret_cast<const rocblas_float_complex*>(X.data()), LDX, R.data()));
       } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<double>>) {
-        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_izamax(s.handle, N, reinterpret_cast<const rocblas_double_complex*>(X.data()), LDX, R.data()));
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
+            rocblas_izamax(s.handle, N, reinterpret_cast<const rocblas_double_complex*>(X.data()), LDX, R.data()));
       }
       Kokkos::Profiling::popRegion();
     } else {
@@ -250,15 +253,18 @@ void rocblasIamaxWrapper(const ExecutionSpace& space, RViewType& R, const XViewT
     }
   } else if constexpr (std::is_same_v<index_type, std::int64_t>) {
     iamax_print_specialization<RViewType, XViewType>();
-    Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_ROCBLAS_64," + KokkosKernels::ArithTraits<scalar_type>::name() + "]");
+    Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_ROCBLAS_64," +
+                                  KokkosKernels::ArithTraits<scalar_type>::name() + "]");
     if constexpr (std::is_same_v<scalar_type, float>) {
       KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_isamax_64(s.handle, N, X.data(), LDX, R.data()));
     } else if constexpr (std::is_same_v<scalar_type, double>) {
       KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_idamax_64(s.handle, N, X.data(), LDX, R.data()));
     } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<float>>) {
-      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_icamax_64(s.handle, N, reinterpret_cast<const rocblas_float_complex*>(X.data()), LDX, R.data()));
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
+          rocblas_icamax_64(s.handle, N, reinterpret_cast<const rocblas_float_complex*>(X.data()), LDX, R.data()));
     } else if constexpr (std::is_same_v<scalar_type, Kokkos::complex<double>>) {
-      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_izamax_64(s.handle, N, reinterpret_cast<const rocblas_double_complex*>(X.data()), LDX, R.data()));
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(
+          rocblas_izamax_64(s.handle, N, reinterpret_cast<const rocblas_double_complex*>(X.data()), LDX, R.data()));
     }
     Kokkos::Profiling::popRegion();
   }
@@ -274,7 +280,7 @@ void rocblasIamaxWrapper(const ExecutionSpace& space, RViewType& R, const XViewT
   }
 }
 
-#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS_WRAPPER(SCALAR_TYPE, INDEX_TYPE, RET_DEVICE_TYPE)      \
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS_WRAPPER(SCALAR_TYPE, INDEX_TYPE, RET_DEVICE_TYPE)                     \
   template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct Iamax<                                                                                                        \
       Kokkos::HIP,                                                                                                     \
@@ -282,9 +288,10 @@ void rocblasIamaxWrapper(const ExecutionSpace& space, RViewType& R, const XViewT
       Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, 1,   \
       true, ETI_SPEC_AVAIL> {                                                                                          \
     using RV = Kokkos::View<INDEX_TYPE, Kokkos::LayoutLeft, RET_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
-    using XV = Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+    using XV =                                                                                                         \
+        Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;    \
     using size_type = typename XV::size_type;                                                                          \
-    									                                               \
+                                                                                                                       \
     static void iamax(const Kokkos::HIP& space, RV& R, const XV& X) {                                                  \
       if (X.extent(0) == 0) {                                                                                          \
         Kokkos::deep_copy(R, 0);                                                                                       \
