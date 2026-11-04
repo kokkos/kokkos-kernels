@@ -98,8 +98,8 @@ struct Functor_BatchedGemv {
   }
 };
 
-/// \brief Implementation details of batched syr analytical test
-///        to confirm A:= x*x**T + A is computed correctly
+/// \brief Implementation details of batched trmv analytical test
+///        to confirm x:= alpha * op(A) * x
 ///        alpha = 1.5
 ///        4x4 matrix (upper)
 ///        U: [[1, -3, -2,  0],
@@ -278,21 +278,15 @@ void impl_test_batched_trmv_analytical(const std::size_t Nb) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType>
 void impl_test_batched_trmv(const std::size_t Nb, const std::size_t BlkSize) {
-  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
-  using RealType          = typename ats::mag_type;
-  using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
-  using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
-  using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
-  using ArgUplo           = typename ParamTagType::uplo;
-  using ArgDiag           = typename ParamTagType::diag;
+  using ats        = typename KokkosKernels::ArithTraits<ScalarType>;
+  using RealType   = typename ats::mag_type;
+  using View2DType = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
+  using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
+  using ArgUplo    = typename ParamTagType::uplo;
+  using ArgDiag    = typename ParamTagType::diag;
 
   View3DType A("A", Nb, BlkSize, BlkSize), A_ref("A_ref", Nb, BlkSize, BlkSize);
   View2DType x("x", Nb, BlkSize), x_ref("x_ref", Nb, BlkSize);
-
-  const std::size_t incx = 2;
-  // Testing incx argument with strided views
-  Kokkos::LayoutStride layout{Nb, incx, BlkSize, Nb * incx};
-  StridedView2DType x_s("x_s", layout);
 
   // Create a random matrix A and x
   using execution_space = typename DeviceType::execution_space;
