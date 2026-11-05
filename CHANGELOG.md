@@ -25,10 +25,11 @@
 
 #### BLAS
 
-- BLAS - GEMM: add bypass when alpha is zero [\#3336](https://github.com/kokkos/kokkos-kernels/pull/3336)
+- GEMM: has been further optimized for multiple special cases: when beta = 0, use deep_copy to set the value directly, when alpha = 0 bypass the call to gemm and just scale C by beta, finally, we are removing the explicit instantiation of GEMM on combinations of layout left and right, these are still possible but will only be compile by the application if required
+  - BLAS - GEMM: add bypass when alpha is zero [\#3336](https://github.com/kokkos/kokkos-kernels/pull/3336)
+  - Reduce layout combinations instantiated for GEMM [\#3245](https://github.com/kokkos/kokkos-kernels/pull/3245)
+  - Use Kokkos to assign scalars in KokkosBlas3_gemm_dotbased_impl.hpp [\#3218](https://github.com/kokkos/kokkos-kernels/pull/3218)
 - Change alpha type in KokkosBlas1_mult_spec [\#3334](https://github.com/kokkos/kokkos-kernels/pull/3334)
-- Reduce layout combinations instantiated for GEMM [\#3245](https://github.com/kokkos/kokkos-kernels/pull/3245)
-- Use Kokkos to assign scalars in KokkosBlas3_gemm_dotbased_impl.hpp [\#3218](https://github.com/kokkos/kokkos-kernels/pull/3218)
 - KokkosBlas::scal: allow alpha to be rank 0 view [\#3199](https://github.com/kokkos/kokkos-kernels/pull/3199)
 - BLAS ETI refactor to align the behavior of CudaSpace and CudaUVMSpace:
   - BLAS level 2,3: remove MEM_SPACE from ETI [\#3233](https://github.com/kokkos/kokkos-kernels/pull/3233)
