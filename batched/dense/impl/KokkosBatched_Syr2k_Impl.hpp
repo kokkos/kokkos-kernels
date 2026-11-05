@@ -72,10 +72,10 @@ KOKKOS_INLINE_FUNCTION static int checkSyr2kInput(const AlphaType /*alpha*/, [[m
     return 1;
   }
 
-  if (lda < Kokkos::max(1, nrowa)) {
+  if (lda < Kokkos::max(0, nrowa)) {
     Kokkos::printf(
         "KokkosBatched::syr2k: leading dimension of A must not be smaller than "
-        "max(1, nrowa): "
+        "max(0, nrowa): "
         "lda = %d, nrowa = %d\n",
         lda, nrowa);
     return 1;

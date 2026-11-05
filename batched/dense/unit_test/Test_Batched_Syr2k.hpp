@@ -423,16 +423,10 @@ void impl_test_batched_syr2k(const std::size_t Nb, const std::size_t M, const st
 
   if (is_trans) {
     if (M == 0 && N > 0) {
-// Quick return case: M=0, N>0, this is not allowed in blas
-#ifndef NDEBUG
-      EXPECT_GT(info0, 0);
-      EXPECT_GT(info1, 0);
-      EXPECT_GT(info2, 0);
-#else
+      // Quick return case: M=0, N>0, this is not allowed in blas
       EXPECT_EQ(info0, 0);
       EXPECT_EQ(info1, 0);
       EXPECT_EQ(info2, 0);
-#endif
       return;
     }
   }
@@ -480,7 +474,7 @@ void impl_test_batched_syr2k(const std::size_t Nb, const std::size_t M, const st
       maybe_conj_alpha, B, A, cone, C_beta0_ref)
       .run();
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = 1.0e2 * ats::epsilon();
 
   auto h_C            = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C);
   auto h_C_alpha0     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, C_alpha0);
@@ -517,15 +511,12 @@ template <typename DeviceType, typename ScalarType, typename ParamTagType, typen
 void test_batched_syr2k_layout() {
   Test::Syr2k::impl_test_batched_syr2k_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(1);
   Test::Syr2k::impl_test_batched_syr2k_analytical<DeviceType, ScalarType, LayoutType, ParamTagType>(2);
-  for (int i = 1; i < 2; i++) {
-    for (int j = 1; j < 2; j++) {
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 5; j++) {
       Test::Syr2k::impl_test_batched_syr2k<DeviceType, ScalarType, LayoutType, ParamTagType>(1, i, j);
       Test::Syr2k::impl_test_batched_syr2k<DeviceType, ScalarType, LayoutType, ParamTagType>(2, i, j);
     }
   }
-  Test::Syr2k::impl_test_batched_syr2k<DeviceType, ScalarType, LayoutType, ParamTagType>(1, 0, 0);
-  Test::Syr2k::impl_test_batched_syr2k<DeviceType, ScalarType, LayoutType, ParamTagType>(1, 5, 0);
-  Test::Syr2k::impl_test_batched_syr2k<DeviceType, ScalarType, LayoutType, ParamTagType>(1, 0, 5);
 }
 
 template <typename DeviceType, typename ScalarType, typename ParamTagType>

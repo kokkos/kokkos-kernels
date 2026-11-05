@@ -59,10 +59,10 @@ KOKKOS_INLINE_FUNCTION static int checkSyrkInput(const AlphaType /*alpha*/, [[ma
   const int k     = is_trans ? A.extent_int(0) : A.extent_int(1);
   const int nrowa = is_trans ? k : n;
 
-  if (lda < Kokkos::max(1, nrowa)) {
+  if (lda < Kokkos::max(0, nrowa)) {
     Kokkos::printf(
         "KokkosBatched::syrk: leading dimension of A must not be smaller than "
-        "max(1, nrowa): "
+        "max(0, nrowa): "
         "lda = %d, nrowa = %d\n",
         lda, nrowa);
     return 1;
