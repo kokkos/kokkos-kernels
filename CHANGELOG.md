@@ -56,6 +56,7 @@
 
 #### TPL support
 
+- BLAS - Iamax: enabling 64 bit code path in cuBLAS [\#3383](https://github.com/kokkos/kokkos-kernels/pull/3383)
 - Adjustments to allow KokkosKernels_ENABLE_TPL_MKL to compile on Aurora [\#3253](https://github.com/kokkos/kokkos-kernels/pull/3253)
 - Make all TPL specializations partial [\#3247](https://github.com/kokkos/kokkos-kernels/pull/3247)
 - Add oneMKL SYCL TPL binding for KokkosBlas::gemm [\#3212](https://github.com/kokkos/kokkos-kernels/pull/3212)
