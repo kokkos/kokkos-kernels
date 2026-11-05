@@ -30,9 +30,10 @@
 - Reduce layout combinations instantiated for GEMM [\#3245](https://github.com/kokkos/kokkos-kernels/pull/3245)
 - Use Kokkos to assign scalars in KokkosBlas3_gemm_dotbased_impl.hpp [\#3218](https://github.com/kokkos/kokkos-kernels/pull/3218)
 - KokkosBlas::scal: allow alpha to be rank 0 view [\#3199](https://github.com/kokkos/kokkos-kernels/pull/3199)
-- BLAS level 2,3: remove MEM_SPACE from ETI [\#3233](https://github.com/kokkos/kokkos-kernels/pull/3233)
-- BLAS level 1: refactor to not ETI on MemSpace [\#3183](https://github.com/kokkos/kokkos-kernels/pull/3183)
-- BLAS ETI/TPL refactor: core changes [\#3171](https://github.com/kokkos/kokkos-kernels/pull/3171)
+- BLAS ETI refactor to align the behavior of CudaSpace and CudaUVMSpace:
+  - BLAS level 2,3: remove MEM_SPACE from ETI [\#3233](https://github.com/kokkos/kokkos-kernels/pull/3233)
+  - BLAS level 1: refactor to not ETI on MemSpace [\#3183](https://github.com/kokkos/kokkos-kernels/pull/3183)
+  - BLAS ETI/TPL refactor: core changes [\#3171](https://github.com/kokkos/kokkos-kernels/pull/3171)
 
 #### Batched
 
