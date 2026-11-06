@@ -311,7 +311,6 @@ template <typename DeviceType, typename ScalarType, typename LayoutType, typenam
 void impl_test_batched_symm(const std::size_t Nb, const std::size_t M, const std::size_t N) {
   using ats        = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType   = typename ats::mag_type;
-  using View2DType = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using ArgSide    = typename ParamTagType::side;
   using ArgUplo    = typename ParamTagType::uplo;
@@ -342,8 +341,7 @@ void impl_test_batched_symm(const std::size_t Nb, const std::size_t M, const std
   dense_to_symmetric<ArgUplo, Trans>(A0, A);
   Kokkos::deep_copy(C_ref, C);
 
-  const RealType alpha = 1.5, beta = 1.2, zero = KokkosKernels::ArithTraits<RealType>::zero(),
-                 one = KokkosKernels::ArithTraits<RealType>::one();
+  const RealType alpha = 1.5, beta = 1.2;
   auto info0 = Functor_BatchedSymm<DeviceType, ScalarType, View3DType, View3DType, View3DType, ParamTagType>(alpha, A,
                                                                                                              B, beta, C)
                    .run();
