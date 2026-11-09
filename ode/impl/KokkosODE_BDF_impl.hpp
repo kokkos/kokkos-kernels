@@ -296,8 +296,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
       Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + ode.neqs));  // Jacobian matrix
   offset += ode.neqs;
   const int tmp_cols = KokkosODE::Impl::newton_tmp_num_cols<typename mat_type::non_const_value_type>(ode.neqs);
-  auto tmp_gesv      = Kokkos::subview(temp, Kokkos::ALL(),
-                                       Kokkos::pair<int, int>(offset, offset + tmp_cols));  // Buffer space for gesv calculation
+  auto tmp_gesv      = Kokkos::subview(
+      temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + tmp_cols));  // Buffer space for gesv calculation
   offset += tmp_cols;
 
   auto coeffs = Kokkos::subview(temp2, Kokkos::ALL(), Kokkos::pair<int, int>(0, 6));

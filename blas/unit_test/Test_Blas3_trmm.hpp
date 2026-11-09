@@ -218,7 +218,7 @@ int test_trmm(char side, char uplo, char trans, char diag, ScalarA alpha) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, trmm_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_half");
-  using half_t                = Kokkos::Experimental::half_t;
+  using half_t               = Kokkos::Experimental::half_t;
   std::vector<half_t> alphas = {half_t(1.0), half_t(4.5)};
   for (half_t alpha : alphas) {
     for (char side : {'L', 'R'}) {

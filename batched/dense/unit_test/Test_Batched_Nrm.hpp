@@ -181,7 +181,7 @@ void impl_test_batched_nrm_overflow(const std::size_t Nb) {
   auto h_norm_ref = Kokkos::create_mirror_view(norm_ref);
 
   constexpr bool is_complex = KokkosKernels::ArithTraits<ScalarType>::is_complex;
-  const RealType large_val  = TestUtils::is_half_v<RealType> ? RealType(1e4)
+  const RealType large_val  = TestUtils::is_half_v<RealType>    ? RealType(1e4)
                               : std::is_same_v<RealType, float> ? RealType(1e20)
                                                                 : RealType(1e200);
 
