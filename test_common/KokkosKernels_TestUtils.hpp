@@ -338,37 +338,6 @@ struct SharedParamTag {
   using batchLayout = BL;
 };
 
-/// \brief value_type_name returns a string with the value type name
-template <typename T>
-std::string value_type_name() {
-  return "::UnknownValueType";
-}
-
-template <>
-std::string value_type_name<float>() {
-  return "::Float";
-}
-
-template <>
-std::string value_type_name<double>() {
-  return "::Double";
-}
-
-template <>
-std::string value_type_name<int>() {
-  return "::Int";
-}
-
-template <>
-std::string value_type_name<Kokkos::complex<float>>() {
-  return "::ComplexFloat";
-}
-
-template <>
-std::string value_type_name<Kokkos::complex<double>>() {
-  return "::ComplexDouble";
-}
-
 /// /brief Coo matrix class for testing purposes.
 /// \tparam ScalarType
 /// \tparam LayoutType

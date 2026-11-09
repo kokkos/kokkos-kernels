@@ -35,7 +35,7 @@ struct Functor_BatchedRotmg {
   inline void run() {
     using value_type = typename DXViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::Rotmg");
-    const std::string name_value_type = TestUtils::value_type_name<value_type>();
+    const std::string name_value_type = KokkosKernels::ArithTraits<value_type>::name();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space> policy(0, m_d1.extent(0));
