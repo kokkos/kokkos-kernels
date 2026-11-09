@@ -68,6 +68,8 @@ Example
 
 .. literalinclude:: ../../../../example/docs/blas/KokkosBlas1_docs_update.cpp
   :language: c++
+  :linenos:
+  :lines: 4-
 
 output:
 

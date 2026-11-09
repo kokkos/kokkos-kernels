@@ -22,9 +22,6 @@ namespace KokkosBlas {
 template <class execution_space, class XVector>
   requires Kokkos::is_execution_space_v<execution_space>
 typename XVector::non_const_value_type sum(const execution_space& space, const XVector& x) {
-  static_assert(Kokkos::is_execution_space_v<execution_space>,
-                "KokkosBlas::sum: execution_space must be a valid Kokkos "
-                "execution space");
   static_assert(Kokkos::is_view<XVector>::value, "KokkosBlas::sum: XVector must be a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
                 "KokkosBlas::sum: XVector must be accessible from execution_space.");
@@ -72,7 +69,7 @@ typename XVector::non_const_value_type sum(const XVector& x) {
 /// This function is non-blocking and thread-safe.
 ///
 /// \tparam execution_space a Kokkos execution space where the kernel will run.
-/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam RMV 0-D or 1-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
@@ -81,7 +78,6 @@ typename XVector::non_const_value_type sum(const XVector& x) {
 /// \param R [out] Output View (rank 0 or 1) containing the results.
 /// \param X [in] Input View (rank 1 or 2).
 template <class execution_space, class RV, class XMV>
-  requires Kokkos::is_view_v<RV>
 void sum(const execution_space& space, const RV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::sum: execution_space must be a valid Kokkos "

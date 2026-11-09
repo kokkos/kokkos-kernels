@@ -64,6 +64,8 @@ Example
 
 .. literalinclude:: ../../../../example/docs/blas/KokkosBlas1_docs_mult.cpp
   :language: c++
+  :linenos:
+  :lines: 4-
 
 output:
 

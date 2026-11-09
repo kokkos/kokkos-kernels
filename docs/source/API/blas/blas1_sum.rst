@@ -52,7 +52,7 @@ Type Requirements
 
   - ``Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible``
 
-- `RV` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1
+- `RV` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 0 or 1, that satisfies
 
   - ``!std::is_const_v<typename RV::value_type>``
   - ``RV::rank == XMV::rank - 1``
@@ -62,6 +62,8 @@ Example
 
 .. literalinclude:: ../../../../example/docs/blas/KokkosBlas1_docs_sum.cpp
   :language: c++
+  :linenos:
+  :lines: 4-
 
 output:
 

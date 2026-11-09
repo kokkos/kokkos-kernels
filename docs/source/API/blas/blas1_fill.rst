@@ -35,13 +35,14 @@ Type Requirements
 - `XMV` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ that satisfies
 
   - ``Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible``
-  - ``XMV::rank == RMV::rank``
 
 Example
 =======
 
 .. literalinclude:: ../../../../example/docs/blas/KokkosBlas1_docs_fill.cpp
   :language: c++
+  :linenos:
+  :lines: 4-
 
 output:
 
