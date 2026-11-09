@@ -218,43 +218,19 @@ int test_trmm(char side, char uplo, char trans, char diag, ScalarA alpha) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trmm_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_half");
-  Kokkos::Experimental::half_t alpha = 1.0;
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLNN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLNU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLTN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLTU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUNN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUNU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUTN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUTU", alpha);
-
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLNN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLNU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLTN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLTU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUNN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUNU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUTN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUTU", alpha);
-
-  alpha = 4.5;
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLNN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLNU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLTN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LLTU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUNN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUNU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUTN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("LUTU", alpha);
-
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLNN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLNU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLTN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RLTU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUNN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUNU", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUTN", alpha);
-  test_trmm<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("RUTU", alpha);
+  using half_t                = Kokkos::Experimental::half_t;
+  std::vector<half_t> alphas = {half_t(1.0), half_t(4.5)};
+  for (half_t alpha : alphas) {
+    for (char side : {'L', 'R'}) {
+      for (char uplo : {'L', 'U'}) {
+        for (char trans : {'N', 'T'}) {
+          for (char diag : {'N', 'U'}) {
+            test_trmm<half_t, half_t, TestDevice>(side, uplo, trans, diag, alpha);
+          }
+        }
+      }
+    }
+  }
   Kokkos::Profiling::popRegion();
 }
 #endif

@@ -502,7 +502,7 @@ void test_BDF_SparseLinearSystem() {
 
   // Adaptive time step BDFSolve
   {
-    mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
+    mat_type temp("buffer1", mySys.neqs, 23 + mySys.neqs + KokkosODE::Impl::newton_tmp_num_cols<scalar_type>(mySys.neqs)), temp2("buffer2", 6, 7);
 
     Kokkos::deep_copy(y0, 1.0);
     Kokkos::deep_copy(y_new, 0.0);
@@ -722,7 +722,7 @@ void test_adaptive_BDF() {
 
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
-  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
+  mat_type temp("buffer1", mySys.neqs, 23 + mySys.neqs + KokkosODE::Impl::newton_tmp_num_cols<scalar_type>(mySys.neqs)), temp2("buffer2", 6, 7);
 
   // Initial condition
   Kokkos::deep_copy(y0, 0.5);
@@ -798,7 +798,7 @@ void test_adaptive_BDF_v2() {
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   Kokkos::deep_copy(y0, 0.5);
 
-  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
+  mat_type temp("buffer1", mySys.neqs, 23 + mySys.neqs + KokkosODE::Impl::newton_tmp_num_cols<scalar_type>(mySys.neqs)), temp2("buffer2", 6, 7);
 
   {
     scalar_type dt = KAT::zero();
@@ -832,7 +832,7 @@ void test_BDF_adaptive_stiff() {
   y0_h(2)   = KAT::zero();
   Kokkos::deep_copy(y0, y0_h);
 
-  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
+  mat_type temp("buffer1", mySys.neqs, 23 + mySys.neqs + KokkosODE::Impl::newton_tmp_num_cols<scalar_type>(mySys.neqs)), temp2("buffer2", 6, 7);
 
   Kokkos::RangePolicy<execution_space> policy(0, 1);
   BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt, (t_end - t_start) / 10, y0, y_new, temp, temp2);

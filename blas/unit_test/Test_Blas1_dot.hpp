@@ -21,25 +21,29 @@ void impl_test_dot(int N) {
 
   {
     ScalarA randStart, randEnd;
-    double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    double randMag = std::is_same<ScalarB, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(b.d_view, rand_pool, randStart, randEnd);
   }
 
   Kokkos::deep_copy(a.h_base, a.d_base);
   Kokkos::deep_copy(b.h_base, b.d_base);
 
-  ScalarA expected_result = 0;
-  for (int i = 0; i < N; i++) expected_result += ats::conj(a.h_view(i)) * b.h_view(i);
+  // KokkosBlas::dot accumulates in a possibly higher precision type (e.g. float for half_t),
+  // so compute the reference the same way and only round to ScalarA at the end.
+  using accum_t         = typename KokkosKernels::Details::DotAccumulatingScalar<ScalarA>::type;
+  accum_t expected_accum = KokkosKernels::ArithTraits<accum_t>::zero();
+  for (int i = 0; i < N; i++)
+    expected_accum += KokkosKernels::Details::CastPossiblyComplex<accum_t, ScalarA>::cast(ats::conj(a.h_view(i))) *
+                      KokkosKernels::Details::CastPossiblyComplex<accum_t, ScalarB>::cast(b.h_view(i));
+  ScalarA expected_result = KokkosKernels::Details::CastPossiblyComplex<ScalarA, accum_t>::cast(expected_accum);
 
   ScalarA nonconst_nonconst_result = KokkosBlas::dot(a.d_view, b.d_view);
-  double eps                       = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
+  double eps                       = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 2e-3);
   EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result, eps * expected_result);
 
   ScalarA const_const_result = KokkosBlas::dot(a.d_view_const, b.d_view_const);
@@ -123,14 +127,13 @@ void impl_test_dot_mv(int N, int K) {
 
 template <class ScalarA, class ScalarB, class Device>
 int test_dot() {
-  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(0);
   Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(13);
-  Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(Nbig);
+  Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(1024);
   // Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(132231);
 #endif
 
@@ -140,7 +143,7 @@ int test_dot() {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(0);
   Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(13);
-  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(Nbig);
+  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(1024);
   // Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
@@ -149,13 +152,13 @@ int test_dot() {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(0);
   Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(13);
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(Nbig);
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(1024);
   // Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(132231);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ll, Device>(Nbig);
-  Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(Nbig);
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ll, Device>(1024);
+  Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(1024);
 #endif
 
   return 1;

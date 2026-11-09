@@ -21,6 +21,18 @@
 namespace KokkosODE {
 namespace Impl {
 
+// Number of columns required for NewtonSolve's tmp argument, which must have
+// extent (neqs, newton_tmp_num_cols<scalar_type>(neqs)). tmp is used either as
+// the workspace for SerialGesv (neqs x (neqs + 4) scalars) or to hold neqs int
+// pivots for SerialGetrf/SerialGetrs. The pivots are written contiguously
+// starting at an int-aligned address in tmp's first row (or tmp's entire span,
+// if contiguous). When scalar_type is smaller than int (e.g. half_t), the
+// first row must be widened so the pivots and alignment padding fit there.
+template <class scalar_type>
+KOKKOS_INLINE_FUNCTION constexpr int newton_tmp_num_cols(int neqs) {
+  return sizeof(scalar_type) < sizeof(int) ? 2 * (neqs + 5) : neqs + 4;
+}
+
 template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_type, class update_type,
           class scale_type>
 KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
@@ -73,24 +85,26 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // KokkosBatched::SerialGesv uses a greedy row-to-column assignment
     // that can fail spuriously on well-conditioned sparse systems
     // (e.g. chemistry Jacobians with one dense row), so it is only kept
-    // as a fallback for systems larger than the pivot buffer we can carve
-    // out of tmp.
+    // as a fallback for when tmp can't hold the pivots.
     int linSolverStat    = 0;
     using mat_value_type = typename mat_type::non_const_value_type;
-    // tmp is laid out as mat_value_type, which may be less aligned than
-    // int (e.g. half_t is 2-byte aligned). alignPtrTo<int> may need to
-    // skip up to (alignof(int) - alignof(mat_value_type)) bytes to find a
-    // valid int-aligned address inside tmp's buffer, so that padding must
-    // be included when checking whether tmp has enough room for the pivot
-    // array. Reinterpreting tmp.data() directly as int* (as used to be
-    // done here) is undefined behavior whenever alignof(mat_value_type) <
-    // alignof(int), and causes non-deterministic failures on CUDA.
+    // The pivots are stored in tmp, starting at the first int-aligned address
+    // (tmp may be less aligned than int, e.g. for half_t). They must fit in a
+    // contiguous run of tmp's memory starting at tmp.data(): either tmp's
+    // whole span, or its first row/column if only that dimension has stride 1.
     constexpr size_t piv_align_pad =
         (alignof(int) > alignof(mat_value_type)) ? (alignof(int) - alignof(mat_value_type)) : size_t(0);
-    if (sys.neqs * sizeof(int) + piv_align_pad <= tmp.size() * sizeof(mat_value_type)) {
-      int* piv_data = KokkosKernels::Impl::alignPtrTo<int>(tmp.data());
+    size_t tmp_contiguous_len = 0;
+    if (tmp.span_is_contiguous()) {
+      tmp_contiguous_len = tmp.span();
+    } else if (tmp.stride(1) == 1) {
+      tmp_contiguous_len = tmp.extent(1);
+    } else if (tmp.stride(0) == 1) {
+      tmp_contiguous_len = tmp.extent(0);
+    }
+    if (sys.neqs * sizeof(int) + piv_align_pad <= tmp_contiguous_len * sizeof(mat_value_type)) {
       Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::AnonymousSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> piv(
-          piv_data, sys.neqs);
+          KokkosKernels::Impl::alignPtrTo<int>(tmp.data()), sys.neqs);
       for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
       linSolverStat = KokkosBatched::SerialGetrf<KokkosBatched::Algo::Getrf::Unblocked>::invoke(J, piv);
       if (linSolverStat == 0) {
