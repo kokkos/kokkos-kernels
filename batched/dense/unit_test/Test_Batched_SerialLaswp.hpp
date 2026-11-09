@@ -88,8 +88,6 @@ struct Functor_BatchedSerialLaswp {
 /// \param N [in] Batch size of matrices
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgDirect>
 void impl_test_batched_laswp_analytical(const std::size_t N) {
-  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
-  using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
@@ -256,8 +254,6 @@ void impl_test_batched_laswp_analytical(const std::size_t N) {
   EXPECT_EQ(info1, 0);
   EXPECT_EQ(info2, 0);
 
-  RealType eps = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
-
   Kokkos::deep_copy(h_A0, A0);
   Kokkos::deep_copy(h_A1, A1);
   Kokkos::deep_copy(h_A2, A2);
@@ -271,15 +267,15 @@ void impl_test_batched_laswp_analytical(const std::size_t N) {
   // Check if A is permuted correctly and A_identity is restored
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t i = 0; i < 3; i++) {
-      EXPECT_NEAR_KK_REL(h_A0(ib, i), h_Ref0(ib, i), eps);
-      EXPECT_NEAR_KK_REL(h_A0_identity(ib, i), h_Ref0_identity(ib, i), eps);
+      EXPECT_EQ(h_A0(ib, i), h_Ref0(ib, i));
+      EXPECT_EQ(h_A0_identity(ib, i), h_Ref0_identity(ib, i));
       for (std::size_t j = 0; j < 2; j++) {
-        EXPECT_NEAR_KK_REL(h_A2(ib, i, j), h_Ref2(ib, i, j), eps);
-        EXPECT_NEAR_KK_REL(h_A2_identity(ib, i, j), h_Ref2_identity(ib, i, j), eps);
+        EXPECT_EQ(h_A2(ib, i, j), h_Ref2(ib, i, j));
+        EXPECT_EQ(h_A2_identity(ib, i, j), h_Ref2_identity(ib, i, j));
       }
       for (std::size_t j = 0; j < 3; j++) {
-        EXPECT_NEAR_KK_REL(h_A1(ib, i, j), h_Ref1(ib, i, j), eps);
-        EXPECT_NEAR_KK_REL(h_A1_identity(ib, i, j), h_Ref1_identity(ib, i, j), eps);
+        EXPECT_EQ(h_A1(ib, i, j), h_Ref1(ib, i, j));
+        EXPECT_EQ(h_A1_identity(ib, i, j), h_Ref1_identity(ib, i, j));
       }
     }
   }
@@ -299,15 +295,15 @@ void impl_test_batched_laswp_analytical(const std::size_t N) {
   Kokkos::deep_copy(h_A2_identity, A2_identity);
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t i = 0; i < 3; i++) {
-      EXPECT_NEAR_KK_REL(h_A0(ib, i), h_Ref0(ib, i), eps);
-      EXPECT_NEAR_KK_REL(h_A0_identity(ib, i), h_Ref0_identity(ib, i), eps);
+      EXPECT_EQ(h_A0(ib, i), h_Ref0(ib, i));
+      EXPECT_EQ(h_A0_identity(ib, i), h_Ref0_identity(ib, i));
       for (std::size_t j = 0; j < 2; j++) {
-        EXPECT_NEAR_KK_REL(h_A2(ib, i, j), h_Ref2(ib, i, j), eps);
-        EXPECT_NEAR_KK_REL(h_A2_identity(ib, i, j), h_Ref2_identity(ib, i, j), eps);
+        EXPECT_EQ(h_A2(ib, i, j), h_Ref2(ib, i, j));
+        EXPECT_EQ(h_A2_identity(ib, i, j), h_Ref2_identity(ib, i, j));
       }
       for (std::size_t j = 0; j < 3; j++) {
-        EXPECT_NEAR_KK_REL(h_A1(ib, i, j), h_Ref1(ib, i, j), eps);
-        EXPECT_NEAR_KK_REL(h_A1_identity(ib, i, j), h_Ref1_identity(ib, i, j), eps);
+        EXPECT_EQ(h_A1(ib, i, j), h_Ref1(ib, i, j));
+        EXPECT_EQ(h_A1_identity(ib, i, j), h_Ref1_identity(ib, i, j));
       }
     }
   }
@@ -320,8 +316,6 @@ void impl_test_batched_laswp_analytical(const std::size_t N) {
 /// \param BlkSize [in] Length of vector b
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgDirect>
 void impl_test_batched_laswp_vector(const std::size_t N, const std::size_t BlkSize) {
-  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
-  using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
   using PivView2DType     = Kokkos::View<int **, LayoutType, DeviceType>;
@@ -402,16 +396,14 @@ void impl_test_batched_laswp_vector(const std::size_t N, const std::size_t BlkSi
     }
   }
 
-  RealType eps = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
-
   auto h_b            = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b);
   auto h_b_identity   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_identity);
   auto h_Ref_identity = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Ref_identity);
   // Check b is permuted correctly and b_identity is restored
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t i = 0; i < BlkSize; i++) {
-      EXPECT_NEAR_KK_REL(h_b(ib, i), h_Ref(ib, i), eps);
-      EXPECT_NEAR_KK_REL(h_b_identity(ib, i), h_Ref_identity(ib, i), eps);
+      EXPECT_EQ(h_b(ib, i), h_Ref(ib, i));
+      EXPECT_EQ(h_b_identity(ib, i), h_Ref_identity(ib, i));
     }
   }
 
@@ -422,8 +414,8 @@ void impl_test_batched_laswp_vector(const std::size_t N, const std::size_t BlkSi
   Kokkos::deep_copy(h_b_identity, b_identity);
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t i = 0; i < BlkSize; i++) {
-      EXPECT_NEAR_KK_REL(h_b(ib, i), h_Ref(ib, i), eps);
-      EXPECT_NEAR_KK_REL(h_b_identity(ib, i), h_Ref_identity(ib, i), eps);
+      EXPECT_EQ(h_b(ib, i), h_Ref(ib, i));
+      EXPECT_EQ(h_b_identity(ib, i), h_Ref_identity(ib, i));
     }
   }
 }
@@ -435,8 +427,6 @@ void impl_test_batched_laswp_vector(const std::size_t N, const std::size_t BlkSi
 /// \param BlkSize [in] Row size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ArgDirect>
 void impl_test_batched_laswp_matrix(const std::size_t N, const std::size_t BlkSize) {
-  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
-  using RealType          = typename ats::mag_type;
   using View3DType        = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using StridedView3DType = Kokkos::View<ScalarType ***, Kokkos::LayoutStride, DeviceType>;
   using PivView2DType     = Kokkos::View<int **, LayoutType, DeviceType>;
@@ -531,8 +521,6 @@ void impl_test_batched_laswp_matrix(const std::size_t N, const std::size_t BlkSi
     }
   }
 
-  RealType eps = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
-
   auto h_A            = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
   auto h_A_identity   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_identity);
   auto h_Ref_identity = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Ref_identity);
@@ -540,8 +528,8 @@ void impl_test_batched_laswp_matrix(const std::size_t N, const std::size_t BlkSi
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t i = 0; i < BlkSize; i++) {
       for (std::size_t j = 0; j < M; j++) {
-        EXPECT_NEAR_KK_REL(h_A(ib, i, j), h_Ref(ib, i, j), eps);
-        EXPECT_NEAR_KK_REL(h_A_identity(ib, i, j), h_Ref_identity(ib, i, j), eps);
+        EXPECT_EQ(h_A(ib, i, j), h_Ref(ib, i, j));
+        EXPECT_EQ(h_A_identity(ib, i, j), h_Ref_identity(ib, i, j));
       }
     }
   }
@@ -554,8 +542,8 @@ void impl_test_batched_laswp_matrix(const std::size_t N, const std::size_t BlkSi
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t i = 0; i < BlkSize; i++) {
       for (std::size_t j = 0; j < M; j++) {
-        EXPECT_NEAR_KK_REL(h_A(ib, i, j), h_Ref(ib, i, j), eps);
-        EXPECT_NEAR_KK_REL(h_A_identity(ib, i, j), h_Ref_identity(ib, i, j), eps);
+        EXPECT_EQ(h_A(ib, i, j), h_Ref(ib, i, j));
+        EXPECT_EQ(h_A_identity(ib, i, j), h_Ref_identity(ib, i, j));
       }
     }
   }
