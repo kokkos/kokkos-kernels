@@ -262,7 +262,7 @@ TEST_F(TestCategory, team_abs_mv_int) { test_team_abs_mv<int, int, TestDevice>()
 #endif
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, team_abs_half) {
   test_team_abs<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
 }

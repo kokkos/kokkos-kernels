@@ -299,7 +299,8 @@ TEST_F(TestCategory, test_batched_team_vector_iamax_double) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 // Serial
 TEST_F(TestCategory, test_batched_serial_iamax_half) {
   test_batched_iamax<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Mode::Serial>();

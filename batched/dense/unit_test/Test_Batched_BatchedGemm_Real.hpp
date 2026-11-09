@@ -49,50 +49,49 @@ TEST_F(TestCategory, batched_scalar_batched_gemm_t_t_bhalf_bhalf_right) {
 }
 #endif  // KOKKOS_BHALF_T_IS_FLOAT
 
-// We do not ETI half-types. Only test this if ETI ONLY is off
-// and half_t is not an alias to float.
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 /********************* BatchLayout::Left *********************/
 TEST_F(TestCategory, batched_scalar_batched_gemm_nt_nt_half_half_left) {
   typedef TestUtils::SharedParamTag<Trans::NoTranspose, Trans::NoTranspose, BatchLayout::Left> param_tag_type;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type>();
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_batched_gemm_t_nt_half_half_left) {
   typedef TestUtils::SharedParamTag<Trans::Transpose, Trans::NoTranspose, BatchLayout::Left> param_tag_type;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type>();
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_batched_gemm_nt_t_half_half_left) {
   typedef TestUtils::SharedParamTag<Trans::NoTranspose, Trans::Transpose, BatchLayout::Left> param_tag_type;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type>();
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_batched_gemm_t_t_half_half_left) {
   typedef TestUtils::SharedParamTag<Trans::Transpose, Trans::Transpose, BatchLayout::Left> param_tag_type;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type>();
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type>();
 }
 /********************* BatchLayout::Right *********************/
 TEST_F(TestCategory, batched_scalar_batched_gemm_nt_nt_half_half_right) {
   typedef TestUtils::SharedParamTag<Trans::NoTranspose, Trans::NoTranspose, BatchLayout::Right> param_tag_type;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type>();
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_batched_gemm_t_nt_half_half_right) {
   typedef TestUtils::SharedParamTag<Trans::Transpose, Trans::NoTranspose, BatchLayout::Right> param_tag_type;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type>();
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_batched_gemm_nt_t_half_half_right) {
   typedef TestUtils::SharedParamTag<Trans::NoTranspose, Trans::Transpose, BatchLayout::Right> param_tag_type;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type>();
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_batched_gemm_t_t_half_half_right) {
   typedef TestUtils::SharedParamTag<Trans::Transpose, Trans::Transpose, BatchLayout::Right> param_tag_type;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type>();
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type>();
 }
 #endif  // KOKKOS_HALF_T_IS_FLOAT
 

@@ -146,7 +146,8 @@ TEST_F(TestCategory, batched_scalar_serial_axpy_nt_float_float) { test_batched_a
 TEST_F(TestCategory, batched_scalar_serial_axpy_nt_double_double) { test_batched_axpy<TestDevice, double, double>(); }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, batched_scalar_serial_axpy_nt_half_half) {
   test_batched_axpy<TestDevice, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t>();
 }

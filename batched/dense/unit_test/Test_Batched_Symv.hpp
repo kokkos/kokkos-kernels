@@ -180,8 +180,7 @@ void impl_test_batched_symv_analytical(const std::size_t Nb) {
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
-  RealType eps =
-      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e2 * ats::epsilon());
+  RealType eps = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e2 * ats::epsilon());
   Kokkos::deep_copy(h_y, y);
 
   // Check if y:= alpha*op( A )*x + beta*y
@@ -302,8 +301,7 @@ void impl_test_batched_symv(const std::size_t Nb, const std::size_t BlkSize) {
     }
   }
 
-  RealType eps =
-      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e2 * ats::epsilon());
+  RealType eps = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e2 * ats::epsilon());
 
   auto h_y        = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y);
   auto h_y_alpha0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y_alpha0);
@@ -476,7 +474,8 @@ TEST_F(TestCategory, test_batched_team_vector_symv_u_c_double) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, test_batched_serial_symv_l_t_half) {
   using param_tag_type =
       ::Test::Symv::ParamTag<KokkosBatched::Uplo::Lower, KokkosBatched::Trans::Transpose, KokkosBatched::Mode::Serial>;

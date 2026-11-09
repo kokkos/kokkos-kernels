@@ -157,8 +157,12 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::GerT
       // large enough to require 'relTol' to value 5.0e-3. The same
       // calculations show no discrepancies for calculations with double.
       // ****************************************************************
-       m_absTol(std::is_same<AuxType, float>::value ? 1.0e-6 : (std::is_same<AuxType, double>::value ? 1.0e-9 : (std::is_same<AuxType, Kokkos::Experimental::half_t>::value ? 5.0e-2 : 0))),
-      m_relTol(std::is_same<AuxType, float>::value ? 5.0e-3 : (std::is_same<AuxType, double>::value ? 1.0e-6 : (std::is_same<AuxType, Kokkos::Experimental::half_t>::value ? 0.3 : 0))),
+      m_absTol(std::is_same<AuxType, float>::value
+                   ? 1.0e-6
+                   : (std::is_same<AuxType, double>::value ? 1.0e-9 : (TestUtils::is_half_v<AuxType> ? 5.0e-2 : 0))),
+      m_relTol(std::is_same<AuxType, float>::value
+                   ? 5.0e-3
+                   : (std::is_same<AuxType, double>::value ? 1.0e-6 : (TestUtils::is_half_v<AuxType> ? 0.3 : 0))),
       m_M(-1),
       m_N(-1),
       m_useAnalyticalResults(false),
@@ -620,7 +624,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::comp
 
     for (int i(0); i < m_M; ++i) {
       for (int j(0); j < m_N; ++j) {
-         diff          = KAT_A::abs(h_expected(i, j).real() - h_vanilla(i, j).real());
+        diff          = KAT_A::abs(h_expected(i, j).real() - h_vanilla(i, j).real());
         errorHappened = false;
         if (h_expected(i, j).real() == 0.) {
           diffThreshold = KAT_A::abs(m_absTol);
@@ -637,11 +641,8 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::comp
           }
 
           diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j).real());
-          // For half_t, also consider absolute tolerance when expected value is small
-          if (std::is_same<AuxType, Kokkos::Experimental::half_t>::value) {
-            AuxType absThresh = KAT_A::abs(m_absTol);
-            if (absThresh > diffThreshold) diffThreshold = absThresh;
-          }
+          // half_t: also allow m_absTol for small expected values
+          if (TestUtils::is_half_v<AuxType> && diffThreshold < m_absTol) diffThreshold = m_absTol;
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRealRel++;
@@ -674,11 +675,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::comp
           }
 
           diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j).imag());
-          // For half_t, also consider absolute tolerance when expected value is small
-          if (std::is_same<AuxType, Kokkos::Experimental::half_t>::value) {
-            AuxType absThresh = KAT_A::abs(m_absTol);
-            if (absThresh > diffThreshold) diffThreshold = absThresh;
-          }
+          if (TestUtils::is_half_v<AuxType> && diffThreshold < m_absTol) diffThreshold = m_absTol;
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsImagRel++;
@@ -1075,11 +1072,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::comp
         }
 
         diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j));
-        // For half_t, also consider absolute tolerance when expected value is small
-        if (std::is_same<AuxType, Kokkos::Experimental::half_t>::value) {
-          AuxType absThresh = KAT_A::abs(m_absTol);
-          if (absThresh > diffThreshold) diffThreshold = absThresh;
-        }
+        if (TestUtils::is_half_v<AuxType> && diffThreshold < m_absTol) diffThreshold = m_absTol;
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRel++;
@@ -1359,10 +1352,11 @@ int test_ger(const std::string& /*caseName*/) {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, ger_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_half");
-  test_ger<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>("test case ger_half");
+  test_ger<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(
+      "test case ger_half");
   Kokkos::Profiling::popRegion();
 }
 #endif

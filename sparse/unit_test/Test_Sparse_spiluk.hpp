@@ -117,7 +117,7 @@ struct SpilukTest {
   using memory_space           = typename device::memory_space;
   using range_policy           = Kokkos::RangePolicy<execution_space>;
 
-  static constexpr double EPS = TestUtils::selectEpsilonForScalarType<scalar_t>(1e-7, 1e-4, 1.0);
+  static constexpr double EPS = std::is_same<mag_t, double>::value ? 1e-7 : 1e-4;
 
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, execution_space,
                                                                         memory_space, memory_space>;
@@ -212,9 +212,7 @@ struct SpilukTest {
     }
 
     if (fill_lev > 1) {
-      const double result_d = static_cast<double>(result);
-      const double tol      = TestUtils::selectEpsilonForScalarType<scalar_t>(1e-4, 1e-4, 0.001);
-      EXPECT_LT(result_d, tol);
+      EXPECT_LT(static_cast<double>(result), TestUtils::selectEpsilonForScalarType<scalar_t>(1e-4, 1e-4, 0.001));
     }
   }
 
@@ -259,6 +257,7 @@ struct SpilukTest {
     kh.destroy_spiluk_handle();
 
 #ifdef TEST_SPILUK_FULL_CHECKS
+    constexpr double VAL_EPS = TestUtils::selectEpsilonForScalarType<scalar_t>(EPS, EPS, 1.0);
     // If block_size is 1, results should exactly match unblocked results
     if (block_size == 1 && UseBlocks) {
       const auto [L_row_map_u, L_entries_u, L_values_u, U_row_map_u, U_entries_u, U_values_u] =
@@ -266,10 +265,10 @@ struct SpilukTest {
 
       EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_u, EPS);
       EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_u, EPS);
-      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_u, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_u, VAL_EPS);
       EXPECT_NEAR_KK_1DVIEW(U_row_map, U_row_map_u, EPS);
       EXPECT_NEAR_KK_1DVIEW(U_entries, U_entries_u, EPS);
-      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_u, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_u, VAL_EPS);
     }
 
     // Check that team size = 1 produces same result
@@ -279,10 +278,10 @@ struct SpilukTest {
 
       EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_ts1, EPS);
       EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_ts1, EPS);
-      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_ts1, VAL_EPS);
       EXPECT_NEAR_KK_1DVIEW(U_row_map, U_row_map_ts1, EPS);
       EXPECT_NEAR_KK_1DVIEW(U_entries, U_entries_ts1, EPS);
-      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_ts1, VAL_EPS);
     }
 #endif
 
@@ -717,7 +716,7 @@ struct SpilukTest {
           gmres(&kh, A, B, X);
 
           // Double check residuals at end of solve:
-          float_t nrmB = static_cast<float_t>(KokkosBlas::nrm2(B));
+          float_t nrmB = KokkosBlas::nrm2(B);
           KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
           KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
           float_t endRes = KokkosBlas::nrm2(B) / nrmB;
@@ -749,7 +748,7 @@ struct SpilukTest {
           gmres(&kh, A, B, X, &myPrec);
 
           // Double check residuals at end of solve:
-          float_t nrmB = static_cast<float_t>(KokkosBlas::nrm2(B));
+          float_t nrmB = KokkosBlas::nrm2(B);
           KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
           KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
           float_t endRes = KokkosBlas::nrm2(B) / nrmB;
@@ -780,7 +779,7 @@ void test_spiluk() {
   TestStruct::run_test_spiluk_blocks();
   TestStruct::run_test_spiluk_scale();
   TestStruct::run_test_spiluk_scale_blocks();
-  if constexpr (!std::is_same_v<scalar_t, Kokkos::Experimental::half_t>) {
+  if constexpr (!TestUtils::is_half_v<scalar_t>) {
     TestStruct::template run_test_spiluk_precond<false>();
     TestStruct::template run_test_spiluk_precond<true>();
   }

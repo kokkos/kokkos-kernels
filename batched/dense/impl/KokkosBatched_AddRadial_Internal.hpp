@@ -25,8 +25,7 @@ struct SerialAddRadialInternal {
     for (int i = 0; i < m; ++i) {
       // const auto a_real = RealPart(A[i*as]);
       const auto a_real = KokkosKernels::ArithTraits<ValueType>::real(A[i * as]);
-      A[i * as] += ValueType(minus_abs_tiny) * ValueType(static_cast<float>(a_real < 0));
-      A[i * as] += ValueType(abs_tiny) * ValueType(static_cast<float>(a_real >= 0));
+      A[i * as] += ValueType(a_real < 0 ? minus_abs_tiny : abs_tiny);
     }
 
     return 0;
@@ -46,8 +45,7 @@ struct TeamAddRadialInternal {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
       // const auto a_real = RealPart(A[i*as]);
       const auto a_real = KokkosKernels::ArithTraits<ValueType>::real(A[i * as]);
-      A[i * as] += ValueType(minus_abs_tiny) * ValueType(static_cast<float>(a_real < 0));
-      A[i * as] += ValueType(abs_tiny) * ValueType(static_cast<float>(a_real >= 0));
+      A[i * as] += ValueType(a_real < 0 ? minus_abs_tiny : abs_tiny);
     });
 
     return 0;

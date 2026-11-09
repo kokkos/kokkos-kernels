@@ -157,7 +157,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
     auto y_actual  = create_random_y_vector(output_mat_actual, x);
     auto y_ref     = create_random_y_vector(output_mat_reference, x);
     using mag_t    = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
-    auto spmv_eps  = TestUtils::selectEpsilonForScalarType<scalar_t>(1e-7, 3.7e-3, 0.1);
+    mag_t spmv_eps = TestUtils::selectEpsilonForScalarType<scalar_t>(1e-7, 3.7e-3, 0.1);
     bool spmv_same = KokkosKernels::Impl::kk_is_relatively_identical_view<decltype(y_actual), decltype(y_ref), mag_t,
                                                                           typename device::execution_space>(
         y_actual, y_ref, spmv_eps);

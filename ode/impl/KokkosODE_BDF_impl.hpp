@@ -300,10 +300,10 @@ template <class ode_type, class vec_type, class res_type, class mat_type, class 
   auto jac =
       Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + ode.neqs));  // Jacobian matrix
   offset += ode.neqs;
-  const int tmp_newton_cols = KokkosODE::Impl::newton_tmp_num_cols<typename mat_type::non_const_value_type>(ode.neqs);
-  auto tmp_newton           = Kokkos::subview(temp, Kokkos::ALL(),
-                                              Kokkos::pair<int, int>(offset, offset + tmp_newton_cols));  // Buffer space for Newton
-  offset += tmp_newton_cols;
+  const int tmp_cols = KokkosODE::Impl::newton_tmp_num_cols<typename mat_type::non_const_value_type>(ode.neqs);
+  auto tmp_gesv      = Kokkos::subview(temp, Kokkos::ALL(),
+                                       Kokkos::pair<int, int>(offset, offset + tmp_cols));  // Buffer space for gesv calculation
+  offset += tmp_cols;
 
   auto coeffs = Kokkos::subview(temp2, Kokkos::ALL(), Kokkos::pair<int, int>(0, 6));
   auto gamma  = Kokkos::subview(temp2, Kokkos::ALL(), 6);
@@ -378,7 +378,7 @@ template <class ode_type, class vec_type, class res_type, class mat_type, class 
     Kokkos::Experimental::local_deep_copy(update, 0);
     int newton_iterations;
     KokkosODE::Experimental::newton_solver_status newton_status =
-        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_newton, y_new, rhs, update, scale, newton_iterations);
+        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs, update, scale, newton_iterations);
 
     for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
       update(eqIdx) = y_new(eqIdx) - y_predict(eqIdx);

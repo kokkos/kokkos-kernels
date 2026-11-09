@@ -36,7 +36,7 @@ void impl_test_team_update(int N) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(randMag));
   Kokkos::fill_random(y.d_view, rand_pool, ScalarB(randMag));
   Kokkos::fill_random(z.d_view, rand_pool, ScalarC(randMag));
@@ -129,7 +129,7 @@ void impl_test_team_update_mv(int N, int K) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(randMag));
   Kokkos::fill_random(y.d_view, rand_pool, ScalarB(randMag));
   Kokkos::fill_random(z.d_view, rand_pool, ScalarC(randMag));
@@ -308,7 +308,7 @@ TEST_F(TestCategory, team_update_mv_int) { test_team_update_mv<int, int, int, Te
 #endif
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, team_update_half) {
   test_team_update<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t,
                    TestDevice>();

@@ -70,7 +70,8 @@ double getRandom<double>() {
   return -5 + (10.0 * rand()) / RAND_MAX;
 }
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 template <>
 Kokkos::Experimental::half_t getRandom<Kokkos::Experimental::half_t>() {
   return static_cast<Kokkos::Experimental::half_t>(-5 + (10.0 * rand()) / RAND_MAX);
@@ -389,7 +390,8 @@ TEST_F(TestCategory, common_device_bitonic) {
   testBitonicSort<TestDevice, int>(123);
   testBitonicSort<TestDevice, double>(60234);
   testBitonicSort<TestDevice, double>(53);
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
   testBitonicSort<TestDevice, Kokkos::Experimental::half_t>(60234);
   testBitonicSort<TestDevice, Kokkos::Experimental::half_t>(53);
 #endif

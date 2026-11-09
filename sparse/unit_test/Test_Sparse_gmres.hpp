@@ -33,7 +33,7 @@ struct TolMeta<float> {
   static constexpr float value = 1e-5;  // Lower tolerance for floats
 };
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 template <>
 struct TolMeta<Kokkos::Experimental::half_t> {
   static constexpr double value = 0.1;
@@ -186,13 +186,8 @@ struct GmresTest {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gmres() {
-  // Half precision is skipped: GMRES iteratively refines via Gram-Schmidt
-  // orthogonalization in scalar_t, which accumulates roundoff to NaN (the
-  // residual never reaches the requested tolerance). This mirrors the batched
-  // GMRES tests, which do not instantiate half_t for the same reason.
-  if constexpr (std::is_same_v<scalar_t, Kokkos::Experimental::half_t>) {
-    return;
-  }
+  // half_t: Gram-Schmidt roundoff -> NaN, GMRES does not converge.
+  if constexpr (TestUtils::is_half_v<scalar_t>) return;
   using TestStruct = Test::GmresTest<scalar_t, lno_t, size_type, device>;
   TestStruct::template run_test_gmres<false>();
   TestStruct::template run_test_gmres<true>();

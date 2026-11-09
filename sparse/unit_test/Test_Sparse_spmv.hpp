@@ -326,26 +326,19 @@ void check_spmv_mv_struct(const crsMat_t input_mat, const int stencil_type,
 }  // namespace Test
 
 template <typename scalar_t>
-scalar_t randomUpperBound(int mag) {
+scalar_t randomUpperBound(typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag) {
   return (scalar_t)mag;
 }
 
 template <>
-Kokkos::complex<double> randomUpperBound<Kokkos::complex<double>>(int mag) {
+Kokkos::complex<double> randomUpperBound<Kokkos::complex<double>>(double mag) {
   return Kokkos::complex<double>(mag, mag);
 }
 
 template <>
-Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(int mag) {
+Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(float mag) {
   return Kokkos::complex<float>(mag, mag);
 }
-
-#if defined(KOKKOSKERNELS_INST_HALF)
-template <>
-Kokkos::Experimental::half_t randomUpperBound<Kokkos::Experimental::half_t>(int mag) {
-  return Kokkos::Experimental::half_t(static_cast<float>(mag));
-}
-#endif
 
 template <typename scalar_t, typename lno_t, typename size_type, typename Device>
 void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance,
@@ -358,9 +351,9 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz, l
   using handle_t      = KokkosSparse::SPMVHandle<Device, crsMat_t, x_vector_type, y_vector_type>;
   using y_policy      = Kokkos::RangePolicy<typename y_vector_type::execution_space>;
 
-  const int max_x   = 1;
-  const int max_y   = 1;
-  const int max_val = 1;
+  const mag_t max_x   = static_cast<mag_t>(1);
+  const mag_t max_y   = static_cast<mag_t>(1);
+  const mag_t max_val = static_cast<mag_t>(1);
 
   lno_t numCols = numRows;
 
@@ -459,9 +452,9 @@ template <typename scalar_t, typename lno_t, typename size_type, typename layout
 void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool heavy, int numMV) {
   using mag_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
-  const int max_x   = 1;
-  const int max_y   = 1;
-  const int max_val = 1;
+  const mag_t max_x   = static_cast<mag_t>(1);
+  const mag_t max_y   = static_cast<mag_t>(1);
+  const mag_t max_val = static_cast<mag_t>(1);
 
   lno_t numCols = numRows;
 
@@ -543,9 +536,9 @@ void test_spmv_mv_heavy(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandw
   using mag_t     = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using handle_t  = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
 
-  const int max_x   = 10;
-  const int max_y   = 10;
-  const int max_val = 10;
+  const mag_t max_x   = static_cast<mag_t>(10);
+  const mag_t max_y   = static_cast<mag_t>(10);
+  const mag_t max_val = static_cast<mag_t>(10);
 
   crsMat_t input_mat =
       KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
@@ -611,9 +604,9 @@ void test_spmv_padded_sizealigned(lno_t numRows, lno_t numCols, size_type nnz, l
   using handle_t     = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
   using handle_r1_t  = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX_1D, ViewTypeY_1D>;
 
-  const int max_x   = 10;
-  const int max_y   = 10;
-  const int max_val = 10;
+  const mag_t max_x   = static_cast<mag_t>(10);
+  const mag_t max_y   = static_cast<mag_t>(10);
+  const mag_t max_val = static_cast<mag_t>(10);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -702,8 +695,8 @@ void test_spmv_struct_1D(lno_t nx, lno_t leftBC, lno_t rightBC) {
   using y_vector_type = scalar_view_t;
   using mag_t         = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
-  const int max_x     = 1;
-  const int max_y     = 1;
+  const mag_t max_x   = static_cast<mag_t>(1);
+  const mag_t max_y   = static_cast<mag_t>(1);
   const mag_t max_val = static_cast<mag_t>(2);
 
   Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", 1);
@@ -1074,8 +1067,8 @@ void test_spmv_all_interfaces_light() {
   multivector_t x_mv("x_mv", n, 3);
   vector_t x("x", n);
   // Randomize x (it won't be modified after that)
-  Kokkos::fill_random(x_mv, rand_pool, randomUpperBound<scalar_t>(static_cast<int>(maxVal)));
-  Kokkos::fill_random(x, rand_pool, randomUpperBound<scalar_t>(static_cast<int>(maxVal)));
+  Kokkos::fill_random(x_mv, rand_pool, randomUpperBound<scalar_t>(maxVal));
+  Kokkos::fill_random(x, rand_pool, randomUpperBound<scalar_t>(maxVal));
   multivector_t y_mv("y_mv", m, 3);
   vector_t y("y", m);
   // Compute the correct y = Ax once

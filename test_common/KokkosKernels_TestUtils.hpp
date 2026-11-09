@@ -299,22 +299,19 @@ class epsilon {
 
 using KokkosKernels::Impl::getRandomBounds;
 
-/// Helper to select the appropriate tolerance/epsilon value for the given scalar type.
-/// Avoids verbose "std::is_same_v<...> ? val1 : val2" chains in tests.
+// True only if T is half_t and half_t is a distinct type (not an alias for float)
+template <typename T>
+constexpr bool is_half_v = !KOKKOS_HALF_T_IS_FLOAT && std::is_same_v<T, Kokkos::Experimental::half_t>;
+
+// Tolerance for scalar_t based on its magnitude type (double, float or half_t)
 template <typename scalar_t>
 constexpr double selectEpsilonForScalarType(double eps_double, double eps_float, double eps_half) {
-  using KAT   = KokkosKernels::ArithTraits<scalar_t>;
-  using mag_t = typename KAT::mag_type;
-  // Check float/double before half_t. Kokkos::Experimental::half_t is an alias
-  // for float when native half precision is unavailable (KOKKOS_HALF_T_IS_FLOAT),
-  // so matching half_t first would make a float scalar select eps_half.
+  using mag_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   if constexpr (std::is_same_v<mag_t, float>) {
     return eps_float;
-  } else if constexpr (std::is_same_v<mag_t, Kokkos::Experimental::half_t>) {
+  } else if constexpr (is_half_v<mag_t>) {
     return eps_half;
   } else {
-    // Either mag_t is double, or some other type not explicitly handled here.
-    // In the latter case conservatively return the strictest tolerance (eps_double).
     return eps_double;
   }
 }
@@ -328,17 +325,17 @@ vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
   if constexpr (vec_t::rank == 2) {
     for (size_t j = 0; j < h_x.extent(1); ++j) {
       for (size_t i = 0; i < h_x.extent(0); ++i) {
-        scalar_t r = static_cast<scalar_t>(static_cast<double>(rand()) / static_cast<double>(RAND_MAX / max_value));
+        scalar_t r       = static_cast<scalar_t>(rand() / (RAND_MAX / max_value));
         h_x.access(i, j) = r;
       }
     }
   } else if constexpr (vec_t::rank == 1) {
     for (size_t i = 0; i < h_x.extent(0); ++i) {
-      scalar_t r    = static_cast<scalar_t>(static_cast<double>(rand()) / static_cast<double>(RAND_MAX / max_value));
+      scalar_t r    = static_cast<scalar_t>(rand() / (RAND_MAX / max_value));
       h_x.access(i) = r;
     }
   } else if constexpr (vec_t::rank == 0) {
-    scalar_t r = static_cast<scalar_t>(static_cast<double>(rand()) / static_cast<double>(RAND_MAX / max_value));
+    scalar_t r = static_cast<scalar_t>(rand() / (RAND_MAX / max_value));
     h_x()      = r;
   }
   Kokkos::deep_copy(kok_x, h_x);

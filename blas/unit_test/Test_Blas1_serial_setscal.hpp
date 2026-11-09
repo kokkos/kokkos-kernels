@@ -175,7 +175,7 @@ TEST_F(TestCategory, blas_scalar_serial_scale_dcomplex_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, blas_scalar_serial_set_half_half) {
   test_blas_matutil<TestDevice, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, ::Test::BlasSet>();
 }

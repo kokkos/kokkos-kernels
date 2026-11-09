@@ -179,8 +179,7 @@ void impl_test_batched_rot_analytical(const std::size_t Nb) {
         .run();
   }
 
-  RealType eps =
-      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   Kokkos::deep_copy(h_x, x);
   Kokkos::deep_copy(h_y, y);
 
@@ -298,10 +297,9 @@ void impl_test_batched_rot(const std::size_t Nb, const std::size_t N) {
     }
   }
 
-  RealType eps =
-      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
-  auto h_x = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x);
-  auto h_y = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y);
+  RealType eps = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  auto h_x     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, x);
+  auto h_y     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y);
 
   // Check if x := c*x + s*y and y := c*y - op(s)*x
   for (std::size_t ib = 0; ib < Nb; ib++) {
@@ -407,7 +405,8 @@ TEST_F(TestCategory, test_batched_teamvector_rot_c_double) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 // Serial
 TEST_F(TestCategory, test_batched_serial_rot_i_half) {
   test_batched_rot<TestDevice, Kokkos::Experimental::half_t, false, KokkosBatched::Mode::Serial>();
