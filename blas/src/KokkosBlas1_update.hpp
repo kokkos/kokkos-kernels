@@ -37,13 +37,13 @@ void update(const execution_space& space, const typename XMV::non_const_value_ty
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::update: execution_space must be a valid Kokkos "
                 "execution space.");
-  static_assert(Kokkos::is_view<XMV>::value,
+  static_assert(Kokkos::is_view_v<XMV>,
                 "KokkosBlas::update: "
                 "X is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<YMV>::value,
+  static_assert(Kokkos::is_view_v<YMV>,
                 "KokkosBlas::update: "
                 "Y is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<ZMV>::value,
+  static_assert(Kokkos::is_view_v<ZMV>,
                 "KokkosBlas::update: "
                 "Z is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
@@ -52,7 +52,7 @@ void update(const execution_space& space, const typename XMV::non_const_value_ty
                 "KokkosBlas::update: YMV must be accessible from execution_space.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename ZMV::memory_space>::accessible,
                 "KokkosBlas::update: ZMV must be accessible from execution_space.");
-  static_assert(std::is_same<typename ZMV::value_type, typename ZMV::non_const_value_type>::value,
+  static_assert(!std::is_const_v<typename ZMV::value_type>,
                 "KokkosBlas::update: Z is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
