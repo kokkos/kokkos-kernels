@@ -13,7 +13,6 @@ Defined in header: :code:`KokkosBlas1_sum.hpp`
   typename XVector::non_const_value_type sum(const XVector& x);
 
   template <class execution_space, class RV, class XMV>
-  requires Kokkos::is_view_v<RV>
   void sum(const execution_space& space, const RV& R, const XMV& X);
 
   template <class RV, class XMV>
