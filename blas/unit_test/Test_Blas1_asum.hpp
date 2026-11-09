@@ -18,7 +18,7 @@ void impl_test_asum(int N) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
   TestUtils::getRandomBounds(randMag, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
@@ -47,7 +47,7 @@ void impl_test_asum(int N) {
 
 template <class ScalarA, class Device>
 int test_asum() {
-  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
+  const int Nbig = TestUtils::is_half_v<ScalarA> ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
@@ -78,7 +78,7 @@ int test_asum() {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, asum_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::asum_half");
   test_asum<Kokkos::Experimental::half_t, TestDevice>();

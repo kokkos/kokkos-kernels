@@ -33,9 +33,8 @@ void impl_test_dot(int N) {
   Kokkos::deep_copy(a.h_base, a.d_base);
   Kokkos::deep_copy(b.h_base, b.d_base);
 
-  // KokkosBlas::dot accumulates in a possibly higher precision type (e.g. float for half_t),
-  // so compute the reference the same way and only round to ScalarA at the end.
-  using accum_t         = typename KokkosKernels::Details::DotAccumulatingScalar<ScalarA>::type;
+  // half_t: dot accumulates in float, so do the same here
+  using accum_t          = std::conditional_t<TestUtils::is_half_v<ScalarA>, float, ScalarA>;
   accum_t expected_accum = KokkosKernels::ArithTraits<accum_t>::zero();
   for (int i = 0; i < N; i++)
     expected_accum += KokkosKernels::Details::CastPossiblyComplex<accum_t, ScalarA>::cast(ats::conj(a.h_view(i))) *
@@ -69,13 +68,13 @@ void impl_test_dot_mv(int N, int K) {
 
   {
     ScalarA randStart, randEnd;
-    double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+    double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
     TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    double randMag = std::is_same<ScalarB, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+    double randMag = TestUtils::is_half_v<ScalarB> ? 1.0 : 10.0;
     TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(b.d_view, rand_pool, randStart, randEnd);
   }
@@ -166,7 +165,7 @@ int test_dot() {
 
 template <class ScalarA, class ScalarB, class Device>
 int test_dot_mv() {
-  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
+  const int Nbig = TestUtils::is_half_v<ScalarA> ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
@@ -210,7 +209,7 @@ int test_dot_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, dot_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::dot_half");
   test_dot<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();

@@ -235,8 +235,7 @@ void impl_test_batched_ger_analytical(const std::size_t Nb) {
   EXPECT_EQ(info1, 0);
   EXPECT_EQ(info2, 0);
 
-  RealType eps =
-      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   Kokkos::deep_copy(h_A2, A2);
   auto h_A0   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A0);
   auto h_A1   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A1);
@@ -351,8 +350,7 @@ void impl_test_batched_ger(const std::size_t N, const std::size_t BlkSize) {
     }
   }
 
-  RealType eps =
-      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
 
   auto h_A    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
   auto h_A0   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A0);
@@ -425,7 +423,8 @@ TEST_F(TestCategory, test_batched_ger_c_double) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, test_batched_ger_t_half) {
   using param_tag_type = ::Test::Ger::ParamTag<Trans::Transpose>;
   test_batched_ger<TestDevice, Kokkos::Experimental::half_t, param_tag_type>();

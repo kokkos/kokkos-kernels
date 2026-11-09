@@ -395,7 +395,7 @@ void test_gemm_mixed_scalars() {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, gemm_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_half");
   test_gemm_enabled_layouts<Kokkos::Experimental::half_t>();

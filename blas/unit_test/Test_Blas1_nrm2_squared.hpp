@@ -89,7 +89,7 @@ void impl_test_nrm2_squared_mv(int N, int K) {
 
 template <class ScalarA, class Device>
 int test_nrm2_squared() {
-  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
+  const int Nbig = TestUtils::is_half_v<ScalarA> ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
@@ -121,7 +121,7 @@ int test_nrm2_squared() {
 
 template <class ScalarA, class Device>
 int test_nrm2_squared_mv() {
-  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
+  const int Nbig = TestUtils::is_half_v<ScalarA> ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
@@ -155,7 +155,7 @@ int test_nrm2_squared_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, nrm2_squared_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_half");
   test_nrm2_squared<Kokkos::Experimental::half_t, TestDevice>();

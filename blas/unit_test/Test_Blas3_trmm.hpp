@@ -90,7 +90,7 @@ void impl_test_trmm(char side, char uplo, char trans, char diag, int M, int N, S
   using mag_type        = typename APT::mag_type;
 
   double machine_eps = static_cast<double>(APT::epsilon());
-  const mag_type eps = 1.0e8 * machine_eps;  //~1e-13 for double
+  const mag_type eps = TestUtils::is_half_v<mag_type> ? 64.0 : 1.0e8 * machine_eps;  //~1e-13 for double
   bool A_l           = (side == 'L') || (side == 'l');
   int K              = A_l ? M : N;
   ViewTypeA A("A", K, K);
@@ -215,7 +215,7 @@ int test_trmm(char side, char uplo, char trans, char diag, ScalarA alpha) {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, trmm_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_half");
   using half_t                = Kokkos::Experimental::half_t;

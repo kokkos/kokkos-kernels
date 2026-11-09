@@ -21,13 +21,8 @@
 namespace KokkosODE {
 namespace Impl {
 
-// Number of columns required for NewtonSolve's tmp argument, which must have
-// extent (neqs, newton_tmp_num_cols<scalar_type>(neqs)). tmp is used either as
-// the workspace for SerialGesv (neqs x (neqs + 4) scalars) or to hold neqs int
-// pivots for SerialGetrf/SerialGetrs. The pivots are written contiguously
-// starting at an int-aligned address in tmp's first row (or tmp's entire span,
-// if contiguous). When scalar_type is smaller than int (e.g. half_t), the
-// first row must be widened so the pivots and alignment padding fit there.
+// Columns needed in NewtonSolve's tmp: Gesv workspace (neqs + 4), or neqs int
+// pivots (plus alignment) in the first row, which is wider for sub-int scalars.
 template <class scalar_type>
 KOKKOS_INLINE_FUNCTION constexpr int newton_tmp_num_cols(int neqs) {
   return sizeof(scalar_type) < sizeof(int) ? 2 * (neqs + 5) : neqs + 4;
@@ -41,23 +36,20 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
   using value_type           = typename ini_vec_type::non_const_value_type;
 
-  // Use double for scalar convergence checks (norm, rate, tol).
-  // When value_type is half_t, half_t-precision norms and rates are
-  // unreliable: the rate can round to exactly 1.0, triggering false
-  // divergence.  Computing norms in double makes the rate computation
-  // accurate while the vectors themselves remain in the original type.
-  using norm_type    = double;
-  using value_traits = KokkosKernels::ArithTraits<value_type>;
-  // Use the scalar type's epsilon for the divergence tolerance so that
-  // half_t retains a lenient tol (matching pre-double-norm behavior),
-  // while float/double keep their stricter, precision-appropriate tol.
-  const norm_type tol = Kokkos::max(10 * static_cast<norm_type>(value_traits::eps()) / params.rel_tol,
-                                    Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
+  // Define the type returned by nrm2 to store
+  // the norm of the residual (at least float: half_t rates are too imprecise).
+  using mag_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename ini_vec_type::non_const_value_type>::mag_type;
+  using norm_type = std::conditional_t<(sizeof(mag_type) < sizeof(float)), float, mag_type>;
   sys.residual(y0, rhs);
   const norm_type norm0 = static_cast<norm_type>(KokkosBlas::serial_nrm2(rhs));
   norm_type norm        = KokkosKernels::ArithTraits<norm_type>::zero();
   norm_type norm_old    = KokkosKernels::ArithTraits<norm_type>::zero();
   norm_type rate        = KokkosKernels::ArithTraits<norm_type>::zero();
+
+  const norm_type tol =
+      Kokkos::max(10 * static_cast<norm_type>(KokkosKernels::ArithTraits<value_type>::eps()) / params.rel_tol,
+                  Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
 
   // LBV - 07/24/2023: for now assume that we take
   // a full Newton step. Eventually this value can
@@ -88,10 +80,7 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // as a fallback for when tmp can't hold the pivots.
     int linSolverStat    = 0;
     using mat_value_type = typename mat_type::non_const_value_type;
-    // The pivots are stored in tmp, starting at the first int-aligned address
-    // (tmp may be less aligned than int, e.g. for half_t). They must fit in a
-    // contiguous run of tmp's memory starting at tmp.data(): either tmp's
-    // whole span, or its first row/column if only that dimension has stride 1.
+    // Pivots go in tmp's leading contiguous run, int-aligned.
     constexpr size_t piv_align_pad =
         (alignof(int) > alignof(mat_value_type)) ? (alignof(int) - alignof(mat_value_type)) : size_t(0);
     size_t tmp_contiguous_len = 0;
@@ -125,10 +114,9 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
 
     // Compute the rms norm of the scaled update and check for divergence
     // before applying the update to y0
-    norm_type norm_new = 0;
+    norm_type norm_new = KokkosKernels::ArithTraits<norm_type>::zero();
     for (int idx = 0; idx < sys.neqs; ++idx) {
-      double ui = static_cast<double>(update(idx));
-      double si = static_cast<double>(scale(idx));
+      const norm_type ui = static_cast<norm_type>(update(idx)), si = static_cast<norm_type>(scale(idx));
       norm_new += (ui * ui) / (si * si);
     }
     norm_new = Kokkos::sqrt(norm_new / sys.neqs);

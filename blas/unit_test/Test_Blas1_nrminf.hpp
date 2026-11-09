@@ -145,7 +145,7 @@ int test_nrminf_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, nrminf_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrminf_half");
   test_nrminf<Kokkos::Experimental::half_t, TestDevice>();
@@ -166,7 +166,7 @@ TEST_F(TestCategory, nrminf_float) {
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrminf_mv_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrminf_mv_float");
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrminf_mvfloat");
   test_nrminf_mv<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }

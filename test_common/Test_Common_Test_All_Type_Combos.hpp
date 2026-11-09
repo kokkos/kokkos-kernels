@@ -13,12 +13,7 @@
 #error Test_Common_Test_All_Type_Combos.hpp requires KOKKOSKERNELS_EXECUTE_TEST to be set
 #endif
 
-#if defined(KOKKOSKERNELS_INST_HALF)
-#ifndef KOKKOSKERNELS_KOKKOS_HALF_TYPEDEF
-#define KOKKOSKERNELS_KOKKOS_HALF_TYPEDEF
-typedef Kokkos::Experimental::half_t kokkos_half;
-#endif
-#endif
+using kokkos_half = Kokkos::Experimental::half_t;
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
@@ -33,7 +28,7 @@ KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, int, TestDevice)
 KOKKOSKERNELS_EXECUTE_TEST(float, int, size_t, TestDevice)
 KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, size_t, TestDevice)
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if !KOKKOS_HALF_T_IS_FLOAT
 KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int, int, TestDevice)
 KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int64_t, int, TestDevice)
 KOKKOSKERNELS_EXECUTE_TEST(kokkos_half, int, size_t, TestDevice)

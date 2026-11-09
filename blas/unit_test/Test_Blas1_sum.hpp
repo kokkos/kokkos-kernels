@@ -16,7 +16,7 @@ void impl_test_sum(int N) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
   TestUtils::getRandomBounds(randMag, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
@@ -43,7 +43,7 @@ void impl_test_sum_mv(int N, int K) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
   TestUtils::getRandomBounds(randMag, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
@@ -79,7 +79,7 @@ void impl_test_sum_mv(int N, int K) {
 
 template <class ScalarA, class Device>
 int test_sum() {
-  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
+  const int Nbig = TestUtils::is_half_v<ScalarA> ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
@@ -111,7 +111,7 @@ int test_sum() {
 
 template <class ScalarA, class Device>
 int test_sum_mv() {
-  const int Nbig = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
+  const int Nbig = TestUtils::is_half_v<ScalarA> ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
@@ -145,7 +145,7 @@ int test_sum_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, sum_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_half");
   test_sum<Kokkos::Experimental::half_t, TestDevice>();

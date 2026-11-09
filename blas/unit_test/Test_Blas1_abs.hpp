@@ -182,7 +182,7 @@ int test_abs_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, abs_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::abs_half");
   test_abs<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();

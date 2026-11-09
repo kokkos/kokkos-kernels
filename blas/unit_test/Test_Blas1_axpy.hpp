@@ -189,7 +189,7 @@ int test_axpy_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, axpy_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpy_half");
   test_axpy<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();

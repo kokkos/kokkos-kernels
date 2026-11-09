@@ -180,6 +180,7 @@ void test_newton_status() {
   const double rel_tol = TestUtils::selectEpsilonForScalarType<scalar_type>(10e-8, 10e-5, 10e-3);
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
   Kokkos::View<newton_solver_status*, Device> status("newton solver status", 1);
+  auto status_h = Kokkos::create_mirror_view(status);
 
   // Create the non-linear system and initialize data
   QuadraticEquation<Device, scalar_type> my_system{};
@@ -191,9 +192,8 @@ void test_newton_status() {
   newton_solver_status newton_status[3] = {newton_solver_status::NLS_SUCCESS, newton_solver_status::NLS_DIVERGENCE,
                                            newton_solver_status::LIN_SOLVE_FAIL};
   vec_type x("solution vector", 1), rhs("right hand side vector", 1);
-  auto x_h      = Kokkos::create_mirror_view(x);
-  auto r_h      = Kokkos::create_mirror_view(rhs);
-  auto status_h = Kokkos::create_mirror_view(status);
+  auto x_h = Kokkos::create_mirror_view(x);
+  auto r_h = Kokkos::create_mirror_view(rhs);
 
   vec_type update("update", 1);
   mat_type J("jacobian", 1, 1), tmp("temp mem", 1, 5);
@@ -466,9 +466,10 @@ template <class Device, class scalar_type>
 void test_newton_on_device() {
   using execution_space      = typename Device::execution_space;
   using vec_type             = Kokkos::View<scalar_type*, Device>;
-  // LayoutRight so that each system's block of rows (in J and tmp) is
-  // contiguous in memory, as required by Newton::Solve for tmp.
-  using mat_type             = Kokkos::View<scalar_type**, Kokkos::LayoutRight, Device>;
+  // half_t: LayoutRight so each row of tmp can hold the int pivots
+  using mat_type = std::conditional_t<TestUtils::is_half_v<scalar_type>,
+                                      Kokkos::View<scalar_type**, Kokkos::LayoutRight, Device>,
+                                      Kokkos::View<scalar_type**, Device>>;
   using newton_params        = KokkosODE::Experimental::Newton_params;
   using system_type          = CircleHyperbolaIntersection<Device, scalar_type>;
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
@@ -701,24 +702,19 @@ void test_newton_iteration_count() {
 TEST_F(TestCategory, Newton_status_float) { ::Test::test_newton_status<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_status_double) { ::Test::test_newton_status<TestDevice, double>(); }
 
-#if defined(KOKKOSKERNELS_INST_HALF)
-TEST_F(TestCategory, Newton_status_half) {
-  // Skipped: Newton solver convergence checks don't work reliably with half_t
-  // as norm_type (affects tol computation, pow, rate-based checks)
-}
-#endif
-
 TEST_F(TestCategory, Newton_simple_float) { ::Test::test_simple_problems<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_simple_double) { ::Test::test_simple_problems<TestDevice, double>(); }
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, Newton_simple_half) { ::Test::test_simple_problems<TestDevice, Kokkos::Experimental::half_t>(); }
 #endif
 
 TEST_F(TestCategory, Newton_system_float) { ::Test::test_simple_systems<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_system_double) { ::Test::test_simple_systems<TestDevice, double>(); }
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, Newton_system_half) { ::Test::test_simple_systems<TestDevice, Kokkos::Experimental::half_t>(); }
 #endif
 
@@ -732,7 +728,8 @@ TEST_F(TestCategory, Newton_lin_solve_fail_keeps_iterate_double) {
 TEST_F(TestCategory, Newton_parallel_float) { ::Test::test_newton_on_device<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_parallel_double) { ::Test::test_newton_on_device<TestDevice, double>(); }
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, Newton_parallel_half) {
   ::Test::test_newton_on_device<TestDevice, Kokkos::Experimental::half_t>();
 }
@@ -741,17 +738,11 @@ TEST_F(TestCategory, Newton_parallel_half) {
 TEST_F(TestCategory, Newton_norm_accumulation_float) { ::Test::test_newton_norm_accumulation<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_norm_accumulation_double) { ::Test::test_newton_norm_accumulation<TestDevice, double>(); }
 
-#if defined(KOKKOSKERNELS_INST_HALF)
-TEST_F(TestCategory, Newton_norm_accumulation_half) {
-  // Skipped: Newton solver convergence checks don't work reliably with half_t
-  // as norm_type (affects sqrt, pow, rate-based checks)
-}
-#endif
-
 TEST_F(TestCategory, Newton_iteration_count_float) { ::Test::test_newton_iteration_count<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_iteration_count_double) { ::Test::test_newton_iteration_count<TestDevice, double>(); }
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, Newton_iteration_count_half) {
   ::Test::test_newton_iteration_count<TestDevice, Kokkos::Experimental::half_t>();
 }

@@ -39,7 +39,7 @@ struct TolMeta<float> {
   static constexpr float value = 1e-5;  // Lower tolerance for floats
 };
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 template <>
 struct TolMeta<Kokkos::Experimental::half_t> {
   static constexpr double value = 0.1;
@@ -299,13 +299,8 @@ void run_test_par_ilut_reuse_numeric_pattern() {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_par_ilut_precond() {
-  // Half precision is skipped: this test drives GMRES, whose iterative
-  // refinement / Gram-Schmidt orthogonalization in scalar_t accumulates
-  // roundoff to NaN (see Test_Sparse_gmres.hpp). This mirrors the batched
-  // GMRES tests, which do not instantiate half_t for the same reason.
-  if constexpr (std::is_same_v<scalar_t, Kokkos::Experimental::half_t>) {
-    return;
-  }
+  // half_t: Gram-Schmidt roundoff -> NaN, GMRES does not converge.
+  if constexpr (TestUtils::is_half_v<scalar_t>) return;
   // Test using par_ilut as a preconditioner
   // Does (LU)^inv Ax = (LU)^inv b converge faster than solving Ax=b?
   using exe_space      = typename device::execution_space;

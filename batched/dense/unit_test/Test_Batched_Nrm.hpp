@@ -132,8 +132,7 @@ void impl_test_batched_nrm_analytical(const std::size_t Nb) {
   info = Functor_BatchedNrm<DeviceType, StridedView2DType, NormViewType, ArgNorm, ArgMode>(x_s, norm_s).run();
   EXPECT_EQ(info, 0);
 
-  RealType eps =
-      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps  = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   auto h_norm   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm);
   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
@@ -182,9 +181,9 @@ void impl_test_batched_nrm_overflow(const std::size_t Nb) {
   auto h_norm_ref = Kokkos::create_mirror_view(norm_ref);
 
   constexpr bool is_complex = KokkosKernels::ArithTraits<ScalarType>::is_complex;
-  const RealType large_val  = std::is_same_v<RealType, Kokkos::Experimental::half_t> ? RealType(1e4)
-                              : std::is_same_v<RealType, float>                      ? RealType(1e20)
-                                                                                     : RealType(1e200);
+  const RealType large_val  = TestUtils::is_half_v<RealType> ? RealType(1e4)
+                              : std::is_same_v<RealType, float> ? RealType(1e20)
+                                                                : RealType(1e200);
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
     if constexpr (is_complex) {
@@ -217,8 +216,7 @@ void impl_test_batched_nrm_overflow(const std::size_t Nb) {
   info = Functor_BatchedNrm<DeviceType, StridedView2DType, NormViewType, ArgNorm, ArgMode>(x_s, norm_s).run();
   EXPECT_EQ(info, 0);
 
-  RealType eps =
-      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps  = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   auto h_norm   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm);
   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
@@ -314,8 +312,7 @@ void impl_test_batched_nrm(const std::size_t Nb, const std::size_t N) {
     h_norm_ref(ib) = norm_tmp;
   }
 
-  RealType eps =
-      std::is_same_v<ScalarType, Kokkos::Experimental::half_t> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
+  RealType eps  = TestUtils::is_half_v<ScalarType> ? RealType(0.1) : RealType(1.0e1 * ats::epsilon());
   auto h_norm   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm);
   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
@@ -491,7 +488,8 @@ TEST_F(TestCategory, test_batched_teamvector_nrm_genuinelinf_double) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 // Serial
 TEST_F(TestCategory, test_batched_serial_nrm_l1_half) {
   test_batched_nrm<TestDevice, Kokkos::Experimental::half_t, KokkosBatched::Norm::L1, KokkosBatched::Mode::Serial>();

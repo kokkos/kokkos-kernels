@@ -39,7 +39,8 @@ TEST_F(TestCategory, batched_scalar_team_gemm_t_t_bhalf_bhalf) {
 }
 #endif  // KOKKOS_BHALF_T_IS_FLOAT
 
-#if defined(KOKKOSKERNELS_INST_HALF)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, batched_scalar_team_gemm_nt_nt_half_half) {
   using param_tag_type = ::Test::TeamGemm::ParamTag<KokkosBatched::Mode::Team, KokkosBatched::Trans::NoTranspose,
                                                     KokkosBatched::Trans::NoTranspose>;
@@ -76,7 +77,7 @@ TEST_F(TestCategory, batched_scalar_team_gemm_t_t_half_half) {
   test_batched_teamgemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type,
                         Algo::Gemm::Unblocked>();
 }
-#endif  // KOKKOSKERNELS_INST_HALF
+#endif  // KOKKOS_HALF_T_IS_FLOAT
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, batched_scalar_team_gemm_nt_nt_float_float) {

@@ -246,7 +246,7 @@ int test_iamax_mv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, iamax_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_half");
   test_iamax<Kokkos::Experimental::half_t, TestDevice>();

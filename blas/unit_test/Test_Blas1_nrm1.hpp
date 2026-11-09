@@ -19,7 +19,7 @@ void impl_test_nrm1(int N) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
   TestUtils::getRandomBounds(randMag, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
@@ -56,7 +56,7 @@ void impl_test_nrm1_mv(int N, int K) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  double randMag = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 1.0 : 10.0;
+  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
   TestUtils::getRandomBounds(randMag, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
@@ -86,15 +86,14 @@ void impl_test_nrm1_mv(int N, int K) {
 
 template <class ScalarA, class Device>
 int test_nrm1() {
-  const int Nbig  = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
-  const int Nhuge = 132231;
+  const int Nbig = TestUtils::is_half_v<ScalarA> ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_nrm1<view_type_a_ll, Device>(0);
   Test::impl_test_nrm1<view_type_a_ll, Device>(13);
   Test::impl_test_nrm1<view_type_a_ll, Device>(Nbig);
-  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value) Test::impl_test_nrm1<view_type_a_ll, Device>(Nhuge);
+  if (!TestUtils::is_half_v<ScalarA>) Test::impl_test_nrm1<view_type_a_ll, Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
@@ -103,7 +102,7 @@ int test_nrm1() {
   Test::impl_test_nrm1<view_type_a_lr, Device>(0);
   Test::impl_test_nrm1<view_type_a_lr, Device>(13);
   Test::impl_test_nrm1<view_type_a_lr, Device>(Nbig);
-  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value) Test::impl_test_nrm1<view_type_a_lr, Device>(Nhuge);
+  if (!TestUtils::is_half_v<ScalarA>) Test::impl_test_nrm1<view_type_a_lr, Device>(132231);
 #endif
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -111,7 +110,7 @@ int test_nrm1() {
   Test::impl_test_nrm1<view_type_a_ls, Device>(0);
   Test::impl_test_nrm1<view_type_a_ls, Device>(13);
   Test::impl_test_nrm1<view_type_a_ls, Device>(Nbig);
-  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value) Test::impl_test_nrm1<view_type_a_ls, Device>(Nhuge);
+  if (!TestUtils::is_half_v<ScalarA>) Test::impl_test_nrm1<view_type_a_ls, Device>(132231);
 #endif
 
   return 1;
@@ -119,8 +118,7 @@ int test_nrm1() {
 
 template <class ScalarA, class Device>
 int test_nrm1_mv() {
-  const int Nbig  = std::is_same<ScalarA, Kokkos::Experimental::half_t>::value ? 128 : 1024;
-  const int Nhuge = 132231;
+  const int Nbig = TestUtils::is_half_v<ScalarA> ? 128 : 1024;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
@@ -128,8 +126,7 @@ int test_nrm1_mv() {
   Test::impl_test_nrm1_mv<view_type_a_ll, Device>(13, 5);
   Test::impl_test_nrm1_mv<view_type_a_ll, Device>(Nbig, 5);
   Test::impl_test_nrm1_mv<view_type_a_ll, Device>(789, 1);
-  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value)
-    Test::impl_test_nrm1_mv<view_type_a_ll, Device>(Nhuge, 5);
+  if (!TestUtils::is_half_v<ScalarA>) Test::impl_test_nrm1_mv<view_type_a_ll, Device>(132231, 5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
@@ -139,8 +136,7 @@ int test_nrm1_mv() {
   Test::impl_test_nrm1_mv<view_type_a_lr, Device>(13, 5);
   Test::impl_test_nrm1_mv<view_type_a_lr, Device>(Nbig, 5);
   Test::impl_test_nrm1_mv<view_type_a_lr, Device>(789, 1);
-  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value)
-    Test::impl_test_nrm1_mv<view_type_a_lr, Device>(Nhuge, 5);
+  if (!TestUtils::is_half_v<ScalarA>) Test::impl_test_nrm1_mv<view_type_a_lr, Device>(132231, 5);
 #endif
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -149,15 +145,14 @@ int test_nrm1_mv() {
   Test::impl_test_nrm1_mv<view_type_a_ls, Device>(13, 5);
   Test::impl_test_nrm1_mv<view_type_a_ls, Device>(Nbig, 5);
   Test::impl_test_nrm1_mv<view_type_a_ls, Device>(789, 1);
-  if (!std::is_same<ScalarA, Kokkos::Experimental::half_t>::value)
-    Test::impl_test_nrm1_mv<view_type_a_ls, Device>(Nhuge, 5);
+  if (!TestUtils::is_half_v<ScalarA>) Test::impl_test_nrm1_mv<view_type_a_ls, Device>(132231, 5);
 #endif
 
   return 1;
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, nrm1_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm1_half");
   test_nrm1<Kokkos::Experimental::half_t, TestDevice>();

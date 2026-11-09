@@ -171,7 +171,7 @@ void impl_test_trsm(char side, char uplo, char trans, char diag, int M, int N, t
   Kokkos::deep_copy(h_B, B);
 
   // Checking vs ref on CPU, this eps is about 10^-6
-  const mag_type eps = 1.0e8 * machine_eps;
+  const mag_type eps = TestUtils::is_half_v<mag_type> ? 1.0 : 1.0e8 * machine_eps;
   bool test_flag     = true;
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < N; j++) {
@@ -215,7 +215,7 @@ int test_trsm(char side, char uplo, char trans, char diag, ScalarA alpha) {
 }
 
 #if defined(KOKKOSKERNELS_INST_HALF) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, trsm_half) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_half");
   using half_t                = Kokkos::Experimental::half_t;

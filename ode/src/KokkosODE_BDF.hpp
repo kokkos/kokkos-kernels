@@ -71,8 +71,6 @@ template <BDF_type T>
 struct BDF {
   using table_type = typename BDF_coeff_helper<T>::table_type;
 
-  /// \param temp [in]: temporary storage passed to the Newton solver as tmp,
-  /// see KokkosODE::Experimental::Newton for its required extent.
   template <class ode_type, class vec_type, class mv_type, class mat_type, class scalar_type>
   KOKKOS_FUNCTION static void Solve(const ode_type& ode, const scalar_type t_start, const scalar_type t_end,
                                     const int num_steps, const vec_type& y0, const vec_type& y, const vec_type& rhs,
@@ -143,11 +141,8 @@ struct BDF {
 /// at the end of the integration
 /// \param y_new [out]: vector of solution at t_end
 /// \param temp [in]: vectors for temporary storage, extent
-/// (neqs, 23 + neqs + KokkosODE::Impl::newton_tmp_num_cols<scalar_type>(neqs)),
-/// i.e. (neqs, 23 + 2 * neqs + 4) when the scalar type is at least as large
-/// as int, or (neqs, 23 + neqs + 2 * (neqs + 5)) for smaller scalar types such
-/// as half_t. Each row of temp, or temp as a whole, must be contiguous in memory.
-/// \param temp2 [in]: vectors for temporary storage, extent (6, 7)
+/// (neqs, 23 + neqs + KokkosODE::Impl::newton_tmp_num_cols<scalar_type>(neqs))
+/// \param temp2 [in]: vectors for temporary storage
 template <class ode_type, class mat_type, class vec_type, class scalar_type>
 KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, const scalar_type t_end,
                               const scalar_type initial_step, scalar_type max_step, const vec_type& y0,

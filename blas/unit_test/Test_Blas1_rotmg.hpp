@@ -16,8 +16,6 @@ void test_rotmg_impl(View0& d1, View0& d2, View0& x1, View0& y1, PView& param, R
   const scalar_type tol =
 #if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
       100 * eps;  // Guessing MKL implements sin/cos differently so need larger tol
-#elif defined(KOKKOSKERNELS_INST_HALF)
-      1.0;
 #else
       10 * eps;
 #endif
@@ -203,7 +201,7 @@ void set_rotmg_input_ref_vals(const int test_case, View0& d1, View0& d2, View0& 
 
 template <class Scalar, class Device>
 int test_rotmg() {
-  if constexpr (std::is_same_v<Scalar, Kokkos::Experimental::half_t>) return 0;
+  if constexpr (TestUtils::is_half_v<Scalar>) return 0;
   Kokkos::View<Scalar, Device> d1("d1"), d2("d2"), x1("x1"), y1("y1");
   Kokkos::View<Scalar[5], Device> param("param");
   Kokkos::View<Scalar[9], Kokkos::DefaultHostExecutionSpace> ref_vals("reference values");
