@@ -7,7 +7,11 @@ int main(void) {
   {
     Kokkos::View<double*> x("x", 5);
     auto h_x = Kokkos::create_mirror_view(x);
-    h_x(0) = 0.0; h_x(1) = -1.0; h_x(2) = -2.0; h_x(3) = 3.0; h_x(4) = -4.0;
+    h_x(0)   = 0.0;
+    h_x(1)   = -1.0;
+    h_x(2)   = -2.0;
+    h_x(3)   = 3.0;
+    h_x(4)   = -4.0;
     Kokkos::deep_copy(x, h_x);
 
     std::cout << "orignal values:\n"
@@ -17,8 +21,7 @@ int main(void) {
     auto res = KokkosBlas::sum(x);
 
     std::cout << "result:\n"
-              << "   " << res
-              << std::endl;
+              << "   " << res << std::endl;
   }
   Kokkos::finalize();
 }

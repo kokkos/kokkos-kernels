@@ -81,15 +81,13 @@ typename XVector::non_const_value_type sum(const XVector& x) {
 /// \param R [out] Output View (rank 0 or 1) containing the results.
 /// \param X [in] Input View (rank 1 or 2).
 template <class execution_space, class RV, class XMV>
-requires Kokkos::is_view_v<RV>
+  requires Kokkos::is_view_v<RV>
 void sum(const execution_space& space, const RV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::sum: execution_space must be a valid Kokkos "
                 "execution space.");
-  static_assert(Kokkos::is_view_v<RV>,
-                "KokkosBlas::sum: R is not a Kokkos::View.");
-  static_assert(Kokkos::is_view_v<XMV>,
-                "KokkosBlas::sum: X is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<RV>, "KokkosBlas::sum: R is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<XMV>, "KokkosBlas::sum: X is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
                 "KokkosBlas::sum: XMV must be accessible from execution_space.");
   static_assert(!std::is_const_v<typename RV::value_type>,
@@ -145,7 +143,7 @@ void sum(const execution_space& space, const RV& R, const XMV& X) {
 /// \param R [out] Output View (rank 0 or 1) containing the results.
 /// \param X [in] Input View (rank 1 or 2).
 template <class RV, class XMV>
-requires Kokkos::is_view_v<RV>
+  requires Kokkos::is_view_v<RV>
 void sum(const RV& R, const XMV& X) {
   sum(typename XMV::execution_space{}, R, X);
 }
