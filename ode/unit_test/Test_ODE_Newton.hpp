@@ -464,12 +464,12 @@ void test_newton_lin_solve_fail_keeps_iterate() {
 
 template <class Device, class scalar_type>
 void test_newton_on_device() {
-  using execution_space      = typename Device::execution_space;
-  using vec_type             = Kokkos::View<scalar_type*, Device>;
+  using execution_space = typename Device::execution_space;
+  using vec_type        = Kokkos::View<scalar_type*, Device>;
   // half_t: LayoutRight so each row of tmp can hold the int pivots
-  using mat_type = std::conditional_t<TestUtils::is_half_v<scalar_type>,
-                                      Kokkos::View<scalar_type**, Kokkos::LayoutRight, Device>,
-                                      Kokkos::View<scalar_type**, Device>>;
+  using mat_type =
+      std::conditional_t<TestUtils::is_half_v<scalar_type>, Kokkos::View<scalar_type**, Kokkos::LayoutRight, Device>,
+                         Kokkos::View<scalar_type**, Device>>;
   using newton_params        = KokkosODE::Experimental::Newton_params;
   using system_type          = CircleHyperbolaIntersection<Device, scalar_type>;
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
