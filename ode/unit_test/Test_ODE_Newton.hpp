@@ -336,7 +336,8 @@ struct CircleHyperbolaIntersection {
     f(1) = y(0) * y(1) - 1;
   }
 
-  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
+  template <class jac_type>
+  KOKKOS_FUNCTION void jacobian(const vec_type& y, const jac_type& jac) const {
     jac(0, 0) = 2 * y(0);
     jac(0, 1) = 2 * y(1);
     jac(1, 0) = y(1);
@@ -465,7 +466,9 @@ template <class Device, class scalar_type>
 void test_newton_on_device() {
   using execution_space      = typename Device::execution_space;
   using vec_type             = Kokkos::View<scalar_type*, Device>;
-  using mat_type             = Kokkos::View<scalar_type**, Device>;
+  // LayoutRight so that each system's block of rows (in J and tmp) is
+  // contiguous in memory, as required by Newton::Solve for tmp.
+  using mat_type             = Kokkos::View<scalar_type**, Kokkos::LayoutRight, Device>;
   using newton_params        = KokkosODE::Experimental::Newton_params;
   using system_type          = CircleHyperbolaIntersection<Device, scalar_type>;
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
@@ -485,7 +488,7 @@ void test_newton_on_device() {
   vec_type rhs("right hand side vector", mySys.neqs * num_systems);
   vec_type update("update", mySys.neqs * num_systems);
   mat_type J("jacobian", mySys.neqs * num_systems, mySys.neqs);
-  mat_type tmp("temp mem", mySys.neqs * num_systems, mySys.neqs + 4);
+  mat_type tmp("temp mem", mySys.neqs * num_systems, KokkosODE::Impl::newton_tmp_num_cols<scalar_type>(mySys.neqs));
 
   Kokkos::View<newton_solver_status*, execution_space> status("solver status", num_systems);
 
