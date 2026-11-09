@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-// We do not ETI half-types. Only test this if ETI ONLY is off
-// and bhalf_t is not an alias to float.
+// We do not ETI bhalf. Only test this if ETI ONLY is off and bhalf_t is not an alias to float.
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && \
     defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
 /********************* BatchLayout::Left *********************/
