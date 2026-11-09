@@ -6,6 +6,7 @@
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 #include <concepts>
+#include <type_traits>
 #include "KokkosBatched_Symm_Internal.hpp"
 
 namespace KokkosBatched {
@@ -17,7 +18,7 @@ KOKKOS_INLINE_FUNCTION static int checkSymmInput([[maybe_unused]] const AViewTyp
   static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::symm: AViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<BViewType>, "KokkosBatched::symm: BViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<CViewType>, "KokkosBatched::symm: CViewType is not a Kokkos::View.");
-  static_assert(std::same_as<typename CViewType::value_type, typename CViewType::non_const_value_type>,
+  static_assert(!std::is_const_v<typename CViewType::value_type>,
                 "KokkosBatched::symm: CViewType must have non-const value type.");
 
   static_assert(AViewType::rank == 2, "KokkosBatched::symm: AViewType must have rank 2.");
