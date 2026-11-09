@@ -66,7 +66,7 @@ struct Functor_BatchedSyr2k {
                               : std::same_as<ArgMode, KokkosBatched::Mode::Team>
                                   ? "KokkosBatched::Test::TeamSyr2k"
                                   : "KokkosBatched::Test::TeamVectorSyr2k";
-    const std::string name_value_type = TestUtils::value_type_name<value_type>();
+    const std::string name_value_type = KokkosKernels::ArithTraits<value_type>::name();
     std::string name                  = name_region + name_value_type;
     int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
@@ -109,7 +109,7 @@ struct Functor_BatchedGemm {
                               : std::same_as<ArgMode, KokkosBatched::Mode::Team>
                                   ? "KokkosBatched::Test::TeamSyr2k"
                                   : "KokkosBatched::Test::TeamVectorSyr2k";
-    const std::string name_value_type = TestUtils::value_type_name<value_type>();
+    const std::string name_value_type = KokkosKernels::ArithTraits<value_type>::name();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
 
