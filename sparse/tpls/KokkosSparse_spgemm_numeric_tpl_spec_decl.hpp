@@ -439,7 +439,148 @@ SPGEMM_NUMERIC_DECL_MKL_E(Kokkos::Serial)
 #ifdef KOKKOS_ENABLE_OPENMP
 SPGEMM_NUMERIC_DECL_MKL_E(Kokkos::OpenMP)
 #endif
-#endif
+
+#ifdef KOKKOS_ENABLE_SYCL
+// Numeric phase with oneMKL: computes the full product from scratch, since the
+// symbolic phase only computed the structure of C (A and B had no values).
+template <typename KernelHandle, typename ain_row_index_view_type, typename ain_nonzero_index_view_type,
+          typename ain_nonzero_value_view_type, typename bin_row_index_view_type, typename bin_nonzero_index_view_type,
+          typename bin_nonzero_value_view_type, typename cin_row_index_view_type, typename cin_nonzero_index_view_type,
+          typename cin_nonzero_value_view_type>
+void spgemm_numeric_onemkl(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
+                           typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,
+                           ain_row_index_view_type rowptrA, ain_nonzero_index_view_type colidxA,
+                           ain_nonzero_value_view_type valuesA, bin_row_index_view_type rowptrB,
+                           bin_nonzero_index_view_type colidxB, bin_nonzero_value_view_type valuesB,
+                           cin_row_index_view_type /* rowptrC */, cin_nonzero_index_view_type colidxC,
+                           cin_nonzero_value_view_type valuesC) {
+  using ExecSpace          = typename KernelHandle::HandleExecSpace;
+  using MemSpace           = typename KernelHandle::HandleTempMemorySpace;
+  using index_type         = typename KernelHandle::nnz_lno_t;
+  using size_type          = typename KernelHandle::size_type;
+  using scalar_type        = typename KernelHandle::nnz_scalar_t;
+  using onemkl_scalar_type = typename KokkosToOneMKLScalar<scalar_type>::type;
+  using matmat_request     = oneapi::mkl::sparse::matmat_request;
+  static_assert(std::is_same_v<index_type, size_type>, "oneMKL spgemm requires offsets and ordinals of the same type");
+
+  const size_type c_nnz = handle->get_c_nnz();
+  if (c_nnz == size_type(0)) {
+    handle->set_computed_entries();
+    handle->set_call_numeric();
+    return;
+  }
+  ExecSpace exec;
+  sycl::queue queue = exec.sycl_queue();
+  // An out-of-order queue does not guarantee that previously enqueued kernels
+  // producing the inputs have finished
+  if (!queue.is_in_order()) exec.fence();
+
+  OneMKLSpgemmData data(queue);
+  auto evA = onemkl_set_csr_data(queue, data.A, m, n, colidxA.extent(0), const_cast<size_type *>(rowptrA.data()),
+                                 const_cast<index_type *>(colidxA.data()),
+                                 reinterpret_cast<onemkl_scalar_type *>(const_cast<scalar_type *>(valuesA.data())));
+  auto evB = onemkl_set_csr_data(queue, data.B, n, k, colidxB.extent(0), const_cast<size_type *>(rowptrB.data()),
+                                 const_cast<index_type *>(colidxB.data()),
+                                 reinterpret_cast<onemkl_scalar_type *>(const_cast<scalar_type *>(valuesB.data())));
+  // oneMKL writes C's rowptrs during the product. Symbolic already computed
+  // them in the user's (const) rowptrC, so give oneMKL a scratch copy instead.
+  Kokkos::View<size_type *, MemSpace> rowptrC(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "oneMKL spgemm C rowptrs"), m + 1);
+  auto evC = onemkl_set_csr_data(queue, data.C, m, k, 0, rowptrC.data(), (index_type *)nullptr,
+                                 (onemkl_scalar_type *)nullptr);
+
+  // Host-accessible outputs of matmat: [work estimation buffer size, compute
+  // buffer size, nnz(C)]
+  Kokkos::View<std::int64_t[3], Kokkos::SYCLHostUSMSpace> sizes("oneMKL spgemm sizes");
+  using buffer_t = Kokkos::View<std::uint8_t *, MemSpace>;
+
+  data.matmat(matmat_request::get_work_estimation_buf_size, &sizes(0), nullptr, {evA, evB, evC}).wait();
+  buffer_t workBuffer(Kokkos::view_alloc(Kokkos::WithoutInitializing, "oneMKL spgemm work buffer"), sizes(0));
+  auto ev = data.matmat(matmat_request::work_estimation, &sizes(0), workBuffer.data(), {});
+
+  data.matmat(matmat_request::get_compute_buf_size, &sizes(1), nullptr, {ev}).wait();
+  buffer_t computeBuffer(Kokkos::view_alloc(Kokkos::WithoutInitializing, "oneMKL spgemm compute buffer"), sizes(1));
+  ev = data.matmat(matmat_request::compute, &sizes(1), computeBuffer.data(), {ev});
+
+  data.matmat(matmat_request::get_nnz, &sizes(2), nullptr, {ev}).wait();
+  if (sizes(2) != static_cast<std::int64_t>(c_nnz)) {
+    std::ostringstream oss;
+    oss << "KokkosSparse::spgemm_numeric[TPL_ONEMKL]: nnz(C) = " << sizes(2)
+        << " computed by oneMKL does not match nnz(C) = " << c_nnz << " from the symbolic phase";
+    throw std::runtime_error(oss.str());
+  }
+
+  ev = onemkl_set_csr_data(queue, data.C, m, k, c_nnz, rowptrC.data(), colidxC.data(),
+                           reinterpret_cast<onemkl_scalar_type *>(valuesC.data()));
+  ev = data.matmat(matmat_request::finalize, nullptr, nullptr, {ev});
+  // matmat does not produce sorted output, so sort C now if the user
+  // requires sorted output.
+  if (handle->get_result_sorted()) {
+    ev = oneapi::mkl::sparse::sort_matrix(queue, data.C, {ev});
+  }
+  ev.wait();
+  handle->set_call_numeric();
+  handle->set_computed_entries();
+}
+
+#define SPGEMM_NUMERIC_DECL_ONEMKL(SCALAR, ORDINAL, MEMSPACE)                                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
+  struct SPGEMM_NUMERIC<KokkosKernels::Experimental::KokkosKernelsHandle<const ORDINAL, const ORDINAL, const SCALAR,  \
+                                                                         Kokkos::SYCL, MEMSPACE, MEMSPACE>,           \
+                        Kokkos::View<const ORDINAL *, KokkosKernels::default_layout,                                  \
+                                     Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<const ORDINAL *, KokkosKernels::default_layout,                                  \
+                                     Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<const SCALAR *, KokkosKernels::default_layout,                                   \
+                                     Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<const ORDINAL *, KokkosKernels::default_layout,                                  \
+                                     Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<const ORDINAL *, KokkosKernels::default_layout,                                  \
+                                     Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<const SCALAR *, KokkosKernels::default_layout,                                   \
+                                     Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<const ORDINAL *, KokkosKernels::default_layout,                                  \
+                                     Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<ORDINAL *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>, \
+                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                         \
+                        Kokkos::View<SCALAR *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,  \
+                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                         \
+                        true, ETI_SPEC_AVAIL> {                                                                       \
+    using KernelHandle    = KokkosKernels::Experimental::KokkosKernelsHandle<const ORDINAL, const ORDINAL, const SCALAR, \
+                                                                          Kokkos::SYCL, MEMSPACE, MEMSPACE>;          \
+    using c_int_view_t    = Kokkos::View<const ORDINAL *, KokkosKernels::default_layout,                               \
+                                      Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+    using int_view_t      = Kokkos::View<ORDINAL *, KokkosKernels::default_layout,                                     \
+                                    Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+    using c_scalar_view_t = Kokkos::View<const SCALAR *, KokkosKernels::default_layout,                                \
+                                         Kokkos::Device<Kokkos::SYCL, MEMSPACE>,                                      \
+                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                     \
+    using scalar_view_t   = Kokkos::View<SCALAR *, KokkosKernels::default_layout,                                      \
+                                       Kokkos::Device<Kokkos::SYCL, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+    static void spgemm_numeric(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,                              \
+                               typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,                \
+                               c_int_view_t row_mapA, c_int_view_t entriesA, c_scalar_view_t valuesA, bool,           \
+                               c_int_view_t row_mapB, c_int_view_t entriesB, c_scalar_view_t valuesB, bool,           \
+                               c_int_view_t row_mapC, int_view_t entriesC, scalar_view_t valuesC) {                   \
+      std::string label =                                                                                             \
+          "KokkosSparse::spgemm_numeric[TPL_ONEMKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";              \
+      Kokkos::Profiling::pushRegion(label);                                                                           \
+      spgemm_numeric_onemkl(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, valuesA, row_mapB, entriesB,    \
+                            valuesB, row_mapC, entriesC, valuesC);                                                    \
+      Kokkos::Profiling::popRegion();                                                                                 \
+    }                                                                                                                 \
+  };
+
+#define SPGEMM_NUMERIC_DECL_ONEMKL_S(SCALAR)                                         \
+  SPGEMM_NUMERIC_DECL_ONEMKL(SCALAR, std::int32_t, Kokkos::SYCLDeviceUSMSpace) \
+  SPGEMM_NUMERIC_DECL_ONEMKL(SCALAR, std::int64_t, Kokkos::SYCLDeviceUSMSpace)
+
+SPGEMM_NUMERIC_DECL_ONEMKL_S(float)
+SPGEMM_NUMERIC_DECL_ONEMKL_S(double)
+SPGEMM_NUMERIC_DECL_ONEMKL_S(Kokkos::complex<float>)
+SPGEMM_NUMERIC_DECL_ONEMKL_S(Kokkos::complex<double>)
+#endif  // KOKKOS_ENABLE_SYCL
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 }  // namespace Impl
 }  // namespace KokkosSparse

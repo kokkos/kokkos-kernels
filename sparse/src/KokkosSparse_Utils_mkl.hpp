@@ -9,6 +9,9 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
 #include <mkl.h>
+#include <sstream>
+#include <type_traits>
+#include <vector>
 
 namespace KokkosSparse {
 namespace Impl {
@@ -131,9 +134,59 @@ class MKLSparseMatrix {
   // Allows using MKLSparseMatrix directly in MKL calls
   inline operator sparse_matrix_t() const { return mtx; }
 
+  // Constructs MKL BSR matrix from KK BSR views (num_rows x num_cols blocks,
+  // each block_size x block_size and stored row-major)
+  static inline MKLSparseMatrix create_bsr(const MKL_INT block_size, const MKL_INT num_rows, const MKL_INT num_cols,
+                                           MKL_INT *xadj, MKL_INT *adj, value_type *values) {
+    sparse_matrix_t m;
+    auto vals = reinterpret_cast<typename KokkosToMKLScalar<value_type>::type *>(values);
+    if constexpr (std::is_same_v<value_type, float>) {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(&m, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, num_rows,
+                                                          num_cols, block_size, xadj, xadj + 1, adj, vals));
+    } else if constexpr (std::is_same_v<value_type, double>) {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(&m, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, num_rows,
+                                                          num_cols, block_size, xadj, xadj + 1, adj, vals));
+    } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(&m, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, num_rows,
+                                                          num_cols, block_size, xadj, xadj + 1, adj, vals));
+    } else {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(&m, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, num_rows,
+                                                          num_cols, block_size, xadj, xadj + 1, adj, vals));
+    }
+    return MKLSparseMatrix(m);
+  }
+
   // Exports MKL sparse matrix contents into KK views
   inline void export_data(MKL_INT &num_rows, MKL_INT &num_cols, MKL_INT *&rows_start, MKL_INT *&columns,
                           value_type *&values) {}
+
+  // Exports MKL BSR matrix contents into KK views. Blocks must be row-major.
+  inline void export_bsr_data(MKL_INT &block_size, MKL_INT &num_rows, MKL_INT &num_cols, MKL_INT *&rows_start,
+                              MKL_INT *&columns, value_type *&values) {
+    sparse_index_base_t indexing;
+    sparse_layout_t block_layout;
+    MKL_INT *rows_end;
+    auto vals = reinterpret_cast<typename KokkosToMKLScalar<value_type>::type **>(&values);
+    if constexpr (std::is_same_v<value_type, float>) {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_export_bsr(mtx, &indexing, &block_layout, &num_rows, &num_cols,
+                                                          &block_size, &rows_start, &rows_end, &columns, vals));
+    } else if constexpr (std::is_same_v<value_type, double>) {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_export_bsr(mtx, &indexing, &block_layout, &num_rows, &num_cols,
+                                                          &block_size, &rows_start, &rows_end, &columns, vals));
+    } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_export_bsr(mtx, &indexing, &block_layout, &num_rows, &num_cols,
+                                                          &block_size, &rows_start, &rows_end, &columns, vals));
+    } else {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_export_bsr(mtx, &indexing, &block_layout, &num_rows, &num_cols,
+                                                          &block_size, &rows_start, &rows_end, &columns, vals));
+    }
+    if (SPARSE_INDEX_BASE_ZERO != indexing) {
+      throw std::runtime_error("Expected zero based indexing in exported MKL sparse matrix\n");
+    }
+    if (SPARSE_LAYOUT_ROW_MAJOR != block_layout) {
+      throw std::runtime_error("Expected row-major blocks in exported MKL BSR matrix\n");
+    }
+  }
 
   inline void destroy() { KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(mtx)); }
 };
@@ -228,7 +281,64 @@ inline void MKLSparseMatrix<Kokkos::complex<double>>::export_data(MKL_INT &num_r
 #include "oneapi/mkl/spblas.hpp"
 
 namespace KokkosSparse {
-namespace Impl {}
+namespace Impl {
+
+// Wrapper for oneapi::mkl::sparse::set_csr_data, which takes nnz as an
+// argument starting in oneMKL 2025.3
+template <typename Ordinal, typename Scalar>
+inline sycl::event onemkl_set_csr_data(sycl::queue &queue, oneapi::mkl::sparse::matrix_handle_t mat,
+                                       std::int64_t num_rows, std::int64_t num_cols, [[maybe_unused]] std::int64_t nnz,
+                                       Ordinal *rowptr, Ordinal *colidx, Scalar *values,
+                                       const std::vector<sycl::event> &dependencies = {}) {
+#if (INTEL_MKL_VERSION < 20250300)
+  return oneapi::mkl::sparse::set_csr_data(queue, mat, num_rows, num_cols, oneapi::mkl::index_base::zero, rowptr,
+                                           colidx, values, dependencies);
+#else
+  return oneapi::mkl::sparse::set_csr_data(queue, mat, num_rows, num_cols, nnz, oneapi::mkl::index_base::zero, rowptr,
+                                           colidx, values, dependencies);
+#endif
+}
+
+// Owns the oneMKL matrix handles and matmat descriptor for one C = A*B
+// (non-transposed, general matrices). Handles are released (synchronously) on
+// destruction.
+struct OneMKLSpgemmData {
+  explicit OneMKLSpgemmData(const sycl::queue &queue_) : queue(queue_) {
+    oneapi::mkl::sparse::init_matrix_handle(&A);
+    oneapi::mkl::sparse::init_matrix_handle(&B);
+    oneapi::mkl::sparse::init_matrix_handle(&C);
+    oneapi::mkl::sparse::init_matmat_descr(&descr);
+    const auto general = oneapi::mkl::sparse::matrix_view_descr::general;
+    const auto nontrans = oneapi::mkl::transpose::nontrans;
+    oneapi::mkl::sparse::set_matmat_data(descr, general, nontrans, general, nontrans, general);
+  }
+
+  OneMKLSpgemmData(const OneMKLSpgemmData &)            = delete;
+  OneMKLSpgemmData &operator=(const OneMKLSpgemmData &) = delete;
+
+  ~OneMKLSpgemmData() {
+    oneapi::mkl::sparse::release_matmat_descr(&descr);
+    auto evA = oneapi::mkl::sparse::release_matrix_handle(queue, &A);
+    auto evB = oneapi::mkl::sparse::release_matrix_handle(queue, &B);
+    auto evC = oneapi::mkl::sparse::release_matrix_handle(queue, &C);
+    evA.wait();
+    evB.wait();
+    evC.wait();
+  }
+
+  sycl::event matmat(oneapi::mkl::sparse::matmat_request req, std::int64_t *sizeTempBuffer, void *tempBuffer,
+                     const std::vector<sycl::event> &dependencies) {
+    return oneapi::mkl::sparse::matmat(queue, A, B, C, req, descr, sizeTempBuffer, tempBuffer, dependencies);
+  }
+
+  sycl::queue queue;
+  oneapi::mkl::sparse::matrix_handle_t A     = nullptr;
+  oneapi::mkl::sparse::matrix_handle_t B     = nullptr;
+  oneapi::mkl::sparse::matrix_handle_t C     = nullptr;
+  oneapi::mkl::sparse::matmat_descr_t descr = nullptr;
+};
+
+}  // namespace Impl
 }  // namespace KokkosSparse
 #endif  // KOKKOS_ENABLE_SYCL
 
