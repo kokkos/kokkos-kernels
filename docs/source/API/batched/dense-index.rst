@@ -4,7 +4,7 @@ API: Batched Dense (DLA)
 .. toctree::
    :maxdepth: 2
    :hidden:
-   
+
    dense/batched_rotg
    dense/batched_rot
    dense/batched_rotmg

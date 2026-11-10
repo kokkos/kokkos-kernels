@@ -1,6 +1,6 @@
 name: github-AT2
 
-on: 
+on:
   pull_request:
     paths-ignore:
     - '**/*.rst'

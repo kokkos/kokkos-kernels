@@ -55,12 +55,12 @@ Below are tables summarizing the currently supported function calls and third pa
      - X
      - --
    * - getri
-     - 
-     - 
-     - 
-     - 
-     - 
-     - 
+     -
+     -
+     -
+     -
+     -
+     -
    * - trtri
      - :doc:`trtri <lapack/trtri>`
      - --
@@ -69,12 +69,12 @@ Below are tables summarizing the currently supported function calls and third pa
      - --
      - --
    * - geequ
-     - 
-     - 
-     - 
-     - 
-     - 
-     - 
+     -
+     -
+     -
+     -
+     -
+     -
    * - geqrf
      - :doc:`geqrf <lapack/geqrf>`
      - --
@@ -118,9 +118,9 @@ Below are tables summarizing the currently supported function calls and third pa
      - X
      - --
    * - geev
-     - 
-     - 
-     - 
-     - 
-     - 
-     - 
+     -
+     -
+     -
+     -
+     -
+     -

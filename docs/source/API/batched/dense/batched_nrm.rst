@@ -43,7 +43,7 @@ Computes the :math:`L1`, :math:`L2` or :math:`L_\infty` norm of a vector :math:`
 
 
 .. note::
-  
+
   Though ``NrmType == KokkosBatched::Norm::L2`` is more efficient, it may overflow for large vectors. For large vectors, ``NrmType == KokkosBatched::Norm::ScaledL2`` is recommended as it uses a numerically stable algorithm to compute the :math:`L2` norm that avoids overflow and underflow by scaling the input vector :math:`X` by the maximum absolute value of its elements that has been encountered.
 
 Parameters
