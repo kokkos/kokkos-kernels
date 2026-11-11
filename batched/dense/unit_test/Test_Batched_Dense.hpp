@@ -3,8 +3,6 @@
 #ifndef TEST_BATCHED_DENSE_HPP
 #define TEST_BATCHED_DENSE_HPP
 
-// NOTE: Test_Batched_Symm.hpp has been split out; see BATCHED_DLA_SPLIT_GROUPS in CMakeLists.txt
-// NOTE: Test_Batched_Syr2k.hpp has been split out; see BATCHED_DLA_SPLIT_GROUPS in CMakeLists.txt
-// NOTE: Test_Batched_Trmv.hpp has been split out; see BATCHED_DLA_SPLIT_GROUPS in CMakeLists.txt
+// NOTE: The .hpps have been split out; see BATCHED_DLA_SPLIT_GROUPS in CMakeLists.txt
 
 #endif  // TEST_BATCHED_DENSE_HPP
