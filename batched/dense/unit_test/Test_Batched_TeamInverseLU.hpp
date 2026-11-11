@@ -95,11 +95,6 @@ struct Functor_BatchedTeamInverseLU {
     auto aa     = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto ww     = Kokkos::subview(_w, k, Kokkos::ALL());
 
-    if (member.team_rank() == 0) {
-      for (int i = 0; i < static_cast<int>(aa.extent(0)); ++i) aa(i, i) += 10.0;
-    }
-    member.team_barrier();
-
     KokkosBatched::TeamInverseLU<MemberType, AlgoTagType>::invoke(member, aa, ww);
   }
 
