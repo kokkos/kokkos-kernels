@@ -115,6 +115,15 @@ set(BATCHED_DLA_SPLIT_GROUPS
   SerialGbtrs
   SerialHouseholder)
 
+# Tests that only work on host space and should be excluded from GPU backends
+set(BATCHED_DLA_HOST_ONLY_GROUPS
+  VectorArithmatic
+  VectorLogical
+  VectorMath
+  VectorMisc
+  VectorRelation
+  VectorView)
+
 # Generate one shim .cpp per (BACKEND, GROUP) into ${CMAKE_CURRENT_BINARY_DIR}
 # and return the list in OUT_VAR.  Each shim mimics the hand-written pattern
 # used by the umbrella backends/*.cpp files: an include guard, the backend
@@ -125,6 +134,12 @@ function(kokkoskernels_batched_dla_split_sources BACKEND OUT_VAR)
   file(MAKE_DIRECTORY "${kkbdss_outdir}")
   string(TOUPPER "${BACKEND}" kkbdss_backend_upper)
   foreach(kkbdss_group IN LISTS BATCHED_DLA_SPLIT_GROUPS)
+    # Skip host-only tests on GPU backends
+    if(BACKEND MATCHES "Cuda|HIP|SYCL|OpenMPTarget")
+      if(kkbdss_group IN_LIST BATCHED_DLA_HOST_ONLY_GROUPS)
+        continue()
+      endif()
+    endif()
     string(TOUPPER "${kkbdss_group}" kkbdss_group_upper)
     set(kkbdss_guard "TEST_${kkbdss_backend_upper}_BATCHED_${kkbdss_group_upper}_CPP")
     set(kkbdss_content
