@@ -97,6 +97,7 @@
 
 ### Bug Fixes
 
+
 - Sparse - SpMV Sell: increasing tolerance check [\#3366](https://github.com/kokkos/kokkos-kernels/pull/3366)
 - Fix sell testmtx gen [\#3172](https://github.com/kokkos/kokkos-kernels/pull/3172)
 - Lapack - GETRF: fixing test for Intel compiler [\#3211](https://github.com/kokkos/kokkos-kernels/pull/3211)
@@ -105,16 +106,20 @@
 - Fix undefined reference linker issues in KokkosBlas3_gemm.hpp with Tpetra [\#3339](https://github.com/kokkos/kokkos-kernels/pull/3339)
 - Fix rotg sign when the first input is zero [\#3333](https://github.com/kokkos/kokkos-kernels/pull/3333)
 - Fix: correct GMRES residual norm calculation to prevent negative values [\#3322](https://github.com/kokkos/kokkos-kernels/pull/3322)
-- Fix(ode): norm was not accumulating or resetting [\#3315](https://github.com/kokkos/kokkos-kernels/pull/3315)
 - Fix out-of-rank extent access in Blas1 dot, sum and Utils permute vector [\#3310](https://github.com/kokkos/kokkos-kernels/pull/3310)
 - Fix bugs in graph distance 2 color [\#3307](https://github.com/kokkos/kokkos-kernels/pull/3307)
 - Fix for rocsparse with rocm 10.0 [\#3305](https://github.com/kokkos/kokkos-kernels/pull/3305)
+
+#### ODE Backward Difference Formula
+A lot of problems in the implementation of the implicit adaptive time integrator have been identified and fixed leading to improved robustness. A few more changes did not merge in time for this release but will make it in 5.4, if you use these, please send feedback in the slack channel or on github.
+
 - Fix(ode): applying `rtol` transformation twice [\#3301](https://github.com/kokkos/kokkos-kernels/pull/3301)
 - Fix(ode): initialize `coeffs` to zero in `compute_coeffs` [\#3300](https://github.com/kokkos/kokkos-kernels/pull/3300)
 - Fix(ode): use `max_step` provided to `BDFSolve` [\#3296](https://github.com/kokkos/kokkos-kernels/pull/3296)
 - Fix(ode): `param.iters` never set so `safety` was constant [\#3295](https://github.com/kokkos/kokkos-kernels/pull/3295)
 - Fix(ode): reorder NewtonSolver to avoid updating with unconverged values [\#3283](https://github.com/kokkos/kokkos-kernels/pull/3283)
 - Fix(ode): reject all newton solves that don't succeed [\#3277](https://github.com/kokkos/kokkos-kernels/pull/3277)
+- Fix(ode): norm was not accumulating or resetting [\#3315](https://github.com/kokkos/kokkos-kernels/pull/3315)
 
 ## [5.2.2](https://github.com/kokkos/kokkos-kernels/tree/5.2.2)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.2.1...5.2.2)
