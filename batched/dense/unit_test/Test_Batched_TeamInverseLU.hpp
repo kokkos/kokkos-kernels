@@ -71,28 +71,30 @@ struct Functor_BatchedTeamGemm {
   }
 };
 
-template <typename DeviceType, typename ViewType, typename AlgoTagType>
-struct Functor_BatchedTeamLU {
-  ViewType _a;
+template <typename DeviceType, typename AViewType, typename WViewType, typename AlgoTagType>
+struct Functor_BatchedTeamInverseLU {
+  AViewType _a;
+  WViewType _w;  // workspace
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedTeamLU(const ViewType &a) : _a(a) {}
+  Functor_BatchedTeamInverseLU(const AViewType &a, const WViewType &w) : _a(a), _w(w) {}
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const DeviceType &, const MemberType &member) const {
     const int k = member.league_rank();
     auto aa     = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
+    auto ww     = Kokkos::subview(_w, k, Kokkos::ALL());
 
     if (member.team_rank() == 0) {
       for (int i = 0; i < static_cast<int>(aa.extent(0)); ++i) aa(i, i) += 10.0;
     }
     member.team_barrier();
 
-    TeamLU<MemberType, AlgoTagType>::invoke(member, aa);
+    KokkosBatched::TeamInverseLU<MemberType, AlgoTagType>::invoke(member, aa, ww);
   }
 
   inline void run() {
-    typedef typename ViewType::value_type value_type;
+    typedef typename AViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamInverseLU");
     const std::string name_value_type = KokkosKernels::ArithTraits<value_type>::name();
     std::string name                  = name_region + name_value_type;
@@ -100,7 +102,7 @@ struct Functor_BatchedTeamLU {
 
     const int league_size = _a.extent(0);
     Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
-    Kokkos::parallel_for((name + "::LUFunctor").c_str(), policy, *this);
+    Kokkos::parallel_for((name + "::InverseLUFunctor").c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
 };
@@ -114,7 +116,7 @@ struct Functor_TestBatchedTeamInverseLU {
   Functor_TestBatchedTeamInverseLU(const AViewType &a, const WViewType &w) : _a(a), _w(w) {}
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const DeviceType &, const MemberType &member) const {
     const int k = member.league_rank();
     auto aa     = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto ww     = Kokkos::subview(_w, k, Kokkos::ALL());
@@ -155,7 +157,7 @@ void impl_test_batched_inverselu(const int N, const int BlkSize) {
   Kokkos::deep_copy(a1, a0);
   Kokkos::deep_copy(w, value_type(0.0));
 
-  Functor_BatchedTeamLU<DeviceType, AViewType, AlgoTagType>(a1).run();
+  Functor_BatchedTeamInverseLU<DeviceType, AViewType, WViewType, AlgoTagType>(a1, w).run();
 
   Functor_TestBatchedTeamInverseLU<DeviceType, AViewType, WViewType, AlgoTagType>(a1, w).run();
 
