@@ -8,9 +8,8 @@
 //       to ensure it is not included in these
 //       backends unit-test
 
-#if !defined(TEST_CUDA_BATCHED_VECTORLOGICAL_CPP) && \
-    !defined(TEST_HIP_BATCHED_VECTORLOGICAL_CPP) && !defined(TEST_SYCL_BATCHED_VECTORLOGICAL_CPP) && \
-    !defined(TEST_OPENAMPTARGET_BATCHED_VECTORLOGICAL_CPP)
+#if !defined(TEST_CUDA_BATCHED_VECTORLOGICAL_CPP) && !defined(TEST_HIP_BATCHED_VECTORLOGICAL_CPP) && \
+    !defined(TEST_SYCL_BATCHED_VECTORLOGICAL_CPP) && !defined(TEST_OPENAMPTARGET_BATCHED_VECTORLOGICAL_CPP)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
