@@ -166,6 +166,7 @@ void impl_test_batched_inverselu(const int N, const int BlkSize) {
   /// randomized input testing views
   AViewType a0("a0", N, BlkSize, BlkSize);
   AViewType a1("a1", N, BlkSize, BlkSize);
+  AViewType a2("a2", N, BlkSize, BlkSize);  // separate copy for first functor
   WViewType w("w", N, BlkSize * BlkSize);
   AViewType c0("c0", N, BlkSize, BlkSize);
 
@@ -175,9 +176,10 @@ void impl_test_batched_inverselu(const int N, const int BlkSize) {
   Kokkos::fence();
 
   Kokkos::deep_copy(a1, a0);
+  Kokkos::deep_copy(a2, a0);
   Kokkos::deep_copy(w, value_type(0.0));
 
-  Functor_BatchedTeamInverseLU<DeviceType, AViewType, WViewType, AlgoTagType>(a1, w).run();
+  Functor_BatchedTeamInverseLU<DeviceType, AViewType, WViewType, AlgoTagType>(a2, w).run();
 
   Functor_TestBatchedTeamInverseLU<DeviceType, AViewType, WViewType, AlgoTagType>(a1, w).run();
 
