@@ -80,7 +80,17 @@ struct Functor_BatchedTeamInverseLU {
   Functor_BatchedTeamInverseLU(const AViewType &a, const WViewType &w) : _a(a), _w(w) {}
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const DeviceType &, const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
+    this->run_impl(member);
+  }
+
+  template <typename TagType, typename MemberType>
+  KOKKOS_INLINE_FUNCTION void operator()(const TagType &, const MemberType &member) const {
+    this->run_impl(member);
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void run_impl(const MemberType &member) const {
     const int k = member.league_rank();
     auto aa     = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto ww     = Kokkos::subview(_w, k, Kokkos::ALL());
@@ -116,7 +126,17 @@ struct Functor_TestBatchedTeamInverseLU {
   Functor_TestBatchedTeamInverseLU(const AViewType &a, const WViewType &w) : _a(a), _w(w) {}
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const DeviceType &, const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
+    this->run_impl(member);
+  }
+
+  template <typename TagType, typename MemberType>
+  KOKKOS_INLINE_FUNCTION void operator()(const TagType &, const MemberType &member) const {
+    this->run_impl(member);
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void run_impl(const MemberType &member) const {
     const int k = member.league_rank();
     auto aa     = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto ww     = Kokkos::subview(_w, k, Kokkos::ALL());
