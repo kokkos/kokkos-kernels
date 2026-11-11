@@ -35,7 +35,7 @@ Performs one of the symmetric or hermitian rank-1 operation of matrix :math:`A` 
    \end{align}
 
 1. If ``ArgTrans == KokkosBatched::Trans::Transpose``, this operation is equivalent to the BLAS routine `SSPR <https://www.netlib.org/blas/sspr.f>`_ (`CSPR <https://www.netlib.org/blas/cspr.f>`_) or `DSPR <https://www.netlib.org/blas/dspr.f>`_ (`ZSPR <https://www.netlib.org/blas/zspr.f>`_) for single or double precision for real (complex) symmetric matrix.
-   
+
 2. If ``ArgTrans == KokkosBatched::Trans::ConjTranspose``, this operation is equivalent to the BLAS routine `CHPR <https://www.netlib.org/blas/chpr.f>`_ or `ZHPR <https://www.netlib.org/blas/zhpr.f>`_ for single or double precision for complex hermitian matrix.
 
 Parameters

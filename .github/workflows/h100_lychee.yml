@@ -23,7 +23,7 @@ jobs:
   PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_DEBUG:
     name: PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_DEBUG
     runs-on: [lychee-cuda-12.6.2-openblas-0.3.28]
-    
+
     steps:
       - name: nvidia-smi
         run: nvidia-smi
@@ -93,7 +93,7 @@ jobs:
   PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_REL:
     name: PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_REL
     runs-on: [lychee-cuda-12.6.2-openblas-0.3.28]
-    
+
     steps:
       - name: nvidia-smi
         run: nvidia-smi
@@ -163,7 +163,7 @@ jobs:
   PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_TPLS_REL:
     name: PR_HOPPER90_CUDA1262_CUDA_LEFT_RIGHT_TPLS_REL
     runs-on: [lychee-cuda-12.6.2-openblas-0.3.28]
-    
+
     steps:
       - name: nvidia-smi
         run: nvidia-smi

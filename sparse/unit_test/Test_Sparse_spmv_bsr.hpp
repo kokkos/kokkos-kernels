@@ -187,7 +187,7 @@ void test_spmv(Handle *handle, const char *mode, const Alpha &alpha, const Beta 
     for (size_t i = 0; i < 100 && i < errIdx.size(); ++i) {
       size_t ei = errIdx[i];
       // clang-format off
-      std::cerr << ei 
+      std::cerr << ei
                 << "\t" << hyExp(ei)
                 << "\t" << hyAct(ei)
                 << "\t" << KATS::abs(hyExp(ei) - hyAct(ei))
@@ -516,7 +516,7 @@ void test_spm_mv(Handle *handle, const char *mode, const Alpha &alpha, const Bet
       auto i  = ij.first;
       auto j  = ij.second;
       // clang-format off
-      std::cerr << i << "\t" << j 
+      std::cerr << i << "\t" << j
                 << "\t" << hyExp(i,j)
                 << "\t" << hyAct(i,j)
                 << "\t" << KATS::abs(hyExp(i,j) - hyAct(i,j))

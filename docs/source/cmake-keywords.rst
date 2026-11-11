@@ -238,11 +238,11 @@ Supported Third-party Libraries and Related CMake Options
       - Default: OFF
 
     - ``ARMPL_LIBRARIES``: STRING
-      
+
       - the name of the armpl library files to look for (possibly combined with above)
 
     - ``ARMPL_LIBRARY_DIRS``: STRING
-      
+
       - which directories to look for ``armpl``/``armpl_mp`` (optionally combined with below)
 
   - Environment Variables

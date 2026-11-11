@@ -49,7 +49,7 @@ abstract: >-
   shared-memory parallel programming model. "Local" means
   not using MPI, or running within a single MPI process
   without knowing about MPI. "Computational kernels" are
-  coarse-grained operations, consisting of substantial work 
+  coarse-grained operations, consisting of substantial work
   suitable for on-node parallel execution using Kokkos. Kokkos
   Kernels can be the building block of a parallel linear
   algebra library that uses MPI and threads for parallelism,

@@ -90,7 +90,7 @@ jobs:
   PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL:
     name: PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL
     runs-on: [gcc-10.5.0_openblas-0.3.30_x86-64]
-    
+
     steps:
       - name: checkout_kokkos_kernels
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -167,7 +167,7 @@ jobs:
   # PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL_NO_ETI_TESTS:
   #   name: PR_GNU1050_OPENMP_SERIAL_LEFT_OPENBLAS_REL_NO_ETI_TESTS
   #   runs-on: [gcc-10.5.0_openblas-0.3.30_x86-64]
-    
+
   #   steps:
   #     - name: checkout_kokkos_kernels
   #       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -247,7 +247,7 @@ jobs:
   # PR_SPR_ONEAPI202310_OPENMP_LEFT_MKLBLAS_MKLLAPACK_REL:
   #   name: PR_SPR_ONEAPI202310_OPENMP_LEFT_MKLBLAS_MKLLAPACK_REL
   #   runs-on: [kk-env-intel-oneapi-compilers-2023.1.0-latest]
-    
+
   #   steps:
   #     - name: checkout_kokkos_kernels
   #       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

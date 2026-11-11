@@ -86,4 +86,3 @@ Example
 .. literalinclude:: ../../../../example/wiki/sparse/KokkosSparse_wiki_spgemm.cpp
   :language: c++
   :lines: 16-
-

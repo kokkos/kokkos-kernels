@@ -16,7 +16,7 @@ jobs:
   PR_PV_ONEAPI202522_SYCL:
     name: PR_PV_ONEAPI202522_SYCL
     runs-on: [intel-oneapi-basekit-2025.2.2-0-devel-ubuntu24.04_gfortran-latest-latest-pv]
-    
+
     steps:
       - name: checkout_kokkos_kernels
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

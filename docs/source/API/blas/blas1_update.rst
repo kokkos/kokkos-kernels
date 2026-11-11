@@ -76,7 +76,7 @@ output:
 .. code::
 
    orignal values:
-     alpha: -1.0,  beta: 2.0,  gamma: 
+     alpha: -1.0,  beta: 2.0,  gamma:
      x: {0, -1, -2, 3, -4}
      y: {3, 2, 3, -2, 4}
      z: {-3, -1, 2, -2, -3}

@@ -79,7 +79,7 @@ create
                             bool input_sorted = false,
                             bool result_sorted = true);
 
-Destroy any previous spgemm sub-handle and create a new owned one. 
+Destroy any previous spgemm sub-handle and create a new owned one.
 
 Parameters
 ^^^^^^^^^^
@@ -325,4 +325,3 @@ destroy
 .. code:: c++
 
   void destroy_gs_handle();
-
