@@ -167,8 +167,12 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::Syr
       // large enough to require 'relTol' to value 5.0e-3. The same
       // calculations show no discrepancies for calculations with double.
       // ****************************************************************
-      m_absTol(std::is_same<AuxType, float>::value ? 1.0e-6 : (std::is_same<AuxType, double>::value ? 1.0e-9 : 0)),
-      m_relTol(std::is_same<AuxType, float>::value ? 5.0e-3 : (std::is_same<AuxType, double>::value ? 1.0e-6 : 0)),
+      m_absTol(std::is_same<AuxType, float>::value
+                   ? 1.0e-6
+                   : (std::is_same<AuxType, double>::value ? 1.0e-9 : (TestUtils::is_half_v<AuxType> ? 1.0e-1 : 0))),
+      m_relTol(std::is_same<AuxType, float>::value
+                   ? 5.0e-3
+                   : (std::is_same<AuxType, double>::value ? 1.0e-6 : (TestUtils::is_half_v<AuxType> ? 0.1 : 0))),
       m_M(-1),
       m_N(-1),
       m_useAnalyticalResults(false),
@@ -524,18 +528,18 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::pop
 
   for (int i = 0; i < m_M; ++i) {
     AuxType auxI = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i));
-    h_x[i]       = sin(auxI);
+    h_x[i]       = Kokkos::sin(auxI);
   }
 
   for (int i = 0; i < m_M; ++i) {
     AuxType auxI = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i));
-    h_y[i]       = cos(auxI);
+    h_y[i]       = Kokkos::cos(auxI);
   }
 
   for (int i = 0; i < m_M; ++i) {
     for (int j = 0; j < m_N; ++j) {
       AuxType auxIpJ = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i + j));
-      h_A(i, j)      = .1 * sin(auxIpJ);
+      h_A(i, j)      = .1 * Kokkos::sin(auxIpJ);
     }
   }
 
@@ -543,7 +547,7 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::pop
     for (int j = 0; j < m_N; ++j) {
       if (((m_useUpOption == true) && (i <= j)) || ((m_useUpOption == false) && (i >= j))) {
         AuxType auxIpJ   = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i + j));
-        h_expected(i, j) = 1.2 * sin(auxIpJ);
+        h_expected(i, j) = 1.2 * Kokkos::sin(auxIpJ);
       } else {
         h_expected(i, j) = h_A(i, j);
       }
@@ -741,6 +745,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::com
           }
 
           diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j).real());
+          // half_t: also allow m_absTol for small expected values
+          if (TestUtils::is_half_v<AuxType> && diffThreshold < m_absTol) diffThreshold = m_absTol;
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRealRel++;
@@ -772,6 +778,7 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::com
           }
 
           diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j).imag());
+          if (TestUtils::is_half_v<AuxType> && diffThreshold < m_absTol) diffThreshold = m_absTol;
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsImagRel++;
@@ -1204,6 +1211,7 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::com
         }
 
         diffThreshold = KAT_A::abs(m_relTol * h_reference(i, j));
+        if (TestUtils::is_half_v<AuxType> && diffThreshold < m_absTol) diffThreshold = m_absTol;
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRel++;
@@ -1597,6 +1605,16 @@ int test_syr2(const std::string& /*caseName*/) {
 #endif
   return 1;
 }
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
+TEST_F(TestCategory, syr2_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_half");
+  test_syr2<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(
+      "test case syr2_half");
+  Kokkos::Profiling::popRegion();
+}
+#endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))

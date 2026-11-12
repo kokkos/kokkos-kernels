@@ -16,9 +16,17 @@
 #include "KokkosBatched_Getrf.hpp"
 #include "KokkosBatched_Getrs.hpp"
 #include "KokkosODE_Types.hpp"
+#include "KokkosKernels_Utils.hpp"
 
 namespace KokkosODE {
 namespace Impl {
+
+// Columns needed in NewtonSolve's tmp: Gesv workspace (neqs + 4), or neqs int
+// pivots (plus alignment) in the first row, which is wider for sub-int scalars.
+template <class scalar_type>
+KOKKOS_INLINE_FUNCTION constexpr int newton_tmp_num_cols(int neqs) {
+  return sizeof(scalar_type) < sizeof(int) ? 2 * (neqs + 5) : neqs + 4;
+}
 
 template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_type, class update_type,
           class scale_type>
@@ -29,17 +37,19 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   using value_type           = typename ini_vec_type::non_const_value_type;
 
   // Define the type returned by nrm2 to store
-  // the norm of the residual.
-  using norm_type =
+  // the norm of the residual (at least float: half_t rates are too imprecise).
+  using mag_type =
       typename KokkosKernels::Details::InnerProductSpaceTraits<typename ini_vec_type::non_const_value_type>::mag_type;
+  using norm_type = std::conditional_t<(sizeof(mag_type) < sizeof(float)), float, mag_type>;
   sys.residual(y0, rhs);
-  const norm_type norm0 = KokkosBlas::serial_nrm2(rhs);
+  const norm_type norm0 = static_cast<norm_type>(KokkosBlas::serial_nrm2(rhs));
   norm_type norm        = KokkosKernels::ArithTraits<norm_type>::zero();
   norm_type norm_old    = KokkosKernels::ArithTraits<norm_type>::zero();
   norm_type rate        = KokkosKernels::ArithTraits<norm_type>::zero();
 
-  const norm_type tol = Kokkos::max(10 * KokkosKernels::ArithTraits<norm_type>::eps() / params.rel_tol,
-                                    Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
+  const norm_type tol =
+      Kokkos::max(10 * static_cast<norm_type>(KokkosKernels::ArithTraits<value_type>::eps()) / params.rel_tol,
+                  Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
 
   // LBV - 07/24/2023: for now assume that we take
   // a full Newton step. Eventually this value can
@@ -67,12 +77,23 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // KokkosBatched::SerialGesv uses a greedy row-to-column assignment
     // that can fail spuriously on well-conditioned sparse systems
     // (e.g. chemistry Jacobians with one dense row), so it is only kept
-    // as a fallback for systems larger than the stack pivot buffer.
+    // as a fallback for when tmp can't hold the pivots.
     int linSolverStat    = 0;
     using mat_value_type = typename mat_type::non_const_value_type;
-    if (sys.neqs * sizeof(int) <= tmp.size() * sizeof(mat_value_type)) {
+    // Pivots go in tmp's leading contiguous run, int-aligned.
+    constexpr size_t piv_align_pad =
+        (alignof(int) > alignof(mat_value_type)) ? (alignof(int) - alignof(mat_value_type)) : size_t(0);
+    size_t tmp_contiguous_len = 0;
+    if (tmp.span_is_contiguous()) {
+      tmp_contiguous_len = tmp.span();
+    } else if (tmp.stride(1) == 1) {
+      tmp_contiguous_len = tmp.extent(1);
+    } else if (tmp.stride(0) == 1) {
+      tmp_contiguous_len = tmp.extent(0);
+    }
+    if (sys.neqs * sizeof(int) + piv_align_pad <= tmp_contiguous_len * sizeof(mat_value_type)) {
       Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::AnonymousSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> piv(
-          reinterpret_cast<int*>(tmp.data()), sys.neqs);
+          KokkosKernels::Impl::alignPtrTo<int>(tmp.data()), sys.neqs);
       for (int idx = 0; idx < sys.neqs; ++idx) update(idx) = rhs(idx);
       linSolverStat = KokkosBatched::SerialGetrf<KokkosBatched::Algo::Getrf::Unblocked>::invoke(J, piv);
       if (linSolverStat == 0) {
@@ -95,7 +116,8 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // before applying the update to y0
     norm_type norm_new = KokkosKernels::ArithTraits<norm_type>::zero();
     for (int idx = 0; idx < sys.neqs; ++idx) {
-      norm_new += (update(idx) * update(idx)) / (scale(idx) * scale(idx));
+      const norm_type ui = static_cast<norm_type>(update(idx)), si = static_cast<norm_type>(scale(idx));
+      norm_new += (ui * ui) / (si * si);
     }
     norm_new = Kokkos::sqrt(norm_new / sys.neqs);
     if ((it > 0) && norm_old > KokkosKernels::ArithTraits<norm_type>::zero()) {
@@ -107,14 +129,15 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
 
     // update solution // x = x + alpha*update
     KokkosBlas::serial_axpy(alpha, update, y0);
-    norm = KokkosBlas::serial_nrm2(rhs);
+    norm = static_cast<norm_type>(KokkosBlas::serial_nrm2(rhs));
 
     if ((it > 0) && norm_old > KokkosKernels::ArithTraits<norm_type>::zero() &&
         ((norm_new == 0) || ((rate / (1 - rate)) * norm_new < tol))) {
       return newton_solver_status::NLS_SUCCESS;
     }
 
-    if ((norm < (params.rel_tol * norm0)) || (it > 0 ? KokkosBlas::serial_nrm2(update) < params.abs_tol : false)) {
+    if ((norm < (params.rel_tol * norm0)) ||
+        (it > 0 ? static_cast<norm_type>(KokkosBlas::serial_nrm2(update)) < params.abs_tol : false)) {
       return newton_solver_status::NLS_SUCCESS;
     }
 

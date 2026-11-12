@@ -17,7 +17,7 @@ void impl_test_update(int N) {
   ScalarA a  = 3;
   ScalarB b  = 5;
   ScalarC c  = 7;
-  double eps = std::is_same<ScalarC, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarC>(1e-7, 2e-5, 0.1);
 
   TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
   TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
@@ -28,17 +28,20 @@ void impl_test_update(int N) {
 
   {
     ScalarA randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = TestUtils::is_half_v<ScalarB> ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarC randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = TestUtils::is_half_v<ScalarC> ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(z.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -83,17 +86,20 @@ void impl_test_update_mv(int N, int K) {
 
   {
     ScalarA randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = TestUtils::is_half_v<ScalarB> ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarC randStart, randEnd;
-    TestUtils::getRandomBounds(10.0, randStart, randEnd);
+    double randMag = TestUtils::is_half_v<ScalarC> ? 1.0 : 10.0;
+    TestUtils::getRandomBounds(randMag, randStart, randEnd);
     Kokkos::fill_random(z.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -106,7 +112,7 @@ void impl_test_update_mv(int N, int K) {
   ScalarB b = 5;
   ScalarC c = 5;
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = TestUtils::selectEpsilonForScalarType<ScalarA>(1e-7, 2e-5, 0.1);
 
   KokkosBlas::update(a, x.d_view, b, y.d_view, c, z.d_view);
   Kokkos::deep_copy(z.h_base, z.d_base);
@@ -215,6 +221,21 @@ int test_update_mv() {
 
   return 1;
 }
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
+TEST_F(TestCategory, update_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::update_half");
+  test_update<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+TEST_F(TestCategory, update_mv_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::update_mv_half");
+  test_update_mv<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t,
+                 TestDevice>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))

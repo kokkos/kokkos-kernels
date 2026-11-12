@@ -201,6 +201,7 @@ void set_rotmg_input_ref_vals(const int test_case, View0& d1, View0& d2, View0& 
 
 template <class Scalar, class Device>
 int test_rotmg() {
+  if constexpr (TestUtils::is_half_v<Scalar>) return 0;
   Kokkos::View<Scalar, Device> d1("d1"), d2("d2"), x1("x1"), y1("y1");
   Kokkos::View<Scalar[5], Device> param("param");
   Kokkos::View<Scalar[9], Kokkos::DefaultHostExecutionSpace> ref_vals("reference values");

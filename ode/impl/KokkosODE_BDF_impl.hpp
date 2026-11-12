@@ -296,9 +296,10 @@ template <class ode_type, class vec_type, class res_type, class mat_type, class 
   auto jac =
       Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + ode.neqs));  // Jacobian matrix
   offset += ode.neqs;
-  auto tmp_gesv = Kokkos::subview(
-      temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + ode.neqs + 4));  // Buffer space for gesv calculation
-  offset += ode.neqs + 4;
+  const int tmp_cols = KokkosODE::Impl::newton_tmp_num_cols<typename mat_type::non_const_value_type>(ode.neqs);
+  auto tmp_gesv      = Kokkos::subview(
+      temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + tmp_cols));  // Buffer space for gesv calculation
+  offset += tmp_cols;
 
   auto coeffs = Kokkos::subview(temp2, Kokkos::ALL(), Kokkos::pair<int, int>(0, 6));
   auto gamma  = Kokkos::subview(temp2, Kokkos::ALL(), 6);

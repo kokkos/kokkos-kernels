@@ -19,7 +19,11 @@ struct SerialScaleInternal {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-    for (int i = 0; i < m; ++i) A[i * as0] *= alpha;
+    for (int i = 0; i < m; ++i) {
+      ValueType aval     = A[i * as0];
+      auto alpha_times_a = aval * alpha;
+      A[i * as0]         = alpha_times_a;
+    }
 
     return 0;
   }

@@ -266,7 +266,7 @@ KOKKOS_INLINE_FUNCTION void updateDot(Kokkos::complex<float>& sum, const Kokkos:
 // Kokkos::complex<float> is not defined.
 template <class Out, class In>
 struct CastPossiblyComplex {
-  static KOKKOS_INLINE_FUNCTION Out cast(const In& x) { return x; }
+  static KOKKOS_INLINE_FUNCTION Out cast(const In& x) { return static_cast<Out>(x); }
 };
 
 template <class OutReal, class InReal>

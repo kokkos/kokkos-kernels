@@ -157,8 +157,12 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::GerT
       // large enough to require 'relTol' to value 5.0e-3. The same
       // calculations show no discrepancies for calculations with double.
       // ****************************************************************
-      m_absTol(std::is_same<AuxType, float>::value ? 1.0e-6 : (std::is_same<AuxType, double>::value ? 1.0e-9 : 0)),
-      m_relTol(std::is_same<AuxType, float>::value ? 5.0e-3 : (std::is_same<AuxType, double>::value ? 1.0e-6 : 0)),
+      m_absTol(std::is_same<AuxType, float>::value
+                   ? 1.0e-6
+                   : (std::is_same<AuxType, double>::value ? 1.0e-9 : (TestUtils::is_half_v<AuxType> ? 5.0e-2 : 0))),
+      m_relTol(std::is_same<AuxType, float>::value
+                   ? 5.0e-3
+                   : (std::is_same<AuxType, double>::value ? 1.0e-6 : (TestUtils::is_half_v<AuxType> ? 0.3 : 0))),
       m_M(-1),
       m_N(-1),
       m_useAnalyticalResults(false),
@@ -491,26 +495,26 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::popu
 
   for (int i = 0; i < m_M; ++i) {
     auxI   = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i));
-    h_x[i] = sin(auxI);
+    h_x[i] = Kokkos::sin(auxI);
   }
 
   for (int j = 0; j < m_N; ++j) {
     auxJ   = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(j));
-    h_y[j] = cos(auxJ);
+    h_y[j] = Kokkos::cos(auxJ);
   }
 
   for (int i = 0; i < m_M; ++i) {
     auxI = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i));
     for (int j = 0; j < m_N; ++j) {
       auxJ      = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(j));
-      h_A(i, j) = 3 * cos(auxI) * sin(auxJ);
+      h_A(i, j) = 3 * Kokkos::cos(auxI) * Kokkos::sin(auxJ);
     }
   }
 
   for (int i = 0; i < m_M; ++i) {
     for (int j = 0; j < m_N; ++j) {
       auxIpJ           = this->shrinkAngleToZeroTwoPiRange(static_cast<AuxType>(i + j));
-      h_expected(i, j) = 3 * sin(auxIpJ);
+      h_expected(i, j) = 3 * Kokkos::sin(auxIpJ);
     }
   }
 }
@@ -637,6 +641,8 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::comp
           }
 
           diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j).real());
+          // half_t: also allow m_absTol for small expected values
+          if (TestUtils::is_half_v<AuxType> && diffThreshold < m_absTol) diffThreshold = m_absTol;
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRealRel++;
@@ -669,6 +675,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::comp
           }
 
           diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j).imag());
+          if (TestUtils::is_half_v<AuxType> && diffThreshold < m_absTol) diffThreshold = m_absTol;
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsImagRel++;
@@ -1065,6 +1072,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::comp
         }
 
         diffThreshold = KAT_A::abs(m_relTol * h_expected(i, j));
+        if (TestUtils::is_half_v<AuxType> && diffThreshold < m_absTol) diffThreshold = m_absTol;
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRel++;
@@ -1342,6 +1350,16 @@ int test_ger(const std::string& /*caseName*/) {
 #endif
   return 1;
 }
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
+TEST_F(TestCategory, ger_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_half");
+  test_ger<Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, TestDevice>(
+      "test case ger_half");
+  Kokkos::Profiling::popRegion();
+}
+#endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))

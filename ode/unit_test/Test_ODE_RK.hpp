@@ -508,6 +508,59 @@ void test_adaptivity() {
 
 }  // test_adaptivity
 
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
+template <class Device>
+void test_RK_half() {
+  using execution_space = typename Device::execution_space;
+  using RK_type         = KokkosODE::Experimental::RK_type;
+  using vec_type        = Kokkos::View<Kokkos::Experimental::half_t*, Device>;
+  using mv_type         = Kokkos::View<Kokkos::Experimental::half_t**, Device>;
+  using solver_type     = KokkosODE::Experimental::RungeKutta<RK_type::RK4>;
+  using count_type      = Kokkos::View<int*, execution_space>;
+  using KAT             = KokkosKernels::ArithTraits<Kokkos::Experimental::half_t>;
+
+  duho my_oscillator(1, 1, 4);
+  const int neqs = my_oscillator.neqs;
+
+  constexpr double tstart = 0, tend = 0.1;
+  vec_type y_new("y new", neqs), y_old("y old", neqs);
+
+  typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
+  y_old_h(0)                                  = KAT::one();
+  y_old_h(1)                                  = KAT::zero();
+
+  vec_type y_ref("reference value", neqs);
+  auto y_ref_h = Kokkos::create_mirror(y_ref);
+  {
+    Kokkos::deep_copy(y_old, y_old_h);
+    Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+    solution_wrapper wrapper(my_oscillator, tend, y_old, y_ref);
+    Kokkos::parallel_for(my_policy, wrapper);
+    Kokkos::deep_copy(y_ref_h, y_ref);
+  }
+
+  // Single RK4 step, check against analytical solution with loose tolerance
+  {
+    Kokkos::deep_copy(y_old, y_old_h);
+    vec_type tmp("tmp vector", neqs);
+    mv_type kstack("k stack", solver_type::num_stages(), neqs);
+    count_type count("time step count", 1);
+
+    RKSolve_wrapper<duho, RK_type::RK4, vec_type, mv_type, double, count_type> solve_wrapper(
+        my_oscillator, KokkosODE::Experimental::ODE_params(1), tstart, tend, y_old, y_new, tmp, kstack, count);
+    Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+    Kokkos::parallel_for(my_policy, solve_wrapper);
+    Kokkos::fence();
+
+    auto y_new_h = Kokkos::create_mirror(y_new);
+    Kokkos::deep_copy(y_new_h, y_new);
+    EXPECT_NEAR(double(y_new_h(0)), double(y_ref_h(0)), 0.2);
+    EXPECT_NEAR(double(y_new_h(1)), double(y_ref_h(1)), 0.2);
+  }
+}
+#endif
+
 }  // namespace Test
 
 void test_RK() { Test::test_RK<TestDevice>(); }
@@ -520,4 +573,9 @@ void test_RK_adaptivity() { Test::test_adaptivity<TestDevice>(); }
 TEST_F(TestCategory, RKSolve_serial) { test_RK(); }
 TEST_F(TestCategory, RK_conv_rate) { test_RK_conv_rate(); }
 TEST_F(TestCategory, RK_adaptivity) { test_RK_adaptivity(); }
+#endif
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
+TEST_F(TestCategory, RK_half_t) { ::Test::test_RK_half<TestDevice>(); }
 #endif

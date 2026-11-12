@@ -299,6 +299,23 @@ class epsilon {
 
 using KokkosKernels::Impl::getRandomBounds;
 
+// True only if T is half_t and half_t is a distinct type (not an alias for float)
+template <typename T>
+constexpr bool is_half_v = !KOKKOS_HALF_T_IS_FLOAT && std::is_same_v<T, Kokkos::Experimental::half_t>;
+
+// Tolerance for scalar_t based on its magnitude type (double, float or half_t)
+template <typename scalar_t>
+constexpr double selectEpsilonForScalarType(double eps_double, double eps_float, double eps_half) {
+  using mag_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
+  if constexpr (std::is_same_v<mag_t, float>) {
+    return eps_float;
+  } else if constexpr (is_half_v<mag_t>) {
+    return eps_half;
+  } else {
+    return eps_double;
+  }
+}
+
 // create_random_x_vector and create_random_y_vector can be used together to
 // generate a random linear system Ax = y.
 template <typename vec_t>
@@ -308,17 +325,17 @@ vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
   if constexpr (vec_t::rank == 2) {
     for (size_t j = 0; j < h_x.extent(1); ++j) {
       for (size_t i = 0; i < h_x.extent(0); ++i) {
-        scalar_t r       = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
+        scalar_t r       = static_cast<scalar_t>(rand() / (RAND_MAX / max_value));
         h_x.access(i, j) = r;
       }
     }
   } else if constexpr (vec_t::rank == 1) {
     for (size_t i = 0; i < h_x.extent(0); ++i) {
-      scalar_t r    = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
+      scalar_t r    = static_cast<scalar_t>(rand() / (RAND_MAX / max_value));
       h_x.access(i) = r;
     }
   } else if constexpr (vec_t::rank == 0) {
-    scalar_t r = static_cast<scalar_t>(rand()) / static_cast<scalar_t>(RAND_MAX / max_value);
+    scalar_t r = static_cast<scalar_t>(rand() / (RAND_MAX / max_value));
     h_x()      = r;
   }
   Kokkos::deep_copy(kok_x, h_x);
@@ -585,7 +602,7 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNN
   // populate values
   typename scalar_view_t::host_mirror_type h_values = Kokkos::create_mirror_view(values);
   for (size_type i = 0; i < nnz; i++) {
-    h_values(i) = KAT::one() * (((typename KAT::mag_type)rand()) / static_cast<typename KAT::mag_type>(RAND_MAX));
+    h_values(i) = KAT::one() * (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
   }
   Kokkos::deep_copy(values, h_values);
   // populate entries (make sure no entry is repeated within a row)

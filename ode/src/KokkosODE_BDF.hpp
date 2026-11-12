@@ -140,7 +140,8 @@ struct BDF {
 /// \param y0 [in/out]: vector of initial conditions, set to the solution
 /// at the end of the integration
 /// \param y_new [out]: vector of solution at t_end
-/// \param temp [in]: vectors for temporary storage
+/// \param temp [in]: vectors for temporary storage, extent
+/// (neqs, 23 + neqs + KokkosODE::Impl::newton_tmp_num_cols<scalar_type>(neqs))
 /// \param temp2 [in]: vectors for temporary storage
 ///
 /// \return SUCCESS if the integration reached t_end, MIN_SIZE if a step

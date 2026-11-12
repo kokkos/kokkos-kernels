@@ -16,6 +16,7 @@ namespace KokkosODE {
 namespace Experimental {
 
 /// \brief Newton solver for non-linear system of equations
+/// \param tmp [out]: extent (neqs, KokkosODE::Impl::newton_tmp_num_cols<scalar_type>(neqs))
 struct Newton {
   template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_type, class update_type,
             class scale_type>

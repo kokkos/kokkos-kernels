@@ -12,6 +12,7 @@
 #include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBatched_Vector.hpp"
 // Make this include-able from all subdirectories
+#include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_NEAR
 
 namespace Test {
 
@@ -265,7 +266,8 @@ void check_matrix(const std::string& name, const RowMapT& row_map, const Entries
   const size_type nrows = row_map.size() - 1;
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
-      EXPECT_NEAR(expected[row_idx][col_idx], decompressed_mtx[row_idx][col_idx], 0.01)
+      EXPECT_NEAR(static_cast<double>(expected[row_idx][col_idx]),
+                  static_cast<double>(decompressed_mtx[row_idx][col_idx]), 0.01)
           << "Failed check is: " << name << "[" << row_idx << "][" << col_idx << "]";
     }
   }
@@ -275,7 +277,7 @@ template <typename scalar_t>
 void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
   for (const auto& row : matrix) {
     for (const auto& item : row) {
-      std::printf("%.5f ", item);
+      std::printf("%.5f ", static_cast<double>(item));
     }
     std::cout << std::endl;
   }

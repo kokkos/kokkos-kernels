@@ -33,6 +33,13 @@ struct TolMeta<float> {
   static constexpr float value = 1e-5;  // Lower tolerance for floats
 };
 
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template <>
+struct TolMeta<Kokkos::Experimental::half_t> {
+  static constexpr double value = 0.1;
+};
+#endif
+
 template <typename Crs, typename AType, typename std::enable_if<is_crs_matrix<AType>::value>::type* = nullptr>
 AType get_A(int n, int diagDominance, int) {
   using lno_t                           = typename Crs::ordinal_type;
@@ -179,6 +186,8 @@ struct GmresTest {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gmres() {
+  // half_t: Gram-Schmidt roundoff -> NaN, GMRES does not converge.
+  if constexpr (TestUtils::is_half_v<scalar_t>) return;
   using TestStruct = Test::GmresTest<scalar_t, lno_t, size_type, device>;
   TestStruct::template run_test_gmres<false>();
   TestStruct::template run_test_gmres<true>();
