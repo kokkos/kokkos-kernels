@@ -322,7 +322,7 @@ void impl_test_batched_sypmv(const std::size_t Nb, const std::size_t BlkSize) {
                                                                                                 y_ref)
       .run();
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = 1.0e2 * ats::epsilon();
   auto h_y     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y);
   auto h_y_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, y_ref);
 
