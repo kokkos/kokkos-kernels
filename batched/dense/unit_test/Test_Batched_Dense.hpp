@@ -16,6 +16,7 @@
 #include "Test_Batched_Spr.hpp"
 #include "Test_Batched_Swap.hpp"
 #include "Test_Batched_Symv.hpp"
+#include "Test_Batched_Sypmv.hpp"
 #include "Test_Batched_Symm.hpp"
 #include "Test_Batched_Syrk.hpp"
 #include "Test_Batched_Syr2k.hpp"
