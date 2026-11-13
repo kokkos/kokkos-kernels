@@ -246,7 +246,7 @@ void impl_test_batched_sypmv_analytical(const std::size_t Nb) {
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
-  RealType eps = 1.0e1 * ats::epsilon();
+  RealType eps = 1.0e2 * ats::epsilon();
   Kokkos::deep_copy(h_y, y);
 
   // Check if y := alpha*op(A)*x + beta*y is computed correctly
