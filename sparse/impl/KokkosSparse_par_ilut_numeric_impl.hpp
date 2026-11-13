@@ -515,11 +515,10 @@ struct IlutWrap {
             const auto col_idx    = L_entries(l_nnz);
             const scalar_t u_diag = Ut_values(Ut_row_map(col_idx + 1) - 1);
             if (u_diag != 0.0) {
-              const auto new_val = compute_sum<false>(row_idx, col_idx, A_row_map, A_entries, A_values, L_row_map,
-                                                      L_entries, L_values, Ut_row_map, Ut_entries, Ut_values)
-                                       .first /
-                                   u_diag;
-              L_values(l_nnz) = new_val;
+              const auto temp = compute_sum<false>(row_idx, col_idx, A_row_map, A_entries, A_values, L_row_map,
+                                                   L_entries, L_values, Ut_row_map, Ut_entries, Ut_values)
+                                    .first;
+              L_values(l_nnz) = temp / u_diag;
             }
           }
 
