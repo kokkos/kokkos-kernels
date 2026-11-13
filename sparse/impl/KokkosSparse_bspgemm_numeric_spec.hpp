@@ -81,18 +81,11 @@ struct bspgemm_numeric_eti_spec_avail {
   };
 
 // Include the actual specialization declarations
-// #include <KokkosSparse_bspgemm_tpl_spec_avail.hpp>
+#include <KokkosSparse_bspgemm_numeric_tpl_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosSparse_bspgemm_numeric_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
 namespace Impl {
-
-// For future use (when TPL with block SpGEMM numeric phase is encountered)
-template <class KernelHandle, class a_size_view_t_, class a_lno_view_t, class a_scalar_view_t, class b_size_view_t_,
-          class b_lno_view_t, class b_scalar_view_t, class c_size_view_t_, class c_lno_view_t, class c_scalar_view_t>
-struct bspgemm_numeric_tpl_spec_avail {
-  enum : bool { value = false };
-};
 
 // Unification layer
 /// \brief Implementation of BSR sparse block matrix - matrix multiplication
@@ -280,6 +273,6 @@ struct BSPGEMM_NUMERIC<KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
       false, true>;
 
-// #include <KokkosSparse_spgemm_tpl_spec_decl.hpp>
+#include <KokkosSparse_bspgemm_numeric_tpl_spec_decl.hpp>
 
-#endif  // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_
+#endif  // KOKKOSSPARSE_IMPL_BSPGEMM_NUMERIC_SPEC_HPP_
