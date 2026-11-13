@@ -60,10 +60,10 @@ set(BATCHED_DLA_SPLIT_GROUPS
   SerialInverseLU
   SerialTbsv
   SerialTrtri
-  TeamLU
   TeamInverseLU
   TeamSolveLU
   TeamTrsm
+  TeamLU
   TeamTrsv
   TeamAxpy
   TeamVectorAxpy
