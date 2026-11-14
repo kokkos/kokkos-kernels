@@ -9,8 +9,11 @@
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Syr2k.hpp>
+#include "KokkosKernels_TestUtils.hpp"
 
 #include "Test_Batched_DenseUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Syr2k {

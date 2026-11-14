@@ -8,6 +8,9 @@
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Symv.hpp>
 #include "Test_Batched_DenseUtils.hpp"
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Symv {

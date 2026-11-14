@@ -9,6 +9,9 @@
 #include "KokkosBatched_Pbtrf.hpp"
 #include "KokkosBatched_Pbtrs.hpp"
 #include "Test_Batched_DenseUtils.hpp"
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Pbtrs {

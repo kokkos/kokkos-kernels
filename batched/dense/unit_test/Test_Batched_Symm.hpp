@@ -10,6 +10,9 @@
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Symm.hpp>
 #include "Test_Batched_DenseUtils.hpp"
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Symm {

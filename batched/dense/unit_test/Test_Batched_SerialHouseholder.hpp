@@ -7,6 +7,9 @@
 #include "gtest/gtest.h"
 #include "KokkosBatched_Householder_Decl.hpp"
 #include "KokkosBatched_ApplyHouseholder_Decl.hpp"
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 
