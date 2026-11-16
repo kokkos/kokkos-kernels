@@ -53,4 +53,6 @@ kokkoskernels_add_executable(serial_syrk SOURCES serial_syrk.cpp)
 
 kokkoskernels_add_executable(serial_syr2k SOURCES serial_syr2k.cpp)
 
+kokkoskernels_add_executable(serial_symm SOURCES serial_symm.cpp)
+
 kokkoskernels_add_executable(serial_spr SOURCES serial_spr.cpp)
