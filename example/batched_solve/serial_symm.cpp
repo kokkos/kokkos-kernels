@@ -19,10 +19,10 @@ using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 ///   alpha: 1.5, beta: 1.2
 ///
 /// After C := alpha*A*B + beta*C
-///        Lower       
+///        Lower
 ///        Ref: [[55.2, 69],
 ///              [88.5, 109.2],
-///              [97.2, 130.2]] 
+///              [97.2, 130.2]]
 ///
 int main(int /*argc*/, char** /*argv*/) {
   Kokkos::initialize();
