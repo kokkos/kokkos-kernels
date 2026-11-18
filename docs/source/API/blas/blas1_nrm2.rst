@@ -40,7 +40,7 @@ Parameters
 :R: computed norm(s)
 
 Type Requirements
------------------
+=================
 
 - `execution_space` must be a Kokkos `execution space <https://kokkos.org/kokkos-core-wiki/API/core/execution_spaces.html>`_
 

@@ -15,6 +15,10 @@ API: BLAS
    blas/blas1_nrminf
    blas/blas1_nrm1
    blas/blas1_nrm2
+   blas/blas1_nrm2w
+   blas/blas1_nrm2_squared
+   blas/blas1_nrm2w_squared
+   blas/blas1_reciprocal
    blas/blas1_rotg
    blas/blas1_rot
    blas/blas1_rotmg
@@ -486,6 +490,31 @@ BLAS Additions
      - X
    * - mult
      - :doc:`mult(space, X, Y) <blas/blas1_mult>`
+     -
+     -
+     -
+   * - nrminf
+     - :doc:`nrminf(space, X) <blas/blas1_nrminf>`
+     -
+     -
+     -
+   * - nrm2w
+     - :doc:`nrm2w(space, X, W) <blas/blas1_nrm2w>`
+     -
+     -
+     -
+   * - nrm2_squared
+     - :doc:`nrm2_squared(space, X) <blas/blas1_nrm2_squared>`
+     -
+     -
+     -
+   * - nrm2w_squared
+     - :doc:`nrm2w_squared(space, X, W) <blas/blas1_nrm2w_squared>`
+     -
+     -
+     -
+   * - reciprocal
+     - :doc:`reciprocal(space, R, X) <blas/blas1_reciprocal>`
      -
      -
      -
