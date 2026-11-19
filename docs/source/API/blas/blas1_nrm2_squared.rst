@@ -6,20 +6,22 @@ Defined in header: :code:`KokkosBlas1_nrm2_squared.hpp`
 .. code:: c++
 
   template <class execution_space, class XVector>
-  typename KokkosKernels::Details::InnerProductSpaceTraits<typename  XVector::non_const_value_type>::mag_type
-  nrm2(const execution_space& space, const XVector& X);
+    requires Kokkos::is_execution_space_v<execution_space>
+  typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+  nrm2_squared(const execution_space& space, const XVector& x);
 
-  template<class XVector>
-  typename KokkosKernels::Details::InnerProductSpaceTraits<typename VectorX::non_const_value_type>::mag_type
-  nrm2 (const XVector& X);
+  template <class XVector>
+  typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+  nrm2_squared(const XVector& x);
 
   template <class execution_space, class RV, class XMV>
-  void nrm2(const execution_space& space, const RV& R, const XMV& X);
+  void nrm2_squared(const execution_space& space, const RV& R, const XMV& X);
 
   template <class RV, class XMV>
-  void nrm2(const RV& R, const XMV& X);
+    requires Kokkos::is_view_v<RV>
+  void nrm2_squared(const RV& R, const XMV& X);
 
-Computes the norm 2 of the vector(s) stored column wise in X.
+Computes the square of the norm 2 of the vector(s) stored column wise in X.
 
 1. accumulates the square of the values in ``X`` and fences the ``space`` instance
 2. accumulates the square of the values in ``X`` and fences the default instance of ``typename XVector::execution_space``

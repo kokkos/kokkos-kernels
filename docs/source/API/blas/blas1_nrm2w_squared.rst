@@ -8,18 +8,18 @@ Defined in header: :code:`KokkosBlas1_nrm2w_squared.hpp`
   template <class execution_space, class XVector>
     requires Kokkos::is_execution_space_v<execution_space>
   typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
-  nrm2w(const execution_space& space, const XVector& x, const XVector& w);
+  nrm2w_squared(const execution_space& space, const XVector& x, const XVector& w);
 
   template <class XVector>
   typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
-  nrm2w(const XVector& x, const XVector& w);
+  nrm2w_squared(const XVector& x, const XVector& w);
 
   template <class execution_space, class RV, class XMV>
-  void nrm2w(const execution_space& space, const RV& R, const XMV& X, const XMV& W);
+  void nrm2w_squared(const execution_space& space, const RV& R, const XMV& X, const XMV& W);
 
   template <class RV, class XMV>
     requires Kokkos::is_view_v<RV>
-  void nrm2w(const RV& R, const XMV& X, const XMV& W);
+  void nrm2w_squared(const RV& R, const XMV& X, const XMV& W);
 
 Computes the square of the nrm2 of vector(s) `X` weighted by vector(s) `W` and store the result(s) in `R`, if provided, otherwise return it.
 
