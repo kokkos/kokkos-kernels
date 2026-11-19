@@ -22,11 +22,11 @@ namespace KokkosBlas {
 /// \return The nrm2 product result; a single value.
 template <class execution_space, class XVector>
   requires Kokkos::is_execution_space_v<execution_space>
-typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm2_squared(
-    const execution_space& space, const XVector& x) {
-  static_assert(Kokkos::is_execution_space<execution_space>::value,
-                "KokkosBlas::nrm2_squared: execution_space must be a valid Kokkos execution space");
-  static_assert(Kokkos::is_view<XVector>::value, "KokkosBlas::nrm2_squared: XVector must be a Kokkos::View.");
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+nrm2_squared(const execution_space& space, const XVector& x) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
+		"KokkosBlas::nrm2_squared: execution_space must be a valid Kokkos execution space");
+  static_assert(Kokkos::is_view_v<XVector>, "KokkosBlas::nrm2_squared: XVector must be a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
                 "KokkosBlas::nrm2_squared: XVector must be accessible from execution_space");
   static_assert(XVector::rank == 1, "KokkosBlas::nrm2_squared: Both Vector inputs must have rank 1.");
@@ -61,8 +61,8 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 ///
 /// \return The nrm2 product result; a single value.
 template <class XVector>
-typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm2_squared(
-    const XVector& x) {
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+nrm2_squared(const XVector& x) {
   return nrm2_squared(typename XVector::execution_space{}, x);
 }
 
@@ -84,15 +84,13 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 /// \param X [in] Input View (rank 1 or 2).
 template <class execution_space, class RV, class XMV>
 void nrm2_squared(const execution_space& space, const RV& R, const XMV& X) {
-  static_assert(Kokkos::is_execution_space<execution_space>::value,
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::nrm2_squared: execution_space must be a valid Kokkos execution space");
-  static_assert(Kokkos::is_view<RV>::value,
-                "KokkosBlas::nrm2_squared: R is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<XMV>::value,
-                "KokkosBlas::nrm2_squared: X is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<RV>, "KokkosBlas::nrm2_squared: R is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<XMV>, "KokkosBlas::nrm2_squared: X is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
                 "KokkosBlas::nrm2_squared: XVector must be accessible from execution_space");
-  static_assert(std::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+  static_assert(!std::is_const_v<typename RV::value_type>,
                 "KokkosBlas::nrm2_squared: R is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
