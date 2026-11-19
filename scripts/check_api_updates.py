@@ -46,7 +46,7 @@ SRC_DOC_MAPPING = dict([
     ('blas/src/KokkosBlas1_nrm2w.hpp', ['docs/source/API/blas/blas1_nrm2w.rst']),
     ('blas/src/KokkosBlas1_nrm2w_squared.hpp', ['docs/source/API/blas/blas1_nrm2w_squared.rst']),
     ('blas/src/KokkosBlas1_nrminf.hpp', ['docs/source/API/blas/blas1_nrminf.rst']),
-    # ('blas/src/KokkosBlas1_reciprocal.hpp', ['']),
+    ('blas/src/KokkosBlas1_reciprocal.hpp', ['docs/source/API/blas/blas1_reciprocal.rst']),
     ('blas/src/KokkosBlas1_rot.hpp', ['docs/source/API/blas/blas1_rot.rst']),
     ('blas/src/KokkosBlas1_rotg.hpp', ['docs/source/API/blas/blas1_rotg.rst']),
     ('blas/src/KokkosBlas1_rotm.hpp', ['docs/source/API/blas/blas1_rotm.rst']),
