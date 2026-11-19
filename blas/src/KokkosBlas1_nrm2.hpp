@@ -86,10 +86,8 @@ template <class execution_space, class RV, class XMV>
 void nrm2(const execution_space& space, const RV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::nrm2: space is not a Kokkos execution space.");
-  static_assert(Kokkos::is_view_v<RV>,
-                "KokkosBlas::nrm2: R is not a Kokkos::View.");
-  static_assert(Kokkos::is_view_v<XMV>,
-                "KokkosBlas::nrm2: X is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<RV>, "KokkosBlas::nrm2: R is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<XMV>, "KokkosBlas::nrm2: X is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
                 "KokkosBlas::nrm2: X cannot be accessed from execution_space.");
   static_assert(!std::is_const_v<typename RV::value_type>,

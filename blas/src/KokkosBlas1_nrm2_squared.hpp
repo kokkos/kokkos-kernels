@@ -22,10 +22,10 @@ namespace KokkosBlas {
 /// \return The nrm2 product result; a single value.
 template <class execution_space, class XVector>
   requires Kokkos::is_execution_space_v<execution_space>
-typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
-nrm2_squared(const execution_space& space, const XVector& x) {
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm2_squared(
+    const execution_space& space, const XVector& x) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
-		"KokkosBlas::nrm2_squared: execution_space must be a valid Kokkos execution space");
+                "KokkosBlas::nrm2_squared: execution_space must be a valid Kokkos execution space");
   static_assert(Kokkos::is_view_v<XVector>, "KokkosBlas::nrm2_squared: XVector must be a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
                 "KokkosBlas::nrm2_squared: XVector must be accessible from execution_space");
@@ -61,8 +61,8 @@ nrm2_squared(const execution_space& space, const XVector& x) {
 ///
 /// \return The nrm2 product result; a single value.
 template <class XVector>
-typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
-nrm2_squared(const XVector& x) {
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm2_squared(
+    const XVector& x) {
   return nrm2_squared(typename XVector::execution_space{}, x);
 }
 
