@@ -21,19 +21,14 @@ namespace KokkosBlas {
 /// \param x [in] Input 1-D View.
 ///
 /// \return The nrm2 product result; a single value.
-template <class execution_space, class XVector,
-          typename std::enable_if<Kokkos::is_execution_space<execution_space>::value, int>::type = 0>
+template <class execution_space, class XVector>
+  requires Kokkos::is_execution_space_v<execution_space>
 typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm2(
     const execution_space& space, const XVector& x) {
-  static_assert(Kokkos::is_execution_space<execution_space>::value,
-                "KokkosBlas::nrm2: execution_space must be a valid"
-                " Kokkos execution space.");
-  static_assert(Kokkos::is_view<XVector>::value, "KokkosBlas::nrm2: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<XVector>, "KokkosBlas::nrm2: XVector must be a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
                 "KokkosBlas::nrm2: XVector must be accessible from execution_space");
-  static_assert(XVector::rank == 1,
-                "KokkosBlas::nrm2: "
-                "XVector must have rank 1.");
+  static_assert(XVector::rank == 1, "KokkosBlas::nrm2: XVector must have rank 1.");
   using mag_type =
       typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type;
 
@@ -88,25 +83,19 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 /// \param R [out] Output View containing results (rank 0 or 1).
 /// \param X [in] Input View (rank 1 or 2).
 template <class execution_space, class RV, class XMV>
-void nrm2(const execution_space& space, const RV& R, const XMV& X,
-          typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
-  static_assert(Kokkos::is_execution_space<execution_space>::value,
+void nrm2(const execution_space& space, const RV& R, const XMV& X) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::nrm2: space is not a Kokkos execution space.");
-  static_assert(Kokkos::is_view<RV>::value,
-                "KokkosBlas::nrm2: "
-                "R is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<XMV>::value,
-                "KokkosBlas::nrm2: "
-                "X is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<RV>, "KokkosBlas::nrm2: R is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<XMV>, "KokkosBlas::nrm2: X is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
                 "KokkosBlas::nrm2: X cannot be accessed from execution_space.");
-  static_assert(std::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+  static_assert(!std::is_const_v<typename RV::value_type>,
                 "KokkosBlas::nrm2: R is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
   static_assert(((RV::rank == 0) && (XMV::rank == 1)) || ((RV::rank == 1) && (XMV::rank == 2)),
-                "KokkosBlas::nrm2: "
-                "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
+                "KokkosBlas::nrm2: RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
   using mag_type =
       typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type;
@@ -161,7 +150,8 @@ void nrm2(const execution_space& space, const RV& R, const XMV& X,
 /// \param R [out] Output View containing results (rank 0 or 1).
 /// \param X [in] Input View (rank 1 or 2).
 template <class RV, class XMV>
-void nrm2(const RV& R, const XMV& X, typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  requires Kokkos::is_view_v<RV>
+void nrm2(const RV& R, const XMV& X) {
   nrm2(typename XMV::execution_space{}, R, X);
 }
 
@@ -181,15 +171,14 @@ KOKKOS_INLINE_FUNCTION
 template <class RV, class XMV>
 KOKKOS_INLINE_FUNCTION int serial_nrm2(const XMV X, const RV& R) {
   // Do some compile time check when debug is enabled
-  static_assert(Kokkos::is_view<XMV>::value, "KokkosBlas::serial_nrm2: XMV is not a Kokkos::View");
-  static_assert(Kokkos::is_view<RV>::value, "KokkosBlas::serial_nrm2: RV is not a Kokkos::View");
-  static_assert(std::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+  static_assert(Kokkos::is_view_v<XMV>, "KokkosBlas::serial_nrm2: XMV is not a Kokkos::View");
+  static_assert(Kokkos::is_view_v<RV>, "KokkosBlas::serial_nrm2: RV is not a Kokkos::View");
+  static_assert(!std::is_const_v<typename RV::value_type>,
                 "KokkosBlas::serial_nrm2: R is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
   static_assert(((RV::rank == 0) && (XMV::rank == 1)) || ((RV::rank == 1) && (XMV::rank == 2)),
-                "KokkosBlas::serial_nrm2: "
-                "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
+                "KokkosBlas::serial_nrm2: RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
 #ifndef NDEBUG
   using norm_type =
