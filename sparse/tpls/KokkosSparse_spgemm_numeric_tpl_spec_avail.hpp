@@ -136,7 +136,45 @@ SPGEMM_NUMERIC_AVAIL_MKL_E(Kokkos::Serial)
 #ifdef KOKKOS_ENABLE_OPENMP
 SPGEMM_NUMERIC_AVAIL_MKL_E(Kokkos::OpenMP)
 #endif
-#endif
+
+#ifdef KOKKOS_ENABLE_SYCL
+// oneMKL matmat requires the same integer type for rowptrs and entries
+#define SPGEMM_NUMERIC_AVAIL_ONEMKL(SCALAR, ORDINAL, MEMSPACE)                                                   \
+  template <>                                                                                                    \
+  struct spgemm_numeric_tpl_spec_avail<                                                                          \
+      KokkosKernels::Experimental::KokkosKernelsHandle<const ORDINAL, const ORDINAL, const SCALAR, Kokkos::SYCL, \
+                                                       MEMSPACE, MEMSPACE>,                                      \
+      Kokkos::View<const ORDINAL *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
+      Kokkos::View<const ORDINAL *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
+      Kokkos::View<const SCALAR *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,        \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
+      Kokkos::View<const ORDINAL *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
+      Kokkos::View<const ORDINAL *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
+      Kokkos::View<const SCALAR *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,        \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
+      Kokkos::View<const ORDINAL *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
+      Kokkos::View<ORDINAL *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                    \
+      Kokkos::View<SCALAR *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::SYCL, MEMSPACE>,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {                                                 \
+    enum : bool { value = true };                                                                                \
+  };
+
+#define SPGEMM_NUMERIC_AVAIL_ONEMKL_S(SCALAR)                                         \
+  SPGEMM_NUMERIC_AVAIL_ONEMKL(SCALAR, std::int32_t, Kokkos::SYCLDeviceUSMSpace) \
+  SPGEMM_NUMERIC_AVAIL_ONEMKL(SCALAR, std::int64_t, Kokkos::SYCLDeviceUSMSpace)
+
+SPGEMM_NUMERIC_AVAIL_ONEMKL_S(float)
+SPGEMM_NUMERIC_AVAIL_ONEMKL_S(double)
+SPGEMM_NUMERIC_AVAIL_ONEMKL_S(Kokkos::complex<float>)
+SPGEMM_NUMERIC_AVAIL_ONEMKL_S(Kokkos::complex<double>)
+#endif  // KOKKOS_ENABLE_SYCL
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 }  // namespace Impl
 }  // namespace KokkosSparse
