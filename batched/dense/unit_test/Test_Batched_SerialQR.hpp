@@ -12,6 +12,9 @@
 #include <KokkosBatched_Util.hpp>  // KokkosBlas::Algo
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include <Kokkos_Core.hpp>
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 template <class MatricesType, class TauViewType, class TmpViewType, class ErrorViewType>
 struct qrFunctor {

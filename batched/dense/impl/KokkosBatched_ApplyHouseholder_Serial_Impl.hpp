@@ -8,6 +8,7 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Householder_Serial_Internal.hpp"
+#include "KokkosBatched_ApplyHouseholder_Serial_Internal.hpp"
 
 namespace KokkosBatched {
 
