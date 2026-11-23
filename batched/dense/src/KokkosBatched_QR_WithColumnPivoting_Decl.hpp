@@ -10,6 +10,18 @@
 namespace KokkosBatched {
 
 ///
+/// Serial QR
+///
+
+template <typename ArgAlgo>
+struct SerialQR_WithColumnPivoting {
+  template <typename AViewType, typename tViewType, typename pViewType, typename wViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const tViewType &t, const pViewType &p,
+                                           const wViewType &w,
+                                           /* */ int &matrix_rank);
+};
+
+///
 /// TeamVector QR
 ///
 
@@ -23,6 +35,7 @@ struct TeamVectorQR_WithColumnPivoting {
 
 }  // namespace KokkosBatched
 
+#include "KokkosBatched_QR_WithColumnPivoting_Serial_Impl.hpp"
 #include "KokkosBatched_QR_WithColumnPivoting_TeamVector_Impl.hpp"
 
 #endif
