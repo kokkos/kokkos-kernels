@@ -120,7 +120,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   mag_type eps = ats::epsilon();
   eps *= std::is_same_v<ValueType, Kokkos::Experimental::half_t> ||
                  std::is_same_v<ValueType, Kokkos::Experimental::bhalf_t>
-             ? 4
+             ? 4 * (TestUtils::is_half_v<ValueType> ? Kokkos::sqrt(static_cast<double>(matAdim2)) : 1.0)
              : 1e3;
 
   for (int k = 0; k < N; ++k)

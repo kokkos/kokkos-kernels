@@ -89,7 +89,7 @@ void impl_test_trsm(char side, char uplo, char trans, char diag, int M, int N, t
   using APT             = KokkosKernels::ArithTraits<ScalarA>;
   using mag_type        = typename APT::mag_type;
 
-  double machine_eps = APT::epsilon();
+  double machine_eps = static_cast<double>(APT::epsilon());
   bool A_l           = (side == 'L') || (side == 'l');
   int K              = A_l ? M : N;
 
@@ -171,7 +171,7 @@ void impl_test_trsm(char side, char uplo, char trans, char diag, int M, int N, t
   Kokkos::deep_copy(h_B, B);
 
   // Checking vs ref on CPU, this eps is about 10^-6
-  const mag_type eps = 1.0e8 * machine_eps;
+  const mag_type eps = TestUtils::is_half_v<mag_type> ? 1.0 : 1.0e8 * machine_eps;
   bool test_flag     = true;
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < N; j++) {
@@ -213,6 +213,27 @@ int test_trsm(char side, char uplo, char trans, char diag, ScalarA alpha) {
 
   return 1;
 }
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
+TEST_F(TestCategory, trsm_half) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_half");
+  using half_t               = Kokkos::Experimental::half_t;
+  std::vector<half_t> alphas = {half_t(1.0), half_t(4.5)};
+  for (half_t alpha : alphas) {
+    for (char side : {'L', 'R'}) {
+      for (char uplo : {'L', 'U'}) {
+        for (char trans : {'N', 'T'}) {
+          for (char diag : {'N', 'U'}) {
+            test_trsm<half_t, half_t, TestDevice>(side, uplo, trans, diag, alpha);
+          }
+        }
+      }
+    }
+  }
+  Kokkos::Profiling::popRegion();
+}
+#endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))

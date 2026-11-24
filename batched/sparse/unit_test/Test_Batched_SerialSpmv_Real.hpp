@@ -14,3 +14,11 @@ TEST_F(TestCategory, batched_scalar_serial_spmv_nt_double_double) {
   test_batched_spmv<TestDevice, double, double, param_tag_type>();
 }
 #endif
+
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
+TEST_F(TestCategory, batched_scalar_serial_spmv_nt_half_half) {
+  typedef ::Test::Spmv::ParamTag<Trans::NoTranspose> param_tag_type;
+  test_batched_spmv<TestDevice, Kokkos::Experimental::half_t, Kokkos::Experimental::half_t, param_tag_type>();
+}
+#endif

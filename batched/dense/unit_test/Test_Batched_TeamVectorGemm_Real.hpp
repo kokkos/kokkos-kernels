@@ -39,7 +39,8 @@ TEST_F(TestCategory, batched_scalar_team_vector_gemm_t_t_bhalf_bhalf) {
 }
 #endif  // KOKKOS_BHALF_T_IS_FLOAT
 
-#if defined(KOKKOS_HALF_T_IS_FLOAT)
+#if defined(KOKKOSKERNELS_INST_HALF) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) && !KOKKOS_HALF_T_IS_FLOAT)
 TEST_F(TestCategory, batched_scalar_team_vector_gemm_nt_nt_half_half) {
   using param_tag_type = ::Test::TeamGemm::ParamTag<KokkosBatched::Mode::TeamVector, KokkosBatched::Trans::NoTranspose,
                                                     KokkosBatched::Trans::NoTranspose>;

@@ -39,6 +39,13 @@ struct TolMeta<float> {
   static constexpr float value = 1e-5;  // Lower tolerance for floats
 };
 
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template <>
+struct TolMeta<Kokkos::Experimental::half_t> {
+  static constexpr double value = 0.1;
+};
+#endif
+
 }  // namespace ParIlut
 
 template <class ViewA, class ViewB>
@@ -292,6 +299,8 @@ void run_test_par_ilut_reuse_numeric_pattern() {
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_par_ilut_precond() {
+  // half_t: Gram-Schmidt roundoff -> NaN, GMRES does not converge.
+  if constexpr (TestUtils::is_half_v<scalar_t>) return;
   // Test using par_ilut as a preconditioner
   // Does (LU)^inv Ax = (LU)^inv b converge faster than solving Ax=b?
   using exe_space      = typename device::execution_space;

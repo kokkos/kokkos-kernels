@@ -7,6 +7,7 @@
 #include <string>
 #include <stdexcept>
 
+#include <KokkosKernels_TestUtils.hpp>
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_IOUtils.hpp>
@@ -211,7 +212,7 @@ struct SpilukTest {
     }
 
     if (fill_lev > 1) {
-      EXPECT_LT(result, 1e-4);
+      EXPECT_LT(static_cast<double>(result), TestUtils::selectEpsilonForScalarType<scalar_t>(1e-4, 1e-4, 0.001));
     }
   }
 
@@ -256,6 +257,7 @@ struct SpilukTest {
     kh.destroy_spiluk_handle();
 
 #ifdef TEST_SPILUK_FULL_CHECKS
+    constexpr double VAL_EPS = TestUtils::selectEpsilonForScalarType<scalar_t>(EPS, EPS, 1.0);
     // If block_size is 1, results should exactly match unblocked results
     if (block_size == 1 && UseBlocks) {
       const auto [L_row_map_u, L_entries_u, L_values_u, U_row_map_u, U_entries_u, U_values_u] =
@@ -263,10 +265,10 @@ struct SpilukTest {
 
       EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_u, EPS);
       EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_u, EPS);
-      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_u, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_u, VAL_EPS);
       EXPECT_NEAR_KK_1DVIEW(U_row_map, U_row_map_u, EPS);
       EXPECT_NEAR_KK_1DVIEW(U_entries, U_entries_u, EPS);
-      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_u, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_u, VAL_EPS);
     }
 
     // Check that team size = 1 produces same result
@@ -276,10 +278,10 @@ struct SpilukTest {
 
       EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_ts1, EPS);
       EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_ts1, EPS);
-      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_ts1, VAL_EPS);
       EXPECT_NEAR_KK_1DVIEW(U_row_map, U_row_map_ts1, EPS);
       EXPECT_NEAR_KK_1DVIEW(U_entries, U_entries_ts1, EPS);
-      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_ts1, VAL_EPS);
     }
 #endif
 
@@ -777,8 +779,10 @@ void test_spiluk() {
   TestStruct::run_test_spiluk_blocks();
   TestStruct::run_test_spiluk_scale();
   TestStruct::run_test_spiluk_scale_blocks();
-  TestStruct::template run_test_spiluk_precond<false>();
-  TestStruct::template run_test_spiluk_precond<true>();
+  if constexpr (!TestUtils::is_half_v<scalar_t>) {
+    TestStruct::template run_test_spiluk_precond<false>();
+    TestStruct::template run_test_spiluk_precond<true>();
+  }
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>

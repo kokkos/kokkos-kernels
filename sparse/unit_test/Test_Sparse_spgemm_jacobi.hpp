@@ -100,6 +100,8 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+  // half_t: omega*dinv*A*B products overflow
+  if constexpr (TestUtils::is_half_v<scalar_t>) return;
   using namespace Test;
   typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 

@@ -153,7 +153,7 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
 
   eps *= std::is_same<ScalarType, Kokkos::Experimental::half_t>::value ||
                  std::is_same<ScalarType, Kokkos::Experimental::bhalf_t>::value
-             ? 4
+             ? 4 * (TestUtils::is_half_v<ScalarType> ? Kokkos::sqrt(static_cast<double>(matAdim2)) : 1.0)
              : 1e3;
 
   for (int k = 0; k < N; ++k) {
