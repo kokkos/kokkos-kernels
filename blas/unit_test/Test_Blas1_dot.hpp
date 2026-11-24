@@ -68,14 +68,12 @@ void impl_test_dot_mv(int N, int K) {
 
   {
     ScalarA randStart, randEnd;
-    double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0, randStart, randEnd);
     Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    double randMag = TestUtils::is_half_v<ScalarB> ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarB> ? 1.0 : 10.0, randStart, randEnd);
     Kokkos::fill_random(b.d_view, rand_pool, randStart, randEnd);
   }
 

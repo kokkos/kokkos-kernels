@@ -157,12 +157,8 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::SyrTester()
       // large enough to require 'relTol' to value 5.0e-3. The same
       // calculations show no discrepancies for calculations with double.
       // ****************************************************************
-      m_absTol(std::is_same<AuxType, float>::value
-                   ? 1.0e-6
-                   : (std::is_same<AuxType, double>::value ? 1.0e-9 : (TestUtils::is_half_v<AuxType> ? 1.0e-1 : 0))),
-      m_relTol(std::is_same<AuxType, float>::value
-                   ? 5.0e-3
-                   : (std::is_same<AuxType, double>::value ? 1.0e-6 : (TestUtils::is_half_v<AuxType> ? 0.1 : 0))),
+      m_absTol(TestUtils::selectEpsilonForScalarType<AuxType>(1.0e-9, 1.0e-6, 1.0e-1)),
+      m_relTol(TestUtils::selectEpsilonForScalarType<AuxType>(1.0e-6, 5.0e-3, 0.1)),
       m_M(-1),
       m_N(-1),
       m_useAnalyticalResults(false),

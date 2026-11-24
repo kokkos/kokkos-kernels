@@ -24,8 +24,7 @@ void impl_test_team_nrm2(int N, int K) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
-  Kokkos::fill_random(a.d_view, rand_pool, ScalarA(randMag));
+  Kokkos::fill_random(a.d_view, rand_pool, ScalarA(TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0));
 
   Kokkos::deep_copy(a.h_base, a.d_base);
 

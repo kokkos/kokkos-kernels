@@ -27,20 +27,17 @@ void impl_test_mult(int N) {
 
   {
     ScalarA randStart, randEnd;
-    double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    double randMag = TestUtils::is_half_v<ScalarB> ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarB> ? 1.0 : 10.0, randStart, randEnd);
     Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarC randStart, randEnd;
-    double randMag = TestUtils::is_half_v<ScalarC> ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarC> ? 1.0 : 10.0, randStart, randEnd);
     Kokkos::fill_random(z.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -86,20 +83,17 @@ void impl_test_mult_mv(int N, int K) {
 
   {
     ScalarA randStart, randEnd;
-    double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    double randMag = TestUtils::is_half_v<ScalarB> ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarB> ? 1.0 : 10.0, randStart, randEnd);
     Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarC randStart, randEnd;
-    double randMag = TestUtils::is_half_v<ScalarC> ? 1.0 : 10.0;
-    TestUtils::getRandomBounds(randMag, randStart, randEnd);
+    TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarC> ? 1.0 : 10.0, randStart, randEnd);
     Kokkos::fill_random(z.d_view, rand_pool, randStart, randEnd);
   }
 

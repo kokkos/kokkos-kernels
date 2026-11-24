@@ -16,8 +16,7 @@ void impl_test_sum(int N) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
-  TestUtils::getRandomBounds(randMag, randStart, randEnd);
+  TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
   Kokkos::deep_copy(a.h_base, a.d_base);
@@ -43,8 +42,7 @@ void impl_test_sum_mv(int N, int K) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  double randMag = TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0;
-  TestUtils::getRandomBounds(randMag, randStart, randEnd);
+  TestUtils::getRandomBounds(TestUtils::is_half_v<ScalarA> ? 1.0 : 10.0, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
   Kokkos::deep_copy(a.h_base, a.d_base);
