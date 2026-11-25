@@ -39,6 +39,11 @@ Performs one of the matrix-matrix multiplication operations where :math:`A` is a
 
 2. If ``Conj == true``,  this operation is equivalent to the BLAS routine `CHEMM <https://www.netlib.org/blas/chemm.f>`_ or `ZHEMM <https://www.netlib.org/blas/zhemm.f>`_ for single or double precision for complex hermitian matrix.
 
+.. note::
+
+   Only the upper or lower triangular part of A is referenced.
+   Then, we compute C := alpha * A * B + beta * C or C := alpha * B * A + beta * C as if A were symmetric.
+
 Parameters
 ==========
 

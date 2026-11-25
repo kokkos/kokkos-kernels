@@ -24,6 +24,9 @@ using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 ///              [88.5, 109.2],
 ///              [97.2, 130.2]]
 ///
+/// \note
+/// Only the upper or lower triangular part of A is referenced
+/// Then, we compute C := alpha * A * B + beta * C as if A were symmetric.
 int main(int /*argc*/, char** /*argv*/) {
   Kokkos::initialize();
   {
