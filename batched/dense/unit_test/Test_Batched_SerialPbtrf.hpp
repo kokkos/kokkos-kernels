@@ -7,7 +7,12 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Pbtrf.hpp"
+#include "KokkosBatched_Gemm_Decl.hpp"
+#include "KokkosBatched_Gemm_Serial_Impl.hpp"
 #include "Test_Batched_DenseUtils.hpp"
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Pbtrf {

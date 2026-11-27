@@ -6,6 +6,9 @@
 #include <Kokkos_Random.hpp>
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Lacgv.hpp>
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Lacgv {

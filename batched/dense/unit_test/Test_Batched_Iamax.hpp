@@ -7,6 +7,7 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Iamax.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 
 using namespace KokkosBatched;
 

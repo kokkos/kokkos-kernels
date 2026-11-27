@@ -5,6 +5,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBatched_Rotg.hpp>
+#include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
 namespace Rotg {

@@ -8,6 +8,9 @@
 #include <KokkosBatched_Getrf.hpp>
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include "Test_Batched_DenseUtils.hpp"
+#include "KokkosKernels_TestUtils.hpp"
+
+using namespace KokkosBatched;
 
 namespace Test {
 namespace Getrf {
