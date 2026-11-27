@@ -40,6 +40,8 @@ int run_block_spgemm(const bsrMat_t A, const bsrMat_t B, bsrMat_t &C,
   }
   KokkosSparse::block_spgemm_symbolic(kh, A, false, B, false, C);
   KokkosSparse::block_spgemm_numeric(kh, A, false, B, false, C);
+  // Call numeric again to test reuse of the handle
+  KokkosSparse::block_spgemm_numeric(kh, A, false, B, false, C);
   kh.destroy_spgemm_handle();
 
   return 0;
@@ -152,8 +154,10 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz, lno_t 
   bsrMat_t output_mat2;
   run_block_spgemm(A, B, output_mat2, SPGEMM_DEBUG, use_dynamic_scheduling, shared_memory_size);
 
+  // SPGEMM_DEFAULT uses a TPL if one is available for these types
   std::vector<SPGEMMAlgorithm> algorithms = {
-      SPGEMM_KK, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */, SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
+      SPGEMM_DEFAULT, SPGEMM_KK, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
+      SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
   };
 
   if (!KokkosKernels::Impl::is_gpu_exec_space_v<typename device::execution_space>) {
@@ -167,6 +171,7 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz, lno_t 
     bool is_expected_to_fail = false;
 
     switch (spgemm_algorithm) {
+      case SPGEMM_DEFAULT: algo = "SPGEMM_DEFAULT"; break;
       case SPGEMM_KK: algo = "SPGEMM_KK"; break;
       case SPGEMM_KK_LP: algo = "SPGEMM_KK_LP"; break;
       case SPGEMM_KK_MEMSPEED: algo = "SPGEMM_KK_MEMSPEED"; break;

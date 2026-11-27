@@ -337,11 +337,13 @@ class SPGEMMHandle {
   struct mklSpgemmHandleType {
     // Allow mkl_sparse_sp2m (in SPARSE_STAGE_NNZ_COUNT mode) to construct C.
     // Then this assumes ownership of it and will destroy it later.
-    mklSpgemmHandleType(const sparse_matrix_t &C_) : C(C_) {}
+    // blockDim is 1 if C is CSR, or the block size if C is BSR.
+    mklSpgemmHandleType(const sparse_matrix_t &C_, MKL_INT blockDim_ = 1) : C(C_), blockDim(blockDim_) {}
 
     ~mklSpgemmHandleType() { KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(C)); }
 
     sparse_matrix_t C;
+    MKL_INT blockDim;
   };
 #endif
 
@@ -680,9 +682,9 @@ class SPGEMMHandle {
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-  void create_mkl_spgemm_handle(sparse_matrix_t C) {
+  void create_mkl_spgemm_handle(sparse_matrix_t C, MKL_INT blockDim = 1) {
     this->destroy_mkl_spgemm_handle();
-    this->mkl_spgemm_handle = new mklSpgemmHandleType(C);
+    this->mkl_spgemm_handle = new mklSpgemmHandleType(C, blockDim);
   }
   void destroy_mkl_spgemm_handle() {
     if (this->mkl_spgemm_handle != nullptr) {
